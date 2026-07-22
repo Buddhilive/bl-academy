@@ -29,6 +29,19 @@ import { ModelSelectorDropdown } from "./model-selector-dropdown";
 import { toast } from "sonner";
 import { BrainIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { encode } from "gpt-tokenizer";
+import {
+    Context,
+    ContextContent,
+    ContextContentBody,
+    ContextContentFooter,
+    ContextContentHeader,
+    ContextInputUsage,
+    ContextOutputUsage,
+    ContextTrigger,
+} from "@/components/ai-elements/context";
+
+const DEFAULT_MAX_CONTEXT_TOKENS = 32000;
 
 const AttachmentItem = ({
     attachment,
@@ -79,9 +92,10 @@ const PromptInputAttachmentsDisplay = () => {
 interface ChatInputAreaProps {
     sendMessage: (text: string) => void;
     chatStatus: ChatStatus;
+    usedTokens?: number;
 }
 
-export const ChatInputArea = ({ sendMessage, chatStatus }: ChatInputAreaProps) => {
+export const ChatInputArea = ({ sendMessage, chatStatus, usedTokens = 0 }: ChatInputAreaProps) => {
     const {
         input,
         setInput,
@@ -125,6 +139,11 @@ export const ChatInputArea = ({ sendMessage, chatStatus }: ChatInputAreaProps) =
         },
         [sendMessage, setInput]
     );
+
+    const liveUsedTokens = useMemo(() => {
+        const inputTokens = input ? encode(input).length : 0;
+        return usedTokens + inputTokens;
+    }, [input, usedTokens]);
 
     const isSubmitDisabled = useMemo(
         () =>
@@ -172,7 +191,25 @@ export const ChatInputArea = ({ sendMessage, chatStatus }: ChatInputAreaProps) =
                         {/* Model selector dropdown component */}
                         <ModelSelectorDropdown />
                     </PromptInputTools>
-                    <PromptInputSubmit disabled={isSubmitDisabled} status={chatStatus} />
+                    <div className="flex items-center gap-2">
+                        <Context 
+                            maxTokens={DEFAULT_MAX_CONTEXT_TOKENS} 
+                            usedTokens={liveUsedTokens} 
+                            // @ts-expect-error ai sdk usage type compatibility
+                            usage={{ promptTokens: liveUsedTokens, completionTokens: 0, totalTokens: liveUsedTokens, inputTokens: liveUsedTokens, outputTokens: 0 }}
+                        >
+                            <ContextTrigger />
+                            <ContextContent>
+                                <ContextContentHeader />
+                                <ContextContentBody>
+                                    <ContextInputUsage />
+                                    <ContextOutputUsage />
+                                </ContextContentBody>
+                                <ContextContentFooter />
+                            </ContextContent>
+                        </Context>
+                        <PromptInputSubmit disabled={isSubmitDisabled} status={chatStatus} />
+                    </div>
                 </PromptInputFooter>
             </PromptInput>
         </div>

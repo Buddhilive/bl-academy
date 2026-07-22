@@ -6,6 +6,7 @@ import { SuggestionsList } from "@/components/chat/suggestions-list";
 import { ChatInputArea } from "@/components/chat/chat-input-area";
 import { useEffect, useMemo, useCallback, useState, use } from "react";
 import { useChat } from "@ai-sdk/react";
+import { encode } from "gpt-tokenizer";
 import { DefaultChatTransport } from "ai";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
@@ -209,6 +210,22 @@ export default function ChatPage({ params }: { params: Promise<{ chatId?: string
         [sendMessage]
     );
 
+    const usedTokens = useMemo(() => {
+        let totalText = "";
+        for (const msg of messages) {
+            if (Array.isArray(msg.parts) && msg.parts.length > 0) {
+                totalText += msg.parts
+                    .filter((p) => p.type === "text")
+                    .map((p) => (p as { text?: string }).text || "")
+                    .join("");
+            } else {
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                totalText += (msg as any).content || "";
+            }
+        }
+        return totalText ? encode(totalText).length : 0;
+    }, [messages]);
+
     if (isFetching) {
         return (
             <div className="flex h-[calc(100vh-80px)] items-center justify-center">
@@ -230,7 +247,7 @@ export default function ChatPage({ params }: { params: Promise<{ chatId?: string
             />
             <div className="grid shrink-0 gap-4 pt-4">
                 <SuggestionsList onSuggestionClick={handleSuggestionClick} />
-                <ChatInputArea sendMessage={sendMessage} chatStatus={chatStatus} />
+                <ChatInputArea sendMessage={sendMessage} chatStatus={chatStatus} usedTokens={usedTokens} />
             </div>
         </div>
     );

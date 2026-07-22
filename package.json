@@ -28,6 +28,7 @@
     "drizzle-kit": "^0.31.10",
     "drizzle-orm": "^0.45.2",
     "embla-carousel-react": "^8.6.0",
+    "gpt-tokenizer": "^3.4.0",
     "lucide-react": "^1.25.0",
     "media-chrome": "^4.19.2",
     "motion": "^12.42.2",
