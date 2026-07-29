@@ -1,6 +1,6 @@
 import { db } from "./index";
 import { chats, messages } from "./schema";
-import { eq, desc, like, count } from "drizzle-orm";
+import { eq, desc, ilike, count } from "drizzle-orm";
 import type { UIMessage } from "ai";
 
 export function truncate(text: string, length: number = 50): string {
@@ -22,8 +22,8 @@ export async function createChat(id: string, title: string, model: string) {
 }
 
 export async function getRecentChats(limit: number = 10) {
-    const list = db.select().from(chats).orderBy(desc(chats.updatedAt)).limit(limit).all();
-    const totalResult = db.select({ count: count() }).from(chats).get();
+    const list = await db.select().from(chats).orderBy(desc(chats.updatedAt)).limit(limit);
+    const [totalResult] = await db.select({ count: count() }).from(chats);
     return {
         chats: list,
         total: totalResult?.count ?? 0,
@@ -31,15 +31,14 @@ export async function getRecentChats(limit: number = 10) {
 }
 
 export async function getChatById(id: string) {
-    const chat = db.select().from(chats).where(eq(chats.id, id)).get();
+    const [chat] = await db.select().from(chats).where(eq(chats.id, id));
     if (!chat) return null;
 
-    const msgList = db
+    const msgList = await db
         .select()
         .from(messages)
         .where(eq(messages.chatId, id))
-        .orderBy(messages.createdAt)
-        .all();
+        .orderBy(messages.createdAt);
 
     return {
         ...chat,
@@ -54,51 +53,48 @@ export async function getChatById(id: string) {
 
 export async function saveMessages(chatId: string, uiMessages: UIMessage[]) {
     const now = new Date();
-    
+
     // Update chat timestamp
-    db.update(chats)
+    await db.update(chats)
         .set({ updatedAt: now })
-        .where(eq(chats.id, chatId))
-        .run();
+        .where(eq(chats.id, chatId));
 
     // Delete existing messages and re-insert updated list to maintain sync
-    db.delete(messages).where(eq(messages.chatId, chatId)).run();
+    await db.delete(messages).where(eq(messages.chatId, chatId));
 
-    for (const msg of uiMessages) {
-        db.insert(messages)
-            .values({
+    if (uiMessages.length > 0) {
+        await db.insert(messages).values(
+            uiMessages.map((msg) => ({
                 id: msg.id,
                 chatId,
                 role: msg.role,
                 parts: msg.parts || [{ type: "text", text: "" }],
                 createdAt: now,
-            })
-            .run();
+            }))
+        );
     }
 }
 
 export async function deleteChat(id: string) {
-    db.delete(chats).where(eq(chats.id, id)).run();
+    await db.delete(chats).where(eq(chats.id, id));
 }
 
 export async function getPaginatedChats(page: number = 1, pageSize: number = 20, search: string = "") {
     const offset = (page - 1) * pageSize;
-    const query = search ? like(chats.title, `%${search}%`) : undefined;
+    const query = search ? ilike(chats.title, `%${search}%`) : undefined;
 
-    const list = db
+    const list = await db
         .select()
         .from(chats)
         .where(query)
         .orderBy(desc(chats.updatedAt))
         .limit(pageSize)
-        .offset(offset)
-        .all();
+        .offset(offset);
 
-    const totalResult = db
+    const [totalResult] = await db
         .select({ count: count() })
         .from(chats)
-        .where(query)
-        .get();
+        .where(query);
 
     return {
         chats: list,

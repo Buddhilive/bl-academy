@@ -1,18 +1,11 @@
-import Database from "better-sqlite3";
-import { drizzle } from "drizzle-orm/better-sqlite3";
+import { Pool } from "pg";
+import { drizzle } from "drizzle-orm/node-postgres";
 import * as schema from "./schema";
-import path from "path";
-import fs from "fs";
 
-const dataDir = path.join(process.cwd(), "data");
-if (!fs.existsSync(dataDir)) {
-    fs.mkdirSync(dataDir, { recursive: true });
+if (!process.env.DATABASE_URL) {
+    throw new Error("DATABASE_URL environment variable is not set");
 }
 
-const dbPath = path.join(dataDir, "buddhi.db");
-const sqlite = new Database(dbPath);
+const pool = new Pool({ connectionString: process.env.DATABASE_URL });
 
-// Enable foreign keys
-sqlite.pragma("foreign_keys = ON");
-
-export const db = drizzle(sqlite, { schema });
+export const db = drizzle(pool, { schema });
