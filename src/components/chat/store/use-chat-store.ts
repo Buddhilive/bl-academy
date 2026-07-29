@@ -47,7 +47,7 @@ interface ChatStore {
 }
 
 export const useChatStore = create<ChatStore>((set, get) => ({
-    model: "google/gemma-4-12b-qat",
+    model: "gemma-4-e4b-it",
     modelSelectorOpen: false,
     useWebSearch: false,
     isLoadingModel: false,

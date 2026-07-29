@@ -1,5 +1,5 @@
 import { streamText, UIMessage, convertToModelMessages, createUIMessageStreamResponse, toUIMessageStream } from "ai";
-import { lmstudio } from "@/lib/lmstudio";
+import { inferenceModel } from "@/lib/inference-client";
 import { NextResponse } from "next/server";
 
 // Allow streaming responses up to 30 seconds
@@ -33,7 +33,7 @@ export async function POST(req: Request) {
     try {
         const result = streamText({
             // model: webSearch ? "perplexity/sonar" : model,
-            model: lmstudio(model),
+            model: inferenceModel(model),
             messages: await convertToModelMessages(messages),
             system:
                 "You are a helpful assistant that can answer questions and help with tasks",
