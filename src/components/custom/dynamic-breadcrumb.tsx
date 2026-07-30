@@ -15,10 +15,10 @@ import { Fragment } from "react";
 
 export function DynamicBreadcrumb() {
   const pathname = usePathname();
-  const { recentChats, currentChatId } = useChatStore();
+  const { recentChats } = useChatStore();
 
   // Handle the home route or root chat route (only show Home if not viewing a chat)
-  if (pathname === "/" || (pathname === "/chat" && !currentChatId)) {
+  if (pathname === "/" || pathname === "/chat") {
     return (
       <Breadcrumb>
         <BreadcrumbList>
@@ -31,10 +31,7 @@ export function DynamicBreadcrumb() {
   }
 
   // Split pathname into segments, remove empty strings
-  // Special case: if viewing a chat via shallow URL, segments should reflect the active chat
-  const segments = pathname === "/chat" && currentChatId 
-    ? ["chat", currentChatId]
-    : pathname.split("/").filter(Boolean);
+  const segments = pathname.split("/").filter(Boolean);
 
   return (
     <Breadcrumb>
