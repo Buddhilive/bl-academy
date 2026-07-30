@@ -1,4 +1,4 @@
-import { streamText, UIMessage, convertToModelMessages, createUIMessageStreamResponse, toUIMessageStream } from "ai";
+import { streamText, UIMessage, convertToModelMessages, createUIMessageStreamResponse, toUIMessageStream, wrapLanguageModel, extractReasoningMiddleware } from "ai";
 import { inferenceModel } from "@/lib/inference-client";
 import { NextResponse } from "next/server";
 
@@ -31,12 +31,17 @@ export async function POST(req: Request) {
     }
 
     try {
+        const system = reasoningEnabled
+            ? "You are a helpful assistant that can answer questions and help with tasks. Before answering, think through the problem step by step inside <think></think> tags. After the closing </think> tag, give a concise final answer without repeating the reasoning."
+            : "You are a helpful assistant that can answer questions and help with tasks";
+
         const result = streamText({
-            // model: webSearch ? "perplexity/sonar" : model,
-            model: inferenceModel(model),
+            model: wrapLanguageModel({
+                model: inferenceModel(model),
+                middleware: extractReasoningMiddleware({ tagName: "think" }),
+            }),
             messages: await convertToModelMessages(messages),
-            system:
-                "You are a helpful assistant that can answer questions and help with tasks",
+            system,
             onFinish: async ({ response }) => {
                 if (chatId) {
                     try {
