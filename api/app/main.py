@@ -19,6 +19,7 @@ from starlette.concurrency import run_in_threadpool
 
 from . import config
 from .engine import EngineState, EngineUnavailableError, split_messages
+from .routers.knowledge import router as knowledge_router
 from .schemas import (
     ChatCompletionChoice,
     ChatCompletionChunk,
@@ -60,6 +61,8 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+app.include_router(knowledge_router)
 
 
 def _error(status_code: int, message: str, error_type: str, code: str | None = None) -> JSONResponse:

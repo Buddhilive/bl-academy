@@ -18,7 +18,7 @@ import {
   SidebarMenuItem,
   SidebarMenuButton,
 } from "@/components/ui/sidebar"
-import { GalleryVerticalEndIcon, AudioLinesIcon, TerminalIcon, TerminalSquareIcon, BotIcon, BookOpenIcon, Settings2Icon, FrameIcon, PieChartIcon, MapIcon, Plus } from "lucide-react"
+import { GalleryVerticalEndIcon, AudioLinesIcon, TerminalIcon, TerminalSquareIcon, BotIcon, BookOpenIcon, Settings2Icon, FrameIcon, PieChartIcon, MapIcon, Plus, UploadIcon } from "lucide-react"
 import Link from "next/link"
 
 // This is sample data.
@@ -80,6 +80,22 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
               <SidebarMenuButton tooltip="New Chat" render={<Link href="/chat" />}>
                 <Plus className="size-4 shrink-0" />
                 <span>New Chat</span>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+          </SidebarMenu>
+        </SidebarGroup>
+        <SidebarGroup>
+          <SidebarMenu>
+            <SidebarMenuItem>
+              <SidebarMenuButton tooltip="Knowledge Base" render={<Link href="/knowledge-base" />}>
+                <UploadIcon className="size-4 shrink-0" />
+                <span>Knowledge Base</span>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+            <SidebarMenuItem>
+              <SidebarMenuButton tooltip="Knowledge Viewer" render={<Link href="/knowledge-viewer" />}>
+                <BookOpenIcon className="size-4 shrink-0" />
+                <span>Knowledge Viewer</span>
               </SidebarMenuButton>
             </SidebarMenuItem>
           </SidebarMenu>
