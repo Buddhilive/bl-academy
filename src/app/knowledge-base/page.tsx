@@ -9,7 +9,7 @@ import { toast } from "sonner";
 
 export default function KnowledgeBasePage() {
     const router = useRouter();
-    const { stage, error, slug, uploadFile, reset } = useKnowledgeUpload();
+    const { stage, error, sourceSlug, progress, uploadFile, reset } = useKnowledgeUpload();
     const busy = stage !== "idle" && stage !== "done" && stage !== "error";
 
     return (
@@ -17,7 +17,7 @@ export default function KnowledgeBasePage() {
             <div>
                 <h1 className="text-2xl font-bold tracking-tight">Knowledge Base</h1>
                 <p className="text-sm text-muted-foreground">
-                    Upload a PDF to extract its content and add it to your knowledge base (OKF v0.2).
+                    Upload a PDF to extract its concepts and add them to your knowledge graph (OKF v0.2).
                 </p>
             </div>
 
@@ -33,15 +33,16 @@ export default function KnowledgeBasePage() {
                 <UploadProgress
                     stage={stage}
                     error={error}
+                    progress={progress}
                     onRetry={stage === "error" ? reset : undefined}
                 />
             )}
 
-            {stage === "done" && slug && (
+            {stage === "done" && sourceSlug && (
                 <button
                     type="button"
                     className="text-sm text-primary underline underline-offset-4"
-                    onClick={() => router.push(`/knowledge-viewer/${slug}`)}
+                    onClick={() => router.push("/knowledge-viewer")}
                 >
                     View in Knowledge Viewer &rarr;
                 </button>

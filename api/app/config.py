@@ -30,3 +30,12 @@ CORS_ORIGINS = [
 
 KNOWLEDGE_MAX_UPLOAD_MB = int(os.environ.get("KNOWLEDGE_MAX_UPLOAD_MB", "30"))
 KNOWLEDGE_MAX_UPLOAD_BYTES = KNOWLEDGE_MAX_UPLOAD_MB * 1024 * 1024
+
+# Hard cap on sections/concepts extracted from a single document; overflow sections
+# are merged into the last one so a huge/heading-heavy PDF can't spawn hundreds of
+# sequential LLM calls.
+KNOWLEDGE_MAX_CONCEPTS_PER_DOCUMENT = int(os.environ.get("KNOWLEDGE_MAX_CONCEPTS_PER_DOCUMENT", "40"))
+
+# Truncation length for the text sent to the classifier prompt only — the full,
+# untruncated section text is still what gets persisted as the concept body.
+KNOWLEDGE_SECTION_PROMPT_CHARS = int(os.environ.get("KNOWLEDGE_SECTION_PROMPT_CHARS", "3000"))

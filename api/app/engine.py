@@ -5,9 +5,10 @@ from __future__ import annotations
 import asyncio
 import logging
 from pathlib import Path
-from typing import Any
+from typing import Any, Callable
 
 import litert_lm
+from litert_lm.tools import tool_from_function
 
 from . import config
 
@@ -121,3 +122,81 @@ def split_messages(messages: list[dict]) -> tuple[str | None, list[dict], str]:
     ]
     system_message = "\n".join(p for p in system_parts if p) or None
     return system_message, history, last["content"]
+
+
+# Single shared engine instance for the whole process. Lives here (not in main.py)
+# so other modules — e.g. routers/knowledge.py — can reuse it without importing
+# main.py (which would create a circular import: main imports the knowledge router).
+engine_state = EngineState()
+
+
+def _extract_text(response_dict: dict) -> str:
+    parts = []
+    for item in response_dict.get("content", []) or []:
+        if isinstance(item, dict) and item.get("type") == "text":
+            parts.append(item.get("text", ""))
+    return "".join(parts)
+
+
+def _first_tool_call_arguments(response_dict: dict) -> dict[str, Any] | None:
+    """Pulls the arguments dict out of the first tool call in a response, if any.
+
+    Response shape confirmed empirically against this app's bundled model:
+    {"role": "assistant", "tool_calls": [{"type": "function",
+     "function": {"name": ..., "arguments": {...}}}]}
+    """
+    tool_calls = response_dict.get("tool_calls") or []
+    if not tool_calls:
+        return None
+    function = tool_calls[0].get("function") or {}
+    arguments = function.get("arguments")
+    return arguments if isinstance(arguments, dict) else None
+
+
+def generate_with_tool(
+    system_message: str, user_text: str, tool_fn: Callable[..., Any], *, max_output_tokens: int
+) -> dict[str, Any] | None:
+    """Runs one constrained-decoding tool call, returning its arguments dict or None.
+
+    Never raises: the model may not support tool calling/constrained decoding on
+    every backend, and the caller (per-section concept classification) must be
+    able to fall back to heading-derived defaults for that one section without
+    aborting the whole extraction.
+    """
+    if engine_state.engine is None:
+        return None
+    try:
+        conversation = engine_state.engine.create_conversation(
+            system_message=system_message,
+            tools=[tool_from_function(tool_fn)],
+            automatic_tool_calling=False,
+            enable_constrained_decoding=True,
+            max_output_tokens=max_output_tokens,
+        )
+        try:
+            response = conversation.send_message(user_text)
+        finally:
+            conversation.close()
+        return _first_tool_call_arguments(response)
+    except Exception:  # noqa: BLE001 - tool-calling support is best-effort, never fatal
+        logger.exception("generate_with_tool failed")
+        return None
+
+
+def generate_text(system_message: str, user_text: str, *, max_output_tokens: int) -> str | None:
+    """Plain-text (non-tool) completion. Returns None on any failure instead of raising."""
+    if engine_state.engine is None:
+        return None
+    try:
+        conversation = engine_state.engine.create_conversation(
+            system_message=system_message,
+            max_output_tokens=max_output_tokens,
+        )
+        try:
+            response = conversation.send_message(user_text)
+        finally:
+            conversation.close()
+        return _extract_text(response)
+    except Exception:  # noqa: BLE001 - relation extraction is best-effort, never fatal
+        logger.exception("generate_text failed")
+        return None

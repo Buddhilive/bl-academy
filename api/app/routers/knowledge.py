@@ -1,25 +1,36 @@
-"""Stateless PDF-parsing endpoint for the Knowledge Base feature.
+"""PDF-parsing + concept-extraction endpoint for the Knowledge Base feature.
 
-This router only extracts text (via EdgeParse) and streams progress back over
-SSE. It never touches Postgres or the `static/` directory — OKF assembly and
-file writes live entirely on the Next.js side, which is the only place that
-already owns persistence in this app.
+This router extracts text (via EdgeParse), splits it into sections, and uses
+the shared LiteRT-LM engine (constrained-decoding tool calls) to classify each
+section into an OKF concept and propose relationships between them. It never
+touches Postgres or the `static/` directory — OKF assembly and file writes
+live entirely on the Next.js side, which is the only place that already owns
+persistence in this app.
 """
 
 from __future__ import annotations
 
 import asyncio
+import json
 import logging
 import os
+import re
 import tempfile
 import threading
-from typing import AsyncIterator
+from typing import Any, AsyncIterator
 
 from fastapi import APIRouter, File, HTTPException, UploadFile
 from fastapi.responses import StreamingResponse
+from starlette.concurrency import run_in_threadpool
 
 from .. import config
-from ..schemas_knowledge import KnowledgeParseMeta, KnowledgeProgressEvent
+from ..engine import engine_state, generate_text, generate_with_tool
+from ..schemas_knowledge import (
+    ExtractedConcept,
+    KnowledgeParseMeta,
+    KnowledgeProgress,
+    KnowledgeProgressEvent,
+)
 
 logger = logging.getLogger("inference_api.knowledge")
 router = APIRouter(prefix="/v1/knowledge", tags=["knowledge"])
@@ -108,14 +119,72 @@ async def _parse_stream(filename: str, data: bytes) -> AsyncIterator[str]:
             yield _sse(KnowledgeProgressEvent(stage="error", message=_friendly_error(result), code="parse_failed"))
             return
 
+        markdown: str = result
         yield _sse(
             KnowledgeProgressEvent(
                 stage="parsed",
                 message="Extraction complete",
-                markdown=result,
-                meta=KnowledgeParseMeta(char_count=len(result)),
+                markdown=markdown,
+                meta=KnowledgeParseMeta(char_count=len(markdown)),
             )
         )
+
+    # EdgeParse's lock is released above; from here every LLM call independently
+    # acquires engine_state.lock so a concurrent chat request can interleave
+    # between sections instead of queuing behind the whole extraction.
+    yield _sse(KnowledgeProgressEvent(stage="segmenting", message="Splitting document into sections..."))
+    sections = _split_sections(markdown)
+
+    if engine_state.engine is None:
+        yield _sse(
+            KnowledgeProgressEvent(
+                stage="degraded",
+                message="Local model unavailable — saving as a single document instead of a knowledge graph.",
+            )
+        )
+        fallback = ExtractedConcept(
+            index=0,
+            type="Document",
+            title=filename.rsplit(".", 1)[0],
+            description="Ingested PDF document (concept extraction unavailable).",
+            tags=[],
+            heading=None,
+            body=markdown,
+        )
+        yield _sse(
+            KnowledgeProgressEvent(
+                stage="extracted", message="Extraction complete", concepts=[fallback], relations=[]
+            )
+        )
+        return
+
+    total = len(sections)
+    classified: list[dict[str, Any]] = []
+    for i, section in enumerate(sections):
+        yield _sse(
+            KnowledgeProgressEvent(
+                stage="classifying",
+                message=f"Classifying concept {i + 1}/{total}",
+                progress=KnowledgeProgress(current=i + 1, total=total),
+            )
+        )
+        async with engine_state.lock:
+            result = await run_in_threadpool(_classify_section, section)
+        classified.append(result)
+
+    yield _sse(KnowledgeProgressEvent(stage="linking", message="Finding relationships between concepts..."))
+    async with engine_state.lock:
+        relations = await run_in_threadpool(_extract_relations, classified)
+
+    concepts = [ExtractedConcept(index=i, **c) for i, c in enumerate(classified)]
+    yield _sse(
+        KnowledgeProgressEvent(
+            stage="extracted",
+            message=f"Extracted {len(concepts)} concept(s)",
+            concepts=concepts,
+            relations=relations,
+        )
+    )
 
 
 def _friendly_error(exc: Exception) -> str:
@@ -125,3 +194,107 @@ def _friendly_error(exc: Exception) -> str:
     if "password" in text or "encrypt" in text or "decrypt" in text:
         return "This PDF is password-protected/encrypted and can't be parsed."
     return f"Failed to parse PDF: {exc}"
+
+
+_HEADING_RE = re.compile(r"^(#{1,3})[ \t]+(.+)$", re.MULTILINE)
+
+
+def _split_sections(markdown: str) -> list[dict[str, Any]]:
+    """Splits markdown into heading-delimited sections.
+
+    Falls back to treating the whole document as one section when there are
+    fewer than 2 headings — still routed through classification below so even
+    single-concept docs get a real LLM-derived type/description/tags instead
+    of a hardcoded one.
+    """
+    matches = list(_HEADING_RE.finditer(markdown))
+    if len(matches) < 2:
+        return [{"heading": None, "body": markdown.strip()}]
+
+    sections: list[dict[str, Any]] = []
+    for i, m in enumerate(matches):
+        start = m.start()
+        end = matches[i + 1].start() if i + 1 < len(matches) else len(markdown)
+        sections.append({"heading": m.group(2).strip(), "body": markdown[start:end].strip()})
+
+    max_concepts = config.KNOWLEDGE_MAX_CONCEPTS_PER_DOCUMENT
+    if len(sections) > max_concepts:
+        head, tail = sections[: max_concepts - 1], sections[max_concepts - 1 :]
+        merged = {"heading": tail[0]["heading"], "body": "\n\n".join(s["body"] for s in tail)}
+        sections = head + [merged]
+    return sections
+
+
+def _record_concept(type: str, title: str, description: str, tags: list[str]) -> None:
+    """Records one extracted knowledge concept.
+    Args:
+      type: Short concept kind, e.g. Definition, Procedure, Topic, Table, Reference.
+      title: Short human-readable title for this concept.
+      description: One-sentence summary.
+      tags: Up to 5 short topical tags.
+    """
+
+
+def _classify_section(section: dict[str, Any]) -> dict[str, Any]:
+    heading = section["heading"]
+    body = section["body"]
+    fallback_title = heading or "Untitled section"
+    system = (
+        "You extract one knowledge concept from a section of a document for a "
+        "personal knowledge base. Call record_concept with your answer."
+    )
+    prompt_text = body[: config.KNOWLEDGE_SECTION_PROMPT_CHARS]
+    args = generate_with_tool(system, prompt_text, _record_concept, max_output_tokens=256) or {}
+
+    tags = args.get("tags")
+    return {
+        "type": (str(args.get("type") or "Section").strip() or "Section"),
+        "title": (str(args.get("title") or fallback_title).strip() or fallback_title),
+        "description": (str(args.get("description") or body[:150]).strip()),
+        "tags": [str(t) for t in tags] if isinstance(tags, list) else [],
+        "heading": heading,
+        "body": body,
+    }
+
+
+_ARRAY_RE = re.compile(r"\[.*\]", re.DOTALL)
+
+
+def _extract_relations(concepts: list[dict[str, Any]]) -> list[list[int]]:
+    if len(concepts) < 2:
+        return []
+    listing = "\n".join(f"{i}. {c['title']} — {c['description']}" for i, c in enumerate(concepts))
+    system = (
+        "Given a numbered list of knowledge concepts from the same document, reply "
+        "with ONLY a JSON array of [i, j] index pairs for concepts that are "
+        "meaningfully related to each other. No prose, no markdown fences. If none "
+        "are related, reply with []."
+    )
+    text = generate_text(system, listing, max_output_tokens=300)
+    if not text:
+        return []
+    return _parse_relations(text, len(concepts))
+
+
+def _parse_relations(text: str, count: int) -> list[list[int]]:
+    match = _ARRAY_RE.search(text)
+    if not match:
+        return []
+    try:
+        data = json.loads(match.group(0))
+    except (json.JSONDecodeError, ValueError):
+        return []
+    if not isinstance(data, list):
+        return []
+
+    pairs: list[list[int]] = []
+    for item in data:
+        if (
+            isinstance(item, list)
+            and len(item) == 2
+            and all(isinstance(x, int) for x in item)
+            and all(0 <= x < count for x in item)
+            and item[0] != item[1]
+        ):
+            pairs.append([item[0], item[1]])
+    return pairs
