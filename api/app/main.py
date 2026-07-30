@@ -18,7 +18,7 @@ from pydantic import ValidationError
 from starlette.concurrency import run_in_threadpool
 
 from . import config
-from .engine import EngineState, EngineUnavailableError, split_messages
+from .engine import EngineUnavailableError, engine_state, split_messages
 from .routers.knowledge import router as knowledge_router
 from .schemas import (
     ChatCompletionChoice,
@@ -37,8 +37,6 @@ from .schemas import (
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("inference_api.main")
-
-engine_state = EngineState()
 
 
 @asynccontextmanager

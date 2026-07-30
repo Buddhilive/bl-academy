@@ -1,13 +1,14 @@
 import { NextResponse } from "next/server";
 
-import { listConcepts } from "@/lib/knowledge/bundle";
+import { listSources } from "@/lib/knowledge/bundle";
 
 export async function GET() {
     try {
-        const { concepts, warnings } = await listConcepts();
-        return NextResponse.json({ concepts, warnings });
-    } catch (error: any) {
+        const { sources, warnings } = await listSources();
+        return NextResponse.json({ sources, warnings });
+    } catch (error) {
         console.error("GET /api/knowledge error:", error);
-        return NextResponse.json({ error: error.message || "Failed to list knowledge base" }, { status: 500 });
+        const message = error instanceof Error ? error.message : "Failed to list knowledge base";
+        return NextResponse.json({ error: message }, { status: 500 });
     }
 }
