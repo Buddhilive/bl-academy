@@ -115,7 +115,7 @@ export default function ChatPage({ params }: { params: Promise<{ chatId?: string
     const sendMessage = useCallback(
         async (text: string) => {
             setError(null);
-            let activeChatId = chatIdFromUrl;
+            let activeChatId = chatIdFromUrl || loadedChatId;
 
             // If starting a new conversation (no chatId in URL yet)
             if (!activeChatId) {
@@ -161,7 +161,7 @@ export default function ChatPage({ params }: { params: Promise<{ chatId?: string
                 }
             );
         },
-        [chatIdFromUrl, model, setCurrentChatId, chatSendMessage, fetchRecentChats, addRecentChat]
+        [chatIdFromUrl, loadedChatId, model, setCurrentChatId, chatSendMessage, fetchRecentChats, addRecentChat]
     );
 
     // --- Message action handlers ---
