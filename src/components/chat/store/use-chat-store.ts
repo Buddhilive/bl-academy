@@ -43,9 +43,13 @@ interface ChatStore {
     loadModel: (modelId: string) => Promise<void>;
     handleModelSelect: (modelId: string) => void;
     fetchRecentChats: () => Promise<void>;
+    addRecentChat: (chat: ChatItem) => void;
     deleteChat: (chatId: string) => Promise<void>;
 }
 
+// Guards fetchRecentChats against out-of-order responses: an older in-flight
+// request must never clobber state set by a newer one.
+let recentChatsFetchSeq = 0;
 export const useChatStore = create<ChatStore>((set, get) => ({
     model: "gemma-4-e4b-it",
     modelSelectorOpen: false,
@@ -129,11 +133,13 @@ export const useChatStore = create<ChatStore>((set, get) => ({
     },
 
     fetchRecentChats: async () => {
+        const seq = ++recentChatsFetchSeq;
         set({ recentChatsLoading: true });
         try {
             const res = await fetch("/api/chats");
             const data = await res.json();
             if (!res.ok) throw new Error(data.error);
+            if (seq !== recentChatsFetchSeq) return;
             set({
                 recentChats: data.chats,
                 totalRecentChats: data.total,
@@ -141,8 +147,20 @@ export const useChatStore = create<ChatStore>((set, get) => ({
             });
         } catch (err) {
             console.error("fetchRecentChats error:", err);
-            set({ recentChatsLoading: false });
+            if (seq === recentChatsFetchSeq) {
+                set({ recentChatsLoading: false });
+            }
         }
+    },
+
+    addRecentChat: (chat) => {
+        set((state) => {
+            if (state.recentChats.some((c) => c.id === chat.id)) return state;
+            return {
+                recentChats: [chat, ...state.recentChats],
+                totalRecentChats: state.totalRecentChats + 1,
+            };
+        });
     },
 
     deleteChat: async (chatId: string) => {
