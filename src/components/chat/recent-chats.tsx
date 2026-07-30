@@ -2,7 +2,6 @@
 
 import * as React from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
 import { useChatStore } from "./store/use-chat-store";
 import { MessageSquare, MoreHorizontal, Trash2, ArrowRight } from "lucide-react";
 import {
@@ -21,8 +20,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 
 export function RecentChats() {
-    const pathname = usePathname();
-    const { recentChats, totalRecentChats, fetchRecentChats, deleteChat, recentChatsLoading } = useChatStore();
+    const { recentChats, totalRecentChats, fetchRecentChats, deleteChat, recentChatsLoading, currentChatId } = useChatStore();
 
     React.useEffect(() => {
         fetchRecentChats();
@@ -53,7 +51,7 @@ export function RecentChats() {
             <SidebarMenu>
                 {recentChats.map((chat) => {
                     const href = `/chat/${chat.id}`;
-                    const isActive = pathname === href;
+                    const isActive = currentChatId === chat.id;
 
                     return (
                         <SidebarMenuItem key={chat.id}>

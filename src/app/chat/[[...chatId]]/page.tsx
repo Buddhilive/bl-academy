@@ -15,11 +15,16 @@ export default function ChatPage({ params }: { params: Promise<{ chatId?: string
     const resolvedParams = use(params);
     const chatIdFromUrl = resolvedParams.chatId?.[0] || null;
 
-    const { model, fetchModels, reasoningEnabled, setCurrentChatId, fetchRecentChats } = useChatStore();
+    const { model, fetchModels, reasoningEnabled, setCurrentChatId, fetchRecentChats, addRecentChat } = useChatStore();
 
     // Tracks which chatId's messages are currently loaded.
     // isFetching is derived from this — no synchronous setState needed in the effect.
     const [loadedChatId, setLoadedChatId] = useState<string | null>(null);
+    // The id fed into useChat — deliberately decoupled from chatIdFromUrl so that
+    // learning a newly-created chat's real DB id doesn't change this value mid-stream.
+    // @ai-sdk/react recreates its internal Chat instance (wiping `messages`) whenever
+    // this id changes, so it's only updated on genuine navigation (see effect below).
+    const [chatHookId, setChatHookId] = useState<string>(chatIdFromUrl || "new-chat");
     const isFetching = Boolean(chatIdFromUrl && loadedChatId !== chatIdFromUrl);
     const [error, setError] = useState<Error | null>(null);
 
@@ -39,7 +44,7 @@ export default function ChatPage({ params }: { params: Promise<{ chatId?: string
     );
 
     const { messages, setMessages, sendMessage: chatSendMessage, status: chatStatus } = useChat({
-        id: chatIdFromUrl || "new-chat",
+        id: chatHookId,
         transport,
         onFinish: () => {
             fetchRecentChats();
@@ -61,8 +66,20 @@ export default function ChatPage({ params }: { params: Promise<{ chatId?: string
     useEffect(() => {
         if (!chatIdFromUrl) {
             setMessages([]);
+            setChatHookId("new-chat");
+            setLoadedChatId(null);
             return;
         }
+
+        // Already have this chat's messages locally (e.g. just created inline) —
+        // skip the DB refetch AND skip updating chatHookId, so `useChat`'s internal
+        // Chat instance isn't recreated (which would silently reset messages to empty)
+        // right as the URL syncs to the newly-created chat's real id.
+        if (loadedChatId === chatIdFromUrl) {
+            return;
+        }
+
+        setChatHookId(chatIdFromUrl);
 
         let isMounted = true;
 
@@ -88,7 +105,7 @@ export default function ChatPage({ params }: { params: Promise<{ chatId?: string
         return () => {
             isMounted = false;
         };
-    }, [chatIdFromUrl, setMessages]);
+    }, [chatIdFromUrl, loadedChatId, setMessages]);
 
     // Fetch models on load
     useEffect(() => {
@@ -112,7 +129,21 @@ export default function ChatPage({ params }: { params: Promise<{ chatId?: string
                     if (data.chatId) {
                         activeChatId = data.chatId;
                         setCurrentChatId(activeChatId);
-                        // Update route smoothly without full navigation/unmount
+                        // Mark this chat's messages as already loaded so the load-effect below
+                        // doesn't refetch from the DB and clobber the in-flight streaming state.
+                        setLoadedChatId(activeChatId);
+                        // Show it in the sidebar immediately — don't rely on fetchRecentChats()
+                        // winning a race against the mount-time fetch (it may resolve later and
+                        // clobber this chat right back out of the list while the reply streams).
+                        addRecentChat({
+                            id: activeChatId as string,
+                            title: text.length > 50 ? text.slice(0, 50) + "..." : text,
+                            model,
+                            createdAt: new Date().toISOString(),
+                            updatedAt: new Date().toISOString(),
+                        });
+                        // Shallow URL sync — preserves component state so messages stay visible through
+                        // the async route param update. setCurrentChatId (called above) is the source of truth.
                         window.history.replaceState(null, "", `/chat/${activeChatId}`);
                         fetchRecentChats();
                     }
@@ -130,7 +161,7 @@ export default function ChatPage({ params }: { params: Promise<{ chatId?: string
                 }
             );
         },
-        [chatIdFromUrl, model, setCurrentChatId, chatSendMessage, fetchRecentChats]
+        [chatIdFromUrl, model, setCurrentChatId, chatSendMessage, fetchRecentChats, addRecentChat]
     );
 
     // --- Message action handlers ---
