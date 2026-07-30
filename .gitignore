@@ -71,3 +71,4 @@ poetry.lock
 # Data
 data/
 models/
+static/

@@ -27,3 +27,6 @@ CORS_ORIGINS = [
     for origin in os.environ.get("CORS_ORIGINS", "http://localhost:3000").split(",")
     if origin.strip()
 ]
+
+KNOWLEDGE_MAX_UPLOAD_MB = int(os.environ.get("KNOWLEDGE_MAX_UPLOAD_MB", "30"))
+KNOWLEDGE_MAX_UPLOAD_BYTES = KNOWLEDGE_MAX_UPLOAD_MB * 1024 * 1024
