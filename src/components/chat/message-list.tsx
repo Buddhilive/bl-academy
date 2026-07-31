@@ -104,8 +104,10 @@ const CITE_MARKER_RE = /\[cite:([^\]]+)\]/g;
 
 /** Rewrites `[cite:id]` markers into markdown links Streamdown can hand to a custom
  * `a` renderer, and drops a dangling partial marker at the very end of in-flight text. */
+const CITATION_URL_PREFIX = "https://citation.internal/";
+
 function toCitationMarkdown(text: string): string {
-    const withLinks = text.replace(CITE_MARKER_RE, (_match, id: string) => `[cite](cite:${encodeURIComponent(id)})`);
+    const withLinks = text.replace(CITE_MARKER_RE, (_match, id: string) => `[cite](${CITATION_URL_PREFIX}${encodeURIComponent(id)})`);
     return withLinks.replace(/\[cite:[^\]]*$/, "");
 }
 
@@ -113,19 +115,23 @@ type CitationAnchorProps = ComponentProps<"a"> & { node?: unknown };
 
 function createCitationAnchor(sources: Map<string, ConceptCitation>) {
     return function CitationAnchor({ href, children, node: _node, ...props }: CitationAnchorProps) {
-        if (href?.startsWith("cite:")) {
-            const source = sources.get(decodeURIComponent(href.slice("cite:".length)));
+        if (href?.startsWith(CITATION_URL_PREFIX)) {
+            const source = sources.get(decodeURIComponent(href.slice(CITATION_URL_PREFIX.length)));
             if (!source) return null;
+            const origin = typeof window !== "undefined" ? window.location.origin : "https://knowledge-base.local";
+            const badgeSources = [new URL(source.url, origin).toString()];
             return (
                 <InlineCitation>
                     <InlineCitationCard>
-                        <InlineCitationCardTrigger sources={[source.url]} />
+                        <InlineCitationCardTrigger sources={badgeSources} label={source.title} />
                         <InlineCitationCardBody>
-                            <InlineCitationSource
-                                title={source.title}
-                                url={source.url}
-                                description={source.description}
-                            />
+                            <div className="p-4">
+                                <InlineCitationSource
+                                    title={source.title}
+                                    url={source.url}
+                                    description={source.description}
+                                />
+                            </div>
                         </InlineCitationCardBody>
                     </InlineCitationCard>
                 </InlineCitation>
