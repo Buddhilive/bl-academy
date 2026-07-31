@@ -24,6 +24,7 @@ import type {
   GraphEdge,
   GraphNode,
   OkfFrontmatter,
+  PatchConceptRequest,
   SourceSummary,
   TrustTier,
 } from "./types";
@@ -281,6 +282,41 @@ export async function getConcept(sourceSlug: string, conceptSlug: string): Promi
   // Let ConceptParseError propagate — the route maps it to a 422 with a clear message.
   const { frontmatter, body } = parseConcept(raw);
   return { sourceSlug, slug: conceptSlug, frontmatter, body, trustTier: trustTier(frontmatter) };
+}
+
+/** Reads the current file, applies a save or verify patch, and atomically writes it back.
+ * Returns null if the concept doesn't exist. Recomputes trustTier from what's actually
+ * on disk after the write, rather than trusting an in-memory guess. */
+export async function updateConcept(
+  sourceSlug: string,
+  conceptSlug: string,
+  patch: PatchConceptRequest
+): Promise<ConceptDetail | null> {
+  const path_ = conceptPath(sourceSlug, conceptSlug);
+  let raw: string;
+  try {
+    raw = await fs.readFile(path_, "utf-8");
+  } catch {
+    return null;
+  }
+  const current = parseConcept(raw);
+
+  let frontmatter: OkfFrontmatter;
+  let body: string;
+  if (patch.action === "verify") {
+    const verified = current.frontmatter.verified ? [...current.frontmatter.verified] : [];
+    // TODO: replace with real user identity once auth exists.
+    verified.push({ by: "human:user", at: new Date().toISOString() });
+    frontmatter = { ...current.frontmatter, verified };
+    body = current.body;
+  } else {
+    // tags is a full-array replace, not a merge — arrays don't merge meaningfully.
+    frontmatter = { ...current.frontmatter, ...patch.frontmatter };
+    body = patch.body;
+  }
+
+  await atomicWriteFile(path_, stringifyConcept(frontmatter, body));
+  return getConcept(sourceSlug, conceptSlug);
 }
 
 const LINK_RE = /\[[^\]]*\]\(([^)]+)\)/g;
