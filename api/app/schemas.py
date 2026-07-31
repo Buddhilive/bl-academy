@@ -8,15 +8,37 @@ from typing import Any, Literal
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 
+class ChatToolFunctionDef(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+
+    name: str
+    description: str | None = None
+    parameters: dict[str, Any] = Field(default_factory=dict)
+
+
+class ChatTool(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+
+    type: Literal["function"] = "function"
+    function: ChatToolFunctionDef
+
+
 class ChatMessage(BaseModel):
     model_config = ConfigDict(extra="ignore")
 
     role: str
     content: Any = None
+    # Present on assistant messages that called a tool, and on tool-result
+    # messages respectively. Kept as loose dicts/strings (not strictly typed
+    # sub-models) since we only need to round-trip them through litert_lm's
+    # own Message/ToolCall/ToolResponse shapes, not validate OpenAI's wire
+    # format precisely.
+    tool_calls: list[dict[str, Any]] | None = None
+    tool_call_id: str | None = None
 
 
 class ChatCompletionRequest(BaseModel):
-    # Unsupported OpenAI fields (n, logit_bias, tools, ...) are accepted and ignored
+    # Unsupported OpenAI fields (n, logit_bias, ...) are accepted and ignored
     # rather than rejected, so the API degrades gracefully instead of hard-failing.
     model_config = ConfigDict(extra="ignore")
 
@@ -27,6 +49,7 @@ class ChatCompletionRequest(BaseModel):
     max_tokens: int | None = None
     stream: bool = False
     stop: str | list[str] | None = None
+    tools: list[ChatTool] | None = None
 
     @field_validator("messages")
     @classmethod
@@ -38,7 +61,8 @@ class ChatCompletionRequest(BaseModel):
 
 class ChatCompletionMessage(BaseModel):
     role: Literal["assistant"] = "assistant"
-    content: str
+    content: str | None = None
+    tool_calls: list[dict[str, Any]] | None = None
 
 
 class Usage(BaseModel):
@@ -65,6 +89,7 @@ class ChatCompletionResponse(BaseModel):
 class ChatCompletionChunkDelta(BaseModel):
     role: Literal["assistant"] | None = None
     content: str | None = None
+    tool_calls: list[dict[str, Any]] | None = None
 
 
 class ChatCompletionChunkChoice(BaseModel):

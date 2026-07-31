@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import json
 import logging
 from pathlib import Path
 from typing import Any, Callable
@@ -89,10 +90,83 @@ def _content_to_text(content: Any) -> str:
     return "" if content is None else str(content)
 
 
-def split_messages(messages: list[dict]) -> tuple[str | None, list[dict], str]:
-    """Splits OpenAI-style messages into (system_message, history, last_user_text).
+class _SchemaTool(litert_lm.Tool):
+    """Wraps a client-supplied OpenAI tool schema — no Python callable backs it.
 
-    Raises ValueError on malformed input (empty list, or last message not from the user).
+    Only usable with automatic_tool_calling=False (the chat-completions endpoint
+    always passes that): the engine returns the proposed call instead of running
+    it, so execute() is never invoked — the caller (e.g. the Next.js AI SDK
+    client) executes the tool itself and sends the result back as a 'tool' role
+    message on the next request.
+    """
+
+    def __init__(self, name: str, description: str, parameters: dict[str, Any]) -> None:
+        self._description = {
+            "type": "function",
+            "function": {
+                "name": name,
+                "description": description,
+                "parameters": parameters or {"type": "object", "properties": {}},
+            },
+        }
+
+    def get_tool_description(self) -> dict[str, Any]:
+        return self._description
+
+    def execute(self, param: Any) -> Any:
+        raise NotImplementedError("_SchemaTool.execute should never run with automatic_tool_calling=False")
+
+
+def _render_history_message(m: dict, tool_call_names: dict[str, str]) -> dict | litert_lm.Message:
+    """Renders one non-system message for either the conversation preface or the
+    final `send_message` argument, tracking tool_call id -> name as it goes so a
+    later 'tool' message (matched by tool_call_id) can resolve back to a name.
+    """
+    role = m.get("role")
+    if role == "assistant" and m.get("tool_calls"):
+        calls = []
+        for tc in m["tool_calls"]:
+            function = tc.get("function") or {}
+            name = function.get("name", "")
+            raw_args = function.get("arguments")
+            try:
+                args = json.loads(raw_args) if isinstance(raw_args, str) else (raw_args or {})
+            except (TypeError, ValueError):
+                args = {}
+            if tc.get("id"):
+                tool_call_names[tc["id"]] = name
+            calls.append(litert_lm.ToolCall(name=name, arguments=args))
+        text = _content_to_text(m.get("content"))
+        contents = litert_lm.Contents.of(text) if text else litert_lm.Contents.empty()
+        return litert_lm.Message.model(contents, tool_calls=calls)
+
+    if role == "tool":
+        name = tool_call_names.get(m.get("tool_call_id") or "", "")
+        raw_response = _content_to_text(m.get("content"))
+        try:
+            response = json.loads(raw_response)
+        except (TypeError, ValueError):
+            response = raw_response
+        return litert_lm.Message.tool(
+            litert_lm.Contents.of(litert_lm.Content.ToolResponse(name=name, response=response))
+        )
+
+    return {"role": _ROLE_TO_LITERT.get(role, role), "content": _content_to_text(m.get("content"))}
+
+
+def split_messages(
+    messages: list[dict],
+) -> tuple[str | None, list[dict | litert_lm.Message], dict | litert_lm.Message]:
+    """Splits OpenAI-style messages into (system_message, preface_history, final_message).
+
+    `preface_history` entries are litert_lm.Message objects for assistant/tool
+    turns carrying tool_calls or tool_call_id (so the model sees its own prior
+    tool call and the tool's result), and plain {"role","content"} dicts
+    otherwise. `final_message` is the last message rendered the same way,
+    ready to hand straight to `conversation.send_message(...)`.
+
+    Raises ValueError on malformed input (empty list, or a final message that
+    isn't from the user or a tool).
     """
     if not messages:
         raise ValueError("messages must not be empty")
@@ -103,25 +177,23 @@ def split_messages(messages: list[dict]) -> tuple[str | None, list[dict], str]:
         role = m.get("role")
         if role not in _ROLE_TO_LITERT:
             raise ValueError(f"unsupported message role: {role!r}")
-        text = _content_to_text(m.get("content"))
         if role == "system":
-            system_parts.append(text)
+            system_parts.append(_content_to_text(m.get("content")))
         else:
-            non_system.append({"role": role, "content": text})
+            non_system.append(m)
 
     if not non_system:
         raise ValueError("messages must include at least one non-system message")
 
     last = non_system[-1]
-    if last["role"] != "user":
-        raise ValueError("the last message must have role 'user'")
+    if last.get("role") not in ("user", "tool"):
+        raise ValueError("the last message must have role 'user' or 'tool'")
 
-    history = [
-        {"role": _ROLE_TO_LITERT.get(m["role"], m["role"]), "content": m["content"]}
-        for m in non_system[:-1]
-    ]
+    tool_call_names: dict[str, str] = {}
+    preface_history = [_render_history_message(m, tool_call_names) for m in non_system[:-1]]
+    final_message = _render_history_message(last, tool_call_names)
     system_message = "\n".join(p for p in system_parts if p) or None
-    return system_message, history, last["content"]
+    return system_message, preface_history, final_message
 
 
 # Single shared engine instance for the whole process. Lives here (not in main.py)
