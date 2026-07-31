@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import json
 import logging
 import threading
 import time
@@ -18,7 +19,7 @@ from pydantic import ValidationError
 from starlette.concurrency import run_in_threadpool
 
 from . import config
-from .engine import EngineUnavailableError, engine_state, split_messages
+from .engine import EngineUnavailableError, _SchemaTool, engine_state, split_messages
 from .routers.knowledge import router as knowledge_router
 from .schemas import (
     ChatCompletionChoice,
@@ -93,6 +94,28 @@ def _extract_text(response_dict: dict) -> str:
     return "".join(parts)
 
 
+def _map_tool_calls(response_dict: dict) -> list[dict] | None:
+    """Maps litert_lm's {"tool_calls": [{"function": {"name", "arguments": dict}}]}
+    into OpenAI wire format: id synthesized (litert_lm doesn't produce one),
+    arguments JSON-stringified (OpenAI's wire format wants a string, litert_lm gives a dict).
+    """
+    tool_calls = response_dict.get("tool_calls") or []
+    if not tool_calls:
+        return None
+    mapped = []
+    for tc in tool_calls:
+        function = tc.get("function") or {}
+        mapped.append({
+            "id": f"call_{uuid.uuid4().hex}",
+            "type": "function",
+            "function": {
+                "name": function.get("name", ""),
+                "arguments": json.dumps(function.get("arguments") or {}),
+            },
+        })
+    return mapped
+
+
 def _safe_token_count(conversation) -> int | None:
     try:
         return conversation.token_count
@@ -106,16 +129,18 @@ def _build_sampler_config(chat_request: ChatCompletionRequest):
     return litert_lm.SamplerConfig(temperature=chat_request.temperature, top_p=chat_request.top_p)
 
 
-def _generate_sync(system_message, history, last_user_text, sampler_config, max_output_tokens):
+def _generate_sync(system_message, preface_history, final_message, sampler_config, max_output_tokens, tools):
     conversation = engine_state.engine.create_conversation(
         system_message=system_message,
-        messages=history,
+        messages=preface_history,
+        tools=tools,
+        automatic_tool_calling=not tools,
         sampler_config=sampler_config,
         max_output_tokens=max_output_tokens,
     )
     try:
         prompt_tokens = _safe_token_count(conversation)
-        response_dict = conversation.send_message(last_user_text)
+        response_dict = conversation.send_message(final_message)
         total_tokens = _safe_token_count(conversation)
     finally:
         conversation.close()
@@ -152,11 +177,16 @@ async def chat_completions(request: Request):
         return _error(404, f"model '{model_id}' not found", "invalid_request_error", "model_not_found")
 
     try:
-        system_message, history, last_user_text = split_messages(
+        system_message, preface_history, final_message = split_messages(
             [m.model_dump() for m in chat_request.messages]
         )
     except ValueError as exc:
         return _error(400, str(exc), "invalid_request_error")
+
+    tools = [
+        _SchemaTool(t.function.name, t.function.description or "", t.function.parameters)
+        for t in chat_request.tools
+    ] if chat_request.tools else None
 
     sampler_config = _build_sampler_config(chat_request)
     max_output_tokens = chat_request.max_tokens or config.DEFAULT_MAX_OUTPUT_TOKENS
@@ -165,8 +195,8 @@ async def chat_completions(request: Request):
     if chat_request.stream:
         return StreamingResponse(
             _stream_completion(
-                completion_id, model_id, system_message, history, last_user_text,
-                sampler_config, max_output_tokens,
+                completion_id, model_id, system_message, preface_history, final_message,
+                sampler_config, max_output_tokens, tools,
             ),
             media_type="text/event-stream",
         )
@@ -174,11 +204,23 @@ async def chat_completions(request: Request):
     async with engine_state.lock:
         try:
             response_dict, usage = await run_in_threadpool(
-                _generate_sync, system_message, history, last_user_text, sampler_config, max_output_tokens
+                _generate_sync, system_message, preface_history, final_message, sampler_config, max_output_tokens, tools
             )
         except Exception as exc:  # noqa: BLE001 - never leak a raw 500 traceback to the client
             logger.exception("Inference failed")
             return _error(500, f"Inference failed: {exc}", "server_error")
+
+    tool_calls = _map_tool_calls(response_dict)
+    if tool_calls:
+        return ChatCompletionResponse(
+            id=completion_id,
+            model=model_id,
+            choices=[ChatCompletionChoice(
+                message=ChatCompletionMessage(content=None, tool_calls=tool_calls),
+                finish_reason="tool_calls",
+            )],
+            usage=usage,
+        )
 
     text = _extract_text(response_dict)
     return ChatCompletionResponse(
@@ -190,7 +232,7 @@ async def chat_completions(request: Request):
 
 
 async def _stream_completion(
-    completion_id, model_id, system_message, history, last_user_text, sampler_config, max_output_tokens
+    completion_id, model_id, system_message, preface_history, final_message, sampler_config, max_output_tokens, tools
 ) -> AsyncIterator[str]:
     async with engine_state.lock:
         loop = asyncio.get_running_loop()
@@ -201,12 +243,14 @@ async def _stream_completion(
             try:
                 conversation = engine_state.engine.create_conversation(
                     system_message=system_message,
-                    messages=history,
+                    messages=preface_history,
+                    tools=tools,
+                    automatic_tool_calling=not tools,
                     sampler_config=sampler_config,
                     max_output_tokens=max_output_tokens,
                 )
                 conversation_holder["conversation"] = conversation
-                for chunk in conversation.send_message_async(last_user_text):
+                for chunk in conversation.send_message_async(final_message):
                     loop.call_soon_threadsafe(chunk_queue.put_nowait, chunk)
             except Exception as exc:  # noqa: BLE001
                 loop.call_soon_threadsafe(chunk_queue.put_nowait, exc)
@@ -217,6 +261,7 @@ async def _stream_completion(
         thread.start()
 
         errored = False
+        finished_with_tool_calls = False
         first_chunk = True
         try:
             while True:
@@ -229,6 +274,19 @@ async def _stream_completion(
                     yield f"data: {err.model_dump_json()}\n\n"
                     errored = True
                     break
+
+                tool_calls = _map_tool_calls(item)
+                if tool_calls:
+                    delta = ChatCompletionChunkDelta(tool_calls=tool_calls, role="assistant" if first_chunk else None)
+                    chunk = ChatCompletionChunk(
+                        id=completion_id,
+                        model=model_id,
+                        choices=[ChatCompletionChunkChoice(delta=delta, finish_reason="tool_calls")],
+                    )
+                    yield f"data: {chunk.model_dump_json(exclude_none=True)}\n\n"
+                    finished_with_tool_calls = True
+                    break
+
                 text = _extract_text(item)
                 delta = ChatCompletionChunkDelta(content=text, role="assistant" if first_chunk else None)
                 first_chunk = False
@@ -249,7 +307,7 @@ async def _stream_completion(
             if conversation is not None:
                 conversation.close()
 
-        if not errored:
+        if not errored and not finished_with_tool_calls:
             final_chunk = ChatCompletionChunk(
                 id=completion_id,
                 model=model_id,
