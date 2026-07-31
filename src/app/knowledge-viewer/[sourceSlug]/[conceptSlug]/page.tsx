@@ -42,7 +42,7 @@ export default function KnowledgeConceptPage() {
     const rendered = concept ? { ...concept, body: rewriteConceptLinks(concept.body, sourceSlug) } : null;
 
     return (
-        <div className="container max-w-3xl space-y-6 px-4 py-8">
+        <div className="container space-y-6 px-4 py-8">
             {loading && <div className="py-12 text-center text-sm text-muted-foreground">Loading...</div>}
             {error && (
                 <Alert variant="destructive">

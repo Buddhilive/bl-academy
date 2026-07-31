@@ -61,7 +61,7 @@ export default function KnowledgeViewerPage() {
     };
 
     return (
-        <div className="container max-w-6xl space-y-6 px-4 py-8">
+        <div className="container space-y-6 px-4 py-8">
             <div className="flex flex-col justify-between gap-4 md:flex-row md:items-center">
                 <div>
                     <h1 className="text-2xl font-bold tracking-tight">Knowledge Viewer</h1>

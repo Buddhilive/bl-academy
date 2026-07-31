@@ -39,3 +39,4 @@ KNOWLEDGE_MAX_CONCEPTS_PER_DOCUMENT = int(os.environ.get("KNOWLEDGE_MAX_CONCEPTS
 # Truncation length for the text sent to the classifier prompt only — the full,
 # untruncated section text is still what gets persisted as the concept body.
 KNOWLEDGE_SECTION_PROMPT_CHARS = int(os.environ.get("KNOWLEDGE_SECTION_PROMPT_CHARS", "3000"))
+KNOWLEDGE_MIN_SECTION_CHARS = int(os.environ.get("KNOWLEDGE_MIN_SECTION_CHARS", "40"))

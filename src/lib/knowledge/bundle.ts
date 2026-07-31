@@ -334,6 +334,8 @@ export async function buildGraph(): Promise<{ nodes: GraphNode[]; edges: GraphEd
           title: frontmatter.title ?? conceptSlug,
           type: frontmatter.type,
           trustTier: trustTier(frontmatter),
+          description: frontmatter.description,
+          isIsolated: true,
         });
         nodeIds.add(id);
         bodies.push({ sourceSlug, conceptSlug, body });
@@ -357,6 +359,13 @@ export async function buildGraph(): Promise<{ nodes: GraphNode[]; edges: GraphEd
       edges.push({ from, to });
     }
   }
+
+  const connected = new Set<string>();
+  for (const e of edges) {
+    connected.add(e.from);
+    connected.add(e.to);
+  }
+  for (const n of nodes) n.isIsolated = !connected.has(n.id);
 
   return { nodes, edges };
 }
