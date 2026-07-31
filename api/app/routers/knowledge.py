@@ -172,11 +172,18 @@ async def _parse_stream(filename: str, data: bytes) -> AsyncIterator[str]:
             result = await run_in_threadpool(_classify_section, section)
         classified.append(result)
 
+    # Concepts the classifier marked as boilerplate/administrative are dropped
+    # here, before relation extraction assigns indices — filtering after would
+    # require remapping [i, j] pairs onto a shrunk list. `or classified` covers
+    # the degenerate case where every section gets marked Skip: better to keep
+    # an over-inclusive result than emit an empty knowledge base.
+    kept = [c for c in classified if c["type"].strip().lower() != "skip"] or classified
+
     yield _sse(KnowledgeProgressEvent(stage="linking", message="Finding relationships between concepts..."))
     async with engine_state.lock:
-        relations = await run_in_threadpool(_extract_relations, classified)
+        relations = await run_in_threadpool(_extract_relations, kept)
 
-    concepts = [ExtractedConcept(index=i, **c) for i, c in enumerate(classified)]
+    concepts = [ExtractedConcept(index=i, **c) for i, c in enumerate(kept)]
     yield _sse(
         KnowledgeProgressEvent(
             stage="extracted",
@@ -215,7 +222,14 @@ def _split_sections(markdown: str) -> list[dict[str, Any]]:
     for i, m in enumerate(matches):
         start = m.start()
         end = matches[i + 1].start() if i + 1 < len(matches) else len(markdown)
-        sections.append({"heading": m.group(2).strip(), "body": markdown[start:end].strip()})
+        body = markdown[start:end].strip()
+        content = body.split("\n", 1)[1].strip() if "\n" in body else ""
+        if len(content) < config.KNOWLEDGE_MIN_SECTION_CHARS:
+            continue
+        sections.append({"heading": m.group(2).strip(), "body": body})
+
+    if not sections:
+        return [{"heading": None, "body": markdown.strip()}]
 
     max_concepts = config.KNOWLEDGE_MAX_CONCEPTS_PER_DOCUMENT
     if len(sections) > max_concepts:
@@ -229,6 +243,10 @@ def _record_concept(type: str, title: str, description: str, tags: list[str]) ->
     """Records one extracted knowledge concept.
     Args:
       type: Short concept kind, e.g. Definition, Procedure, Topic, Table, Reference.
+        Use "Skip" if this section is boilerplate or administrative rather than a
+        real concept — e.g. page headers/footers, credits, personnel or staff
+        listings, printing/ISBN/publisher info, anthem or song lyrics, cover-page
+        labels, or a generic module/term label with no substantive content.
       title: Short human-readable title for this concept.
       description: One-sentence summary.
       tags: Up to 5 short topical tags.
@@ -241,7 +259,12 @@ def _classify_section(section: dict[str, Any]) -> dict[str, Any]:
     fallback_title = heading or "Untitled section"
     system = (
         "You extract one knowledge concept from a section of a document for a "
-        "personal knowledge base. Call record_concept with your answer."
+        "personal knowledge base. Call record_concept with your answer. If this "
+        'section is boilerplate or administrative rather than a real concept — '
+        "e.g. page headers/footers, credits, personnel or staff listings, "
+        "printing/ISBN/publisher info, anthem or song lyrics, cover-page labels, "
+        'or a generic module/term label with no substantive content — set type '
+        'to exactly "Skip".'
     )
     prompt_text = body[: config.KNOWLEDGE_SECTION_PROMPT_CHARS]
     args = generate_with_tool(system, prompt_text, _record_concept, max_output_tokens=256) or {}

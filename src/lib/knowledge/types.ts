@@ -59,6 +59,8 @@ export interface GraphNode {
   title: string;
   type: string;
   trustTier: TrustTier;
+  description?: string;
+  isIsolated: boolean;
 }
 
 export interface GraphEdge {

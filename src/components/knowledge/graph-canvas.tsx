@@ -2,10 +2,11 @@
 
 import * as React from "react";
 import { useRouter } from "next/navigation";
-import { Handle, Position, type Edge as FlowEdge, type Node as FlowNode, type NodeProps } from "@xyflow/react";
+import { Controls, Handle, MiniMap, Position, type Edge as FlowEdge, type Node as FlowNode, type NodeProps } from "@xyflow/react";
 import { forceCollide, forceLink, forceManyBody, forceSimulation, forceX, forceY } from "d3-force";
 
 import { Canvas } from "@/components/ai-elements/canvas";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 import type { GraphEdge, GraphNode } from "@/lib/knowledge/types";
 
@@ -37,13 +38,28 @@ const CENTER_HANDLE_STYLE: React.CSSProperties = {
 function ConceptNode({ data }: NodeProps) {
   const title = typeof data.title === "string" ? data.title : "";
   const type = typeof data.type === "string" ? data.type : "Section";
-  return (
-    <div className={cn("w-40 rounded-md border-2 bg-card px-2 py-1.5 text-xs shadow-sm", borderColorForType(type))}>
+  const description = typeof data.description === "string" ? data.description : "";
+  const isIsolated = data.isIsolated === true;
+  const card = (
+    <div
+      className={cn(
+        "w-40 rounded-md border-2 bg-card px-2 py-1.5 text-xs shadow-sm",
+        borderColorForType(type),
+        isIsolated && "border-dashed opacity-70"
+      )}
+    >
       <Handle type="target" position={Position.Top} style={CENTER_HANDLE_STYLE} />
       <div className="line-clamp-2 font-medium">{title}</div>
       <div className="text-[10px] text-muted-foreground">{type}</div>
       <Handle type="source" position={Position.Bottom} style={CENTER_HANDLE_STYLE} />
     </div>
+  );
+  if (!description) return card;
+  return (
+    <Tooltip>
+      <TooltipTrigger render={card} />
+      <TooltipContent side="top">{description}</TooltipContent>
+    </Tooltip>
   );
 }
 
@@ -104,7 +120,7 @@ function computeLayout(nodes: GraphNode[], edges: GraphEdge[]): { flowNodes: Flo
     id: n.id,
     type: "concept",
     position: positioned.get(n.id) ?? { x: 0, y: 0 },
-    data: { title: n.title, type: n.type },
+    data: { title: n.title, type: n.type, description: n.description, isIsolated: n.isIsolated },
   }));
 
   const flowEdges: FlowEdge[] = edges.map((e, i) => ({
@@ -128,11 +144,17 @@ export function GraphCanvas({ nodes, edges }: { nodes: GraphNode[]; edges: Graph
         nodes={flowNodes}
         edges={flowEdges}
         nodeTypes={nodeTypes}
+        panOnDrag
+        selectionOnDrag={false}
+        zoomOnDoubleClick
         onNodeClick={(_, node) => {
           const gn = nodesBySlug.get(node.id);
           if (gn) router.push(`/knowledge-viewer/${gn.sourceSlug}/${gn.conceptSlug}`);
         }}
-      />
+      >
+        <Controls />
+        <MiniMap pannable zoomable />
+      </Canvas>
     </div>
   );
 }

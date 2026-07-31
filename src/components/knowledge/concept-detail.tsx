@@ -8,7 +8,7 @@ export function ConceptDetail({ concept }: { concept: ConceptDetailType }) {
   const { frontmatter, body } = concept;
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-6 max-w-6xl mx-auto">
       <div className="flex flex-col gap-2">
         <div className="flex flex-wrap items-center gap-2">
           <h1 className="text-xl font-semibold">{frontmatter.title ?? concept.slug}</h1>
