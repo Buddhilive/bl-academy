@@ -45,6 +45,15 @@ export async function POST(req: Request) {
             ? `You are a helpful assistant that can answer questions and help with tasks. Before answering, think through the problem step by step inside <think></think> tags. After the closing </think> tag, give a concise final answer without repeating the reasoning. ${groundingInstructions}`
             : `You are a helpful assistant that can answer questions and help with tasks. ${groundingInstructions}`;
 
+        const tools = {
+            searchKnowledgeBase: tool({
+                description:
+                    "Search the OKF knowledge base for concepts relevant to the user's question. Returns matching concepts with an `id`, `title`, `description`, `snippet`, and `url`.",
+                inputSchema: z.object({ query: z.string().describe("Search query derived from the user's question") }),
+                execute: async ({ query }: { query: string }) => ({ results: await searchConcepts(query) }),
+            }),
+        };
+
         const result = streamText({
             model: wrapLanguageModel({
                 model: inferenceModel(model),
@@ -52,46 +61,28 @@ export async function POST(req: Request) {
             }),
             messages: await convertToModelMessages(messages),
             system,
-            tools: {
-                searchKnowledgeBase: tool({
-                    description:
-                        "Search the OKF knowledge base for concepts relevant to the user's question. Returns matching concepts with an `id`, `title`, `description`, `snippet`, and `url`.",
-                    inputSchema: z.object({ query: z.string().describe("Search query derived from the user's question") }),
-                    execute: async ({ query }) => ({ results: await searchConcepts(query) }),
-                }),
-            },
+            tools,
             stopWhen: stepCountIs(5),
-            onFinish: async ({ response }) => {
-                if (chatId) {
-                    try {
-                        const { saveMessages } = await import("@/lib/db/queries");
-                        // Combine existing messages with assistant's response message
-                        const fullMessages: UIMessage[] = [
-                            ...messages,
-                            {
-                                id: response.id || `assistant-${Date.now()}`,
-                                role: "assistant",
-                                parts: response.messages.flatMap((m) =>
-                                    typeof m.content === "string"
-                                        ? [{ type: "text" as const, text: m.content }]
-                                        : (m.content as any[])
-                                ),
-                            },
-                        ];
-                        await saveMessages(chatId, fullMessages);
-                    } catch (err) {
-                        console.error("Failed to save chat messages in onFinish:", err);
-                    }
-                }
-            },
         });
 
         // send sources and reasoning back to the client
         return createUIMessageStreamResponse({
             stream: toUIMessageStream({
                 stream: result.stream,
+                tools,
                 sendSources: true,
                 sendReasoning: reasoningEnabled,
+                originalMessages: messages,
+                onFinish: async ({ messages: finishedMessages }) => {
+                    if (chatId) {
+                        try {
+                            const { saveMessages } = await import("@/lib/db/queries");
+                            await saveMessages(chatId, finishedMessages);
+                        } catch (err) {
+                            console.error("Failed to save chat messages in onFinish:", err);
+                        }
+                    }
+                },
             }),
         });
         // eslint-disable-next-line @typescript-eslint/no-explicit-any

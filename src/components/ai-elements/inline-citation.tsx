@@ -14,7 +14,7 @@ import {
 } from "@/components/ui/hover-card";
 import { cn } from "@/lib/utils";
 import { ArrowLeftIcon, ArrowRightIcon } from "lucide-react";
-import type { ComponentProps } from "react";
+import type { ComponentProps, ReactNode } from "react";
 import {
   createContext,
   useCallback,
@@ -55,14 +55,21 @@ export const InlineCitationCard = (props: InlineCitationCardProps) => (
 
 export type InlineCitationCardTriggerProps = ComponentProps<typeof Badge> & {
   sources: string[];
+  label?: ReactNode;
 };
 
 export const InlineCitationCardTrigger = ({
   sources,
+  label,
   className,
   ...props
 }: InlineCitationCardTriggerProps) => (
-  <HoverCardTrigger render={<Badge className={cn("ml-1 rounded-full", className)} variant="secondary" {...props} />}>{sources[0] ? (
+  <HoverCardTrigger render={<Badge className={cn("ml-1 rounded-full", className)} variant="secondary" {...props} />}>{label ? (
+            <>
+              {label}{" "}
+              {sources.length > 1 && `+${sources.length - 1}`}
+            </>
+          ) : sources[0] ? (
             <>
               {new URL(sources[0]).hostname}{" "}
               {sources.length > 1 && `+${sources.length - 1}`}
