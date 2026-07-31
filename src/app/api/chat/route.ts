@@ -1,5 +1,7 @@
-import { streamText, UIMessage, convertToModelMessages, createUIMessageStreamResponse, toUIMessageStream, wrapLanguageModel, extractReasoningMiddleware } from "ai";
+import { streamText, UIMessage, convertToModelMessages, createUIMessageStreamResponse, toUIMessageStream, wrapLanguageModel, extractReasoningMiddleware, tool, stepCountIs } from "ai";
+import { z } from "zod";
 import { inferenceModel } from "@/lib/inference-client";
+import { searchConcepts } from "@/lib/knowledge/search";
 import { NextResponse } from "next/server";
 
 // Allow streaming responses up to 30 seconds
@@ -31,9 +33,17 @@ export async function POST(req: Request) {
     }
 
     try {
+        const groundingInstructions =
+            "You have a `searchKnowledgeBase` tool over an ingested document knowledge base. " +
+            "Always call it before answering questions that could be grounded in ingested documents. " +
+            "When you use a result in your answer, cite it immediately after the relevant sentence using the literal marker `[cite:<id>]`, " +
+            "where `<id>` is exactly the result's `id` field (e.g. `[cite:physics-101/newtons-second-law]`). " +
+            "Only cite ids that were actually returned by the tool — never invent one. " +
+            "If no relevant results are found, answer normally without citing.";
+
         const system = reasoningEnabled
-            ? "You are a helpful assistant that can answer questions and help with tasks. Before answering, think through the problem step by step inside <think></think> tags. After the closing </think> tag, give a concise final answer without repeating the reasoning."
-            : "You are a helpful assistant that can answer questions and help with tasks";
+            ? `You are a helpful assistant that can answer questions and help with tasks. Before answering, think through the problem step by step inside <think></think> tags. After the closing </think> tag, give a concise final answer without repeating the reasoning. ${groundingInstructions}`
+            : `You are a helpful assistant that can answer questions and help with tasks. ${groundingInstructions}`;
 
         const result = streamText({
             model: wrapLanguageModel({
@@ -42,6 +52,15 @@ export async function POST(req: Request) {
             }),
             messages: await convertToModelMessages(messages),
             system,
+            tools: {
+                searchKnowledgeBase: tool({
+                    description:
+                        "Search the OKF knowledge base for concepts relevant to the user's question. Returns matching concepts with an `id`, `title`, `description`, `snippet`, and `url`.",
+                    inputSchema: z.object({ query: z.string().describe("Search query derived from the user's question") }),
+                    execute: async ({ query }) => ({ results: await searchConcepts(query) }),
+                }),
+            },
+            stopWhen: stepCountIs(5),
             onFinish: async ({ response }) => {
                 if (chatId) {
                     try {
