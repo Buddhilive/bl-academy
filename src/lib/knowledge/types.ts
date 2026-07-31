@@ -44,6 +44,10 @@ export interface ConceptDetail extends ConceptSummary {
   body: string;
 }
 
+export type PatchConceptRequest =
+  | { action: "save"; frontmatter: Partial<OkfFrontmatter>; body: string }
+  | { action: "verify" };
+
 export interface SourceSummary {
   sourceSlug: string;
   title: string;

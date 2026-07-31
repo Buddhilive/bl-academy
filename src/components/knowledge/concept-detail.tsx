@@ -1,10 +1,21 @@
 import { Streamdown } from "streamdown";
 
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { TrustBadge } from "@/components/knowledge/trust-badge";
 import type { ConceptDetail as ConceptDetailType } from "@/lib/knowledge/types";
 
-export function ConceptDetail({ concept }: { concept: ConceptDetailType }) {
+export function ConceptDetail({
+  concept,
+  onEdit,
+  onVerify,
+  verifying,
+}: {
+  concept: ConceptDetailType;
+  onEdit?: () => void;
+  onVerify?: () => void;
+  verifying?: boolean;
+}) {
   const { frontmatter, body } = concept;
 
   return (
@@ -14,6 +25,20 @@ export function ConceptDetail({ concept }: { concept: ConceptDetailType }) {
           <h1 className="text-xl font-semibold">{frontmatter.title ?? concept.slug}</h1>
           <TrustBadge tier={concept.trustTier} />
           <Badge variant="outline">{frontmatter.status ?? "stable"}</Badge>
+          {(onEdit || onVerify) && (
+            <div className="ml-auto flex gap-2">
+              {onEdit && (
+                <Button size="sm" variant="outline" onClick={onEdit}>
+                  Edit
+                </Button>
+              )}
+              {onVerify && concept.trustTier !== "human-reviewed" && (
+                <Button size="sm" variant="outline" onClick={onVerify} disabled={verifying}>
+                  {verifying ? "Verifying…" : "Mark as verified"}
+                </Button>
+              )}
+            </div>
+          )}
         </div>
         {frontmatter.description && <p className="text-sm text-muted-foreground">{frontmatter.description}</p>}
       </div>
