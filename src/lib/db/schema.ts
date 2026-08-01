@@ -1,4 +1,4 @@
-import { pgTable, text, timestamp, jsonb } from "drizzle-orm/pg-core";
+import { pgTable, text, timestamp, jsonb, integer } from "drizzle-orm/pg-core";
 
 export const chats = pgTable("chats", {
     id: text("id").primaryKey(),
@@ -6,6 +6,8 @@ export const chats = pgTable("chats", {
     model: text("model").notNull(),
     createdAt: timestamp("created_at", { mode: "date", withTimezone: true }).notNull(),
     updatedAt: timestamp("updated_at", { mode: "date", withTimezone: true }).notNull(),
+    contextSummary: text("context_summary"),
+    summarizedMessageCount: integer("summarized_message_count").notNull().default(0),
 });
 
 export const messages = pgTable("messages", {

@@ -1,6 +1,7 @@
 import { streamText, UIMessage, convertToModelMessages, createUIMessageStreamResponse, toUIMessageStream, wrapLanguageModel, extractReasoningMiddleware, tool, stepCountIs } from "ai";
 import { z } from "zod";
 import { inferenceModel } from "@/lib/inference-client";
+import { summarizeIfNeeded } from "@/lib/context/summarize";
 import { searchConcepts } from "@/lib/knowledge/search";
 import { searchWeb } from "@/lib/search/searxng";
 import { NextResponse } from "next/server";
@@ -69,13 +70,22 @@ export async function POST(req: Request) {
                 : {}),
         };
 
+        const { system: compactedSystem, messages: compactedMessages } = await summarizeIfNeeded({
+            chatId,
+            model,
+            messages,
+            systemPrompt: system,
+            reserveLast: true,
+            signal: req.signal,
+        });
+
         const result = streamText({
             model: wrapLanguageModel({
                 model: inferenceModel(model),
                 middleware: extractReasoningMiddleware({ tagName: "think" }),
             }),
-            messages: await convertToModelMessages(messages),
-            system,
+            messages: await convertToModelMessages(compactedMessages),
+            system: compactedSystem,
             tools,
             stopWhen: stepCountIs(5),
         });

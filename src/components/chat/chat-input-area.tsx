@@ -28,7 +28,8 @@ import type { ChatStatus } from "ai";
 import { toast } from "sonner";
 import { BrainIcon, GlobeIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { encode } from "gpt-tokenizer";
+import { Shimmer } from "@/components/ai-elements/shimmer";
+import { MAX_CONTEXT_TOKENS, countTokens } from "@/lib/context/constants";
 import {
     Context,
     ContextContent,
@@ -40,7 +41,6 @@ import {
     ContextTrigger,
 } from "@/components/ai-elements/context";
 
-const DEFAULT_MAX_CONTEXT_TOKENS = 32000;
 
 const AttachmentItem = ({
     attachment,
@@ -92,9 +92,10 @@ interface ChatInputAreaProps {
     sendMessage: (text: string) => void;
     chatStatus: ChatStatus;
     usedTokens?: number;
+    isSummarizing?: boolean;
 }
 
-export const ChatInputArea = ({ sendMessage, chatStatus, usedTokens = 0 }: ChatInputAreaProps) => {
+export const ChatInputArea = ({ sendMessage, chatStatus, usedTokens = 0, isSummarizing = false }: ChatInputAreaProps) => {
     const {
         input,
         setInput,
@@ -141,27 +142,36 @@ export const ChatInputArea = ({ sendMessage, chatStatus, usedTokens = 0 }: ChatI
     );
 
     const liveUsedTokens = useMemo(() => {
-        const inputTokens = input ? encode(input).length : 0;
+        const inputTokens = countTokens(input);
         return usedTokens + inputTokens;
     }, [input, usedTokens]);
 
+    // Busy for reasons unrelated to what's typed — used to disable the textarea itself
+    // (unlike isSubmitDisabled below, this must NOT include the "input is empty" check,
+    // or an empty box would be permanently untypable).
+    const isBusy = useMemo(
+        () => chatStatus === "streaming" || chatStatus === "submitted" || isSummarizing,
+        [chatStatus, isSummarizing]
+    );
+
     const isSubmitDisabled = useMemo(
-        () =>
-            !(input || "").trim() ||
-            chatStatus === "streaming" ||
-            chatStatus === "submitted" ||
-            !model,
-        [input, chatStatus, model]
+        () => !(input || "").trim() || isBusy || !model,
+        [input, isBusy, model]
     );
 
     return (
         <div className="w-full px-4 pb-4">
+            {isSummarizing && (
+                <div className="pb-2">
+                    <Shimmer className="text-sm">Compacting conversation to free up context…</Shimmer>
+                </div>
+            )}
             <PromptInput globalDrop multiple onSubmit={handleSubmit}>
                 <PromptInputHeader>
                     <PromptInputAttachmentsDisplay />
                 </PromptInputHeader>
                 <PromptInputBody>
-                    <PromptInputTextarea onChange={handleTextChange} value={input} />
+                    <PromptInputTextarea disabled={isBusy} onChange={handleTextChange} value={input} />
                 </PromptInputBody>
                 <PromptInputFooter>
                     <PromptInputTools>
@@ -202,7 +212,7 @@ export const ChatInputArea = ({ sendMessage, chatStatus, usedTokens = 0 }: ChatI
                     </PromptInputTools>
                     <div className="flex items-center gap-2">
                         <Context 
-                            maxTokens={DEFAULT_MAX_CONTEXT_TOKENS} 
+                            maxTokens={MAX_CONTEXT_TOKENS} 
                             usedTokens={liveUsedTokens} 
                             // @ts-expect-error ai sdk usage type compatibility
                             usage={{ promptTokens: liveUsedTokens, completionTokens: 0, totalTokens: liveUsedTokens, inputTokens: liveUsedTokens, outputTokens: 0 }}

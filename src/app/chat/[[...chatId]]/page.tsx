@@ -15,6 +15,7 @@ export default function ChatPage() {
         error,
         usedTokens,
         isFetching,
+        isSummarizing,
         sendMessage,
         handleEdit,
         handleRegenerate,
@@ -43,7 +44,12 @@ export default function ChatPage() {
             />
             <div className="grid shrink-0 gap-4 pt-4">
                 <SuggestionsList onSuggestionClick={handleSuggestionClick} />
-                <ChatInputArea sendMessage={sendMessage} chatStatus={chatStatus} usedTokens={usedTokens} />
+                <ChatInputArea
+                    sendMessage={sendMessage}
+                    chatStatus={chatStatus}
+                    usedTokens={usedTokens}
+                    isSummarizing={isSummarizing}
+                />
             </div>
         </div>
     );
