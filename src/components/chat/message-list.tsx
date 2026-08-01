@@ -28,7 +28,7 @@ import {
 import { Button } from "@/components/ui/button";
 import type { UIMessage, ChatStatus } from "ai";
 import type { ComponentProps } from "react";
-import { AlertCircleIcon } from "lucide-react";
+import { AlertCircleIcon, FileTextIcon, GlobeIcon } from "lucide-react";
 
 interface MessageListProps {
     messages: UIMessage[];
@@ -81,6 +81,7 @@ interface ConceptCitation {
     title: string;
     url: string;
     description?: string;
+    isWeb: boolean;
 }
 
 /** Collects `[cite:<id>]`-able sources from any completed `searchKnowledgeBase` tool
@@ -94,7 +95,7 @@ function collectCitationSources(message: UIMessage): Map<string, ConceptCitation
         const toolPart = part as { state?: string; output?: { results?: { id: string; title: string; url: string; description?: string }[] } };
         if (toolPart.state !== "output-available") continue;
         for (const result of toolPart.output?.results ?? []) {
-            sources.set(result.id, { title: result.title, url: result.url, description: result.description });
+            sources.set(result.id, { title: result.title, url: result.url, description: result.description, isWeb: part.type === "tool-webSearch" });
         }
     }
     return sources;
@@ -111,6 +112,10 @@ function toCitationMarkdown(text: string): string {
     return withLinks.replace(/\[cite:[^\]]*$/, "");
 }
 
+function truncateCitationTitle(title: string, max = 10): string {
+    return title.length > max ? `${title.slice(0, max)}…` : title;
+}
+
 type CitationAnchorProps = ComponentProps<"a"> & { node?: unknown };
 
 function createCitationAnchor(sources: Map<string, ConceptCitation>) {
@@ -120,10 +125,19 @@ function createCitationAnchor(sources: Map<string, ConceptCitation>) {
             if (!source) return null;
             const origin = typeof window !== "undefined" ? window.location.origin : "https://knowledge-base.local";
             const badgeSources = [new URL(source.url, origin).toString()];
+            const Icon = source.isWeb ? GlobeIcon : FileTextIcon;
             return (
                 <InlineCitation>
                     <InlineCitationCard>
-                        <InlineCitationCardTrigger sources={badgeSources} label={source.title} />
+                        <InlineCitationCardTrigger
+                            sources={badgeSources}
+                            label={
+                                <span className="inline-flex items-center gap-1">
+                                    <Icon className="size-3" />
+                                    {`[${truncateCitationTitle(source.title)}]`}
+                                </span>
+                            }
+                        />
                         <InlineCitationCardBody>
                             <div className="p-4">
                                 <InlineCitationSource
