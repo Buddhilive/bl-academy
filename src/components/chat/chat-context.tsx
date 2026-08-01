@@ -2,7 +2,7 @@
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { useChat } from "@ai-sdk/react";
-import { encode } from "gpt-tokenizer";
+import { countTokens, extractMessageText, SUMMARIZATION_TOKEN_THRESHOLD } from "@/lib/context/constants";
 import { DefaultChatTransport, type UIMessage } from "ai";
 import { useParams, useRouter } from "next/navigation";
 import { toast } from "sonner";
@@ -14,6 +14,7 @@ interface ChatSession {
     error: Error | null;
     usedTokens: number;
     isFetching: boolean;
+    isSummarizing: boolean;
     sendMessage: (text: string) => void;
     handleEdit: (editedText: string) => void;
     handleRegenerate: () => void;
@@ -58,6 +59,56 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
     // can't tell that apart from a genuine "navigated to /chat fresh" case, and
     // wrongly resets everything. Cleared once chatIdFromUrl catches up.
     const pendingChatIdRef = useRef<string | null>(null);
+    // Context-compaction state: how many of the loaded chat's messages are already
+    // folded into the server-persisted summary, plus in-flight tracking so a nav-away
+    // or chat switch can abort a running compaction request instead of wasting compute.
+    const [summarizedMessageCount, setSummarizedMessageCount] = useState(0);
+    const [isSummarizing, setIsSummarizing] = useState(false);
+    const summarizeAbortRef = useRef<AbortController | null>(null);
+
+    const maybeCompactContext = useCallback(
+        async (targetChatId: string, msgs: UIMessage[], summarizedCount: number) => {
+            const tailTokens = countTokens(
+                msgs.slice(summarizedCount).map(extractMessageText).join("")
+            );
+            if (tailTokens < SUMMARIZATION_TOKEN_THRESHOLD) return;
+
+            summarizeAbortRef.current?.abort();
+            const controller = new AbortController();
+            summarizeAbortRef.current = controller;
+            setIsSummarizing(true);
+
+            try {
+                const res = await fetch(`/api/chats/${targetChatId}/summarize`, {
+                    method: "POST",
+                    signal: controller.signal,
+                });
+                if (res.ok) {
+                    const data = await res.json();
+                    if (typeof data.summarizedMessageCount === "number") {
+                        setSummarizedMessageCount(data.summarizedMessageCount);
+                    }
+                }
+            } catch (err) {
+                if ((err as Error)?.name !== "AbortError") {
+                    console.error("Context compaction failed:", err);
+                }
+            } finally {
+                if (summarizeAbortRef.current === controller) {
+                    setIsSummarizing(false);
+                }
+            }
+        },
+        []
+    );
+
+    // Abort any in-flight compaction when switching chats or navigating away —
+    // no point burning compute on a summary for a chat the user has left.
+    useEffect(() => {
+        return () => {
+            summarizeAbortRef.current?.abort();
+        };
+    }, [chatIdFromUrl]);
 
     // Update currentChatId in store when URL param changes
     useEffect(() => {
@@ -77,8 +128,12 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
     const { messages, setMessages, sendMessage: chatSendMessage, status: chatStatus } = useChat({
         id: chatHookId,
         transport,
-        onFinish: () => {
+        onFinish: ({ messages: finishedMessages }) => {
             fetchRecentChats();
+            const targetChatId = chatIdFromUrl || loadedChatId;
+            if (targetChatId) {
+                void maybeCompactContext(targetChatId, finishedMessages, summarizedMessageCount);
+            }
         },
         onError: (err) => {
             console.error("Chat error:", err);
@@ -114,6 +169,7 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
             setMessages([]);
             setChatHookId("new-chat");
             setLoadedChatId(null);
+            setSummarizedMessageCount(0);
             return;
         }
 
@@ -136,8 +192,13 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
             })
             .then((data) => {
                 if (isMounted) {
-                    setMessages(data.messages || []);
+                    const loadedMessages = data.messages || [];
+                    const loadedSummarizedCount =
+                        typeof data.summarizedMessageCount === "number" ? data.summarizedMessageCount : 0;
+                    setMessages(loadedMessages);
                     setLoadedChatId(chatIdFromUrl);
+                    setSummarizedMessageCount(loadedSummarizedCount);
+                    void maybeCompactContext(chatIdFromUrl, loadedMessages, loadedSummarizedCount);
                 }
             })
             .catch((err) => {
@@ -145,13 +206,14 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
                 if (isMounted) {
                     setMessages([]);
                     setLoadedChatId(chatIdFromUrl);
+                    setSummarizedMessageCount(0);
                 }
             });
 
         return () => {
             isMounted = false;
         };
-    }, [chatIdFromUrl, loadedChatId, setMessages]);
+    }, [chatIdFromUrl, loadedChatId, setMessages, maybeCompactContext]);
 
     const sendMessage = useCallback(
         async (text: string) => {
@@ -288,21 +350,10 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
         [sendMessage]
     );
 
-    const usedTokens = useMemo(() => {
-        let totalText = "";
-        for (const msg of messages) {
-            if (Array.isArray(msg.parts) && msg.parts.length > 0) {
-                totalText += msg.parts
-                    .filter((p) => p.type === "text")
-                    .map((p) => (p as { text?: string }).text || "")
-                    .join("");
-            } else {
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                totalText += (msg as any).content || "";
-            }
-        }
-        return totalText ? encode(totalText).length : 0;
-    }, [messages]);
+    const usedTokens = useMemo(
+        () => countTokens(messages.map(extractMessageText).join("")),
+        [messages]
+    );
 
     const value: ChatSession = {
         messages,
@@ -310,6 +361,7 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
         error,
         usedTokens,
         isFetching,
+        isSummarizing,
         sendMessage,
         handleEdit,
         handleRegenerate,

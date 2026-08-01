@@ -79,6 +79,13 @@ export async function deleteChat(id: string) {
     await db.delete(chats).where(eq(chats.id, id));
 }
 
+export async function updateChatSummary(chatId: string, summary: string, summarizedMessageCount: number) {
+    await db
+        .update(chats)
+        .set({ contextSummary: summary, summarizedMessageCount })
+        .where(eq(chats.id, chatId));
+}
+
 export async function getPaginatedChats(page: number = 1, pageSize: number = 20, search: string = "") {
     const offset = (page - 1) * pageSize;
     const query = search ? ilike(chats.title, `%${search}%`) : undefined;
