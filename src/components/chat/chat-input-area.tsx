@@ -25,9 +25,8 @@ import {
 import { SpeechInput } from "@/components/ai-elements/speech-input";
 import { useChatStore } from "./store/use-chat-store";
 import type { ChatStatus } from "ai";
-import { ModelSelectorDropdown } from "./model-selector-dropdown";
 import { toast } from "sonner";
-import { BrainIcon } from "lucide-react";
+import { BrainIcon, GlobeIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { encode } from "gpt-tokenizer";
 import {
@@ -99,10 +98,11 @@ export const ChatInputArea = ({ sendMessage, chatStatus, usedTokens = 0 }: ChatI
     const {
         input,
         setInput,
-        isLoadingModel,
         model,
         reasoningEnabled,
         setReasoningEnabled,
+        useWebSearch,
+        setUseWebSearch,
     } = useChatStore();
 
     const handleTextChange = useCallback(
@@ -150,9 +150,8 @@ export const ChatInputArea = ({ sendMessage, chatStatus, usedTokens = 0 }: ChatI
             !(input || "").trim() ||
             chatStatus === "streaming" ||
             chatStatus === "submitted" ||
-            isLoadingModel ||
             !model,
-        [input, chatStatus, isLoadingModel, model]
+        [input, chatStatus, model]
     );
 
     return (
@@ -181,6 +180,7 @@ export const ChatInputArea = ({ sendMessage, chatStatus, usedTokens = 0 }: ChatI
                         <PromptInputButton
                             onClick={() => setReasoningEnabled((prev) => !prev)}
                             tooltip={reasoningEnabled ? "Disable reasoning" : "Enable reasoning"}
+                            aria-pressed={reasoningEnabled}
                             className={cn(
                                 "shrink-0 transition-colors",
                                 reasoningEnabled ? "text-primary hover:text-primary/80" : "text-muted-foreground hover:text-foreground"
@@ -188,8 +188,17 @@ export const ChatInputArea = ({ sendMessage, chatStatus, usedTokens = 0 }: ChatI
                         >
                             <BrainIcon className="size-4" />
                         </PromptInputButton>
-                        {/* Model selector dropdown component */}
-                        <ModelSelectorDropdown />
+                        <PromptInputButton
+                            onClick={() => setUseWebSearch((prev) => !prev)}
+                            tooltip={useWebSearch ? "Disable web search" : "Enable web search"}
+                            aria-pressed={useWebSearch}
+                            className={cn(
+                                "shrink-0 transition-colors",
+                                useWebSearch ? "text-primary hover:text-primary/80" : "text-muted-foreground hover:text-foreground"
+                            )}
+                        >
+                            <GlobeIcon className="size-4" />
+                        </PromptInputButton>
                     </PromptInputTools>
                     <div className="flex items-center gap-2">
                         <Context 

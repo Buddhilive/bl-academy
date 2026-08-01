@@ -90,7 +90,7 @@ function collectCitationSources(message: UIMessage): Map<string, ConceptCitation
     if (!Array.isArray(message.parts)) return sources;
 
     for (const part of message.parts) {
-        if (part.type !== "tool-searchKnowledgeBase") continue;
+        if (part.type !== "tool-searchKnowledgeBase" && part.type !== "tool-webSearch") continue;
         const toolPart = part as { state?: string; output?: { results?: { id: string; title: string; url: string; description?: string }[] } };
         if (toolPart.state !== "output-available") continue;
         for (const result of toolPart.output?.results ?? []) {

@@ -34,7 +34,7 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
     const chatIdFromUrl = params.chatId?.[0] || null;
     const router = useRouter();
 
-    const { model, reasoningEnabled, fetchModels, setCurrentChatId, fetchRecentChats, addRecentChat } = useChatStore();
+    const { model, reasoningEnabled, useWebSearch, setCurrentChatId, fetchRecentChats, addRecentChat } = useChatStore();
 
     // Tracks which chatId's messages are currently loaded.
     // isFetching is derived from this — no synchronous setState needed in the effect.
@@ -69,9 +69,9 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
         () =>
             new DefaultChatTransport({
                 api: "/api/chat",
-                body: { model, reasoningEnabled, chatId: chatIdFromUrl },
+                body: { model, reasoningEnabled, chatId: chatIdFromUrl, webSearch: useWebSearch },
             }),
-        [model, reasoningEnabled, chatIdFromUrl]
+        [model, reasoningEnabled, chatIdFromUrl, useWebSearch]
     );
 
     const { messages, setMessages, sendMessage: chatSendMessage, status: chatStatus } = useChat({
@@ -152,11 +152,6 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
             isMounted = false;
         };
     }, [chatIdFromUrl, loadedChatId, setMessages]);
-
-    // Fetch models on load
-    useEffect(() => {
-        fetchModels();
-    }, [fetchModels]);
 
     const sendMessage = useCallback(
         async (text: string) => {

@@ -2,6 +2,7 @@ import { streamText, UIMessage, convertToModelMessages, createUIMessageStreamRes
 import { z } from "zod";
 import { inferenceModel } from "@/lib/inference-client";
 import { searchConcepts } from "@/lib/knowledge/search";
+import { searchWeb } from "@/lib/search/searxng";
 import { NextResponse } from "next/server";
 
 // Allow streaming responses up to 30 seconds
@@ -13,13 +14,13 @@ export async function POST(req: Request) {
         model,
         reasoningEnabled = true,
         chatId,
-        // webSearch,
+        webSearch = false,
     }: {
         messages: UIMessage[];
         model: string;
         reasoningEnabled?: boolean;
         chatId?: string;
-        // webSearch: boolean;
+        webSearch?: boolean;
     } = await req.json();
 
     console.log("RECEIVED BODY MODEL:", model);
@@ -39,7 +40,11 @@ export async function POST(req: Request) {
             "When you use a result in your answer, cite it immediately after the relevant sentence using the literal marker `[cite:<id>]`, " +
             "where `<id>` is exactly the result's `id` field (e.g. `[cite:physics-101/newtons-second-law]`). " +
             "Only cite ids that were actually returned by the tool — never invent one. " +
-            "If no relevant results are found, answer normally without citing.";
+            "If no relevant results are found, answer normally without citing." +
+            (webSearch
+                ? " You also have a `webSearch` tool for general or current-events questions not covered by the knowledge base. " +
+                  "Cite its results the same way with `[cite:<id>]`, using the id exactly as returned (these ids are prefixed `web:`)."
+                : "");
 
         const system = reasoningEnabled
             ? `You are a helpful assistant that can answer questions and help with tasks. Before answering, think through the problem step by step inside <think></think> tags. After the closing </think> tag, give a concise final answer without repeating the reasoning. ${groundingInstructions}`
@@ -52,6 +57,16 @@ export async function POST(req: Request) {
                 inputSchema: z.object({ query: z.string().describe("Search query derived from the user's question") }),
                 execute: async ({ query }: { query: string }) => ({ results: await searchConcepts(query) }),
             }),
+            ...(webSearch
+                ? {
+                      webSearch: tool({
+                          description:
+                              "Search the public web for current information via SearXNG. Returns results with `id`, `title`, `url`, `description`.",
+                          inputSchema: z.object({ query: z.string().describe("Search query derived from the user's question") }),
+                          execute: async ({ query }: { query: string }) => ({ results: await searchWeb(query) }),
+                      }),
+                  }
+                : {}),
         };
 
         const result = streamText({
