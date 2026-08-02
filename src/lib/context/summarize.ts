@@ -40,6 +40,7 @@ export interface SummarizeIfNeededResult {
     messages: UIMessage[];
     summarized: boolean;
     summarizedMessageCount: number;
+    summary: string | null;
 }
 
 /**
@@ -62,6 +63,7 @@ export async function summarizeIfNeeded({
         messages,
         summarized: false,
         summarizedMessageCount: 0,
+        summary: null,
     };
 
     if (!chatId) return fallback;
@@ -82,6 +84,7 @@ export async function summarizeIfNeeded({
             messages: tail,
             summarized: false,
             summarizedMessageCount: summarizedCount,
+            summary: priorSummary,
         };
 
         if (foldable.length === 0) {
@@ -117,6 +120,7 @@ export async function summarizeIfNeeded({
             messages: reserved ? [reserved] : [],
             summarized: true,
             summarizedMessageCount: newSummarizedCount,
+            summary: newSummary,
         };
     } catch (err) {
         console.error("Context summarization failed, falling back to full history:", err);
