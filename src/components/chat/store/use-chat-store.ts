@@ -12,6 +12,7 @@ export interface ChatItem {
 interface ChatStore {
     model: string;
     useWebSearch: boolean;
+    suggestionsEnabled: boolean;
     input: string;
     reasoningEnabled: boolean;
     
@@ -24,6 +25,7 @@ interface ChatStore {
     // Actions
     setModel: (model: string) => void;
     setUseWebSearch: (useWebSearch: boolean | ((prev: boolean) => boolean)) => void;
+    setSuggestionsEnabled: (suggestionsEnabled: boolean | ((prev: boolean) => boolean)) => void;
     setInput: (input: string | ((prev: string) => string)) => void;
     setReasoningEnabled: (reasoningEnabled: boolean | ((prev: boolean) => boolean)) => void;
     setCurrentChatId: (chatId: string | null) => void;
@@ -38,6 +40,7 @@ let recentChatsFetchSeq = 0;
 export const useChatStore = create<ChatStore>((set) => ({
     model: "gemma-4-e4b-it",
     useWebSearch: false,
+    suggestionsEnabled: false,
     input: "",
     reasoningEnabled: true,
     currentChatId: null,
@@ -49,6 +52,10 @@ export const useChatStore = create<ChatStore>((set) => ({
     setUseWebSearch: (useWebSearch) =>
         set((state) => ({
             useWebSearch: typeof useWebSearch === "function" ? useWebSearch(state.useWebSearch) : useWebSearch,
+        })),
+    setSuggestionsEnabled: (suggestionsEnabled) =>
+        set((state) => ({
+            suggestionsEnabled: typeof suggestionsEnabled === "function" ? suggestionsEnabled(state.suggestionsEnabled) : suggestionsEnabled,
         })),
     setInput: (input) =>
         set((state) => ({

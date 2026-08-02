@@ -1,17 +1,6 @@
 import { useCallback } from "react";
 import { Suggestion, Suggestions } from "@/components/ai-elements/suggestion";
 
-const suggestions = [
-    "What are the latest trends in AI?",
-    "How does machine learning work?",
-    "Explain quantum computing",
-    "Best practices for React development",
-    "Tell me about TypeScript benefits",
-    "How to optimize database queries?",
-    "What is the difference between SQL and NoSQL?",
-    "Explain cloud computing basics",
-];
-
 const SuggestionItem = ({
     suggestion,
     onClick,
@@ -28,12 +17,23 @@ const SuggestionItem = ({
 
 interface SuggestionsListProps {
     onSuggestionClick: (suggestion: string) => void;
+    /**
+     * Dynamically generated suggestions for the ongoing conversation.
+     * `null`/`undefined`/`[]` — nothing to show, hide the row entirely.
+     */
+    suggestions?: string[] | null;
 }
 
-export const SuggestionsList = ({ onSuggestionClick }: SuggestionsListProps) => {
+export const SuggestionsList = ({ onSuggestionClick, suggestions }: SuggestionsListProps) => {
+    const resolvedSuggestions = suggestions ?? [];
+
+    if (resolvedSuggestions.length === 0) {
+        return null;
+    }
+
     return (
         <Suggestions className="px-4">
-            {suggestions.map((suggestion) => (
+            {resolvedSuggestions.map((suggestion) => (
                 <SuggestionItem
                     key={suggestion}
                     onClick={onSuggestionClick}

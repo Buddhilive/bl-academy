@@ -26,7 +26,7 @@ import { SpeechInput } from "@/components/ai-elements/speech-input";
 import { useChatStore } from "./store/use-chat-store";
 import type { ChatStatus } from "ai";
 import { toast } from "sonner";
-import { BrainIcon, GlobeIcon } from "lucide-react";
+import { BrainIcon, GlobeIcon, LightbulbIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Shimmer } from "@/components/ai-elements/shimmer";
 import { MAX_CONTEXT_TOKENS, countTokens } from "@/lib/context/constants";
@@ -104,6 +104,8 @@ export const ChatInputArea = ({ sendMessage, chatStatus, usedTokens = 0, isSumma
         setReasoningEnabled,
         useWebSearch,
         setUseWebSearch,
+        suggestionsEnabled,
+        setSuggestionsEnabled,
     } = useChatStore();
 
     const handleTextChange = useCallback(
@@ -208,6 +210,17 @@ export const ChatInputArea = ({ sendMessage, chatStatus, usedTokens = 0, isSumma
                             )}
                         >
                             <GlobeIcon className="size-4" />
+                        </PromptInputButton>
+                        <PromptInputButton
+                            onClick={() => setSuggestionsEnabled((prev) => !prev)}
+                            tooltip={suggestionsEnabled ? "Disable suggested replies" : "Enable suggested replies"}
+                            aria-pressed={suggestionsEnabled}
+                            className={cn(
+                                "shrink-0 transition-colors",
+                                suggestionsEnabled ? "text-primary hover:text-primary/80" : "text-muted-foreground hover:text-foreground"
+                            )}
+                        >
+                            <LightbulbIcon className="size-4" />
                         </PromptInputButton>
                     </PromptInputTools>
                     <div className="flex items-center gap-2">

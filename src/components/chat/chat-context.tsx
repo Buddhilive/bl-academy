@@ -20,6 +20,7 @@ interface ChatSession {
     handleRegenerate: () => void;
     handleCopy: (text: string) => void;
     handleSuggestionClick: (suggestion: string) => void;
+    dynamicSuggestions: string[] | null;
 }
 
 const ChatContext = createContext<ChatSession | null>(null);
@@ -35,7 +36,7 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
     const chatIdFromUrl = params.chatId?.[0] || null;
     const router = useRouter();
 
-    const { model, reasoningEnabled, useWebSearch, setCurrentChatId, fetchRecentChats, addRecentChat } = useChatStore();
+    const { model, reasoningEnabled, useWebSearch, suggestionsEnabled, setCurrentChatId, fetchRecentChats, addRecentChat } = useChatStore();
 
     // Tracks which chatId's messages are currently loaded.
     // isFetching is derived from this — no synchronous setState needed in the effect.
@@ -66,6 +67,8 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
     const [contextSummary, setContextSummary] = useState<string | null>(null);
     const [isSummarizing, setIsSummarizing] = useState(false);
     const summarizeAbortRef = useRef<AbortController | null>(null);
+    const [dynamicSuggestions, setDynamicSuggestions] = useState<string[] | null>(null);
+    const suggestionsAbortRef = useRef<AbortController | null>(null);
 
     const maybeCompactContext = useCallback(
         async (targetChatId: string, msgs: UIMessage[], summarizedCount: number) => {
@@ -106,11 +109,41 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
         []
     );
 
+    const maybeGenerateSuggestions = useCallback(
+        async (msgs: UIMessage[]) => {
+            suggestionsAbortRef.current?.abort();
+            const controller = new AbortController();
+            suggestionsAbortRef.current = controller;
+
+            try {
+                const res = await fetch("/api/chat/suggestions", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ model, messages: msgs.slice(-8) }),
+                    signal: controller.signal,
+                });
+                if (res.ok) {
+                    const data = await res.json();
+                    setDynamicSuggestions(Array.isArray(data.suggestions) ? data.suggestions : []);
+                } else {
+                    setDynamicSuggestions([]);
+                }
+            } catch (err) {
+                if ((err as Error)?.name !== "AbortError") {
+                    console.error("Suggestion generation failed:", err);
+                    setDynamicSuggestions([]);
+                }
+            }
+        },
+        [model]
+    );
+
     // Abort any in-flight compaction when switching chats or navigating away —
     // no point burning compute on a summary for a chat the user has left.
     useEffect(() => {
         return () => {
             summarizeAbortRef.current?.abort();
+            suggestionsAbortRef.current?.abort();
         };
     }, [chatIdFromUrl]);
 
@@ -118,6 +151,15 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
     useEffect(() => {
         setCurrentChatId(chatIdFromUrl);
     }, [chatIdFromUrl, setCurrentChatId]);
+
+    // Turning suggestions off immediately reverts the chip row to static defaults
+    // rather than leaving the last-generated set stuck on screen.
+    useEffect(() => {
+        if (!suggestionsEnabled) {
+            suggestionsAbortRef.current?.abort();
+            setDynamicSuggestions(null);
+        }
+    }, [suggestionsEnabled]);
 
     // Stable transport — recreated only when model, reasoningEnabled, or chatIdFromUrl changes
     const transport = useMemo(
@@ -137,6 +179,9 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
             const targetChatId = chatIdFromUrl || loadedChatId;
             if (targetChatId) {
                 void maybeCompactContext(targetChatId, finishedMessages, summarizedMessageCount);
+            }
+            if (suggestionsEnabled) {
+                void maybeGenerateSuggestions(finishedMessages);
             }
         },
         onError: (err) => {
@@ -175,6 +220,7 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
             setLoadedChatId(null);
             setSummarizedMessageCount(0);
             setContextSummary(null);
+            setDynamicSuggestions(null);
             return;
         }
 
@@ -206,6 +252,7 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
                     setContextSummary(
                         typeof data.contextSummary === "string" ? data.contextSummary : null
                     );
+                    setDynamicSuggestions(null);
                     void maybeCompactContext(chatIdFromUrl, loadedMessages, loadedSummarizedCount);
                 }
             })
@@ -216,6 +263,7 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
                     setLoadedChatId(chatIdFromUrl);
                     setSummarizedMessageCount(0);
                     setContextSummary(null);
+                    setDynamicSuggestions(null);
                 }
             });
 
@@ -373,6 +421,7 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
         usedTokens,
         isFetching,
         isSummarizing,
+        dynamicSuggestions,
         sendMessage,
         handleEdit,
         handleRegenerate,
