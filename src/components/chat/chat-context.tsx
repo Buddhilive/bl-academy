@@ -63,6 +63,7 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
     // folded into the server-persisted summary, plus in-flight tracking so a nav-away
     // or chat switch can abort a running compaction request instead of wasting compute.
     const [summarizedMessageCount, setSummarizedMessageCount] = useState(0);
+    const [contextSummary, setContextSummary] = useState<string | null>(null);
     const [isSummarizing, setIsSummarizing] = useState(false);
     const summarizeAbortRef = useRef<AbortController | null>(null);
 
@@ -87,6 +88,9 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
                     const data = await res.json();
                     if (typeof data.summarizedMessageCount === "number") {
                         setSummarizedMessageCount(data.summarizedMessageCount);
+                    }
+                    if (typeof data.summary === "string" || data.summary === null) {
+                        setContextSummary(data.summary);
                     }
                 }
             } catch (err) {
@@ -170,6 +174,7 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
             setChatHookId("new-chat");
             setLoadedChatId(null);
             setSummarizedMessageCount(0);
+            setContextSummary(null);
             return;
         }
 
@@ -198,6 +203,9 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
                     setMessages(loadedMessages);
                     setLoadedChatId(chatIdFromUrl);
                     setSummarizedMessageCount(loadedSummarizedCount);
+                    setContextSummary(
+                        typeof data.contextSummary === "string" ? data.contextSummary : null
+                    );
                     void maybeCompactContext(chatIdFromUrl, loadedMessages, loadedSummarizedCount);
                 }
             })
@@ -207,6 +215,7 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
                     setMessages([]);
                     setLoadedChatId(chatIdFromUrl);
                     setSummarizedMessageCount(0);
+                    setContextSummary(null);
                 }
             });
 
@@ -350,10 +359,12 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
         [sendMessage]
     );
 
-    const usedTokens = useMemo(
-        () => countTokens(messages.map(extractMessageText).join("")),
-        [messages]
-    );
+    const usedTokens = useMemo(() => {
+        const tail = messages.slice(summarizedMessageCount);
+        const tailTokens = countTokens(tail.map(extractMessageText).join(""));
+        const summaryTokens = countTokens(contextSummary || "");
+        return summaryTokens + tailTokens;
+    }, [messages, summarizedMessageCount, contextSummary]);
 
     const value: ChatSession = {
         messages,

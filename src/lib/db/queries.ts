@@ -52,6 +52,15 @@ export async function getChatById(id: string) {
 }
 
 export async function saveMessages(chatId: string, uiMessages: UIMessage[]) {
+    // Guard against wiping a chat's history: a legitimate save always includes
+    // at least the in-progress exchange, so an empty list here means something
+    // upstream produced a bad/partial message set (SDK edge case, aborted
+    // request, etc.) — never a valid "clear this chat" instruction.
+    if (uiMessages.length === 0) {
+        console.error(`saveMessages: refusing to save empty message list for chat ${chatId}`);
+        return;
+    }
+
     const now = new Date();
 
     // Update chat timestamp
@@ -65,7 +74,7 @@ export async function saveMessages(chatId: string, uiMessages: UIMessage[]) {
     if (uiMessages.length > 0) {
         await db.insert(messages).values(
             uiMessages.map((msg) => ({
-                id: msg.id,
+                id: msg.id || crypto.randomUUID(),
                 chatId,
                 role: msg.role,
                 parts: msg.parts || [{ type: "text", text: "" }],

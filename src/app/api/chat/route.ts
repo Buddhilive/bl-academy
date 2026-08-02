@@ -98,6 +98,7 @@ export async function POST(req: Request) {
                 sendSources: true,
                 sendReasoning: reasoningEnabled,
                 originalMessages: messages,
+                generateMessageId: () => crypto.randomUUID(),
                 onFinish: async ({ messages: finishedMessages }) => {
                     if (chatId) {
                         try {
