@@ -17,7 +17,7 @@ export function DynamicBreadcrumb() {
   const pathname = usePathname();
   const { recentChats } = useChatStore();
 
-  // Handle the home route or root chat route
+  // Handle the home route or root chat route (only show Home if not viewing a chat)
   if (pathname === "/" || pathname === "/chat") {
     return (
       <Breadcrumb>

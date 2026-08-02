@@ -25,44 +25,30 @@ import Link from "next/link"
 const data = {
   user: {
     name: "shadcn",
-    email: "m@example.com",
+    email: "[EMAIL_ADDRESS]",
     avatar: "/avatars/shadcn.jpg",
   },
   teams: [
     {
-      name: "Acme Inc",
+      name: "BuddhiAI",
       logo: (
         <GalleryVerticalEndIcon
         />
       ),
-      plan: "Enterprise",
-    },
-    {
-      name: "Acme Corp.",
-      logo: (
-        <AudioLinesIcon
-        />
-      ),
-      plan: "Startup",
-    },
-    {
-      name: "Evil Corp.",
-      logo: (
-        <TerminalIcon
-        />
-      ),
-      plan: "Free",
-    },
+      plan: "Local AI OS",
+    }
   ],
   navMain: [
     {
-      title: "Playground",
-      url: "/chat",
+      title: "Knowledge",
       icon: (
-        <TerminalSquareIcon
-        />
+        <BookOpenIcon className="size-4 shrink-0" />
       ),
       isActive: true,
+      items: [
+        { title: "Knowledge Base", url: "/knowledge-base" },
+        { title: "Knowledge Viewer", url: "/knowledge-viewer" },
+      ],
     },
   ],
 }
@@ -84,10 +70,11 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             </SidebarMenuItem>
           </SidebarMenu>
         </SidebarGroup>
+        <NavMain items={data.navMain} />
         <RecentChats />
       </SidebarContent>
       <SidebarFooter>
-        <NavUser user={data.user} />
+        {/* <NavUser user={data.user} /> */}
       </SidebarFooter>
       <SidebarRail />
     </Sidebar>

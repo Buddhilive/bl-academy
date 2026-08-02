@@ -25,11 +25,11 @@ import {
 import { SpeechInput } from "@/components/ai-elements/speech-input";
 import { useChatStore } from "./store/use-chat-store";
 import type { ChatStatus } from "ai";
-import { ModelSelectorDropdown } from "./model-selector-dropdown";
 import { toast } from "sonner";
-import { BrainIcon } from "lucide-react";
+import { BrainIcon, GlobeIcon, LightbulbIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { encode } from "gpt-tokenizer";
+import { Shimmer } from "@/components/ai-elements/shimmer";
+import { MAX_CONTEXT_TOKENS, countTokens } from "@/lib/context/constants";
 import {
     Context,
     ContextContent,
@@ -41,7 +41,6 @@ import {
     ContextTrigger,
 } from "@/components/ai-elements/context";
 
-const DEFAULT_MAX_CONTEXT_TOKENS = 32000;
 
 const AttachmentItem = ({
     attachment,
@@ -93,16 +92,20 @@ interface ChatInputAreaProps {
     sendMessage: (text: string) => void;
     chatStatus: ChatStatus;
     usedTokens?: number;
+    isSummarizing?: boolean;
 }
 
-export const ChatInputArea = ({ sendMessage, chatStatus, usedTokens = 0 }: ChatInputAreaProps) => {
+export const ChatInputArea = ({ sendMessage, chatStatus, usedTokens = 0, isSummarizing = false }: ChatInputAreaProps) => {
     const {
         input,
         setInput,
-        isLoadingModel,
         model,
         reasoningEnabled,
         setReasoningEnabled,
+        useWebSearch,
+        setUseWebSearch,
+        suggestionsEnabled,
+        setSuggestionsEnabled,
     } = useChatStore();
 
     const handleTextChange = useCallback(
@@ -141,28 +144,36 @@ export const ChatInputArea = ({ sendMessage, chatStatus, usedTokens = 0 }: ChatI
     );
 
     const liveUsedTokens = useMemo(() => {
-        const inputTokens = input ? encode(input).length : 0;
+        const inputTokens = countTokens(input);
         return usedTokens + inputTokens;
     }, [input, usedTokens]);
 
+    // Busy for reasons unrelated to what's typed — used to disable the textarea itself
+    // (unlike isSubmitDisabled below, this must NOT include the "input is empty" check,
+    // or an empty box would be permanently untypable).
+    const isBusy = useMemo(
+        () => chatStatus === "streaming" || chatStatus === "submitted" || isSummarizing,
+        [chatStatus, isSummarizing]
+    );
+
     const isSubmitDisabled = useMemo(
-        () =>
-            !(input || "").trim() ||
-            chatStatus === "streaming" ||
-            chatStatus === "submitted" ||
-            isLoadingModel ||
-            !model,
-        [input, chatStatus, isLoadingModel, model]
+        () => !(input || "").trim() || isBusy || !model,
+        [input, isBusy, model]
     );
 
     return (
         <div className="w-full px-4 pb-4">
+            {isSummarizing && (
+                <div className="pb-2">
+                    <Shimmer className="text-sm">Compacting conversation to free up context…</Shimmer>
+                </div>
+            )}
             <PromptInput globalDrop multiple onSubmit={handleSubmit}>
                 <PromptInputHeader>
                     <PromptInputAttachmentsDisplay />
                 </PromptInputHeader>
                 <PromptInputBody>
-                    <PromptInputTextarea onChange={handleTextChange} value={input} />
+                    <PromptInputTextarea disabled={isBusy} onChange={handleTextChange} value={input} />
                 </PromptInputBody>
                 <PromptInputFooter>
                     <PromptInputTools>
@@ -181,6 +192,7 @@ export const ChatInputArea = ({ sendMessage, chatStatus, usedTokens = 0 }: ChatI
                         <PromptInputButton
                             onClick={() => setReasoningEnabled((prev) => !prev)}
                             tooltip={reasoningEnabled ? "Disable reasoning" : "Enable reasoning"}
+                            aria-pressed={reasoningEnabled}
                             className={cn(
                                 "shrink-0 transition-colors",
                                 reasoningEnabled ? "text-primary hover:text-primary/80" : "text-muted-foreground hover:text-foreground"
@@ -188,12 +200,32 @@ export const ChatInputArea = ({ sendMessage, chatStatus, usedTokens = 0 }: ChatI
                         >
                             <BrainIcon className="size-4" />
                         </PromptInputButton>
-                        {/* Model selector dropdown component */}
-                        <ModelSelectorDropdown />
+                        <PromptInputButton
+                            onClick={() => setUseWebSearch((prev) => !prev)}
+                            tooltip={useWebSearch ? "Disable web search" : "Enable web search"}
+                            aria-pressed={useWebSearch}
+                            className={cn(
+                                "shrink-0 transition-colors",
+                                useWebSearch ? "text-primary hover:text-primary/80" : "text-muted-foreground hover:text-foreground"
+                            )}
+                        >
+                            <GlobeIcon className="size-4" />
+                        </PromptInputButton>
+                        <PromptInputButton
+                            onClick={() => setSuggestionsEnabled((prev) => !prev)}
+                            tooltip={suggestionsEnabled ? "Disable suggested replies" : "Enable suggested replies"}
+                            aria-pressed={suggestionsEnabled}
+                            className={cn(
+                                "shrink-0 transition-colors",
+                                suggestionsEnabled ? "text-primary hover:text-primary/80" : "text-muted-foreground hover:text-foreground"
+                            )}
+                        >
+                            <LightbulbIcon className="size-4" />
+                        </PromptInputButton>
                     </PromptInputTools>
                     <div className="flex items-center gap-2">
                         <Context 
-                            maxTokens={DEFAULT_MAX_CONTEXT_TOKENS} 
+                            maxTokens={MAX_CONTEXT_TOKENS} 
                             usedTokens={liveUsedTokens} 
                             // @ts-expect-error ai sdk usage type compatibility
                             usage={{ promptTokens: liveUsedTokens, completionTokens: 0, totalTokens: liveUsedTokens, inputTokens: liveUsedTokens, outputTokens: 0 }}

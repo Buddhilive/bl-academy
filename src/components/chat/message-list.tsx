@@ -13,6 +13,13 @@ import {
     ReasoningTrigger,
     ReasoningContent,
 } from "@/components/ai-elements/reasoning";
+import {
+    InlineCitation,
+    InlineCitationCard,
+    InlineCitationCardBody,
+    InlineCitationCardTrigger,
+    InlineCitationSource,
+} from "@/components/ai-elements/inline-citation";
 import { Shimmer } from "@/components/ai-elements/shimmer";
 import {
     AssistantMessageActions,
@@ -20,7 +27,8 @@ import {
 } from "@/components/chat/message-actions";
 import { Button } from "@/components/ui/button";
 import type { UIMessage, ChatStatus } from "ai";
-import { AlertCircleIcon } from "lucide-react";
+import type { ComponentProps } from "react";
+import { AlertCircleIcon, FileTextIcon, GlobeIcon } from "lucide-react";
 
 interface MessageListProps {
     messages: UIMessage[];
@@ -69,6 +77,88 @@ function parseMessageContent(message: UIMessage) {
     };
 }
 
+interface ConceptCitation {
+    title: string;
+    url: string;
+    description?: string;
+    isWeb: boolean;
+}
+
+/** Collects `[cite:<id>]`-able sources from any completed `searchKnowledgeBase` tool
+ * results in a message, keyed by the concept id the model was told to cite. */
+function collectCitationSources(message: UIMessage): Map<string, ConceptCitation> {
+    const sources = new Map<string, ConceptCitation>();
+    if (!Array.isArray(message.parts)) return sources;
+
+    for (const part of message.parts) {
+        if (part.type !== "tool-searchKnowledgeBase" && part.type !== "tool-webSearch") continue;
+        const toolPart = part as { state?: string; output?: { results?: { id: string; title: string; url: string; description?: string }[] } };
+        if (toolPart.state !== "output-available") continue;
+        for (const result of toolPart.output?.results ?? []) {
+            sources.set(result.id, { title: result.title, url: result.url, description: result.description, isWeb: part.type === "tool-webSearch" });
+        }
+    }
+    return sources;
+}
+
+const CITE_MARKER_RE = /\[cite:([^\]]+)\]/g;
+
+/** Rewrites `[cite:id]` markers into markdown links Streamdown can hand to a custom
+ * `a` renderer, and drops a dangling partial marker at the very end of in-flight text. */
+const CITATION_URL_PREFIX = "https://citation.internal/";
+
+function toCitationMarkdown(text: string): string {
+    const withLinks = text.replace(CITE_MARKER_RE, (_match, id: string) => `[cite](${CITATION_URL_PREFIX}${encodeURIComponent(id)})`);
+    return withLinks.replace(/\[cite:[^\]]*$/, "");
+}
+
+function truncateCitationTitle(title: string, max = 10): string {
+    return title.length > max ? `${title.slice(0, max)}…` : title;
+}
+
+type CitationAnchorProps = ComponentProps<"a"> & { node?: unknown };
+
+function createCitationAnchor(sources: Map<string, ConceptCitation>) {
+    return function CitationAnchor({ href, children, node: _node, ...props }: CitationAnchorProps) {
+        if (href?.startsWith(CITATION_URL_PREFIX)) {
+            const source = sources.get(decodeURIComponent(href.slice(CITATION_URL_PREFIX.length)));
+            if (!source) return null;
+            const origin = typeof window !== "undefined" ? window.location.origin : "https://knowledge-base.local";
+            const badgeSources = [new URL(source.url, origin).toString()];
+            const Icon = source.isWeb ? GlobeIcon : FileTextIcon;
+            return (
+                <InlineCitation>
+                    <InlineCitationCard>
+                        <InlineCitationCardTrigger
+                            sources={badgeSources}
+                            label={
+                                <span className="inline-flex items-center gap-1">
+                                    <Icon className="size-3" />
+                                    {`[${truncateCitationTitle(source.title)}]`}
+                                </span>
+                            }
+                        />
+                        <InlineCitationCardBody>
+                            <div className="p-4">
+                                <InlineCitationSource
+                                    title={source.title}
+                                    url={source.url}
+                                    description={source.description}
+                                />
+                            </div>
+                        </InlineCitationCardBody>
+                    </InlineCitationCard>
+                </InlineCitation>
+            );
+        }
+        return (
+            <a href={href} {...props}>
+                {children}
+            </a>
+        );
+    };
+}
+
 export const MessageList = ({
     messages,
     reasoningEnabled = true,
@@ -104,6 +194,7 @@ export const MessageList = ({
                     const isLastAssistant = isAssistant && index === lastAssistantIndex;
 
                     const { reasoningText, textContent } = parseMessageContent(message);
+                    const citationSources = isAssistant ? collectCitationSources(message) : new Map<string, ConceptCitation>();
 
                     const isWaiting =
                         isAssistant &&
@@ -154,7 +245,13 @@ export const MessageList = ({
                                                     )}
                                                 </>
                                             )}
-                                            <MessageResponse>{textContent}</MessageResponse>
+                                            {isAssistant && citationSources.size > 0 ? (
+                                                <MessageResponse components={{ a: createCitationAnchor(citationSources) }}>
+                                                    {toCitationMarkdown(textContent)}
+                                                </MessageResponse>
+                                            ) : (
+                                                <MessageResponse>{textContent}</MessageResponse>
+                                            )}
                                         </>
                                     )}
                                 </MessageContent>
