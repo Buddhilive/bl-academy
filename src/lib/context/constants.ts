@@ -1,7 +1,7 @@
 import { encode } from "gpt-tokenizer";
 import type { UIMessage } from "ai";
 
-export const MAX_CONTEXT_TOKENS = 700;
+export const MAX_CONTEXT_TOKENS = 34000;
 export const SUMMARIZATION_THRESHOLD_RATIO = 0.8;
 export const SUMMARIZATION_TOKEN_THRESHOLD = Math.floor(
     MAX_CONTEXT_TOKENS * SUMMARIZATION_THRESHOLD_RATIO

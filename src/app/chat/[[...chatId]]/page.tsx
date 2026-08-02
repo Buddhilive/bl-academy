@@ -21,6 +21,7 @@ export default function ChatPage() {
         handleRegenerate,
         handleCopy,
         handleSuggestionClick,
+        dynamicSuggestions,
     } = useChatSession();
 
     if (isFetching) {
@@ -43,7 +44,7 @@ export default function ChatPage() {
                 error={error}
             />
             <div className="grid shrink-0 gap-4 pt-4">
-                <SuggestionsList onSuggestionClick={handleSuggestionClick} />
+                <SuggestionsList onSuggestionClick={handleSuggestionClick} suggestions={dynamicSuggestions} />
                 <ChatInputArea
                     sendMessage={sendMessage}
                     chatStatus={chatStatus}
