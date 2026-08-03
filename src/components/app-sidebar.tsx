@@ -50,6 +50,15 @@ const data = {
         { title: "Knowledge Viewer", url: "/knowledge-viewer" },
       ],
     },
+    {
+      title: "Settings",
+      icon: (
+        <Settings2Icon className="size-4 shrink-0" />
+      ),
+      items: [
+        { title: "Backup & Restore", url: "/settings/backup-restore" },
+      ],
+    },
   ],
 }
 

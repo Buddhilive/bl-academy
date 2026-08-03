@@ -14,6 +14,13 @@ import {
     ReasoningContent,
 } from "@/components/ai-elements/reasoning";
 import {
+    Tool,
+    ToolHeader,
+    ToolContent,
+    ToolInput,
+    ToolOutput,
+} from "@/components/ai-elements/tool";
+import {
     InlineCitation,
     InlineCitationCard,
     InlineCitationCardBody,
@@ -26,7 +33,7 @@ import {
     UserMessageWithActions,
 } from "@/components/chat/message-actions";
 import { Button } from "@/components/ui/button";
-import type { UIMessage, ChatStatus } from "ai";
+import type { UIMessage, ChatStatus, ToolUIPart, DynamicToolUIPart } from "ai";
 import type { ComponentProps } from "react";
 import { AlertCircleIcon, FileTextIcon, GlobeIcon } from "lucide-react";
 
@@ -75,6 +82,14 @@ function parseMessageContent(message: UIMessage) {
         reasoningText,
         textContent: cleanTextContent,
     };
+}
+
+function extractToolParts(message: UIMessage): (ToolUIPart | DynamicToolUIPart)[] {
+    if (!Array.isArray(message.parts)) return [];
+    return message.parts.filter(
+        (p): p is ToolUIPart | DynamicToolUIPart =>
+            p.type === "dynamic-tool" || p.type.startsWith("tool-")
+    );
 }
 
 interface ConceptCitation {
@@ -195,12 +210,13 @@ export const MessageList = ({
 
                     const { reasoningText, textContent } = parseMessageContent(message);
                     const citationSources = isAssistant ? collectCitationSources(message) : new Map<string, ConceptCitation>();
+                    const toolParts = isAssistant ? extractToolParts(message) : [];
 
                     const isWaiting =
                         isAssistant &&
                         isLastMessage &&
                         (chatStatus === "submitted" ||
-                            (chatStatus === "streaming" && !reasoningText && !textContent));
+                            (chatStatus === "streaming" && !reasoningText && !textContent && toolParts.length === 0));
 
                     // Last user message — rendered with inline edit + action buttons
                     if (isLastUser && hasActionCallbacks) {
@@ -245,6 +261,19 @@ export const MessageList = ({
                                                     )}
                                                 </>
                                             )}
+                                            {toolParts.map((part, toolIndex) => (
+                                                <Tool key={`${message.id}-tool-${toolIndex}`} defaultOpen={part.state === "output-error"} className="max-w-2xl">
+                                                    {part.type === "dynamic-tool" ? (
+                                                        <ToolHeader type={part.type} state={part.state} toolName={part.toolName} />
+                                                    ) : (
+                                                        <ToolHeader type={part.type} state={part.state} />
+                                                    )}
+                                                    <ToolContent>
+                                                        <ToolInput input={part.input} />
+                                                        <ToolOutput output={part.output} errorText={part.errorText} />
+                                                    </ToolContent>
+                                                </Tool>
+                                            ))}
                                             {isAssistant && citationSources.size > 0 ? (
                                                 <MessageResponse components={{ a: createCitationAnchor(citationSources) }}>
                                                     {toCitationMarkdown(textContent)}
