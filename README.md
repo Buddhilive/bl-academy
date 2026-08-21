@@ -1,49 +1,22 @@
 # Buddhi AI OS
 
-> Privacy-focused, edge-first AI workstation and local knowledge operating system powered by Google's LiteRT LM, Next.js 16, FastAPI, and Google's **Open Knowledge Format (OKF)**.
+> Privacy-focused AI workstation powered by Next.js 16, FastAPI, and a swappable OpenAI-compatible inference backend.
 
 ---
 
 ## 🌟 Overview
 
-**Buddhi AI OS** is a high-performance local AI assistant and knowledge management workstation. Designed for privacy, offline execution, and high performance, it combines local LLM inference via Google LiteRT LM (running Gemma models) with real-time web search grounding (SearXNG), interactive Knowledge Graph exploration based on **Google's Open Knowledge Format (OKF)**, and rich streaming output.
+**Buddhi AI OS** is a local-first AI assistant workstation. It pairs an OpenAI-compatible chat backend (point it at any compatible inference server via a single env var) with real-time web search grounding (SearXNG) and rich streaming output.
 
 ---
 
 ## ✨ Features
 
-- **Google Open Knowledge Format (OKF) Graph Engine**: Native support for [Google's Open Knowledge Format (OKF)](https://github.com/GoogleCloudPlatform/knowledge-catalog/blob/main/okf/README.md). Ingested documents (parsed via `edgeparse`) are transformed into structured OKF concepts with YAML frontmatter metadata, source provenance, and typed graph links.
-- **Edge-First Local Inference**: OpenAI-compatible Python API built on FastAPI and Google's [LiteRT LM](https://github.com/google-ai-edge/litert-lm) with XNNPACK acceleration and program caching for low-latency local model execution (e.g. Gemma 4-E4B-it).
 - **AI Streaming Interface**: Built with Next.js 16 (App Router), React 19, and Vercel AI SDK. Supports reasoning models (`<think>` tags), streaming deltas, and native tool execution.
-- **Interactive OKF Graph Visualizer**: Interactive concept exploration and visual graph navigation powered by Cytoscape.js and Cytoscape-fcose over the ingested OKF knowledge catalog.
+- **Swappable Inference Backend**: Chat calls an OpenAI-compatible API at a configurable `INFERENCE_BASE_URL`, so you can point it at any compatible local or hosted inference server.
 - **Privacy Web Grounding**: Real-time web search synthesis powered by a self-hosted [SearXNG](https://searxng.org/) engine.
 - **Rich Markdown & Visual Output**: Native rendering via Streamdown with Shiki code syntax highlighting, KaTeX mathematical expressions, and Mermaid diagrams.
 - **PostgreSQL Persistence**: Persistent chat sessions, message history, and context summaries managed via Drizzle ORM.
-
----
-
-## 🧠 Open Knowledge Format (OKF) Integration
-
-Buddhi AI OS structures all knowledge base concepts using **Google's Open Knowledge Format (OKF)** standard:
-
-1. **Structured Concept Files**: Every extracted concept is stored as an OKF markdown document containing standardized YAML frontmatter metadata:
-   ```yaml
-   type: concept
-   title: Newton's Second Law
-   description: Core law of classical mechanics defining F = ma.
-   resource: physics-101
-   tags: [physics, mechanics, forces]
-   generated:
-     by: buddhi-ai/ingest+gemma-4-e4b-it
-     at: "2026-08-02T19:00:00Z"
-   sources:
-     - id: original-pdf
-       resource: physics-101.pdf
-       title: Physics Fundamentals
-   status: stable
-   ```
-2. **Graph Relationships**: Cross-concept graph edges are derived from relative markdown link relationships (`[Title](./slug.md)`) within `## Related` sections.
-3. **Grounding & Citations**: The AI agent queries OKF concept files using the `searchKnowledgeBase` tool and grounds its responses with verifiable inline citation tags (`[cite:concept-id]`).
 
 ---
 
@@ -52,23 +25,17 @@ Buddhi AI OS structures all knowledge base concepts using **Google's Open Knowle
 ```
                           ┌───────────────────────────┐
                           │   Next.js 16 Web App      │
-                          │ (React 19 / Cytoscape OKF)│
+                          │        (React 19)         │
                           │      http://localhost:3000│
                           └─────────────┬─────────────┘
                                         │
            ┌────────────────────────────┼────────────────────────────┐
            ▼                            ▼                            ▼
 ┌──────────────────────┐    ┌──────────────────────┐    ┌──────────────────────┐
-│  Python Inference API│    │   PostgreSQL 16 DB   │    │    SearXNG Engine    │
-│ (FastAPI + LiteRT LM)│    │    (Drizzle ORM)     │    │   (Privacy Search)   │
-│ http://localhost:8000│    │ http://localhost:5432│    │ http://localhost:8080│
-└──────────┬───────────┘    └──────────────────────┘    └──────────────────────┘
-           │
-           ▼
-┌──────────────────────┐
-│  Local Model Storage │
-│ (./models/*.litertlm)│
-└──────────────────────┘
+│ OpenAI-compatible API│    │   PostgreSQL 16 DB   │    │    SearXNG Engine    │
+│ (INFERENCE_BASE_URL) │    │    (Drizzle ORM)     │    │   (Privacy Search)   │
+│                       │    │ http://localhost:5432│    │ http://localhost:8080│
+└──────────────────────┘    └──────────────────────┘    └──────────────────────┘
 ```
 
 ---
@@ -77,23 +44,18 @@ Buddhi AI OS structures all knowledge base concepts using **Google's Open Knowle
 
 ```
 buddhi-ai-os/
-├── api/                       # Python FastAPI backend (LiteRT LM inference & EdgeParse)
+├── api/                       # Minimal Python FastAPI backend skeleton
 │   ├── app/
-│   │   ├── engine.py          # LiteRT LM engine loader and tool execution wrapper
-│   │   ├── main.py            # OpenAI-compatible API routes (/v1/chat/completions, /health)
-│   │   └── routers/
-│   │       └── knowledge.py   # PDF text extraction & OKF concept extraction routes
+│   │   └── main.py            # CORS + /health route
 │   └── pyproject.toml         # Python dependencies (managed via uv)
-├── models/                    # Local LiteRT model binaries (*.litertlm)
 ├── searxng/                   # SearXNG configuration files
 ├── src/                       # Next.js 16 Frontend Web Application
-│   ├── app/                   # App Router pages and API endpoints (/api/chat, /api/knowledge)
-│   ├── components/            # UI Components (Chat, OKF Knowledge Graph, Navigation)
-│   │   ├── chat/              # Chat message list, context management, & input forms
-│   │   └── knowledge/         # Cytoscape graph canvas, PDF dropzone, & concept editor
-│   ├── lib/                   # Utility libraries, DB client, OKF bundling, & search
+│   ├── app/                   # App Router pages and API endpoints (/api/chat)
+│   ├── components/            # UI Components (Chat, Navigation)
+│   │   └── chat/               # Chat message list, context management, & input forms
+│   ├── lib/                   # Utility libraries, DB client, inference client, & search
 │   │   ├── db/                # Drizzle ORM database client & schema definitions
-│   │   ├── knowledge/         # OKF frontmatter parsing, bundling, slugging, & search
+│   │   ├── inference-client.ts # OpenAI-compatible inference client (INFERENCE_BASE_URL)
 │   │   └── search/            # SearXNG integration
 ├── docker-compose.dev.yml     # Local services (PostgreSQL 16 + SearXNG)
 ├── drizzle.config.ts          # Drizzle ORM configuration
@@ -144,7 +106,7 @@ Update your `.env.local` if needed:
 | Variable | Description | Default Value |
 |----------|-------------|---------------|
 | `DATABASE_URL` | PostgreSQL connection string | `postgresql://buddhi:Admin@123@localhost:5432/buddhi-ai` |
-| `API_BASE_URL` | Python Inference API URL | `http://localhost:8000` |
+| `INFERENCE_BASE_URL` | OpenAI-compatible inference server URL | `http://localhost:8000/v1` |
 | `SEARXNG_BASE_URL` | SearXNG Search Engine URL | `http://localhost:8080` |
 | `SEARXNG_SECRET_KEY` | Secret key for SearXNG instance | `changeme-generate-a-random-string` |
 
@@ -171,22 +133,22 @@ pnpm db:push
 
 ---
 
-### Step 5: Model Setup
+### Step 5: Inference Backend
 
-Ensure your LiteRT LM model file (e.g., `gemma-4-E4B-it.litertlm`) is placed in the `./models/` directory.
+Point `INFERENCE_BASE_URL` at any OpenAI-compatible inference server (local or hosted). The bundled `api/` FastAPI project is just a health-check skeleton — it does not serve inference itself.
 
 ---
 
 ### Step 6: Start Development Server
 
-Run both the Next.js frontend and Python FastAPI backend concurrently:
+Run both the Next.js frontend and the FastAPI skeleton concurrently:
 
 ```bash
 pnpm dev
 ```
 
 - **Frontend Application**: [http://localhost:3000](http://localhost:3000)
-- **FastAPI Inference API**: [http://localhost:8000](http://localhost:8000) (Docs at `http://localhost:8000/docs`)
+- **FastAPI Skeleton**: [http://localhost:8000](http://localhost:8000) (Docs at `http://localhost:8000/docs`)
 - **SearXNG Search**: [http://localhost:8080](http://localhost:8080)
 
 ---

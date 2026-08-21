@@ -5,7 +5,7 @@ export interface BackupManifest {
   createdAt: string;
   /** Reserved for a future opt-in to include static/knowledge/sources/*.pdf. */
   includesSourcePdfs: false;
-  counts: { chats: number; messages: number; concepts: number };
+  counts: { chats: number; messages: number };
 }
 
 export class ManifestValidationError extends Error {}
@@ -27,18 +27,13 @@ export function validateManifest(json: unknown): BackupManifest {
     throw new ManifestValidationError("manifest.json is missing `createdAt`");
   }
   const counts = m.counts as Record<string, unknown> | undefined;
-  if (
-    !counts ||
-    typeof counts.chats !== "number" ||
-    typeof counts.messages !== "number" ||
-    typeof counts.concepts !== "number"
-  ) {
+  if (!counts || typeof counts.chats !== "number" || typeof counts.messages !== "number") {
     throw new ManifestValidationError("manifest.json is missing valid `counts`");
   }
   return {
     version: m.version,
     createdAt: m.createdAt,
     includesSourcePdfs: false,
-    counts: { chats: counts.chats, messages: counts.messages, concepts: counts.concepts },
+    counts: { chats: counts.chats, messages: counts.messages },
   };
 }

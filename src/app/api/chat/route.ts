@@ -2,7 +2,6 @@ import { streamText, UIMessage, convertToModelMessages, createUIMessageStreamRes
 import { z } from "zod";
 import { inferenceModel } from "@/lib/inference-client";
 import { summarizeIfNeeded } from "@/lib/context/summarize";
-import { searchConcepts } from "@/lib/knowledge/search";
 import { searchWeb } from "@/lib/search/searxng";
 import { NextResponse } from "next/server";
 
@@ -35,29 +34,19 @@ export async function POST(req: Request) {
     }
 
     try {
-        const groundingInstructions =
-            "You have a `searchKnowledgeBase` tool over an ingested document knowledge base. " +
-            "Always call it before answering questions that could be grounded in ingested documents. " +
-            "When you use a result in your answer, cite it immediately after the relevant sentence using the literal marker `[cite:<id>]`, " +
-            "where `<id>` is exactly the result's `id` field (e.g. `[cite:physics-101/newtons-second-law]`). " +
-            "Only cite ids that were actually returned by the tool — never invent one. " +
-            "If no relevant results are found, answer normally without citing." +
-            (webSearch
-                ? " You also have a `webSearch` tool for general or current-events questions not covered by the knowledge base. " +
-                  "Cite its results the same way with `[cite:<id>]`, using the id exactly as returned (these ids are prefixed `web:`)."
-                : "");
+        const groundingInstructions = webSearch
+            ? "You have a `webSearch` tool for general or current-events questions. " +
+              "When you use a result in your answer, cite it immediately after the relevant sentence using the literal marker `[cite:<id>]`, " +
+              "where `<id>` is exactly the result's `id` field (these ids are prefixed `web:`). " +
+              "Only cite ids that were actually returned by the tool — never invent one. " +
+              "If no relevant results are found, answer normally without citing."
+            : "";
 
         const system = reasoningEnabled
             ? `You are a helpful assistant that can answer questions and help with tasks. Before answering, think through the problem step by step inside <think></think> tags. After the closing </think> tag, give a concise final answer without repeating the reasoning. ${groundingInstructions}`
             : `You are a helpful assistant that can answer questions and help with tasks. ${groundingInstructions}`;
 
         const tools = {
-            searchKnowledgeBase: tool({
-                description:
-                    "Search the OKF knowledge base for concepts relevant to the user's question. Returns matching concepts with an `id`, `title`, `description`, `snippet`, and `url`.",
-                inputSchema: z.object({ query: z.string().describe("Search query derived from the user's question") }),
-                execute: async ({ query }: { query: string }) => ({ results: await searchConcepts(query) }),
-            }),
             ...(webSearch
                 ? {
                       webSearch: tool({

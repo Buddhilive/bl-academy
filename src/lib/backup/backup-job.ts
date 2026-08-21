@@ -1,4 +1,3 @@
-import { listSources } from "@/lib/knowledge/bundle";
 import { buildDumpSql } from "./db-dump";
 import { jobRegistry } from "./job-registry";
 import { CURRENT_MANIFEST_VERSION, type BackupManifest } from "./manifest";
@@ -11,19 +10,11 @@ export async function runBackupJob(jobId: string): Promise<void> {
     jobRegistry.emitEvent(jobId, { stage: "dumping_db", message: "Dumping database...", percent: 30 });
     const { sql: dumpSql, counts: dbCounts } = await buildDumpSql();
 
-    jobRegistry.emitEvent(jobId, {
-      stage: "zipping_knowledge",
-      message: "Collecting knowledge base markdown...",
-      percent: 55,
-    });
-    const { sources } = await listSources();
-    const conceptCount = sources.reduce((sum, s) => sum + s.conceptCount, 0);
-
     const manifest: BackupManifest = {
       version: CURRENT_MANIFEST_VERSION,
       createdAt: new Date().toISOString(),
       includesSourcePdfs: false,
-      counts: { chats: dbCounts.chats, messages: dbCounts.messages, concepts: conceptCount },
+      counts: { chats: dbCounts.chats, messages: dbCounts.messages },
     };
 
     jobRegistry.emitEvent(jobId, { stage: "writing_zip", message: "Writing backup archive...", percent: 85 });
@@ -32,7 +23,7 @@ export async function runBackupJob(jobId: string): Promise<void> {
 
     jobRegistry.emitEvent(jobId, {
       stage: "done",
-      message: `Backup complete (${dbCounts.chats} chat(s), ${conceptCount} concept(s))`,
+      message: `Backup complete (${dbCounts.chats} chat(s))`,
       percent: 100,
       fileName,
       sizeBytes,

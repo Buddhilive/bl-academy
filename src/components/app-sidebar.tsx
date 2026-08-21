@@ -18,7 +18,7 @@ import {
   SidebarMenuItem,
   SidebarMenuButton,
 } from "@/components/ui/sidebar"
-import { GalleryVerticalEndIcon, AudioLinesIcon, TerminalIcon, TerminalSquareIcon, BotIcon, BookOpenIcon, Settings2Icon, FrameIcon, PieChartIcon, MapIcon, Plus } from "lucide-react"
+import { GalleryVerticalEndIcon, AudioLinesIcon, TerminalIcon, TerminalSquareIcon, BotIcon, Settings2Icon, FrameIcon, PieChartIcon, MapIcon, Plus } from "lucide-react"
 import Link from "next/link"
 
 // This is sample data.
@@ -39,17 +39,6 @@ const data = {
     }
   ],
   navMain: [
-    {
-      title: "Knowledge",
-      icon: (
-        <BookOpenIcon className="size-4 shrink-0" />
-      ),
-      isActive: true,
-      items: [
-        { title: "Knowledge Base", url: "/knowledge-base" },
-        { title: "Knowledge Viewer", url: "/knowledge-viewer" },
-      ],
-    },
     {
       title: "Settings",
       icon: (

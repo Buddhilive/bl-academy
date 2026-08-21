@@ -18,7 +18,7 @@ export default function BackupRestorePage() {
       <div>
         <h1 className="text-2xl font-bold tracking-tight">Backup &amp; Restore</h1>
         <p className="text-sm text-muted-foreground">
-          Back up your knowledge base and chat history to a zip file, or restore from a previous backup.
+          Back up your chat history to a zip file, or restore from a previous backup.
         </p>
       </div>
 

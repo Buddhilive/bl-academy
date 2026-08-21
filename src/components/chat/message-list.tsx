@@ -99,18 +99,18 @@ interface ConceptCitation {
     isWeb: boolean;
 }
 
-/** Collects `[cite:<id>]`-able sources from any completed `searchKnowledgeBase` tool
- * results in a message, keyed by the concept id the model was told to cite. */
+/** Collects `[cite:<id>]`-able sources from any completed `webSearch` tool
+ * results in a message, keyed by the result id the model was told to cite. */
 function collectCitationSources(message: UIMessage): Map<string, ConceptCitation> {
     const sources = new Map<string, ConceptCitation>();
     if (!Array.isArray(message.parts)) return sources;
 
     for (const part of message.parts) {
-        if (part.type !== "tool-searchKnowledgeBase" && part.type !== "tool-webSearch") continue;
+        if (part.type !== "tool-webSearch") continue;
         const toolPart = part as { state?: string; output?: { results?: { id: string; title: string; url: string; description?: string }[] } };
         if (toolPart.state !== "output-available") continue;
         for (const result of toolPart.output?.results ?? []) {
-            sources.set(result.id, { title: result.title, url: result.url, description: result.description, isWeb: part.type === "tool-webSearch" });
+            sources.set(result.id, { title: result.title, url: result.url, description: result.description, isWeb: true });
         }
     }
     return sources;
@@ -138,7 +138,7 @@ function createCitationAnchor(sources: Map<string, ConceptCitation>) {
         if (href?.startsWith(CITATION_URL_PREFIX)) {
             const source = sources.get(decodeURIComponent(href.slice(CITATION_URL_PREFIX.length)));
             if (!source) return null;
-            const origin = typeof window !== "undefined" ? window.location.origin : "https://knowledge-base.local";
+            const origin = typeof window !== "undefined" ? window.location.origin : "https://citation.local";
             const badgeSources = [new URL(source.url, origin).toString()];
             const Icon = source.isWeb ? GlobeIcon : FileTextIcon;
             return (
