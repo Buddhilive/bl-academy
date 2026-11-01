@@ -1,1 +1,113 @@
-[]
+[
+  {
+    "node_id": "class:src/lib/confetti.ts::ConfettiOptions",
+    "kind": "class",
+    "name": "ConfettiOptions",
+    "qualified_name": "ConfettiOptions",
+    "file_path": "src/lib/confetti.ts",
+    "language": "typescript",
+    "start_line": 3,
+    "end_line": 9,
+    "snippet": "interface ConfettiOptions extends confetti.Options {\n  /**\n   * If true, force execution even if prefers-reduced-motion is enabled.\n   * Defaults to false to adhere to WCAG 2.2 AA accessibility guidelines.\n   */\n  forceMotion?: boolean;\n}",
+    "content_hash": "7d8d4567d5384920173d52a7afa72846df29e5538c3bf96deb659a7aa950acdd",
+    "parent_id": "file:src/lib/confetti.ts",
+    "callers": [],
+    "callees": [],
+    "doc_path": ".buddhi/docs/src/lib/confetti/ConfettiOptions.md",
+    "needs_generation": true,
+    "community_id": 2,
+    "community_label": "lib/ConfettiOptions",
+    "cohesion": 1.0,
+    "is_god_node": false,
+    "degree": 1,
+    "signature": null,
+    "edge_confidences": {
+      "EXTRACTED": 1
+    },
+    "relations": []
+  },
+  {
+    "node_id": "function:src/lib/confetti.ts::triggerCompletionConfetti",
+    "kind": "function",
+    "name": "triggerCompletionConfetti",
+    "qualified_name": "triggerCompletionConfetti",
+    "file_path": "src/lib/confetti.ts",
+    "language": "typescript",
+    "start_line": 14,
+    "end_line": 31,
+    "snippet": "function triggerCompletionConfetti(options?: ConfettiOptions): Promise<undefined> | null {\n  if (typeof window === 'undefined') {\n    return null;\n  }\n\n  const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;\n  if (prefersReducedMotion && !options?.forceMotion) {\n    // Gracefully respect user motion preferences\n    return null;\n  }\n\n  return confetti({\n    particleCount: 80,\n    spread: 70,\n    origin: { y: 0.6 },\n    ...options,\n  });\n}",
+    "content_hash": "dc72c29820a5889592c4c10815e43964b86bb55fc4b2b05e41c8e99c7526d306",
+    "parent_id": "file:src/lib/confetti.ts",
+    "callers": [
+      "function:src/components/TestCounter.tsx::TestCounter"
+    ],
+    "callees": [],
+    "doc_path": ".buddhi/docs/src/lib/confetti/triggerCompletionConfetti.md",
+    "needs_generation": true,
+    "community_id": 1,
+    "community_label": "components/TestCounter",
+    "cohesion": 0.5,
+    "is_god_node": false,
+    "degree": 4,
+    "signature": null,
+    "edge_confidences": {
+      "EXTRACTED": 1,
+      "INFERRED": 1,
+      "AMBIGUOUS": 2
+    },
+    "relations": [
+      {
+        "kind": "calls",
+        "target": "external:window.matchMedia"
+      },
+      {
+        "kind": "calls",
+        "target": "external:confetti"
+      }
+    ]
+  },
+  {
+    "node_id": "function:src/components/TestCounter.tsx::TestCounter",
+    "kind": "function",
+    "name": "TestCounter",
+    "qualified_name": "TestCounter",
+    "file_path": "src/components/TestCounter.tsx",
+    "language": "tsx",
+    "start_line": 4,
+    "end_line": 28,
+    "snippet": "function TestCounter() {\n  const [count, setCount] = useState(0);\n\n  const handleIncrement = () => {\n    const next = count + 1;\n    setCount(next);\n    if (next % 5 === 0) {\n      triggerCompletionConfetti();\n    }\n  };\n\n  return (\n    <div className=\"p-4 rounded-xl border border-neutral-800 bg-neutral-900/60 flex flex-col items-center gap-3 max-w-sm\">\n      <span className=\"text-sm font-medium text-neutral-400\">Interactive Island Test</span>\n      <span className=\"text-2xl font-bold text-neutral-100\">{count}</span>\n      <button\n        type=\"button\"\n        onClick={handleIncrement}\n        className=\"px-4 py-2 bg-indigo-600 hover:bg-indigo-500 active:bg-indigo-700 text-white font-medium rounded-lg transition-colors focus-visible:ring-2 focus-visible:ring-indigo-400 focus-visible:ring-offset-2 focus-visible:ring-offset-neutral-900\"\n      >\n        Increment (Confetti at 5)\n      </button>\n    </div>\n  );\n}",
+    "content_hash": "6285bd289eb3445ef3981341f3fa234783d8f394675116221d87b5176d0eac32",
+    "parent_id": "file:src/components/TestCounter.tsx",
+    "callers": [],
+    "callees": [
+      "function:src/lib/confetti.ts::triggerCompletionConfetti"
+    ],
+    "doc_path": ".buddhi/docs/src/components/TestCounter/TestCounter.md",
+    "needs_generation": true,
+    "community_id": 1,
+    "community_label": "components/TestCounter",
+    "cohesion": 0.5,
+    "is_god_node": false,
+    "degree": 4,
+    "signature": null,
+    "edge_confidences": {
+      "EXTRACTED": 1,
+      "AMBIGUOUS": 2,
+      "INFERRED": 1
+    },
+    "relations": [
+      {
+        "kind": "calls",
+        "target": "external:useState"
+      },
+      {
+        "kind": "calls",
+        "target": "external:setCount"
+      },
+      {
+        "kind": "calls",
+        "target": "function:src/lib/confetti.ts::triggerCompletionConfetti"
+      }
+    ]
+  }
+]
