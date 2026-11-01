@@ -1,0 +1,22 @@
+# Antigravity Workspace Rules: Buddhilive Academy
+
+## 1. Grounding Rule
+- Whenever creating, editing, or outlining lessons, inspect `/docs` first.
+- Every code snippet, algorithm, and concept must cite and derive from the reference documents in `/docs`.
+
+## 2. Content Generation Contract
+- Every lesson must be an `.mdx` file located in `/src/content/lessons/`.
+- Frontmatter must strictly validate against our Zod schema: `title`, `topic`, `difficulty`, `xp`, `prerequisites`.
+- Each lesson must contain at least 350+ words of clear conceptual explanation with KaTeX formulas before or alongside interactive widgets (ensuring high-quality AdSense indexing).
+- Use `<PythonRunner client:visible />` for interactive code execution. Code execution must never block the main thread.
+
+## 3. Code Integrity & Architecture
+- Maintain clean separation between static layout and hydrated islands.
+- Zero-Backend / 100% Client-Side Execution: All Python runs client-side via Pyodide v0.26+ in a Web Worker (`/src/workers/pyodide.worker.ts`) with a hard 5-second timeout.
+- Never introduce Node/server-side dependencies for code execution.
+- Offline-first state persistence in `localStorage`, syncing to Supabase (PostgreSQL + RLS) when authenticated.
+
+## 4. Theme & Styling
+- Project must support light and dark mode with `#A7452A` as primary color (with dark mode tint `#E07A5F`).
+- All interactive elements and colors must meet WCAG 2.2 AA contrast standards.
+- Reserve fixed container heights for Google AdSense slots to eliminate Cumulative Layout Shift (CLS).
