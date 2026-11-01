@@ -1,0 +1,30 @@
+---
+layout: ../layouts/Layout.astro
+title: Foundation Test Lesson
+---
+import TestCounter from '../components/TestCounter.tsx';
+
+<main className="max-w-3xl mx-auto px-6 py-12">
+  <article className="prose prose-invert lg:prose-xl">
+    # Core Foundation Verification
+
+    Welcome to the interactive test lesson demonstrating MDX, KaTeX, and React integration.
+
+    ## Mathematical Equations (KaTeX)
+
+    Here is Einstein's mass-energy equivalence principle inline: $E = mc^2$.
+
+    And here is Gauss's law in differential form displayed as a block:
+
+    $$
+    \nabla \cdot \mathbf{E} = \frac{\rho}{\varepsilon_0}
+    $$
+
+    ## Interactive React Island
+
+    <div className="my-8 not-prose">
+      <TestCounter client:load />
+    </div>
+  </article>
+</main>
+
