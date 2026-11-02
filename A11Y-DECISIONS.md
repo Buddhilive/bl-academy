@@ -38,3 +38,20 @@ Record of conformant accessibility choices made during development.
   - Dark Success Green `#4ade80` on `#1E1E1E`: **9.57:1** (Pass AA >= 4.5:1)
   - Dark Surface Text `#F5F5F4` on `#1E1E1E`: **15.28:1** (Pass AA >= 4.5:1)
 
+## 2026-11-02: Local-First State & Supabase Integration (`004-local-first-state`)
+
+### Decision 6: WAI-ARIA Modal Dialog & Keyboard Focus Management in `AuthModal.tsx`
+- **Pattern**: Accessible Authentication Dialog (`AuthModal.tsx`).
+- **Rule**: WCAG 2.2 SC 2.1.2 (No Keyboard Trap), SC 2.4.3 (Focus Order), SC 1.3.1 (Info and Relationships), SC 4.1.3 (Status Messages).
+- **Choice**:
+  1. Conforms to WAI-ARIA Dialog (Modal) Pattern: `role="dialog"`, `aria-modal="true"`, `aria-labelledby="auth-modal-title"`, and `aria-describedby="auth-modal-desc"`.
+  2. Traps focus within modal while open (Tab and Shift+Tab cycle within focusable dialog elements).
+  3. Dismisses on `Escape` key press and background overlay click, returning focus to the triggering element upon exit (`previousActiveElementRef`).
+  4. Explicit semantic input binding using `<label htmlFor="auth-email-input">Email address</label>`.
+  5. Dynamic status notifications using `aria-live="polite"` and `role="alert"` for authentication errors.
+  6. Color contrast verified via `check_contrast`:
+     - Light Mode Primary `#FFFFFF` on `#A7452A`: **5.95:1** (Pass AA >= 4.5:1)
+     - Dark Mode Primary `#0A0A0A` on `#E07A5F`: **6.71:1** (Pass AA >= 4.5:1)
+     - Secondary Surface `#F5F5F4` on `#262626`: **13.87:1** (Pass AA >= 4.5:1)
+
+
