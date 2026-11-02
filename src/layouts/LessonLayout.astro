@@ -1,0 +1,88 @@
+---
+import 'katex/dist/katex.min.css';
+import Layout from './Layout.astro';
+import LessonSidebar from '../components/static/LessonSidebar.astro';
+import LessonProgressPanel from '../components/islands/LessonProgressPanel';
+import AdSlot from '../components/static/AdSlot.astro';
+import type { CollectionEntry } from 'astro:content';
+
+interface Props {
+  entry: CollectionEntry<'lessons'>;
+  allLessons?: CollectionEntry<'lessons'>[];
+}
+
+const { entry, allLessons = [] } = Astro.props;
+const { title, description } = entry.data;
+
+// Summary for progress panel
+const trackLessonSummaries = allLessons
+  .filter((l) => l.data.track === entry.data.track)
+  .map((l) => ({
+    id: l.id,
+    order: l.data.order,
+    xp: l.data.xp,
+  }));
+---
+
+<Layout title={`${title} | BuddhiLive Academy`} description={description}>
+  <slot name="head" slot="head" />
+  
+  <div class="min-h-screen flex flex-col bg-neutral-950 text-neutral-100">
+    {/* Top Navigation & Live Progress Panel */}
+    <slot name="top-nav">
+      <LessonProgressPanel
+        client:load
+        currentSlug={entry.id}
+        trackLessons={trackLessonSummaries}
+      />
+    </slot>
+
+    <div class="flex-1 max-w-7xl w-full mx-auto flex flex-col lg:flex-row px-4 sm:px-6 lg:px-8 py-6 gap-8">
+      {/* Dynamic sidebar */}
+      <slot name="sidebar">
+        <LessonSidebar
+          currentTrack={entry.data.track}
+          currentSlug={entry.id}
+          lessons={allLessons}
+        />
+      </slot>
+
+      {/* Main lesson content */}
+      <main id="main-content" class="flex-1 min-w-0 max-w-4xl">
+        <slot name="top-banner">
+          <AdSlot slotId="top-lesson-banner" className="mb-6" />
+        </slot>
+
+        <article class="prose prose-invert prose-neutral max-w-none prose-headings:font-semibold prose-headings:text-neutral-100 prose-a:text-[#E07A5F] hover:prose-a:underline prose-code:text-[#E07A5F] prose-pre:bg-neutral-900 prose-pre:border prose-pre:border-neutral-800">
+          <header class="mb-8 border-b border-neutral-800 pb-4">
+            <div class="flex items-center gap-3 text-sm text-neutral-400 mb-2">
+              <span class="capitalize px-2 py-0.5 rounded bg-neutral-900 border border-neutral-800 text-xs font-mono">
+                {entry.data.track}
+              </span>
+              <span>•</span>
+              <span class="capitalize text-xs font-medium text-[#E07A5F]">
+                {entry.data.difficulty}
+              </span>
+              <span>•</span>
+              <span class="text-xs font-medium text-amber-400">
+                +{entry.data.xp} XP
+              </span>
+            </div>
+            <h1 class="text-3xl sm:text-4xl font-extrabold tracking-tight text-white mb-2">
+              {entry.data.title}
+            </h1>
+            <p class="text-lg text-neutral-400">
+              {entry.data.description}
+            </p>
+          </header>
+
+          <slot />
+        </article>
+
+        <slot name="bottom-banner">
+          <AdSlot slotId="bottom-lesson-banner" className="mt-10" />
+        </slot>
+      </main>
+    </div>
+  </div>
+</Layout>

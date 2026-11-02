@@ -1,0 +1,56 @@
+---
+title: "Hello Python & Algorithmic Foundations"
+track: "python-zero-to-hero"
+order: 1
+difficulty: "beginner"
+xp: 50
+description: "Master foundational Python syntax, variable allocation mechanics, arithmetic expressions, and computational efficiency."
+topic: "Python Basics"
+prerequisites: []
+---
+import PythonRunner from '../../components/islands/PythonRunner';
+
+## Introduction to Python Computations
+
+Python represents one of the most expressive high-level interpreted programming languages in modern computer science. It provides developers, data scientists, and computational engineers with clean syntax combined with dynamic typing semantics. When we write an algorithm or computational model in Python, our primary objective is to transform raw input datasets through well-structured transformation functions into verified analytical outputs.
+
+Understanding how Python evaluates expressions begins with variables, memory allocation, and reference counting. Unlike lower-level compiled languages where memory locations are fixed upon definition, Python assigns labels to references pointing to dynamic heap-allocated objects. Every value—whether an integer, floating-point scalar, or dynamic list—is encapsulated within a full `PyObject` structure containing type descriptors and reference metadata.
+
+### Mathematical Formulation of Computational Complexity
+
+When developing algorithms, we measure time complexity using Big-O asymptotic notation to project performance scalability as dataset sizes increase towards infinity. Consider evaluating a sequence of $n$ computational elements:
+
+$$T(n) = \sum_{i=1}^{n} c \cdot i = c \cdot \frac{n(n + 1)}{2} = \mathcal{O}(n^2)$$
+
+Where $c$ denotes the constant computational cycle penalty required for standard CPU register operations. Furthermore, when computing compound sequences or iterative progressions such as Fibonacci numbers without dynamic programming memoization, the call graph scales exponentially:
+
+$$F_n = \frac{1}{\sqrt{5}} \left( \left(\frac{1 + \sqrt{5}}{2}\right)^n - \left(\frac{1 - \sqrt{5}}{2}\right)^n \right) = \Theta(\phi^n)$$
+
+Where $\phi \approx 1.6180339887$ is the golden ratio. Understanding these mathematical constraints equips developers to design algorithms that minimize CPU instruction overhead and avoid redundant sub-problem recomputations.
+
+### Arithmetic Operators and Precedence
+
+In Python, basic operations adhere to standard mathematical precedence rules: parentheses, exponentiation (`**`), multiplication and division (`*`, `/`, `//`, `%`), followed by addition and subtraction (`+`, `-`). Floating-point arithmetic conforms strictly to the IEEE 754 standard for double-precision representation.
+
+Let us evaluate the Euclidean norm of a 2D coordinate vector $(x, y)$:
+
+$$\|\mathbf{v}\|_2 = \sqrt{x^2 + y^2}$$
+
+Below, you can interactively execute Python code directly inside your browser via Pyodide. No server requests are initiated—your browser executes the Python runtime purely client-side inside a sandboxed Web Worker.
+
+<PythonRunner 
+  client:visible 
+  initialCode={`# Calculate Euclidean Norm
+import math
+
+x = 3.0
+y = 4.0
+magnitude = math.sqrt(x**2 + y**2)
+
+print(f"Coordinates: ({x}, {y})")
+print(f"Euclidean Norm: {magnitude}")
+`} 
+/>
+
+Experiment with modifying the coordinates above and observe how the dynamic execution responds instantly. As you advance through this curriculum, you will build increasingly sophisticated computational scripts, combining algorithmic rigor with performant software craftsmanship.
+
