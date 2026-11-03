@@ -12,6 +12,15 @@ interface Props {
   trackLessons: LessonSummary[];
 }
 
+const AVAILABLE_TRACKS = [
+  { id: 'python', label: 'Python', href: '/learn/python/01-hello-python' },
+  { id: 'numpy', label: 'NumPy', href: '#' },
+  { id: 'pandas', label: 'Pandas', href: '#' },
+  { id: 'dsa', label: 'DSA', href: '#' },
+  { id: 'sql', label: 'SQL', href: '#' },
+  { id: 'ai', label: 'AI & ML', href: '#' },
+];
+
 export default function LessonProgressPanel({ trackLessons }: Props) {
   const [completedCount, setCompletedCount] = useState<number>(0);
   const [totalXp, setTotalXp] = useState<number>(0);
@@ -89,34 +98,57 @@ export default function LessonProgressPanel({ trackLessons }: Props) {
   const percentage = totalLessons > 0 ? Math.round((completedCount / totalLessons) * 100) : 0;
 
   return (
-    <header className="w-full bg-neutral-900 border-b border-neutral-800 px-4 sm:px-6 lg:px-8 py-3 transition-colors">
-      <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-3 text-sm">
-        {/* Track Title & Breadcrumb */}
-        <div className="flex items-center gap-2 text-neutral-300 w-full sm:w-auto">
+    <header className="w-full bg-neutral-900 border-b border-neutral-800 transition-colors">
+      {/* Top Track & Subject Bar (W3Schools Style) */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2.5 flex flex-wrap items-center justify-between gap-4">
+        {/* Brand & Track Links */}
+        <div className="flex items-center gap-4 overflow-x-auto py-1 scrollbar-none">
           <a
             href="/"
-            className="text-neutral-400 hover:text-white transition-colors focus:outline-none focus-visible:ring-1 focus-visible:ring-[#E07A5F] rounded px-1"
+            className="flex items-center gap-2 font-bold text-white text-base tracking-tight shrink-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#E07A5F] rounded"
           >
-            Academy
+            <span className="w-6 h-6 rounded bg-[#A7452A] flex items-center justify-center text-xs text-white font-extrabold">
+              BL
+            </span>
+            <span>BuddhiLive</span>
           </a>
-          <span className="text-neutral-600">/</span>
-          <span className="font-semibold text-white truncate">Python Zero to Hero</span>
+
+          <div className="h-4 w-px bg-neutral-800 shrink-0" />
+
+          {/* Horizontal Track Selector */}
+          <nav aria-label="Tutorial subjects" className="flex items-center gap-1 shrink-0">
+            {AVAILABLE_TRACKS.map((t) => {
+              const isCurrent = t.id === 'python';
+              return (
+                <a
+                  key={t.id}
+                  href={t.href}
+                  className={`px-3 py-1 rounded-md text-xs font-semibold transition-colors focus:outline-none focus-visible:ring-1 focus-visible:ring-[#E07A5F] ${
+                    isCurrent
+                      ? 'bg-[#A7452A] text-white shadow-sm'
+                      : 'text-neutral-400 hover:text-white hover:bg-neutral-800'
+                  }`}
+                >
+                  {t.label}
+                </a>
+              );
+            })}
+          </nav>
         </div>
 
-        {/* Progress Bar & XP Tracker */}
-        <div className="flex items-center gap-6 w-full sm:w-auto justify-between sm:justify-end">
-          {/* Progress Bar Container */}
-          <div className="flex items-center gap-3">
-            <span className="text-xs text-neutral-400 whitespace-nowrap">
-              {completedCount} / {totalLessons} completed ({percentage}%)
+        {/* Pathfinder / My Learning Progress Indicator */}
+        <div className="flex items-center gap-4 shrink-0">
+          <div className="flex items-center gap-2.5">
+            <span className="text-xs text-neutral-400 hidden sm:inline-block">
+              Python: {completedCount}/{totalLessons} ({percentage}%)
             </span>
             <div
-              className="w-28 sm:w-36 h-2 bg-neutral-800 rounded-full overflow-hidden relative"
+              className="w-20 sm:w-28 h-2 bg-neutral-800 rounded-full overflow-hidden relative"
               role="progressbar"
               aria-valuenow={percentage}
               aria-valuemin={0}
               aria-valuemax={100}
-              aria-label="Course completion progress"
+              aria-label="Track progress"
             >
               <div
                 className="h-full bg-gradient-to-r from-[#A7452A] to-[#E07A5F] transition-all duration-300 ease-out"
@@ -125,10 +157,10 @@ export default function LessonProgressPanel({ trackLessons }: Props) {
             </div>
           </div>
 
-          {/* XP Badge */}
+          {/* Pathfinder XP Pill */}
           <div
-            className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-950/40 border border-amber-800/40 text-amber-300 font-mono text-xs font-semibold shrink-0"
-            title="Total XP Earned"
+            className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-950/40 border border-amber-800/40 text-amber-300 font-mono text-xs font-semibold"
+            title="Pathfinder XP Earned"
           >
             <span className="text-amber-400" aria-hidden="true">★</span>
             <span>{totalXp} XP</span>

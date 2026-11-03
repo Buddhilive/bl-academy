@@ -8,19 +8,28 @@ trigger: always_on
 # Antigravity Rules: Buddhilive Academy
 
 ## 1. Grounding Rule (Non-Negotiable)
-- Whenever tasked with creating, editing, or outlining lessons, inspect `/docs` first.
-- Every code snippet, algorithm, mathematical derivation, and concept must cite and derive from the reference documents in `/docs`.
+- Whenever tasked with creating, editing, or outlining tutorials/lessons, inspect `/docs` first.
+- Every code snippet, algorithm, and concept must cite and derive from reference documents in `/docs`.
 - Hallucinated topics or unreferenced external materials are strictly forbidden without user approval.
 
-## 2. Content Generation Contract
-- **File Format**: Every lesson must be an `.mdx` file located inside `/src/content/lessons/`.
+## 2. Content Generation Contract (W3Schools Architecture + Pathfinder Progress)
+- **File Format**: Every tutorial page is an `.mdx` file located inside `/src/content/lessons/`.
 - **Frontmatter Schema**: Strict Zod validation required:
   - `title` (string)
-  - `topic` (string)
+  - `track` (string identifier, e.g. "python", "sql", "numpy")
+  - `category` (string section heading, e.g. "Python Tutorial", "Python Functions", "Python Reference")
+  - `order` (number)
   - `difficulty` ("beginner" | "intermediate" | "advanced")
-  - `xp` (integer)
-  - `prerequisites` (array of lesson slugs)
-- **AdSense & Prose Standard**: Each lesson must contain at least **350+ words** of clear conceptual explanation with KaTeX formulas before or alongside interactive widgets (ensuring high-quality Google AdSense indexing and SEO ranking).
+  - `xp` (integer, for Pathfinder / My Learning tracking)
+  - `description` (string min 30 chars for SEO)
+  - `topic` (string optional)
+  - `prerequisites` (array of slugs optional)
+- **Content & AdSense Standard**: Each article must follow the scannable W3Schools layout:
+  1. Quick conceptual explanation & syntax block.
+  2. Concrete copyable code example + "Try it Yourself" execution island.
+  3. Reference/parameter tables explaining inputs, outputs, and edge cases.
+  4. Quick self-check quiz or exercise.
+  5. Minimum **350+ words** of clear explanatory prose ensuring top-tier SEO and AdSense indexing. KaTeX formulas used when mathematically relevant.
 - **Execution Island**: Interactive execution must use `<PythonRunner client:visible />`. Code execution must never block the main thread.
 
 ## 3. Code Integrity & Client-Side Sandbox
