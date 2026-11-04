@@ -26,6 +26,7 @@ export default function LessonProgressPanel({ trackLessons }: Props) {
   const [totalXp, setTotalXp] = useState<number>(0);
 
   const totalLessons = trackLessons.length;
+  const firstPythonLessonSlug = trackLessons.length > 0 ? trackLessons[0].id : '01-hello-python';
 
   const refreshProgress = () => {
     try {
@@ -119,10 +120,11 @@ export default function LessonProgressPanel({ trackLessons }: Props) {
           <nav aria-label="Tutorial subjects" className="flex items-center gap-1 shrink-0">
             {AVAILABLE_TRACKS.map((t) => {
               const isCurrent = t.id === 'python';
+              const trackHref = t.id === 'python' ? `/learn/python/${firstPythonLessonSlug}` : t.href;
               return (
                 <a
                   key={t.id}
-                  href={t.href}
+                  href={trackHref}
                   className={`px-3 py-1 rounded-md text-xs font-semibold transition-colors focus:outline-none focus-visible:ring-1 focus-visible:ring-[#E07A5F] ${
                     isCurrent
                       ? 'bg-[#A7452A] text-white shadow-sm'

@@ -38,7 +38,16 @@ Record of conformant accessibility choices made during development.
   - Dark Success Green `#4ade80` on `#1E1E1E`: **9.57:1** (Pass AA >= 4.5:1)
   - Dark Surface Text `#F5F5F4` on `#1E1E1E`: **15.28:1** (Pass AA >= 4.5:1)
 
-## 2026-11-02: Local-First State & Supabase Integration (`004-local-first-state`)
+## 2026-11-04: Chapter 1 Interactive Lesson — Setting Up Python (`007-python-zero-hero`)
+
+### Decision 7: Accessible OS Setup Reference Table & KaTeX Integration in `01-setting-up-python.mdx`
+- **Pattern**: Data table and mathematical formulas in MDX curriculum content (`01-setting-up-python.mdx`).
+- **Rule**: WCAG 2.2 SC 1.3.1 (Info and Relationships) & SC 1.3.2 (Meaningful Sequence).
+- **Choice**:
+  1. Formatted OS setup reference table using standard markdown table structure with header scope, rendered into semantic `<table>`, `<thead>`, `<th scope="col">`, and `<tbody>` elements by Astro's MDX parser.
+  2. Integrated KaTeX inline math (`$...$`) for bit-width address space formulas ($2^{32}$ and $2^{64}$) and version tuples, while strictly fencing terminal/bash commands with ```` ```bash ```` to eliminate any unescaped shell `$` delimiter collisions.
+  3. Reused conformant `<PythonRunner client:visible />` (Decision 1, 3, 4) and `<QuizCard client:visible />` (Decision 2, 3) interactive islands with zero main-thread blocking.
+
 
 ### Decision 6: WAI-ARIA Modal Dialog & Keyboard Focus Management in `AuthModal.tsx`
 - **Pattern**: Accessible Authentication Dialog (`AuthModal.tsx`).

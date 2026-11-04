@@ -1,5 +1,86 @@
 [
   {
+    "node_id": "class:src/components/islands/AuthModal.tsx::AuthModalProps",
+    "kind": "class",
+    "name": "AuthModalProps",
+    "qualified_name": "AuthModalProps",
+    "file_path": "src/components/islands/AuthModal.tsx",
+    "language": "tsx",
+    "start_line": 4,
+    "end_line": 8,
+    "snippet": "interface AuthModalProps {\n  open: boolean;\n  onClose: () => void;\n  redirectTo?: string;\n}",
+    "content_hash": "9af5452ab041f3c8ec939494ade9e84b6e1b028521a6439cba5ed5f89151f67b",
+    "parent_id": "file:src/components/islands/AuthModal.tsx",
+    "callers": [],
+    "callees": [],
+    "doc_path": ".buddhi/docs/src/components/islands/AuthModal/AuthModalProps.md",
+    "needs_generation": true,
+    "community_id": 6,
+    "community_label": "islands/AuthModalProps",
+    "cohesion": 1.0,
+    "is_god_node": false,
+    "degree": 1,
+    "signature": null,
+    "edge_confidences": {
+      "EXTRACTED": 1
+    },
+    "relations": []
+  },
+  {
+    "node_id": "class:src/components/islands/LessonProgressPanel.tsx::LessonSummary",
+    "kind": "class",
+    "name": "LessonSummary",
+    "qualified_name": "LessonSummary",
+    "file_path": "src/components/islands/LessonProgressPanel.tsx",
+    "language": "tsx",
+    "start_line": 4,
+    "end_line": 8,
+    "snippet": "interface LessonSummary {\n  id: string;\n  order: number;\n  xp: number;\n}",
+    "content_hash": "911e2b30223464c0e1e35fb0399dca38834f2d34bb26e2b5173be1af0093c399",
+    "parent_id": "file:src/components/islands/LessonProgressPanel.tsx",
+    "callers": [],
+    "callees": [],
+    "doc_path": ".buddhi/docs/src/components/islands/LessonProgressPanel/LessonSummary.md",
+    "needs_generation": true,
+    "community_id": 7,
+    "community_label": "islands/LessonSummary",
+    "cohesion": 1.0,
+    "is_god_node": false,
+    "degree": 1,
+    "signature": null,
+    "edge_confidences": {
+      "EXTRACTED": 1
+    },
+    "relations": []
+  },
+  {
+    "node_id": "class:src/components/islands/LessonProgressPanel.tsx::Props",
+    "kind": "class",
+    "name": "Props",
+    "qualified_name": "Props",
+    "file_path": "src/components/islands/LessonProgressPanel.tsx",
+    "language": "tsx",
+    "start_line": 10,
+    "end_line": 13,
+    "snippet": "interface Props {\n  currentSlug?: string;\n  trackLessons: LessonSummary[];\n}",
+    "content_hash": "9263599f78a5c6a66a03718f3f157f9f37098044fd5481fd8eb13d52a60c7998",
+    "parent_id": "file:src/components/islands/LessonProgressPanel.tsx",
+    "callers": [],
+    "callees": [],
+    "doc_path": ".buddhi/docs/src/components/islands/LessonProgressPanel/Props.md",
+    "needs_generation": true,
+    "community_id": 8,
+    "community_label": "islands/Props",
+    "cohesion": 1.0,
+    "is_god_node": false,
+    "degree": 1,
+    "signature": null,
+    "edge_confidences": {
+      "EXTRACTED": 1
+    },
+    "relations": []
+  },
+  {
     "node_id": "class:src/lib/confetti.ts::ConfettiOptions",
     "kind": "class",
     "name": "ConfettiOptions",
@@ -15,7 +96,7 @@
     "callees": [],
     "doc_path": ".buddhi/docs/src/lib/confetti/ConfettiOptions.md",
     "needs_generation": true,
-    "community_id": 2,
+    "community_id": 9,
     "community_label": "lib/ConfettiOptions",
     "cohesion": 1.0,
     "is_god_node": false,
@@ -25,6 +106,410 @@
       "EXTRACTED": 1
     },
     "relations": []
+  },
+  {
+    "node_id": "class:src/lib/storage.ts::LessonProgress",
+    "kind": "class",
+    "name": "LessonProgress",
+    "qualified_name": "LessonProgress",
+    "file_path": "src/lib/storage.ts",
+    "language": "typescript",
+    "start_line": 3,
+    "end_line": 9,
+    "snippet": "interface LessonProgress {\n  lesson_slug: string;\n  completed: boolean;\n  saved_code: string;\n  xp_earned: number;\n  updated_at: string;\n}",
+    "content_hash": "870f526da8cce465ab9f37e6d4293bca58cb7ffda5752416aea0a41698152d47",
+    "parent_id": "file:src/lib/storage.ts",
+    "callers": [],
+    "callees": [],
+    "doc_path": ".buddhi/docs/src/lib/storage/LessonProgress.md",
+    "needs_generation": true,
+    "community_id": 10,
+    "community_label": "lib/LessonProgress",
+    "cohesion": 1.0,
+    "is_god_node": false,
+    "degree": 1,
+    "signature": null,
+    "edge_confidences": {
+      "EXTRACTED": 1
+    },
+    "relations": []
+  },
+  {
+    "node_id": "class:src/types/islands.ts::LessonFooterProps",
+    "kind": "class",
+    "name": "LessonFooterProps",
+    "qualified_name": "LessonFooterProps",
+    "file_path": "src/types/islands.ts",
+    "language": "typescript",
+    "start_line": 71,
+    "end_line": 106,
+    "snippet": "interface LessonFooterProps {\n  /**\n   * Experience points reward for completing this lesson (default: 10).\n   */\n  xp?: number;\n\n  /**\n   * Relative or absolute URL to the next lesson in the curriculum.\n   */\n  nextLessonUrl?: string;\n\n  /**\n   * Display title of the next lesson (e.g. \"Next: Control Flow & Loops\").\n   */\n  nextLessonTitle?: string;\n\n  /**\n   * Optional callback fired when the completion button is clicked.\n   */\n  onComplete?: () => void;\n\n  /**\n   * Whether the current lesson has already been marked completed.\n   */\n  isCompleted?: boolean;\n\n  /**\n   * Whether the footer should stick to the bottom of the viewport. Defaults to true.\n   */\n  sticky?: boolean;\n\n  /**\n   * Additional container CSS classes.\n   */\n  className?: string;\n}",
+    "content_hash": "2603ace8a516784da3141446e458b20a397eedc5937257a9e01878e94493db3a",
+    "parent_id": "file:src/types/islands.ts",
+    "callers": [],
+    "callees": [],
+    "doc_path": ".buddhi/docs/src/types/islands/LessonFooterProps.md",
+    "needs_generation": true,
+    "community_id": 12,
+    "community_label": "types/LessonFooterProps",
+    "cohesion": 1.0,
+    "is_god_node": false,
+    "degree": 1,
+    "signature": null,
+    "edge_confidences": {
+      "EXTRACTED": 1
+    },
+    "relations": []
+  },
+  {
+    "node_id": "class:src/types/islands.ts::PythonRunnerProps",
+    "kind": "class",
+    "name": "PythonRunnerProps",
+    "qualified_name": "PythonRunnerProps",
+    "file_path": "src/types/islands.ts",
+    "language": "typescript",
+    "start_line": 5,
+    "end_line": 37,
+    "snippet": "interface PythonRunnerProps {\n  /**\n   * Initial Python code preloaded into the editor.\n   */\n  initialCode?: string;\n\n  /**\n   * Optional expected stdout string.\n   * If provided, trimmed stdout will be compared against trimmed expectedOutput,\n   * triggering a Pass/Try Again state and celebratory confetti on success.\n   */\n  expectedOutput?: string;\n\n  /**\n   * Optional list of Pyodide/micropip packages to preload (e.g. ['numpy', 'sympy']).\n   */\n  packages?: string[];\n\n  /**\n   * Optional visual label or exercise title (e.g. \"Exercise: Fibonacci\").\n   */\n  title?: string;\n\n  /**\n   * Minimum editor height in lines or min-height. Defaults to 6.\n   */\n  minLines?: number;\n\n  /**\n   * Additional container CSS classes.\n   */\n  className?: string;\n}",
+    "content_hash": "f94dc4bd4d9c9e390aa01e6f3515de4b980c2f29315e837d0cef50661fff2910",
+    "parent_id": "file:src/types/islands.ts",
+    "callers": [],
+    "callees": [],
+    "doc_path": ".buddhi/docs/src/types/islands/PythonRunnerProps.md",
+    "needs_generation": true,
+    "community_id": 13,
+    "community_label": "types/PythonRunnerProps",
+    "cohesion": 1.0,
+    "is_god_node": false,
+    "degree": 1,
+    "signature": null,
+    "edge_confidences": {
+      "EXTRACTED": 1
+    },
+    "relations": []
+  },
+  {
+    "node_id": "class:src/types/islands.ts::QuizCardProps",
+    "kind": "class",
+    "name": "QuizCardProps",
+    "qualified_name": "QuizCardProps",
+    "file_path": "src/types/islands.ts",
+    "language": "typescript",
+    "start_line": 39,
+    "end_line": 69,
+    "snippet": "interface QuizCardProps {\n  /**\n   * The question prompt text (can include inline mathematical notation).\n   */\n  question: string;\n\n  /**\n   * 2 to 6 multiple choice options.\n   */\n  options: string[];\n\n  /**\n   * 0-indexed position of the correct answer.\n   */\n  correctAnswer: number;\n\n  /**\n   * Conceptual explanation revealed once an answer is chosen.\n   */\n  explanation?: string;\n\n  /**\n   * Event callback emitted when an answer is selected.\n   */\n  onAnswer?: (correct: boolean) => void;\n\n  /**\n   * Additional container CSS classes.\n   */\n  className?: string;\n}",
+    "content_hash": "5b80c54bd2d08bae5cd7064729ec949d13d194d956217991d2c0326da88430f6",
+    "parent_id": "file:src/types/islands.ts",
+    "callers": [],
+    "callees": [],
+    "doc_path": ".buddhi/docs/src/types/islands/QuizCardProps.md",
+    "needs_generation": true,
+    "community_id": 14,
+    "community_label": "types/QuizCardProps",
+    "cohesion": 1.0,
+    "is_god_node": false,
+    "degree": 1,
+    "signature": null,
+    "edge_confidences": {
+      "EXTRACTED": 1
+    },
+    "relations": []
+  },
+  {
+    "node_id": "class:src/types/pyodide.ts::PyodideMessageRequest",
+    "kind": "class",
+    "name": "PyodideMessageRequest",
+    "qualified_name": "PyodideMessageRequest",
+    "file_path": "src/types/pyodide.ts",
+    "language": "typescript",
+    "start_line": 5,
+    "end_line": 9,
+    "snippet": "interface PyodideMessageRequest {\n  id: string;\n  code: string;\n  packages?: string[];\n}",
+    "content_hash": "2f7c648a3215632a852580a05a6049c86367575a0972d1673edb8f4071cbe6b1",
+    "parent_id": "file:src/types/pyodide.ts",
+    "callers": [],
+    "callees": [],
+    "doc_path": ".buddhi/docs/src/types/pyodide/PyodideMessageRequest.md",
+    "needs_generation": true,
+    "community_id": 15,
+    "community_label": "types/PyodideMessageRequest",
+    "cohesion": 1.0,
+    "is_god_node": false,
+    "degree": 1,
+    "signature": null,
+    "edge_confidences": {
+      "EXTRACTED": 1
+    },
+    "relations": []
+  },
+  {
+    "node_id": "class:src/types/pyodide.ts::PyodideMessageResponse",
+    "kind": "class",
+    "name": "PyodideMessageResponse",
+    "qualified_name": "PyodideMessageResponse",
+    "file_path": "src/types/pyodide.ts",
+    "language": "typescript",
+    "start_line": 11,
+    "end_line": 16,
+    "snippet": "interface PyodideMessageResponse {\n  id: string;\n  success: boolean;\n  output?: string;\n  error?: string;\n}",
+    "content_hash": "6666bf36fc6b1ccf136fadd74439fd1617a2ea1c65562cfe0dc0eb81c114e83c",
+    "parent_id": "file:src/types/pyodide.ts",
+    "callers": [],
+    "callees": [],
+    "doc_path": ".buddhi/docs/src/types/pyodide/PyodideMessageResponse.md",
+    "needs_generation": true,
+    "community_id": 16,
+    "community_label": "types/PyodideMessageResponse",
+    "cohesion": 1.0,
+    "is_god_node": false,
+    "degree": 1,
+    "signature": null,
+    "edge_confidences": {
+      "EXTRACTED": 1
+    },
+    "relations": []
+  },
+  {
+    "node_id": "class:src/types/pyodide.ts::UsePyodideReturn",
+    "kind": "class",
+    "name": "UsePyodideReturn",
+    "qualified_name": "UsePyodideReturn",
+    "file_path": "src/types/pyodide.ts",
+    "language": "typescript",
+    "start_line": 18,
+    "end_line": 24,
+    "snippet": "interface UsePyodideReturn {\n  runCode: (code: string, packages?: string[]) => Promise<PyodideMessageResponse>;\n  output: string;\n  isRunning: boolean;\n  isReady: boolean;\n  error: string | null;\n}",
+    "content_hash": "c8987c3dd014c3fbbf9edb3ed1285afce6d6a7a54f7352fb5734a2aed61bf26e",
+    "parent_id": "file:src/types/pyodide.ts",
+    "callers": [],
+    "callees": [],
+    "doc_path": ".buddhi/docs/src/types/pyodide/UsePyodideReturn.md",
+    "needs_generation": true,
+    "community_id": 17,
+    "community_label": "types/UsePyodideReturn",
+    "cohesion": 1.0,
+    "is_god_node": false,
+    "degree": 1,
+    "signature": null,
+    "edge_confidences": {
+      "EXTRACTED": 1
+    },
+    "relations": []
+  },
+  {
+    "node_id": "class:src/workers/pyodide.worker.ts::PyodideInterface",
+    "kind": "class",
+    "name": "PyodideInterface",
+    "qualified_name": "PyodideInterface",
+    "file_path": "src/workers/pyodide.worker.ts",
+    "language": "typescript",
+    "start_line": 4,
+    "end_line": 9,
+    "snippet": "interface PyodideInterface {\n  loadPackage: (packages: string | string[]) => Promise<void>;\n  setStdout: (options: { batched: (msg: string) => void } | ((msg: string) => void)) => void;\n  setStderr: (options: { batched: (msg: string) => void } | ((msg: string) => void)) => void;\n  runPythonAsync: (code: string) => Promise<unknown>;\n}",
+    "content_hash": "230818ababd6ab48a3970ca63a2e46d862646fb64acfde14e0f2bb3f21f4eb5f",
+    "parent_id": "file:src/workers/pyodide.worker.ts",
+    "callers": [],
+    "callees": [],
+    "doc_path": ".buddhi/docs/src/workers/pyodide.worker/PyodideInterface.md",
+    "needs_generation": true,
+    "community_id": 18,
+    "community_label": "workers/PyodideInterface",
+    "cohesion": 1.0,
+    "is_god_node": false,
+    "degree": 1,
+    "signature": null,
+    "edge_confidences": {
+      "EXTRACTED": 1
+    },
+    "relations": []
+  },
+  {
+    "node_id": "function:src/hooks/usePyodide.ts::usePyodide",
+    "kind": "function",
+    "name": "usePyodide",
+    "qualified_name": "usePyodide",
+    "file_path": "src/hooks/usePyodide.ts",
+    "language": "typescript",
+    "start_line": 10,
+    "end_line": 175,
+    "snippet": "function usePyodide(): UsePyodideReturn {\n  const [output, setOutput] = useState<string>('');\n  const [isRunning, setIsRunning] = useState<boolean>(false);\n  const [isReady, setIsReady] = useState<boolean>(false);\n  const [error, setError] = useState<string | null>(null);\n\n  const workerRef = useRef<Worker | null>(null);\n  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);\n  const pendingResolveRef = useRef<((value: PyodideMessageResponse) => void) | null>(null);\n\n  // Initialize or re-create worker\n  const initWorker = useCallback((): Worker | null => {\n    if (typeof window === 'undefined') return null;\n\n    if (workerRef.current) {\n      workerRef.current.terminate();\n      workerRef.current = null;\n    }\n\n    try {\n      const worker = new Worker(\n        new URL('../workers/pyodide.worker.ts', import.meta.url),\n        { type: 'module' }\n      );\n\n      worker.onmessage = (event: MessageEvent<PyodideMessageResponse>) => {\n        if (timerRef.current) {\n          clearTimeout(timerRef.current);\n          timerRef.current = null;\n        }\n\n        const data = event.data;\n        setIsRunning(false);\n\n        if (data.success) {\n          setOutput(data.output || '');\n          setError(null);\n        } else {\n          setOutput(data.output || '');\n          setError(data.error || 'Execution failed');\n        }\n\n        if (pendingResolveRef.current) {\n          pendingResolveRef.current(data);\n          pendingResolveRef.current = null;\n        }\n      };\n\n      worker.onerror = (err) => {\n        if (timerRef.current) {\n          clearTimeout(timerRef.current);\n          timerRef.current = null;\n        }\n        setIsRunning(false);\n        const errMessage = err.message || 'Worker runtime error';\n        setError(errMessage);\n\n        if (pendingResolveRef.current) {\n          pendingResolveRef.current({\n            id: 'error',\n            success: false,\n            error: errMessage,\n          });\n          pendingResolveRef.current = null;\n        }\n      };\n\n      workerRef.current = worker;\n      setIsReady(true);\n      return worker;\n    } catch (err: unknown) {\n      const msg = err instanceof Error ? err.message : String(err);\n      setError(`Failed to initialize Pyodide worker: ${msg}`);\n      setIsReady(false);\n      return null;\n    }\n  }, []);\n\n  // Ensure worker is created when mounted in client\n  useEffect(() => {\n    initWorker();\n\n    return () => {\n      if (timerRef.current) {\n        clearTimeout(timerRef.current);\n        timerRef.current = null;\n      }\n      if (workerRef.current) {\n        workerRef.current.terminate();\n        workerRef.current = null;\n      }\n    };\n  }, [initWorker]);\n\n  const runCode = useCallback(\n    async (code: string, packages?: string[]): Promise<PyodideMessageResponse> => {\n      if (typeof window === 'undefined') {\n        throw new Error('Pyodide execution is only supported in client environments.');\n      }\n\n      if (isRunning) {\n        throw new Error('Code is already running. Please wait for the current execution to finish.');\n      }\n\n      let worker = workerRef.current;\n      if (!worker) {\n        worker = initWorker();\n        if (!worker) {\n          throw new Error('Failed to start Pyodide Web Worker.');\n        }\n      }\n\n      setIsRunning(true);\n      setError(null);\n\n      const id = `${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;\n\n      return new Promise<PyodideMessageResponse>((resolve) => {\n        pendingResolveRef.current = resolve;\n\n        // Arm 5-second watchdog timer\n        timerRef.current = setTimeout(() => {\n          if (workerRef.current) {\n            workerRef.current.terminate();\n            workerRef.current = null;\n          }\n\n          const timeoutError = 'Execution timed out (5s limit)';\n          setIsRunning(false);\n          setError(timeoutError);\n\n          // Re-instantiate replacement worker immediately so subsequent executions work\n          initWorker();\n\n          const timeoutRes\n\u2026 (truncated)",
+    "content_hash": "aff99c8040c79fd2c9acd5d67dcbb50fe7f6218dbbd6aa468e1c5d4eacb69e73",
+    "parent_id": "file:src/hooks/usePyodide.ts",
+    "callers": [
+      "function:src/components/islands/PyodideTester.tsx::PyodideTester"
+    ],
+    "callees": [],
+    "doc_path": ".buddhi/docs/src/hooks/usePyodide/usePyodide.md",
+    "needs_generation": true,
+    "community_id": 5,
+    "community_label": "islands/PyodideTester",
+    "cohesion": 0.5,
+    "is_god_node": true,
+    "degree": 41,
+    "signature": null,
+    "edge_confidences": {
+      "EXTRACTED": 1,
+      "INFERRED": 2,
+      "AMBIGUOUS": 38
+    },
+    "relations": [
+      {
+        "kind": "calls",
+        "target": "external:useState"
+      },
+      {
+        "kind": "calls",
+        "target": "external:useState"
+      },
+      {
+        "kind": "calls",
+        "target": "external:useState"
+      },
+      {
+        "kind": "calls",
+        "target": "external:useState"
+      },
+      {
+        "kind": "calls",
+        "target": "external:useRef"
+      },
+      {
+        "kind": "calls",
+        "target": "external:useRef"
+      },
+      {
+        "kind": "calls",
+        "target": "external:useRef"
+      },
+      {
+        "kind": "calls",
+        "target": "external:useCallback"
+      },
+      {
+        "kind": "calls",
+        "target": "external:clearTimeout"
+      },
+      {
+        "kind": "calls",
+        "target": "external:setIsRunning"
+      },
+      {
+        "kind": "calls",
+        "target": "external:setOutput"
+      },
+      {
+        "kind": "calls",
+        "target": "external:setError"
+      },
+      {
+        "kind": "calls",
+        "target": "external:setOutput"
+      },
+      {
+        "kind": "calls",
+        "target": "external:setError"
+      },
+      {
+        "kind": "calls",
+        "target": "external:pendingResolveRef.current"
+      },
+      {
+        "kind": "calls",
+        "target": "external:clearTimeout"
+      },
+      {
+        "kind": "calls",
+        "target": "external:setIsRunning"
+      },
+      {
+        "kind": "calls",
+        "target": "external:setError"
+      },
+      {
+        "kind": "calls",
+        "target": "external:pendingResolveRef.current"
+      },
+      {
+        "kind": "calls",
+        "target": "external:setIsReady"
+      }
+    ]
+  },
+  {
+    "node_id": "function:src/components/islands/PyodideTester.tsx::PyodideTester",
+    "kind": "function",
+    "name": "PyodideTester",
+    "qualified_name": "PyodideTester",
+    "file_path": "src/components/islands/PyodideTester.tsx",
+    "language": "tsx",
+    "start_line": 4,
+    "end_line": 182,
+    "snippet": "function PyodideTester() {\n  const [code, setCode] = useState<string>('print(\"Hello from WASM Python\")');\n  const [uiCounter, setUiCounter] = useState<number>(0);\n  const { runCode, output, isRunning, isReady, error } = usePyodide();\n\n  const handleRun = async () => {\n    try {\n      await runCode(code);\n    } catch {\n      // Error is captured in hook state\n    }\n  };\n\n  const handleInfiniteLoopTest = async () => {\n    const loopCode = 'import time\\nprint(\"Starting infinite loop test...\")\\nwhile True:\\n    pass';\n    setCode(loopCode);\n    try {\n      await runCode(loopCode);\n    } catch {\n      // Caught in hook state\n    }\n  };\n\n  const handleMathDemo = async () => {\n    const mathCode = 'total = sum(x**2 for x in range(100000))\\nprint(f\"Sum of squares up to 100,000: {total}\")';\n    setCode(mathCode);\n    try {\n      await runCode(mathCode);\n    } catch {\n      // Caught in hook state\n    }\n  };\n\n  return (\n    <div className=\"w-full max-w-4xl mx-auto p-6 bg-white dark:bg-[#1E1E1E] rounded-xl shadow-md border border-stone-200 dark:border-stone-800 text-stone-900 dark:text-stone-100 transition-colors\">\n      <div className=\"flex flex-col sm:flex-row items-start sm:items-center justify-between pb-5 border-b border-stone-200 dark:border-stone-800 gap-4\">\n        <div>\n          <h2 className=\"text-2xl font-bold tracking-tight text-stone-900 dark:text-stone-100\">\n            Pyodide WASM Engine Tester\n          </h2>\n          <p className=\"text-sm text-stone-600 dark:text-stone-400 mt-1\">\n            Zero-backend client-side Python execution inside a dedicated Web Worker.\n          </p>\n        </div>\n\n        <div className=\"flex items-center gap-3\">\n          <span\n            className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wider ${\n              isRunning\n                ? 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/30 animate-pulse'\n                : isReady\n                ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30'\n                : 'bg-stone-500/10 text-stone-600 dark:text-stone-400 border border-stone-500/30'\n            }`}\n            role=\"status\"\n            aria-live=\"polite\"\n          >\n            <span\n              className={`w-2 h-2 rounded-full ${\n                isRunning\n                  ? 'bg-amber-500'\n                  : isReady\n                  ? 'bg-emerald-500'\n                  : 'bg-stone-400'\n              }`}\n            />\n            {isRunning ? 'Executing...' : isReady ? 'Engine Ready' : 'Initializing...'}\n          </span>\n        </div>\n      </div>\n\n      {/* Main thread responsiveness test badge */}\n      <div className=\"mt-4 p-3 bg-stone-50 dark:bg-[#121212] rounded-lg border border-stone-200 dark:border-stone-800 flex items-center justify-between\">\n        <div className=\"text-xs text-stone-600 dark:text-stone-400\">\n          <span className=\"font-semibold text-stone-900 dark:text-stone-200\">Main Thread Test:</span> Click to prove the UI thread remains completely responsive during heavy or looping Python scripts.\n        </div>\n        <button\n          type=\"button\"\n          onClick={() => setUiCounter((c) => c + 1)}\n          className=\"px-3 py-1 text-xs font-medium rounded-md bg-stone-200 dark:bg-stone-800 hover:bg-stone-300 dark:hover:bg-stone-700 text-stone-800 dark:text-stone-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#A7452A] dark:focus-visible:ring-[#E07A5F] transition-colors\"\n          aria-label=\"Increment UI test counter\"\n        >\n          UI Clicks: {uiCounter}\n        </button>\n      </div>\n\n      {/* Code Editor Area */}\n      <div className=\"mt-5\">\n        <label\n          htmlFor=\"python-code-editor\"\n          className=\"block text-sm font-semibold mb-2 text-stone-800 dark:text-stone-200\"\n        >\n          Python Code:\n        </label>\n        <textarea\n          id=\"python-code-editor\"\n          v\n\u2026 (truncated)",
+    "content_hash": "c8f54f8a5157e685fe90c8fa3776f2771a20b63e3a8d32c455cb5aff7d8bd35d",
+    "parent_id": "file:src/components/islands/PyodideTester.tsx",
+    "callers": [],
+    "callees": [
+      "function:src/hooks/usePyodide.ts::usePyodide"
+    ],
+    "doc_path": ".buddhi/docs/src/components/islands/PyodideTester/PyodideTester.md",
+    "needs_generation": true,
+    "community_id": 5,
+    "community_label": "islands/PyodideTester",
+    "cohesion": 0.5,
+    "is_god_node": false,
+    "degree": 12,
+    "signature": null,
+    "edge_confidences": {
+      "EXTRACTED": 1,
+      "AMBIGUOUS": 10,
+      "INFERRED": 1
+    },
+    "relations": [
+      {
+        "kind": "calls",
+        "target": "external:useState"
+      },
+      {
+        "kind": "calls",
+        "target": "external:useState"
+      },
+      {
+        "kind": "calls",
+        "target": "function:src/hooks/usePyodide.ts::usePyodide"
+      },
+      {
+        "kind": "calls",
+        "target": "external:runCode"
+      },
+      {
+        "kind": "calls",
+        "target": "external:setCode"
+      },
+      {
+        "kind": "calls",
+        "target": "external:runCode"
+      },
+      {
+        "kind": "calls",
+        "target": "external:setCode"
+      },
+      {
+        "kind": "calls",
+        "target": "external:runCode"
+      },
+      {
+        "kind": "calls",
+        "target": "external:setUiCounter"
+      },
+      {
+        "kind": "calls",
+        "target": "external:setCode"
+      },
+      {
+        "kind": "calls",
+        "target": "external:setCode"
+      }
+    ]
   },
   {
     "node_id": "function:src/lib/confetti.ts::triggerCompletionConfetti",
@@ -44,15 +529,15 @@
     "callees": [],
     "doc_path": ".buddhi/docs/src/lib/confetti/triggerCompletionConfetti.md",
     "needs_generation": true,
-    "community_id": 1,
+    "community_id": 4,
     "community_label": "components/TestCounter",
     "cohesion": 0.5,
     "is_god_node": false,
-    "degree": 4,
+    "degree": 5,
     "signature": null,
     "edge_confidences": {
       "EXTRACTED": 1,
-      "INFERRED": 1,
+      "INFERRED": 2,
       "AMBIGUOUS": 2
     },
     "relations": [
@@ -84,7 +569,7 @@
     ],
     "doc_path": ".buddhi/docs/src/components/TestCounter/TestCounter.md",
     "needs_generation": true,
-    "community_id": 1,
+    "community_id": 4,
     "community_label": "components/TestCounter",
     "cohesion": 0.5,
     "is_god_node": false,
@@ -107,6 +592,1000 @@
       {
         "kind": "calls",
         "target": "function:src/lib/confetti.ts::triggerCompletionConfetti"
+      }
+    ]
+  },
+  {
+    "node_id": "function:src/lib/storage.ts::clampCode",
+    "kind": "function",
+    "name": "clampCode",
+    "qualified_name": "clampCode",
+    "file_path": "src/lib/storage.ts",
+    "language": "typescript",
+    "start_line": 27,
+    "end_line": 30,
+    "snippet": "function clampCode(code: unknown): string {\n  if (typeof code !== 'string') return '';\n  return code.length > MAX_SAVED_CODE_LENGTH ? code.slice(0, MAX_SAVED_CODE_LENGTH) : code;\n}",
+    "content_hash": "2e7f658c5d9edf1d02dd2f3eedddbbb510bc9ce8589698173bfbfd80a114002b",
+    "parent_id": "file:src/lib/storage.ts",
+    "callers": [
+      "function:src/lib/storage.ts::parseStoredProgress",
+      "function:src/lib/storage.ts::saveProgress",
+      "function:src/lib/storage.ts::syncLocalToSupabase"
+    ],
+    "callees": [],
+    "doc_path": ".buddhi/docs/src/lib/storage/clampCode.md",
+    "needs_generation": true,
+    "community_id": 2,
+    "community_label": "lib/parseStoredProgress",
+    "cohesion": 0.5,
+    "is_god_node": false,
+    "degree": 5,
+    "signature": null,
+    "edge_confidences": {
+      "EXTRACTED": 4,
+      "AMBIGUOUS": 1
+    },
+    "relations": [
+      {
+        "kind": "calls",
+        "target": "external:code.slice"
+      }
+    ]
+  },
+  {
+    "node_id": "function:src/lib/storage.ts::getSafeStorage",
+    "kind": "function",
+    "name": "getSafeStorage",
+    "qualified_name": "getSafeStorage",
+    "file_path": "src/lib/storage.ts",
+    "language": "typescript",
+    "start_line": 68,
+    "end_line": 80,
+    "snippet": "function getSafeStorage(): Storage | MemoryStorage {\n  if (typeof window === 'undefined') {\n    return memoryStorageFallback;\n  }\n  try {\n    const testKey = '__bl_storage_test__';\n    window.localStorage.setItem(testKey, testKey);\n    window.localStorage.removeItem(testKey);\n    return window.localStorage;\n  } catch {\n    return memoryStorageFallback;\n  }\n}",
+    "content_hash": "092576e0ce949a3a586d84ea6a84dc816a1d916690ef7aa3e9249622fe18370c",
+    "parent_id": "file:src/lib/storage.ts",
+    "callers": [
+      "function:src/lib/storage.ts::clearProgress",
+      "function:src/lib/storage.ts::getProgress",
+      "function:src/lib/storage.ts::listLocalProgress",
+      "function:src/lib/storage.ts::saveProgress",
+      "function:src/lib/storage.ts::syncLocalToSupabase"
+    ],
+    "callees": [],
+    "doc_path": ".buddhi/docs/src/lib/storage/getSafeStorage.md",
+    "needs_generation": true,
+    "community_id": 1,
+    "community_label": "lib/getSafeStorage",
+    "cohesion": 0.25,
+    "is_god_node": false,
+    "degree": 7,
+    "signature": null,
+    "edge_confidences": {
+      "EXTRACTED": 6,
+      "INFERRED": 1
+    },
+    "relations": []
+  },
+  {
+    "node_id": "function:src/lib/storage.ts::isValidSlug",
+    "kind": "function",
+    "name": "isValidSlug",
+    "qualified_name": "isValidSlug",
+    "file_path": "src/lib/storage.ts",
+    "language": "typescript",
+    "start_line": 20,
+    "end_line": 22,
+    "snippet": "function isValidSlug(slug: unknown): slug is string {\n  return typeof slug === 'string' && slug.length > 0 && slug.length <= 128 && SLUG_REGEX.test(slug);\n}",
+    "content_hash": "abe660da622c7cbc33716be9f15df6f593f264942f1ab3ab82152d638e72bc85",
+    "parent_id": "file:src/lib/storage.ts",
+    "callers": [
+      "function:src/lib/storage.ts::clearProgress",
+      "function:src/lib/storage.ts::getProgress",
+      "function:src/lib/storage.ts::listLocalProgress",
+      "function:src/lib/storage.ts::saveProgress"
+    ],
+    "callees": [],
+    "doc_path": ".buddhi/docs/src/lib/storage/isValidSlug.md",
+    "needs_generation": true,
+    "community_id": 3,
+    "community_label": "lib/isValidSlug",
+    "cohesion": 0.3333,
+    "is_god_node": false,
+    "degree": 6,
+    "signature": null,
+    "edge_confidences": {
+      "EXTRACTED": 5,
+      "AMBIGUOUS": 1
+    },
+    "relations": [
+      {
+        "kind": "calls",
+        "target": "external:SLUG_REGEX.test"
+      }
+    ]
+  },
+  {
+    "node_id": "function:src/lib/storage.ts::clearProgress",
+    "kind": "function",
+    "name": "clearProgress",
+    "qualified_name": "clearProgress",
+    "file_path": "src/lib/storage.ts",
+    "language": "typescript",
+    "start_line": 187,
+    "end_line": 207,
+    "snippet": "async function clearProgress(slug: string): Promise<void> {\n  if (!isValidSlug(slug)) return;\n\n  const storage = getSafeStorage();\n  storage.removeItem(STORAGE_PREFIX + slug);\n\n  if (isSupabaseConfigured) {\n    supabase.auth\n      .getSession()\n      .then(({ data: { session } }) => {\n        if (!session?.user) return;\n        return supabase\n          .from('user_progress')\n          .delete()\n          .match({ user_id: session.user.id, lesson_slug: slug });\n      })\n      .catch((err) => {\n        console.warn('[storage] Cloud delete error for', slug, err);\n      });\n  }\n}",
+    "content_hash": "5d1cd2ec715f8afd44de0a4bb84d4aed347d6fdcdffce5ab8205c02ca3e3ea69",
+    "parent_id": "file:src/lib/storage.ts",
+    "callers": [],
+    "callees": [
+      "function:src/lib/storage.ts::getSafeStorage",
+      "function:src/lib/storage.ts::isValidSlug"
+    ],
+    "doc_path": ".buddhi/docs/src/lib/storage/clearProgress.md",
+    "needs_generation": true,
+    "community_id": 3,
+    "community_label": "lib/isValidSlug",
+    "cohesion": 0.3333,
+    "is_god_node": false,
+    "degree": 7,
+    "signature": null,
+    "edge_confidences": {
+      "EXTRACTED": 3,
+      "INFERRED": 1,
+      "AMBIGUOUS": 3
+    },
+    "relations": [
+      {
+        "kind": "calls",
+        "target": "function:src/lib/storage.ts::isValidSlug"
+      },
+      {
+        "kind": "calls",
+        "target": "function:src/lib/storage.ts::getSafeStorage"
+      },
+      {
+        "kind": "calls",
+        "target": "external:storage.removeItem"
+      },
+      {
+        "kind": "calls",
+        "target": "external:supabase.from"
+      },
+      {
+        "kind": "calls",
+        "target": "external:console.warn"
+      }
+    ]
+  },
+  {
+    "node_id": "function:src/lib/storage.ts::parseStoredProgress",
+    "kind": "function",
+    "name": "parseStoredProgress",
+    "qualified_name": "parseStoredProgress",
+    "file_path": "src/lib/storage.ts",
+    "language": "typescript",
+    "start_line": 85,
+    "end_line": 101,
+    "snippet": "function parseStoredProgress(raw: string | null, slug: string): LessonProgress | null {\n  if (!raw) return null;\n  try {\n    const parsed = JSON.parse(raw);\n    if (!parsed || typeof parsed !== 'object') return null;\n\n    return {\n      lesson_slug: slug,\n      completed: Boolean(parsed.completed),\n      saved_code: clampCode(parsed.saved_code ?? ''),\n      xp_earned: typeof parsed.xp_earned === 'number' && parsed.xp_earned >= 0 ? Math.floor(parsed.xp_earned) : 0,\n      updated_at: typeof parsed.updated_at === 'string' ? parsed.updated_at : new Date().toISOString(),\n    };\n  } catch {\n    return null;\n  }\n}",
+    "content_hash": "643984e7c46703c1be9b63a334955627c484488cd7ecc24ff317178f73ef840d",
+    "parent_id": "file:src/lib/storage.ts",
+    "callers": [
+      "function:src/lib/storage.ts::getProgress",
+      "function:src/lib/storage.ts::listLocalProgress",
+      "function:src/lib/storage.ts::saveProgress"
+    ],
+    "callees": [
+      "function:src/lib/storage.ts::clampCode"
+    ],
+    "doc_path": ".buddhi/docs/src/lib/storage/parseStoredProgress.md",
+    "needs_generation": true,
+    "community_id": 2,
+    "community_label": "lib/parseStoredProgress",
+    "cohesion": 0.5,
+    "is_god_node": false,
+    "degree": 8,
+    "signature": null,
+    "edge_confidences": {
+      "EXTRACTED": 5,
+      "AMBIGUOUS": 3
+    },
+    "relations": [
+      {
+        "kind": "calls",
+        "target": "external:JSON.parse"
+      },
+      {
+        "kind": "calls",
+        "target": "external:Boolean"
+      },
+      {
+        "kind": "calls",
+        "target": "function:src/lib/storage.ts::clampCode"
+      },
+      {
+        "kind": "calls",
+        "target": "external:Math.floor"
+      }
+    ]
+  },
+  {
+    "node_id": "function:src/lib/storage.ts::getProgress",
+    "kind": "function",
+    "name": "getProgress",
+    "qualified_name": "getProgress",
+    "file_path": "src/lib/storage.ts",
+    "language": "typescript",
+    "start_line": 107,
+    "end_line": 116,
+    "snippet": "async function getProgress(slug: string): Promise<LessonProgress | null> {\n  if (!isValidSlug(slug)) {\n    console.warn(`[storage] Invalid lesson slug: \"${slug}\"`);\n    return null;\n  }\n\n  const storage = getSafeStorage();\n  const raw = storage.getItem(STORAGE_PREFIX + slug);\n  return parseStoredProgress(raw, slug);\n}",
+    "content_hash": "39eeec4056b768e027c306ff9e3f233d8dbd5fbd2f800c908e8b455e7b0ca5ae",
+    "parent_id": "file:src/lib/storage.ts",
+    "callers": [],
+    "callees": [
+      "function:src/lib/storage.ts::getSafeStorage",
+      "function:src/lib/storage.ts::isValidSlug",
+      "function:src/lib/storage.ts::parseStoredProgress"
+    ],
+    "doc_path": ".buddhi/docs/src/lib/storage/getProgress.md",
+    "needs_generation": true,
+    "community_id": 3,
+    "community_label": "lib/isValidSlug",
+    "cohesion": 0.3333,
+    "is_god_node": false,
+    "degree": 7,
+    "signature": null,
+    "edge_confidences": {
+      "EXTRACTED": 4,
+      "INFERRED": 1,
+      "AMBIGUOUS": 2
+    },
+    "relations": [
+      {
+        "kind": "calls",
+        "target": "function:src/lib/storage.ts::isValidSlug"
+      },
+      {
+        "kind": "calls",
+        "target": "external:console.warn"
+      },
+      {
+        "kind": "calls",
+        "target": "function:src/lib/storage.ts::getSafeStorage"
+      },
+      {
+        "kind": "calls",
+        "target": "external:storage.getItem"
+      },
+      {
+        "kind": "calls",
+        "target": "function:src/lib/storage.ts::parseStoredProgress"
+      }
+    ]
+  },
+  {
+    "node_id": "function:src/lib/storage.ts::listLocalProgress",
+    "kind": "function",
+    "name": "listLocalProgress",
+    "qualified_name": "listLocalProgress",
+    "file_path": "src/lib/storage.ts",
+    "language": "typescript",
+    "start_line": 212,
+    "end_line": 228,
+    "snippet": "function listLocalProgress(): LessonProgress[] {\n  const storage = getSafeStorage();\n  const records: LessonProgress[] = [];\n\n  for (let i = 0; i < storage.length; i++) {\n    const key = storage.key(i);\n    if (key && key.startsWith(STORAGE_PREFIX)) {\n      const slug = key.slice(STORAGE_PREFIX.length);\n      if (isValidSlug(slug)) {\n        const item = parseStoredProgress(storage.getItem(key), slug);\n        if (item) records.push(item);\n      }\n    }\n  }\n\n  return records;\n}",
+    "content_hash": "b6e62f4b58d92a2771d85fcfe89dd4e76d828abb108e33e8d967c547d50c9ffd",
+    "parent_id": "file:src/lib/storage.ts",
+    "callers": [
+      "function:src/components/islands/LessonProgressPanel.tsx::LessonProgressPanel",
+      "function:src/lib/storage.ts::syncLocalToSupabase"
+    ],
+    "callees": [
+      "function:src/lib/storage.ts::getSafeStorage",
+      "function:src/lib/storage.ts::isValidSlug",
+      "function:src/lib/storage.ts::parseStoredProgress"
+    ],
+    "doc_path": ".buddhi/docs/src/lib/storage/listLocalProgress.md",
+    "needs_generation": true,
+    "community_id": 1,
+    "community_label": "lib/getSafeStorage",
+    "cohesion": 0.25,
+    "is_god_node": false,
+    "degree": 12,
+    "signature": null,
+    "edge_confidences": {
+      "EXTRACTED": 5,
+      "INFERRED": 2,
+      "AMBIGUOUS": 5
+    },
+    "relations": [
+      {
+        "kind": "calls",
+        "target": "function:src/lib/storage.ts::getSafeStorage"
+      },
+      {
+        "kind": "calls",
+        "target": "external:storage.key"
+      },
+      {
+        "kind": "calls",
+        "target": "external:key.startsWith"
+      },
+      {
+        "kind": "calls",
+        "target": "external:key.slice"
+      },
+      {
+        "kind": "calls",
+        "target": "function:src/lib/storage.ts::isValidSlug"
+      },
+      {
+        "kind": "calls",
+        "target": "function:src/lib/storage.ts::parseStoredProgress"
+      },
+      {
+        "kind": "calls",
+        "target": "external:storage.getItem"
+      },
+      {
+        "kind": "calls",
+        "target": "external:records.push"
+      }
+    ]
+  },
+  {
+    "node_id": "function:src/components/islands/LessonProgressPanel.tsx::LessonProgressPanel",
+    "kind": "function",
+    "name": "LessonProgressPanel",
+    "qualified_name": "LessonProgressPanel",
+    "file_path": "src/components/islands/LessonProgressPanel.tsx",
+    "language": "tsx",
+    "start_line": 24,
+    "end_line": 172,
+    "snippet": "function LessonProgressPanel({ trackLessons }: Props) {\n  const [completedCount, setCompletedCount] = useState<number>(0);\n  const [totalXp, setTotalXp] = useState<number>(0);\n\n  const totalLessons = trackLessons.length;\n\n  const refreshProgress = () => {\n    try {\n      const records = listLocalProgress();\n      const recordMap = new Map<string, LessonProgress>();\n      for (const rec of records) {\n        recordMap.set(rec.lesson_slug, rec);\n      }\n\n      let completed = 0;\n      let xpSum = 0;\n\n      // 1. Calculate stats for this track\n      for (const lesson of trackLessons) {\n        const item = recordMap.get(lesson.id);\n        if (item?.completed) {\n          completed++;\n        }\n      }\n\n      // 2. Calculate overall total XP across all completed lessons in storage\n      for (const rec of records) {\n        if (rec.completed) {\n          xpSum += rec.xp_earned;\n        }\n      }\n\n      setCompletedCount(completed);\n      setTotalXp(xpSum);\n\n      // 3. Update sidebar checkmarks dynamically in the DOM\n      const badges = document.querySelectorAll<HTMLElement>('[data-sidebar-lesson-slug]');\n      badges.forEach((linkEl) => {\n        const slug = linkEl.getAttribute('data-sidebar-lesson-slug');\n        if (slug) {\n          const isDone = recordMap.get(slug)?.completed;\n          const badge = linkEl.querySelector('.sidebar-check-badge');\n          if (badge) {\n            if (isDone) {\n              badge.classList.remove('hidden');\n            } else {\n              badge.classList.add('hidden');\n            }\n          }\n        }\n      });\n    } catch (e) {\n      console.warn('[LessonProgressPanel] Unable to read local storage progress:', e);\n    }\n  };\n\n  useEffect(() => {\n    refreshProgress();\n\n    // Listen for storage events (multi-tab sync or code completion updates)\n    const handleStorageChange = () => {\n      refreshProgress();\n    };\n\n    window.addEventListener('storage', handleStorageChange);\n    // Support custom bl:progress-updated event dispatched by completion triggers\n    window.addEventListener('bl:progress-updated', handleStorageChange);\n\n    return () => {\n      window.removeEventListener('storage', handleStorageChange);\n      window.removeEventListener('bl:progress-updated', handleStorageChange);\n    };\n  }, [trackLessons]);\n\n  const percentage = totalLessons > 0 ? Math.round((completedCount / totalLessons) * 100) : 0;\n\n  return (\n    <header className=\"w-full bg-neutral-900 border-b border-neutral-800 transition-colors\">\n      {/* Top Track & Subject Bar (W3Schools Style) */}\n      <div className=\"max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2.5 flex flex-wrap items-center justify-between gap-4\">\n        {/* Brand & Track Links */}\n        <div className=\"flex items-center gap-4 overflow-x-auto py-1 scrollbar-none\">\n          <a\n            href=\"/\"\n            className=\"flex items-center gap-2 font-bold text-white text-base tracking-tight shrink-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#E07A5F] rounded\"\n          >\n            <span className=\"w-6 h-6 rounded bg-[#A7452A] flex items-center justify-center text-xs text-white font-extrabold\">\n              BL\n            </span>\n            <span>BuddhiLive</span>\n          </a>\n\n          <div className=\"h-4 w-px bg-neutral-800 shrink-0\" />\n\n          {/* Horizontal Track Selector */}\n          <nav aria-label=\"Tutorial subjects\" className=\"flex items-center gap-1 shrink-0\">\n            {AVAILABLE_TRACKS.map((t) => {\n              const isCurrent = t.id === 'python';\n              return (\n                <a\n                  key={t.id}\n                  href={t.href}\n                  className={`px-3 py-1 rounded-md text-xs font-semibold transition-colors focus:outline-none focus-visible:ring-1 focus-visible:ring-[#E07A5F] ${\n                    isCurrent\n                      ? 'bg-[#A7452A] text-white shadow-sm'\n                      : 'text-neutral-400 hover:text-white hover:bg-neutral-800'\n                  }`}\n     \n\u2026 (truncated)",
+    "content_hash": "1bb2754133ad52ee1bc58cd25b9d5f691760322ccb0342241edb627cb2a1c217",
+    "parent_id": "file:src/components/islands/LessonProgressPanel.tsx",
+    "callers": [],
+    "callees": [
+      "function:src/lib/storage.ts::listLocalProgress"
+    ],
+    "doc_path": ".buddhi/docs/src/components/islands/LessonProgressPanel/LessonProgressPanel.md",
+    "needs_generation": true,
+    "community_id": 1,
+    "community_label": "lib/getSafeStorage",
+    "cohesion": 0.25,
+    "is_god_node": false,
+    "degree": 23,
+    "signature": null,
+    "edge_confidences": {
+      "EXTRACTED": 1,
+      "AMBIGUOUS": 21,
+      "INFERRED": 1
+    },
+    "relations": [
+      {
+        "kind": "calls",
+        "target": "external:useState"
+      },
+      {
+        "kind": "calls",
+        "target": "external:useState"
+      },
+      {
+        "kind": "calls",
+        "target": "function:src/lib/storage.ts::listLocalProgress"
+      },
+      {
+        "kind": "calls",
+        "target": "external:recordMap.set"
+      },
+      {
+        "kind": "calls",
+        "target": "external:recordMap.get"
+      },
+      {
+        "kind": "calls",
+        "target": "external:setCompletedCount"
+      },
+      {
+        "kind": "calls",
+        "target": "external:setTotalXp"
+      },
+      {
+        "kind": "calls",
+        "target": "external:document.querySelectorAll"
+      },
+      {
+        "kind": "calls",
+        "target": "external:badges.forEach"
+      },
+      {
+        "kind": "calls",
+        "target": "external:linkEl.getAttribute"
+      },
+      {
+        "kind": "calls",
+        "target": "external:recordMap.get"
+      },
+      {
+        "kind": "calls",
+        "target": "external:linkEl.querySelector"
+      },
+      {
+        "kind": "calls",
+        "target": "external:console.warn"
+      },
+      {
+        "kind": "calls",
+        "target": "external:useEffect"
+      },
+      {
+        "kind": "calls",
+        "target": "external:refreshProgress"
+      },
+      {
+        "kind": "calls",
+        "target": "external:refreshProgress"
+      },
+      {
+        "kind": "calls",
+        "target": "external:window.addEventListener"
+      },
+      {
+        "kind": "calls",
+        "target": "external:window.addEventListener"
+      },
+      {
+        "kind": "calls",
+        "target": "external:window.removeEventListener"
+      },
+      {
+        "kind": "calls",
+        "target": "external:window.removeEventListener"
+      }
+    ]
+  },
+  {
+    "node_id": "function:src/lib/storage.ts::saveProgress",
+    "kind": "function",
+    "name": "saveProgress",
+    "qualified_name": "saveProgress",
+    "file_path": "src/lib/storage.ts",
+    "language": "typescript",
+    "start_line": 123,
+    "end_line": 182,
+    "snippet": "async function saveProgress(\n  slug: string,\n  patch: Partial<Omit<LessonProgress, 'lesson_slug'>>\n): Promise<LessonProgress | null> {\n  if (!isValidSlug(slug)) {\n    console.warn(`[storage] Invalid lesson slug: \"${slug}\"`);\n    return null;\n  }\n\n  const storage = getSafeStorage();\n  const existing = parseStoredProgress(storage.getItem(STORAGE_PREFIX + slug), slug);\n\n  const updatedRecord: LessonProgress = {\n    lesson_slug: slug,\n    completed: patch.completed !== undefined ? Boolean(patch.completed) : (existing?.completed ?? false),\n    saved_code: patch.saved_code !== undefined ? clampCode(patch.saved_code) : (existing?.saved_code ?? ''),\n    xp_earned: patch.xp_earned !== undefined ? Math.max(0, Math.floor(patch.xp_earned)) : (existing?.xp_earned ?? 0),\n    updated_at: new Date().toISOString(),\n  };\n\n  // 1. Write locally\n  try {\n    storage.setItem(STORAGE_PREFIX + slug, JSON.stringify(updatedRecord));\n  } catch (err) {\n    console.warn('[storage] Failed to save progress locally:', err);\n  }\n\n  // 2. Non-blocking cloud mirror if authenticated\n  if (isSupabaseConfigured) {\n    supabase.auth\n      .getSession()\n      .then(({ data: { session } }) => {\n        if (!session?.user) return;\n\n        return supabase\n          .from('user_progress')\n          .upsert(\n            {\n              user_id: session.user.id,\n              lesson_slug: updatedRecord.lesson_slug,\n              completed: updatedRecord.completed,\n              saved_code: updatedRecord.saved_code,\n              xp_earned: updatedRecord.xp_earned,\n              updated_at: updatedRecord.updated_at,\n            },\n            { onConflict: 'user_id,lesson_slug' }\n          )\n          .then(({ error }) => {\n            if (error) {\n              console.warn('[storage] Cloud mirror upsert error for', slug, error.message);\n            }\n          });\n      })\n      .catch((err) => {\n        console.warn('[storage] Cloud mirror network error for', slug, err);\n      });\n  }\n\n  return updatedRecord;\n}",
+    "content_hash": "59c2b2dc53e65edc19898a837e887cd189d77df015affac9628afab5da12de7b",
+    "parent_id": "file:src/lib/storage.ts",
+    "callers": [],
+    "callees": [
+      "function:src/lib/storage.ts::clampCode",
+      "function:src/lib/storage.ts::getSafeStorage",
+      "function:src/lib/storage.ts::isValidSlug",
+      "function:src/lib/storage.ts::parseStoredProgress"
+    ],
+    "doc_path": ".buddhi/docs/src/lib/storage/saveProgress.md",
+    "needs_generation": true,
+    "community_id": 2,
+    "community_label": "lib/parseStoredProgress",
+    "cohesion": 0.5,
+    "is_god_node": false,
+    "degree": 17,
+    "signature": null,
+    "edge_confidences": {
+      "EXTRACTED": 5,
+      "INFERRED": 1,
+      "AMBIGUOUS": 11
+    },
+    "relations": [
+      {
+        "kind": "calls",
+        "target": "function:src/lib/storage.ts::isValidSlug"
+      },
+      {
+        "kind": "calls",
+        "target": "external:console.warn"
+      },
+      {
+        "kind": "calls",
+        "target": "function:src/lib/storage.ts::getSafeStorage"
+      },
+      {
+        "kind": "calls",
+        "target": "function:src/lib/storage.ts::parseStoredProgress"
+      },
+      {
+        "kind": "calls",
+        "target": "external:storage.getItem"
+      },
+      {
+        "kind": "calls",
+        "target": "external:Boolean"
+      },
+      {
+        "kind": "calls",
+        "target": "function:src/lib/storage.ts::clampCode"
+      },
+      {
+        "kind": "calls",
+        "target": "external:Math.max"
+      },
+      {
+        "kind": "calls",
+        "target": "external:Math.floor"
+      },
+      {
+        "kind": "calls",
+        "target": "external:storage.setItem"
+      },
+      {
+        "kind": "calls",
+        "target": "external:JSON.stringify"
+      },
+      {
+        "kind": "calls",
+        "target": "external:console.warn"
+      },
+      {
+        "kind": "calls",
+        "target": "external:supabase.from"
+      },
+      {
+        "kind": "calls",
+        "target": "external:console.warn"
+      },
+      {
+        "kind": "calls",
+        "target": "external:console.warn"
+      }
+    ]
+  },
+  {
+    "node_id": "function:src/lib/storage.ts::syncLocalToSupabase",
+    "kind": "function",
+    "name": "syncLocalToSupabase",
+    "qualified_name": "syncLocalToSupabase",
+    "file_path": "src/lib/storage.ts",
+    "language": "typescript",
+    "start_line": 239,
+    "end_line": 367,
+    "snippet": "async function syncLocalToSupabase(\n  explicitUserId?: string\n): Promise<{ migratedCount: number; errors: number }> {\n  if (inFlightMigration) {\n    return inFlightMigration;\n  }\n\n  inFlightMigration = (async () => {\n    if (!isSupabaseConfigured) {\n      return { migratedCount: 0, errors: 0 };\n    }\n\n    let userId = explicitUserId;\n    if (!userId) {\n      const { data: { session } } = await supabase.auth.getSession();\n      userId = session?.user?.id;\n    }\n\n    if (!userId) {\n      return { migratedCount: 0, errors: 0 };\n    }\n\n    const storage = getSafeStorage();\n    const migrationFlagKey = MIGRATION_PREFIX + userId;\n\n    if (storage.getItem(migrationFlagKey) === 'true') {\n      return { migratedCount: 0, errors: 0 };\n    }\n\n    const localItems = listLocalProgress();\n\n    try {\n      // 1. Fetch existing remote progress for this user\n      const { data: remoteRows, error: fetchError } = await supabase\n        .from('user_progress')\n        .select('lesson_slug, completed, saved_code, xp_earned, updated_at')\n        .eq('user_id', userId);\n\n      if (fetchError) {\n        console.warn('[storage] Failed to fetch remote progress for sync:', fetchError.message);\n        return { migratedCount: 0, errors: 1 };\n      }\n\n      const remoteMap = new Map<string, LessonProgress>();\n      if (remoteRows) {\n        for (const row of remoteRows) {\n          remoteMap.set(row.lesson_slug, {\n            lesson_slug: row.lesson_slug,\n            completed: Boolean(row.completed),\n            saved_code: clampCode(row.saved_code ?? ''),\n            xp_earned: Math.max(0, row.xp_earned ?? 0),\n            updated_at: row.updated_at || new Date().toISOString(),\n          });\n        }\n      }\n\n      // 2. Deterministic merge:\n      // - completed: local || remote\n      // - xp_earned: max(local, remote)\n      // - saved_code: newer timestamp wins\n      const mergedToUpsert: LessonProgress[] = [];\n\n      for (const local of localItems) {\n        const remote = remoteMap.get(local.lesson_slug);\n        if (!remote) {\n          mergedToUpsert.push(local);\n        } else {\n          const localTime = new Date(local.updated_at).getTime();\n          const remoteTime = new Date(remote.updated_at).getTime();\n          const useLocalCode = isNaN(remoteTime) || localTime >= remoteTime;\n\n          const merged: LessonProgress = {\n            lesson_slug: local.lesson_slug,\n            completed: local.completed || remote.completed,\n            xp_earned: Math.max(local.xp_earned, remote.xp_earned),\n            saved_code: useLocalCode ? local.saved_code : remote.saved_code,\n            updated_at: useLocalCode ? local.updated_at : remote.updated_at,\n          };\n          mergedToUpsert.push(merged);\n        }\n      }\n\n      // 3. Batch upsert merged items into Supabase\n      if (mergedToUpsert.length > 0) {\n        const payload = mergedToUpsert.map((item) => ({\n          user_id: userId,\n          lesson_slug: item.lesson_slug,\n          completed: item.completed,\n          saved_code: item.saved_code,\n          xp_earned: item.xp_earned,\n          updated_at: item.updated_at,\n        }));\n\n        const { error: upsertError } = await supabase\n          .from('user_progress')\n          .upsert(payload, { onConflict: 'user_id,lesson_slug' });\n\n        if (upsertError) {\n          console.warn('[storage] Batch upsert during migration failed:', upsertError.message);\n          return { migratedCount: 0, errors: 1 };\n        }\n      }\n\n      // 4. Hydrate local storage with all remote progress (including rows from other devices)\n      for (const item of mergedToUpsert) {\n        storage.setItem(STORAGE_PREFIX + item.lesson_slug, JSON.stringify(item));\n      }\n      for (const [slug, remote] of remoteMap.entries()) {\n        if (!localItems.some((l) => l.lesson_slug === slug)) {\n          storage.setItem(STORAGE_PREFIX + slug, JSON.stringify(remote));\n        }\n      }\n\n      // 5. Mark migration as completed for this user\n      storage.setItem(migratio\n\u2026 (truncated)",
+    "content_hash": "8db83478bf4b7c3439173c8242818a137bc69e2fb6c6ae8edf16cc4920256451",
+    "parent_id": "file:src/lib/storage.ts",
+    "callers": [
+      "function:src/lib/storage.ts::initProgressSync"
+    ],
+    "callees": [
+      "function:src/lib/storage.ts::clampCode",
+      "function:src/lib/storage.ts::getSafeStorage",
+      "function:src/lib/storage.ts::listLocalProgress"
+    ],
+    "doc_path": ".buddhi/docs/src/lib/storage/syncLocalToSupabase.md",
+    "needs_generation": true,
+    "community_id": 1,
+    "community_label": "lib/getSafeStorage",
+    "cohesion": 0.25,
+    "is_god_node": true,
+    "degree": 28,
+    "signature": null,
+    "edge_confidences": {
+      "EXTRACTED": 5,
+      "INFERRED": 1,
+      "AMBIGUOUS": 22
+    },
+    "relations": [
+      {
+        "kind": "calls",
+        "target": "function:src/lib/storage.ts::getSafeStorage"
+      },
+      {
+        "kind": "calls",
+        "target": "external:storage.getItem"
+      },
+      {
+        "kind": "calls",
+        "target": "function:src/lib/storage.ts::listLocalProgress"
+      },
+      {
+        "kind": "calls",
+        "target": "external:supabase.from"
+      },
+      {
+        "kind": "calls",
+        "target": "external:console.warn"
+      },
+      {
+        "kind": "calls",
+        "target": "external:remoteMap.set"
+      },
+      {
+        "kind": "calls",
+        "target": "external:Boolean"
+      },
+      {
+        "kind": "calls",
+        "target": "function:src/lib/storage.ts::clampCode"
+      },
+      {
+        "kind": "calls",
+        "target": "external:Math.max"
+      },
+      {
+        "kind": "calls",
+        "target": "external:remoteMap.get"
+      },
+      {
+        "kind": "calls",
+        "target": "external:mergedToUpsert.push"
+      },
+      {
+        "kind": "calls",
+        "target": "external:isNaN"
+      },
+      {
+        "kind": "calls",
+        "target": "external:Math.max"
+      },
+      {
+        "kind": "calls",
+        "target": "external:mergedToUpsert.push"
+      },
+      {
+        "kind": "calls",
+        "target": "external:mergedToUpsert.map"
+      },
+      {
+        "kind": "calls",
+        "target": "external:supabase.from"
+      },
+      {
+        "kind": "calls",
+        "target": "external:console.warn"
+      },
+      {
+        "kind": "calls",
+        "target": "external:storage.setItem"
+      },
+      {
+        "kind": "calls",
+        "target": "external:JSON.stringify"
+      },
+      {
+        "kind": "calls",
+        "target": "external:remoteMap.entries"
+      }
+    ]
+  },
+  {
+    "node_id": "function:src/lib/storage.ts::initProgressSync",
+    "kind": "function",
+    "name": "initProgressSync",
+    "qualified_name": "initProgressSync",
+    "file_path": "src/lib/storage.ts",
+    "language": "typescript",
+    "start_line": 374,
+    "end_line": 392,
+    "snippet": "function initProgressSync(): () => void {\n  if (!isSupabaseConfigured) {\n    return () => {};\n  }\n\n  const {\n    data: { subscription },\n  } = supabase.auth.onAuthStateChange((event, session) => {\n    if ((event === 'SIGNED_IN' || event === 'INITIAL_SESSION') && session?.user) {\n      syncLocalToSupabase(session.user.id).catch((err) => {\n        console.warn('[storage] Auto-migration on auth state change failed:', err);\n      });\n    }\n  });\n\n  return () => {\n    subscription.unsubscribe();\n  };\n}",
+    "content_hash": "10f0da4d13826079f14e9d3a91d324002baa8b00a5425f8f305d0742d56a8b1b",
+    "parent_id": "file:src/lib/storage.ts",
+    "callers": [],
+    "callees": [
+      "function:src/lib/storage.ts::syncLocalToSupabase"
+    ],
+    "doc_path": ".buddhi/docs/src/lib/storage/initProgressSync.md",
+    "needs_generation": true,
+    "community_id": 1,
+    "community_label": "lib/getSafeStorage",
+    "cohesion": 0.25,
+    "is_god_node": false,
+    "degree": 4,
+    "signature": null,
+    "edge_confidences": {
+      "EXTRACTED": 2,
+      "AMBIGUOUS": 2
+    },
+    "relations": [
+      {
+        "kind": "calls",
+        "target": "function:src/lib/storage.ts::syncLocalToSupabase"
+      },
+      {
+        "kind": "calls",
+        "target": "external:console.warn"
+      },
+      {
+        "kind": "calls",
+        "target": "external:subscription.unsubscribe"
+      }
+    ]
+  },
+  {
+    "node_id": "function:src/workers/pyodide.worker.ts::initPyodide",
+    "kind": "function",
+    "name": "initPyodide",
+    "qualified_name": "initPyodide",
+    "file_path": "src/workers/pyodide.worker.ts",
+    "language": "typescript",
+    "start_line": 15,
+    "end_line": 53,
+    "snippet": "async function initPyodide(): Promise<PyodideInterface> {\n  if (pyodideInstance) {\n    return pyodideInstance;\n  }\n  if (pyodideInitPromise) {\n    return pyodideInitPromise;\n  }\n\n  pyodideInitPromise = (async () => {\n    // Dynamically import Pyodide v0.26.4 from official CDN\n    const cdnUrl = 'https://cdn.jsdelivr.net/pyodide/v0.26.4/full/pyodide.mjs';\n    const pyodideModule = await import(/* @vite-ignore */ cdnUrl);\n    const loadPyodide = pyodideModule.loadPyodide;\n    const pyodide = (await loadPyodide({\n      indexURL: 'https://cdn.jsdelivr.net/pyodide/v0.26.4/full/',\n    })) as PyodideInterface;\n\n    const captureStdout = (msg: string) => {\n      currentOutput += (currentOutput.length > 0 && !currentOutput.endsWith('\\n') ? '\\n' : '') + msg;\n    };\n\n    try {\n      pyodide.setStdout({ batched: captureStdout });\n    } catch {\n      pyodide.setStdout(captureStdout);\n    }\n\n    try {\n      pyodide.setStderr({ batched: captureStdout });\n    } catch {\n      pyodide.setStderr(captureStdout);\n    }\n\n    pyodideInstance = pyodide;\n    return pyodide;\n  })();\n\n  return pyodideInitPromise;\n}",
+    "content_hash": "23569b42ce7f01c3114ce8f822905b7d76817166a9468e5b979e09b7a58149dd",
+    "parent_id": "file:src/workers/pyodide.worker.ts",
+    "callers": [],
+    "callees": [],
+    "doc_path": ".buddhi/docs/src/workers/pyodide.worker/initPyodide.md",
+    "needs_generation": true,
+    "community_id": 19,
+    "community_label": "workers/initPyodide",
+    "cohesion": 1.0,
+    "is_god_node": false,
+    "degree": 8,
+    "signature": null,
+    "edge_confidences": {
+      "EXTRACTED": 2,
+      "AMBIGUOUS": 6
+    },
+    "relations": [
+      {
+        "kind": "calls",
+        "target": "external:loadPyodide"
+      },
+      {
+        "kind": "calls",
+        "target": "external:currentOutput.endsWith"
+      },
+      {
+        "kind": "calls",
+        "target": "external:pyodide.setStdout"
+      },
+      {
+        "kind": "calls",
+        "target": "external:pyodide.setStdout"
+      },
+      {
+        "kind": "calls",
+        "target": "external:pyodide.setStderr"
+      },
+      {
+        "kind": "calls",
+        "target": "external:pyodide.setStderr"
+      }
+    ]
+  },
+  {
+    "node_id": "method:src/lib/storage.ts::MemoryStorage.clear",
+    "kind": "method",
+    "name": "clear",
+    "qualified_name": "MemoryStorage.clear",
+    "file_path": "src/lib/storage.ts",
+    "language": "typescript",
+    "start_line": 58,
+    "end_line": 60,
+    "snippet": "clear(): void {\n    this.store.clear();\n  }",
+    "content_hash": "ae8ac89c26353f727c03ccfa174c1d1e94709d73bc0cdcb7adbf23a57be3942b",
+    "parent_id": "class:src/lib/storage.ts::MemoryStorage",
+    "callers": [
+      "class:src/lib/storage.ts::MemoryStorage"
+    ],
+    "callees": [],
+    "doc_path": ".buddhi/docs/src/lib/storage/MemoryStorage.clear.md",
+    "needs_generation": true,
+    "community_id": 20,
+    "community_label": "lib/clear",
+    "cohesion": 1.0,
+    "is_god_node": false,
+    "degree": 1,
+    "signature": null,
+    "edge_confidences": {
+      "EXTRACTED": 1
+    },
+    "relations": []
+  },
+  {
+    "node_id": "method:src/lib/storage.ts::MemoryStorage.getItem",
+    "kind": "method",
+    "name": "getItem",
+    "qualified_name": "MemoryStorage.getItem",
+    "file_path": "src/lib/storage.ts",
+    "language": "typescript",
+    "start_line": 38,
+    "end_line": 40,
+    "snippet": "getItem(key: string): string | null {\n    return this.store.get(key) ?? null;\n  }",
+    "content_hash": "87fecf16212ae1500021d6e8692a4f5e5a5187fe27f02ce7a49eeffd9c783194",
+    "parent_id": "class:src/lib/storage.ts::MemoryStorage",
+    "callers": [
+      "class:src/lib/storage.ts::MemoryStorage"
+    ],
+    "callees": [],
+    "doc_path": ".buddhi/docs/src/lib/storage/MemoryStorage.getItem.md",
+    "needs_generation": true,
+    "community_id": 21,
+    "community_label": "lib/getItem",
+    "cohesion": 1.0,
+    "is_god_node": false,
+    "degree": 1,
+    "signature": null,
+    "edge_confidences": {
+      "EXTRACTED": 1
+    },
+    "relations": []
+  },
+  {
+    "node_id": "method:src/lib/storage.ts::MemoryStorage.key",
+    "kind": "method",
+    "name": "key",
+    "qualified_name": "MemoryStorage.key",
+    "file_path": "src/lib/storage.ts",
+    "language": "typescript",
+    "start_line": 54,
+    "end_line": 56,
+    "snippet": "key(index: number): string | null {\n    return Array.from(this.store.keys())[index] ?? null;\n  }",
+    "content_hash": "b3969e66896923f59aef640861518a8a3b1d5b61c1bc079a60a1dedcad5575c7",
+    "parent_id": "class:src/lib/storage.ts::MemoryStorage",
+    "callers": [
+      "class:src/lib/storage.ts::MemoryStorage"
+    ],
+    "callees": [],
+    "doc_path": ".buddhi/docs/src/lib/storage/MemoryStorage.key.md",
+    "needs_generation": true,
+    "community_id": 22,
+    "community_label": "lib/key",
+    "cohesion": 1.0,
+    "is_god_node": false,
+    "degree": 2,
+    "signature": null,
+    "edge_confidences": {
+      "EXTRACTED": 1,
+      "AMBIGUOUS": 1
+    },
+    "relations": [
+      {
+        "kind": "calls",
+        "target": "external:Array.from"
+      }
+    ]
+  },
+  {
+    "node_id": "method:src/lib/storage.ts::MemoryStorage.length",
+    "kind": "method",
+    "name": "length",
+    "qualified_name": "MemoryStorage.length",
+    "file_path": "src/lib/storage.ts",
+    "language": "typescript",
+    "start_line": 50,
+    "end_line": 52,
+    "snippet": "get length(): number {\n    return this.store.size;\n  }",
+    "content_hash": "99ad0ad42dcea6273c71ad5abc7e9dbc17d587a544cb189953ad1ef128275087",
+    "parent_id": "class:src/lib/storage.ts::MemoryStorage",
+    "callers": [
+      "class:src/lib/storage.ts::MemoryStorage"
+    ],
+    "callees": [],
+    "doc_path": ".buddhi/docs/src/lib/storage/MemoryStorage.length.md",
+    "needs_generation": true,
+    "community_id": 23,
+    "community_label": "lib/length",
+    "cohesion": 1.0,
+    "is_god_node": false,
+    "degree": 1,
+    "signature": null,
+    "edge_confidences": {
+      "EXTRACTED": 1
+    },
+    "relations": []
+  },
+  {
+    "node_id": "method:src/lib/storage.ts::MemoryStorage.removeItem",
+    "kind": "method",
+    "name": "removeItem",
+    "qualified_name": "MemoryStorage.removeItem",
+    "file_path": "src/lib/storage.ts",
+    "language": "typescript",
+    "start_line": 46,
+    "end_line": 48,
+    "snippet": "removeItem(key: string): void {\n    this.store.delete(key);\n  }",
+    "content_hash": "39f675782cc0958c91f184e7a95f391a81a48c154f0799847d282a581c146d60",
+    "parent_id": "class:src/lib/storage.ts::MemoryStorage",
+    "callers": [
+      "class:src/lib/storage.ts::MemoryStorage"
+    ],
+    "callees": [],
+    "doc_path": ".buddhi/docs/src/lib/storage/MemoryStorage.removeItem.md",
+    "needs_generation": true,
+    "community_id": 24,
+    "community_label": "lib/removeItem",
+    "cohesion": 1.0,
+    "is_god_node": false,
+    "degree": 1,
+    "signature": null,
+    "edge_confidences": {
+      "EXTRACTED": 1
+    },
+    "relations": []
+  },
+  {
+    "node_id": "method:src/lib/storage.ts::MemoryStorage.setItem",
+    "kind": "method",
+    "name": "setItem",
+    "qualified_name": "MemoryStorage.setItem",
+    "file_path": "src/lib/storage.ts",
+    "language": "typescript",
+    "start_line": 42,
+    "end_line": 44,
+    "snippet": "setItem(key: string, value: string): void {\n    this.store.set(key, value);\n  }",
+    "content_hash": "b4f9b7c111dc7f1375d1f6f42e9a6f05d94cf79b07424e8e60ab7b13ac9add2e",
+    "parent_id": "class:src/lib/storage.ts::MemoryStorage",
+    "callers": [
+      "class:src/lib/storage.ts::MemoryStorage"
+    ],
+    "callees": [],
+    "doc_path": ".buddhi/docs/src/lib/storage/MemoryStorage.setItem.md",
+    "needs_generation": true,
+    "community_id": 25,
+    "community_label": "lib/setItem",
+    "cohesion": 1.0,
+    "is_god_node": false,
+    "degree": 1,
+    "signature": null,
+    "edge_confidences": {
+      "EXTRACTED": 1
+    },
+    "relations": []
+  },
+  {
+    "node_id": "class:src/lib/storage.ts::MemoryStorage",
+    "kind": "class",
+    "name": "MemoryStorage",
+    "qualified_name": "MemoryStorage",
+    "file_path": "src/lib/storage.ts",
+    "language": "typescript",
+    "start_line": 35,
+    "end_line": 61,
+    "snippet": "class MemoryStorage {\n  private store = new Map<string, string>();\n\n  getItem(key: string): string | null {\n    return this.store.get(key) ?? null;\n  }\n\n  setItem(key: string, value: string): void {\n    this.store.set(key, value);\n  }\n\n  removeItem(key: string): void {\n    this.store.delete(key);\n  }\n\n  get length(): number {\n    return this.store.size;\n  }\n\n  key(index: number): string | null {\n    return Array.from(this.store.keys())[index] ?? null;\n  }\n\n  clear(): void {\n    this.store.clear();\n  }\n}",
+    "content_hash": "2ee72fae3acc8e4832feec52d96a0a29c671aa3805b0856a2a453d2777b94a20",
+    "parent_id": "file:src/lib/storage.ts",
+    "callers": [],
+    "callees": [
+      "method:src/lib/storage.ts::MemoryStorage.clear",
+      "method:src/lib/storage.ts::MemoryStorage.getItem",
+      "method:src/lib/storage.ts::MemoryStorage.key",
+      "method:src/lib/storage.ts::MemoryStorage.length",
+      "method:src/lib/storage.ts::MemoryStorage.removeItem",
+      "method:src/lib/storage.ts::MemoryStorage.setItem"
+    ],
+    "doc_path": ".buddhi/docs/src/lib/storage/MemoryStorage.md",
+    "needs_generation": true,
+    "community_id": 11,
+    "community_label": "lib/MemoryStorage",
+    "cohesion": 1.0,
+    "is_god_node": false,
+    "degree": 7,
+    "signature": null,
+    "edge_confidences": {
+      "EXTRACTED": 7
+    },
+    "relations": [
+      {
+        "kind": "contains",
+        "target": "method:src/lib/storage.ts::MemoryStorage.getItem"
+      },
+      {
+        "kind": "contains",
+        "target": "method:src/lib/storage.ts::MemoryStorage.setItem"
+      },
+      {
+        "kind": "contains",
+        "target": "method:src/lib/storage.ts::MemoryStorage.removeItem"
+      },
+      {
+        "kind": "contains",
+        "target": "method:src/lib/storage.ts::MemoryStorage.length"
+      },
+      {
+        "kind": "contains",
+        "target": "method:src/lib/storage.ts::MemoryStorage.key"
+      },
+      {
+        "kind": "contains",
+        "target": "method:src/lib/storage.ts::MemoryStorage.clear"
       }
     ]
   }
