@@ -1,0 +1,326 @@
+---
+title: "Writing, Executing, and Debugging Python Code"
+track: "python"
+category: "Python Tutorial"
+order: 2
+difficulty: "beginner"
+xp: 50
+description: "Master running code in IDLE's REPL and Script Window, debug SyntaxError and NameError tracebacks, apply PEP 8 variable conventions, inspect values, and write helpful comments."
+topic: "Writing & Running Python"
+prerequisites: ["python-zero-to-hero/01-setting-up-python"]
+---
+import PythonRunner from '../../../components/islands/PythonRunner';
+import QuizCard from '../../../components/islands/QuizCard';
+
+## Writing and Executing Python Code
+
+Once Python and IDLE are installed on your workstation, the next step is learning how to write, execute, inspect, and debug code. In Python's built-in IDLE (*Integrated Development and Learning Environment*), programming takes place across two distinct interfaces: the **Interactive Window** and the **Script Window**. Understanding when to use each window, how Python processes expressions, and how functions communicate output to the screen forms the foundation of all software development in Python.
+
+---
+
+## 2.1 The Interactive Window and the REPL
+
+When you launch IDLE, the application opens directly into the **Interactive Window**, which runs an active Python shell. The top banner displays the running Python version, compiler build date, and operating system information. Directly beneath the banner sits the primary prompt symbol: `>>>`.
+
+The interactive shell operates on a continuous three-step execution cycle known as the **Read-Evaluate-Print Loop (REPL)**:
+
+1. **Read**: Python accepts the expression or statement typed at the `>>>` prompt and parses its syntax.
+2. **Evaluate**: The interpreter computes the result of the expression. For example, evaluating the mathematical expression $1 + 1$ produces the numerical value $2$.
+3. **Print**: Python displays the evaluated result directly onto the screen and outputs a fresh `>>>` prompt, waiting for your next instruction.
+
+```python
+>>> 1 + 1
+2
+>>> 2 ** 8
+256
+```
+
+Because the REPL evaluates code immediately after you press `Enter`, it provides instantaneous feedback. This makes the interactive shell ideal for testing short code snippets, calculating quick numbers, and exploring unfamiliar language features.
+
+### The `print()` Function and Side Effects
+
+To display text, numbers, or variable values explicitly on the screen, Python provides the built-in `print()` function. In computer programming, a **function** is a named, reusable block of code that accepts zero or more inputs (termed **arguments**), executes an operation, and returns a result.
+
+In pure mathematics, a function strictly maps input values from a domain $X$ to output values in a codomain $Y$:
+
+$$f: X \rightarrow Y$$
+
+A mathematical function produces no changes outside of returning its output. In programming, however, functions can produce **side effects**. A side effect is an operation that alters the state of the computer, runtime environment, or external display outside the function's internal scope. 
+
+Calling `print("Hello, world")` writes characters to standard output (`stdout`), causing text to appear in your console:
+
+```python
+print("Hello, world")
+```
+
+The string `"Hello, world"` passed inside the parentheses is the function's argument. The physical rendering of characters on your display screen is a side effect of running the function.
+
+### Script Window vs. Interactive Window
+
+While the interactive shell REPL is excellent for one-line experiments, it does not persist your code. Once you close IDLE, all statements typed into the interactive shell disappear. 
+
+To build reusable programs, you use IDLE's **Script Window**:
+
+- **Interactive Window (`>>>`)**: Executes statements line-by-line as you press `Enter`. The `>>>` prompt indicates active shell listening. Code cannot be saved as a permanent file from this window.
+- **Script Window (`.py` files)**: Functions as a full text editor where you write multi-line code files without the `>>>` prompt. You save these files to disk with the `.py` extension (such as `hello_world.py`).
+- **Persistence and Execution**: Scripts can be opened, modified, versioned, and executed repeatedly by selecting **Run $\rightarrow$ Run Module** (or pressing `F5`) in IDLE. Running a script executes all lines from top to bottom, displaying the final program output inside the interactive window.
+
+When you double-click a `.py` file from an operating system file explorer (such as Windows Explorer or macOS Finder), the system spawns a terminal window, executes the script, and closes the terminal immediately upon program termination. Running scripts inside IDLE keeps the interactive window open, allowing you to review the program output, inspect variable states, and troubleshoot errors.
+
+---
+
+## 2.2 Understanding and Debugging Errors
+
+Errors occur constantly during programming. Rather than viewing errors as failures, treat them as diagnostic signals from the Python interpreter. Python errors divide into two primary categories: **Syntax Errors** and **Run-Time Errors**.
+
+### Syntax Errors
+
+A **syntax error** occurs when code violates the formal grammatical rules of the Python language. Python parses your code before attempting to run it. If the syntax is invalid, IDLE halts and rejects the script before executing any instructions.
+
+Consider omitting the closing quotation mark in a string literal:
+
+```python
+print("Hello, world)
+```
+
+In IDLE, attempting to run this line triggers a dialog box stating:
+
+```text
+SyntaxError: EOL while scanning string literal
+```
+
+In Python terminology:
+- **String Literal**: A sequence of characters enclosed within matching quotation marks (`"..."` or `'...'`).
+- **EOL**: Stands for **End Of Line**. Python reached the end of the physical line before locating the matching closing quote needed to complete the string literal.
+
+IDLE highlights the exact location of the syntax error in red, alerting you to correct the typo before execution begins.
+
+### Run-Time Errors and Tracebacks
+
+A **run-time error** occurs when the syntax is grammatically valid, but an invalid operation is attempted while the program is actively executing.
+
+Consider calling the `print()` function without enclosing the words in quotation marks:
+
+```python
+print(Hello, world)
+```
+
+From a syntax perspective, Python sees two comma-separated identifiers passed as arguments to `print()`. However, neither `Hello` nor `world` has been defined in the program. Python begins execution, discovers that these names do not exist in memory, and halts with a **run-time error**.
+
+When a run-time error halts a program, Python prints diagnostic error text called a **traceback**. A traceback details four critical pieces of troubleshooting evidence:
+
+1. **File Path and Line Number**: The exact file location and line number where execution failed (for example, `File "hello.py", line 1`).
+2. **Offending Statement**: The specific code line that triggered the exception.
+3. **Exception Type**: The formal error classification (such as `NameError`, `TypeError`, or `ZeroDivisionError`).
+4. **Diagnostic Error Message**: An explanation of why the operation failed (for example, `name 'Hello' is not defined`).
+
+Learning to read tracebacks from the bottom up allows you to identify the exception type, locate the line number, and resolve the defect quickly.
+
+---
+
+## 2.3 Variables and Naming Conventions
+
+Programs frequently need to store, manipulate, and retrieve data. A **variable** is a named reference in memory that points to a specific value.
+
+### Assigning Variables
+
+In Python, you assign a value to a variable name using the `=` **assignment operator**:
+
+```python
+phrase = "Hello, world"
+print(phrase)
+```
+
+In the assignment `phrase = "Hello, world"`, Python creates the string object `"Hello, world"` in computer memory and binds the identifier `phrase` to that memory reference. 
+
+Variables serve two primary software engineering purposes:
+
+1. **Accessibility**: Variables store intermediate computational results in memory. Instead of recomputing an expensive operation multiple times across $N$ lines of code, the program computes the value once and retrieves it in $O(1)$ constant time lookup.
+2. **Context**: Variables transform raw literal values into meaningful domain concepts. For example, assigning the number $3600$ to an identifier named `seconds_per_hour` communicates clear intent to anyone reading the code:
+
+$$\text{seconds\_per\_hour} = 60 \times 60 = 3600\text{ seconds}$$
+
+```python
+# Context makes literal values self-explanatory
+seconds_per_minute = 60
+minutes_per_hour = 60
+seconds_per_hour = seconds_per_minute * minutes_per_hour
+```
+
+### Rules for Valid Variable Names
+
+Python enforces strict structural constraints on variable identifiers:
+
+- **Permitted Characters**: Identifiers may contain only uppercase letters (`A` through `Z`), lowercase letters (`a` through `z`), numerical digits (`0` through `9`), and underscores (`_`).
+- **No Leading Digits**: A variable name cannot begin with a number. The identifier `9lives` is invalid and triggers a `SyntaxError`, whereas `lives9`, `string1`, and `_counter` are valid.
+- **No Whitespace or Special Symbols**: Spaces, hyphens, and symbols like `@`, `$`, `%`, or `!` are illegal in variable names.
+- **Case-Sensitivity**: Identifiers are strictly case-sensitive. The names `phrase`, `Phrase`, and `PHRASE` refer to three entirely separate variables in memory:
+
+```python
+phrase = "Greetings"
+# Referencing Phrase raises NameError: name 'Phrase' is not defined
+print(phrase)
+```
+
+### PEP 8 Naming Conventions
+
+**PEP 8** is the official style guide for Python code. While Python permits various valid identifier styles, PEP 8 defines community standards to ensure consistency and readability across codebases:
+
+- **Snake Case (`snake_case`)**: Variable names should be written entirely in lowercase letters with words separated by underscores (for example, `num_students`, `total_score`, or `seconds_per_hour`). This contrasts with `camelCase` (common in JavaScript) or `PascalCase` (used for Python class names).
+- **Descriptive Names**: Choose descriptive, self-documenting names rather than cryptic abbreviations (prefer `elapsed_time` over `t`, and `item_count` over `c`).
+- **Concise Length**: Keep variable names readable and focused, typically between one and four words. Avoid excessively long names like `number_of_students_enrolled_in_the_fall_semester_class`.
+
+---
+
+## 2.4 Inspecting Values in the Interactive Window
+
+In IDLE's interactive shell, you can inspect the value and type of any variable by typing its name directly at the `>>>` prompt and pressing `Enter`. You do not need to call `print()`.
+
+### Value Inspection vs. `print()`
+
+The output produced by interactive value inspection differs from the output of the `print()` function in meaningful ways:
+
+- **`print(variable)`**: Formats the value into a clean, human-readable representation intended for end-users. For text strings, `print()` strips surrounding quotation marks and interprets escape sequences.
+- **Inspecting `variable` (Developer Representation)**: When you type a variable name at the `>>>` prompt, Python displays the raw representation of the object (via its underlying `repr()` output). Strings appear enclosed in single quotation marks (`'Hello, world'`), making it easy to identify their data type.
+
+Inspection clarifies data types when visual representations look similar:
+
+- Inspecting the integer `2` outputs: `2`
+- Inspecting the string `"2"` outputs: `'2'`
+
+```python
+>>> score = 100
+>>> label = "100"
+>>> score
+100
+>>> label
+'100'
+>>> print(label)
+100
+```
+
+Notice that inside a standalone script file (`.py`), typing a variable name on a line by itself produces no visual output when executed. Interactive inspection is a feature unique to the interactive REPL shell.
+
+---
+
+## 2.5 Writing Helpful Comments
+
+**Comments** are human-readable explanations included directly within source code. The Python interpreter completely ignores comments during execution. They exist to document intent, describe logic, and aid maintenance.
+
+### Types of Comments
+
+Python provides several ways to structure comments:
+
+1. **Block Comments**: Occupy their own dedicated lines and begin with the `#` symbol followed by a single space:
+   ```python
+   # Calculate the total travel duration in seconds
+   travel_hours = 3
+   total_seconds = travel_hours * 3600
+   ```
+2. **In-Line Comments**: Sit on the same line as code, appearing after the executable statement and separated from the code by at least two spaces:
+   ```python
+   salary = base_pay * 1.15  # Apply 15% regional cost adjustment
+   ```
+3. **Multi-Line Comments**: For extended explanations spanning several lines, start each consecutive line with its own `#` symbol:
+   ```python
+   # The following calculation converts temperature from Fahrenheit
+   # to Celsius using the standard thermodynamic offset formula:
+   # Celsius = (Fahrenheit - 32) * (5 / 9)
+   temp_f = 98.6
+   temp_c = (temp_f - 32) * (5 / 9)
+   ```
+
+### Best Practices and PEP 8 Guidelines for Comments
+
+- **Commenting Out Code**: You can prefix code lines with `#` to disable them temporarily during debugging without deleting the logic. In IDLE, you can toggle comment blocks on selected lines using `Alt + 3` (comment out) and `Alt + 4` (uncomment) on Windows, or `Ctrl + 3` and `Ctrl + 4` on macOS.
+- **Two-Space In-Line Separation**: PEP 8 requires at least two blank spaces between the end of your code statement and the `#` symbol of an in-line comment.
+- **Avoid Stating the Obvious**: Comments should explain **why** something was done, not **what** the code already states. A comment like `# Print greeting` above `print("Hello")` adds clutter without insight.
+- **Keep Comments Synchronized**: An outdated comment that contradicts the code is worse than no comment at all. Whenever you modify logic, update the associated comments.
+
+---
+
+## Interactive Code Practice
+
+Experiment with variables, PEP 8 naming standards, value inspection, and the `print()` function in the browser sandbox below:
+
+<PythonRunner 
+  client:visible 
+  title="Example 1: Variables, PEP 8 snake_case, and Output Formatting"
+  initialCode={`# Assigning descriptive variables in PEP 8 snake_case
+greeting = "Hello, world"
+seconds_per_minute = 60
+minutes_per_hour = 60
+
+# Calculate total seconds in one hour (60 * 60 = 3600)
+seconds_per_hour = seconds_per_minute * minutes_per_hour
+
+# 1. Output human-readable text via print()
+print("Greeting text  :", greeting)
+print("Seconds / Hour :", seconds_per_hour)
+
+# 2. Compare print() output with interactive developer inspection repr()
+str_number = "42"
+int_number = 42
+
+print("\\n--- Output Formatting Comparison ---")
+print("print(str_number) outputs :", str_number)
+print("repr(str_number)  outputs :", repr(str_number))  # Shows quotes '42'
+print("repr(int_number)  outputs :", repr(int_number))  # Shows integer 42
+`} 
+/>
+
+### Investigating Run-Time Errors and Case Sensitivity
+
+In this exercise, observe how Python handles variable references and case-sensitivity. Run the script to see valid assignments, or uncomment the invalid reference to examine how a `NameError` occurs:
+
+<PythonRunner 
+  client:visible 
+  title="Example 2: Case Sensitivity and NameError Diagnostics"
+  initialCode={`# Python identifiers are strictly case-sensitive
+user_status = "active"
+User_Status = "pending"
+
+print("user_status (lowercase) :", user_status)
+print("User_Status (capitalized):", User_Status)
+
+# Uncomment the line below to observe a NameError in the output console:
+# print(USER_STATUS)
+`} 
+/>
+
+---
+
+## Python Syntax, Naming, and Diagnostics Reference
+
+The table below summarizes language rules, identifier validity, error classifications, and inspection behaviors:
+
+| Concept / Category | Example Syntax | Classification / Status | Behavior & Interpreter Rule |
+| :--- | :--- | :--- | :--- |
+| **Valid Identifier** | `seconds_per_hour = 3600` | Valid (`snake_case`) | Letters, digits, underscores; follows PEP 8 standards. |
+| **Valid Identifier** | `_temp_reading_2 = 98.6` | Valid | Leading underscores and embedded numbers are legal. |
+| **Invalid Identifier** | `9lives = "cat"` | Invalid (`SyntaxError`) | Identifiers cannot begin with a numerical digit. |
+| **Invalid Identifier** | `user-count = 10` | Invalid (`SyntaxError`) | Hyphens are interpreted as subtraction operators. |
+| **Syntax Error** | `print("Hello, world)` | `SyntaxError: EOL` | Unclosed string quote caught prior to code execution. |
+| **Run-Time Error** | `print(Hello)` | `NameError` | Syntactically valid call, but `Hello` is undefined in memory. |
+| **User Output** | `print("Hello")` | Standard Output | Displays text cleanly without surrounding quotation marks. |
+| **Shell Inspection** | `>>> "Hello"` | Developer `repr()` | Displays raw data type representation with enclosing quotes (`'Hello'`). |
+
+---
+
+## Quick Self-Check
+
+Test your understanding of Python syntax rules, error diagnostics, and naming standards before moving forward:
+
+<QuizCard
+  client:visible
+  question="Which of the following statements correctly distinguishes a SyntaxError from a Run-Time Error in Python?"
+  options={[
+    "A SyntaxError occurs only inside saved .py script files, whereas a Run-Time Error occurs only in the interactive REPL shell.",
+    "A SyntaxError violates the grammatical rules of Python and is caught before execution, while a Run-Time Error occurs while the program is actively running.",
+    "A SyntaxError halts the computer with a traceback, while a Run-Time Error is silently ignored by the interpreter.",
+    "A SyntaxError occurs when variable names contain uppercase letters, while a Run-Time Error occurs when comments lack a leading # symbol."
+  ]}
+  correctAnswer={1}
+  explanation="A SyntaxError represents an invalid language structure (such as an unclosed quote or parentheses) and prevents Python from running the script. A Run-Time Error occurs during active execution when code attempts an impossible operation, such as referencing an undefined variable name (NameError) or dividing by zero."
+/>
+

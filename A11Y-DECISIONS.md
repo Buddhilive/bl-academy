@@ -63,4 +63,16 @@ Record of conformant accessibility choices made during development.
      - Dark Mode Primary `#0A0A0A` on `#E07A5F`: **6.71:1** (Pass AA >= 4.5:1)
      - Secondary Surface `#F5F5F4` on `#262626`: **13.87:1** (Pass AA >= 4.5:1)
 
+## 2026-11-05: Chapter 2 Interactive Lesson — Writing and Running Python
+
+### Decision 8: Heading Structure, Accessible Reference Table, and KaTeX Integration in `02-writing-and-running-python.mdx`
+- **Pattern**: Document heading hierarchy, semantic reference tables, and mathematical formulas in MDX curriculum content (`02-writing-and-running-python.mdx`).
+- **Rule**: WCAG 2.2 SC 1.3.1 (Info and Relationships), SC 1.3.2 (Meaningful Sequence), SC 2.4.6 (Headings and Labels).
+- **Choice**:
+  1. Maintained strict heading hierarchy: `LessonLayout.astro` renders `<h1>`, so the MDX content strictly uses `<h2>` for main sections and `<h3>` for subtopics without skipping levels.
+  2. Implemented the Python syntax and diagnostics reference table using semantic markdown table structure with header cells, rendered into `<table>`, `<thead>`, `<th scope="col">`, and `<tbody>` by Astro's MDX parser.
+  3. Formatted mathematical mappings ($f: X \rightarrow Y$) and Big-O runtime notations ($O(1)$) using KaTeX math blocks without unescaped shell `$` collision.
+  4. Reused accessible interactive islands `<PythonRunner client:visible />` and `<QuizCard client:visible />` with zero main-thread blocking.
+
+
 
