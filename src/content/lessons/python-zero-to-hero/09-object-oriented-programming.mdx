@@ -1,0 +1,529 @@
+---
+title: "Object-Oriented Programming (OOP) in Python"
+track: "python"
+category: "Python Tutorial"
+order: 9
+difficulty: "beginner"
+xp: 90
+description: "Master Python Object-Oriented Programming: classes, instances, constructors, instance vs class attributes, methods, __str__, inheritance, super(), and polymorphism."
+topic: "Object-Oriented Programming"
+prerequisites: ["python-zero-to-hero/08-tuples-lists-and-dictionaries"]
+---
+import PythonRunner from '../../../components/islands/PythonRunner';
+import QuizCard from '../../../components/islands/QuizCard';
+
+## Introduction: The Object-Oriented Paradigm
+
+In earlier chapters, you organized programs using **procedural programming**—writing sequential instructions and standalone functions that manipulate primitive data types (integers, strings, booleans) and compound structures (tuples, lists, dictionaries).
+
+While procedural paradigms work well for simple scripts, data processing pipelines, and isolated mathematical routines, real-world software systems require modeling complex entities with interdependent data and actions. Consider modeling an automotive fleet, an e-commerce catalog, or a medical patient database:
+* Representing a vehicle merely as a dictionary `{"color": "blue", "mileage": 20000}` leaves the data vulnerable to inconsistent manual updates and detached from functions that operate on it.
+* Passing loose variables across dozens of utility functions increases cognitive load and risks invalid state transitions.
+
+**Object-Oriented Programming (OOP)** solves this by bundling related **properties (state/data)** and **behaviors (methods/actions)** into cohesive, self-contained computational units called **objects**.
+
+Conceptually, an object-oriented program operates like an **assembly line**:
+* Each component on the line is an **object**.
+* Each object holds specific materials (**attributes**).
+* Each object carries out dedicated operations (**methods**) to transform inputs, manage its own internal state, and communicate with other objects.
+
+Mathematically, an object instance can be formalized as an encapsulated state machine:
+
+$$\mathcal{O} = \langle S, \mathcal{A}, \mathcal{M}, s_0 \rangle$$
+
+where:
+* $S$ denotes the internal state space defined by instance attributes,
+* $\mathcal{A}$ represents the visible attribute interfaces,
+* $\mathcal{M}$ represents state-transition operators (methods), and
+* $s_0 \in S$ denotes the initial state constructed upon instantiation.
+
+---
+
+## 9.1 Defining a Class and Initializing Attributes
+
+### Classes vs. Instances
+
+The foundational axiom of OOP is the distinction between a **class** and an **instance**:
+
+* **Class**: An abstract blueprint, template, or schema. It defines what attributes and methods every object of that type will possess, without allocating specific data values for an individual entity.
+* **Instance**: A concrete, materialized object created from that class blueprint. It occupies its own memory address and maintains its own specific attribute values.
+
+> [!NOTE]
+> Think of a class as an **architectural blueprint** for a house: the blueprint specifies rooms, doors, and wiring diagrams, but nobody can live inside a blueprint. An instance is the **actual physical house** constructed at 124 Elm Street with distinct paint colors and occupants.
+
+### Class Definition Syntax
+
+Every class definition begins with the `class` keyword followed by the class name in **PascalCase** (also referred to as **CamelCase**) and a terminating colon:
+
+```python
+class Dog:
+    # Class attribute: identical across all Dog instances
+    species = "Canis familiaris"
+
+    def __init__(self, name, age):
+        # Instance attributes: unique to each Dog instance
+        self.name = name
+        self.age = age
+```
+
+### Syntactic Elements & Rules
+
+1. **Naming Conventions (PEP 8)**:
+   Class names use `PascalCase` (`Dog`, `ElectricVehicle`, `ShoppingCart`), whereas variables and functions follow `snake_case` (`dog_name`, `calculate_mileage()`).
+2. **Indentation Standards**:
+   * Method declarations inside the class are indented **4 spaces**.
+   * Code statements inside method bodies are indented **8 spaces** (4 spaces deeper than the method signature).
+3. **The `pass` Keyword**:
+   Python requires an indented block following any class or function header. If you are scaffolding an architectural blueprint before writing implementation logic, use the `pass` keyword as a non-operational placeholder:
+   ```python
+   class AnimalSkeleton:
+       pass  # Syntactic placeholder; executes without error
+   ```
+
+### The Initializer: `.__init__()` and `self`
+
+When you create a new object, Python executes the `.__init__()` method (known as the **initializer** or constructor). Its role is to establish the initial state ($s_0$) by binding values to the new instance.
+
+* **The `self` Parameter**:
+  The first parameter of `.__init__()` and any instance method is always `self`. It is an explicit reference to the specific object instance being created or invoked.
+* **Automatic Binding**:
+  When calling `Dog("Miles", 4)`, Python automatically routes the newly allocated memory instance to `self`. You only pass the remaining arguments (`"Miles"` and `4`).
+
+```python
+def __init__(self, name, age):
+    self.name = name  # Binds 'name' to this concrete object instance
+    self.age = age    # Binds 'age' to this concrete object instance
+```
+
+### Instance Attributes vs. Class Attributes
+
+Understanding variable scope inside classes prevents state-sharing bugs:
+
+| Dimension | **Instance Attributes** | **Class Attributes** |
+| :--- | :--- | :--- |
+| **Definition Location** | Inside methods (typically `.__init__()`) using `self.attribute` | Directly inside the `class` body, outside any method |
+| **Storage & Namespace** | Stored in the instance dictionary: `instance.__dict__` | Stored in the class dictionary: `Class.__dict__` |
+| **Memory Allocation** | Allocated separately for every instance created | Single copy allocated in memory, shared across all instances |
+| **Mutation Effect** | Reassigning alters state **only** for that specific instance | Modifying via `Class.attr` affects all instances accessing it |
+| **Canonical Example** | `self.name`, `self.age`, `self.mileage` | `Dog.species = "Canis familiaris"`, `Car.wheels = 4` |
+
+```python
+class Dog:
+    species = "Canis familiaris"  # Class attribute
+
+    def __init__(self, name, age):
+        self.name = name          # Instance attribute
+        self.age = age            # Instance attribute
+
+miles = Dog("Miles", 4)
+buddy = Dog("Buddy", 9)
+
+# Both share the class attribute
+print(miles.species)  # Canis familiaris
+print(buddy.species)  # Canis familiaris
+
+# Each instance holds distinct instance attributes
+print(miles.name)     # Miles
+print(buddy.name)     # Buddy
+```
+
+> [!WARNING]
+> Assigning to an attribute via an instance (`miles.species = "Wolf"`) creates an **instance attribute** on `miles` that shadows the class attribute. It does **not** change `Dog.species` or `buddy.species`. To alter a class attribute across all instances, modify it via the class name: `Dog.species = "Canis lupus"`.
+
+---
+
+## 9.2 Instantiating Objects, Accessing Data, and Defining Methods
+
+### Instantiating and Accessing Attributes
+
+To instantiate an object, invoke the class name as if it were a function, passing the values defined in `.__init__()` after `self`:
+
+```python
+miles = Dog("Miles", 4)
+buddy = Dog("Buddy", 9)
+
+# Read attributes using dot notation
+print(miles.name)     # Output: Miles
+print(buddy.age)      # Output: 9
+print(miles.species)  # Output: Canis familiaris
+```
+
+### Attribute Mutability
+
+In Python, custom class instances are **mutable by default**. You can modify existing attributes or add new attributes at runtime using dot assignment:
+
+```python
+buddy.age = 10
+print(buddy.age)      # Output: 10
+```
+
+### Defining Instance Methods
+
+An **instance method** is a function defined inside a class that operates on the instance's state via `self`.
+
+```python
+class Dog:
+    species = "Canis familiaris"
+
+    def __init__(self, name, age):
+        self.name = name
+        self.age = age
+
+    # Instance method receiving 'self' and an external argument
+    def speak(self, sound):
+        return f"{self.name} says {sound}"
+
+miles = Dog("Miles", 4)
+print(miles.speak("Woof"))  # Output: Miles says Woof
+```
+
+When you call `miles.speak("Woof")`, Python internally translates this syntactic sugar into:
+
+$$\text{Dog.speak}(\text{miles}, \text{"Woof"})$$
+
+### Customizing String Output: `.__str__()`
+
+By default, passing an instance of a user-defined class to `print()` or `str()` displays a cryptic string showing the class name and its hexadecimal memory address:
+
+```python
+print(miles)
+# Output: <__main__.Dog object at 0x7fa2c8153400>
+```
+
+To provide an intuitive, human-readable string representation, override the **dunder method** (double underscore method) `.__str__()`:
+
+```python
+class Dog:
+    def __init__(self, name, age):
+        self.name = name
+        self.age = age
+
+    def __str__(self):
+        return f"{self.name} is {self.age} years old."
+
+miles = Dog("Miles", 4)
+print(miles)  # Output: Miles is 4 years old.
+```
+
+### Practical Engineering Example: The `Car` Model
+
+Consider a practical class modeling a motor vehicle with an odometer that updates over time:
+
+```python
+class Car:
+    def __init__(self, color, mileage):
+        self.color = color
+        self.mileage = mileage
+
+    def __str__(self):
+        return f"The {self.color} car has {self.mileage:,} miles."
+
+    def drive(self, miles):
+        if miles < 0:
+            raise ValueError("Distance driven cannot be negative.")
+        self.mileage += miles
+
+# Instantiating Car objects
+blue_car = Car("blue", 20000)
+red_car = Car("red", 30000)
+
+print(blue_car)  # Output: The blue car has 20,000 miles.
+print(red_car)   # Output: The red car has 30,000 miles.
+
+# Drive the blue car 100 miles
+blue_car.drive(100)
+print(blue_car)  # Output: The blue car has 20,100 miles.
+```
+
+---
+
+## Conceptual Self-Check: Namespace Scoping & Shadowing
+
+Test your understanding of how Python resolves class vs. instance attributes before moving to inheritance:
+
+<QuizCard
+  client:visible
+  question="Given a class 'Dog' with class attribute 'species = Canis familiaris', what occurs when you execute 'miles.species = Canis lupus' on an instance?"
+  options={[
+    "It alters Dog.species, changing the species for all existing and future Dog instances.",
+    "It triggers an AttributeError because class attributes cannot be modified via instance references.",
+    "It creates a new instance attribute 'species' on miles that shadows the class attribute, leaving Dog.species and other instances unchanged.",
+    "It raises a TypeError because class attributes require a dedicated setter method."
+  ]}
+  correctAnswer={2}
+  explanation="In Python, assigning to an attribute through an instance (miles.species = ...) writes to that instance's local namespace dictionary (miles.__dict__). It shadows the class attribute for miles only. The class attribute Dog.species and all other instances remain completely untouched."
+/>
+
+---
+
+## 9.3 Inheritance, Method Overriding, and `super()`
+
+### Principles of Inheritance
+
+**Inheritance** is an OOP mechanism where a new class (the **child** or **derived class**) acquires the attributes and methods of an existing class (the **parent** or **base class**).
+
+Inheritance promotes **code reuse** (DRY — *Don't Repeat Yourself*) and establishes a hierarchical **"is-a"** relationship:
+* A `JackRussellTerrier` **is a** `Dog`.
+* A `Car` **is a** `Vehicle`.
+* A `Square` **is a** `Rectangle`.
+
+In Python 3, every class automatically and implicitly inherits from the built-in top-level `object` class:
+
+```python
+class Dog(object):  # Explicitly writing '(object)' is optional in Python 3
+    pass
+```
+
+### Method Overriding & Extending with `super()`
+
+Child classes can:
+1. **Inherit** parent methods verbatim without modification.
+2. **Override** parent methods by declaring a method with the exact same name and signature.
+3. **Extend** parent methods using `super()` to invoke the parent implementation before or after adding specialized behavior.
+
+```python
+# Parent (Base) Class
+class Dog:
+    species = "Canis familiaris"
+
+    def __init__(self, name, age):
+        self.name = name
+        self.age = age
+
+    def __str__(self):
+        return f"{self.name} is {self.age} years old."
+
+    def speak(self, sound):
+        return f"{self.name} barks: {sound}"
+
+# Child (Derived) Class extending Dog
+class JackRussellTerrier(Dog):
+    # Override speak with a default sound while utilizing parent formatting
+    def speak(self, sound="Arf"):
+        return super().speak(sound)
+
+class Bulldog(Dog):
+    # Override speak with a breed-specific default sound
+    def speak(self, sound="Woof"):
+        return super().speak(sound)
+
+miles = JackRussellTerrier("Miles", 4)
+jack = Bulldog("Jack", 3)
+
+print(miles.speak())        # Output: Miles barks: Arf
+print(jack.speak())         # Output: Jack barks: Woof
+print(miles.speak("Grrr"))  # Output: Miles barks: Grrr
+```
+
+### Runtime Type Inspection: `isinstance()`
+
+Python provides `isinstance(object, classinfo)` to inspect whether an instance belongs to a class or any of its parent classes:
+
+```python
+print(isinstance(miles, Dog))                # Output: True (JackRussellTerrier inherits from Dog)
+print(isinstance(miles, JackRussellTerrier)) # Output: True (Exact class match)
+print(isinstance(miles, Bulldog))            # Output: False (Separate sibling branch)
+```
+
+### Geometric Hierarchy: `Rectangle` and `Square`
+
+In geometry, a square is a special case of a rectangle where both dimensions are equal:
+
+$$\text{length} = \text{width} = s$$
+
+By leveraging `super().__init__()`, the `Square` subclass forwards its single side length to both dimensions of the parent `Rectangle`:
+
+```python
+class Rectangle:
+    def __init__(self, length, width):
+        self.length = length
+        self.width = width
+
+    def area(self):
+        return self.length * self.width
+
+    def perimeter(self):
+        return 2 * (self.length + self.width)
+
+class Square(Rectangle):
+    def __init__(self, side_length):
+        # Forward side_length to both length and width of Rectangle
+        super().__init__(side_length, side_length)
+
+sq = Square(4)
+print(f"Square area: {sq.area()}")           # Output: Square area: 16
+print(f"Square perimeter: {sq.perimeter()}") # Output: Square perimeter: 16
+```
+
+Mathematically, the area and perimeter formulas seamlessly hold without rewriting any arithmetic:
+
+$$A_{\text{rect}} = l \cdot w \implies A_{\text{sq}}(s) = s \cdot s = s^2$$
+
+$$\mathcal{P}_{\text{rect}} = 2(l + w) \implies \mathcal{P}_{\text{sq}}(s) = 2(s + s) = 4s$$
+
+---
+
+## 9.4 Practical Challenge: Modeling a Farm Simulation
+
+Let us apply OOP principles to design an extensible agricultural simulation. We establish a root `Animal` base class and derive specialized animal breeds that customize initial attributes and introduce distinct species-specific actions.
+
+```python
+class Animal:
+    def __init__(self, name, age, sound):
+        self.name = name
+        self.age = age
+        self.sound = sound
+
+    def make_sound(self):
+        return f"{self.name} says {self.sound}!"
+
+    def eat(self, food):
+        return f"{self.name} is eating {food}."
+
+class Cow(Animal):
+    def __init__(self, name, age):
+        # Pass species-specific sound "Moo" to parent constructor
+        super().__init__(name, age, sound="Moo")
+
+    def produce_milk(self):
+        return f"{self.name} produced a bucket of fresh milk."
+
+class Chicken(Animal):
+    def __init__(self, name, age):
+        # Pass species-specific sound "Cluck" to parent constructor
+        super().__init__(name, age, sound="Cluck")
+
+    def lay_egg(self):
+        return f"{self.name} laid an egg."
+```
+
+### Polymorphism in Action
+
+Notice how `make_sound()` and `eat()` are defined on the base `Animal` class. We can place instances of `Cow` and `Chicken` in a single list and execute their common behaviors uniformly:
+
+```python
+bessie = Cow("Bessie", 5)
+charlotte = Chicken("Charlotte", 2)
+
+farm_residents = [bessie, charlotte]
+
+for animal in farm_residents:
+    print(animal.make_sound())
+    print(animal.eat("fresh hay"))
+```
+
+---
+
+## 9.5 Interactive Code Sandboxes
+
+### Sandbox 1: The Vehicle Fleet & Odometer State Mutation
+
+Test how classes encapsulate attributes and mutate state across multiple distinct objects. Run the code, then modify the distance driven or add a new vehicle instance:
+
+<PythonRunner
+  client:visible
+  title="Interactive Sandbox: Vehicle Fleet & State Mutation"
+  expectedOutput="The blue car has 20,000 miles.
+The red car has 30,000 miles.
+Updated: The blue car has 20,100 miles."
+  initialCode={`class Car:
+    def __init__(self, color, mileage):
+        self.color = color
+        self.mileage = mileage
+
+    def __str__(self):
+        return f"The {self.color} car has {self.mileage:,} miles."
+
+    def drive(self, miles):
+        if miles < 0:
+            raise ValueError("Distance driven cannot be negative.")
+        self.mileage += miles
+
+# Instantiate distinct Car instances
+blue_car = Car("blue", 20000)
+red_car = Car("red", 30000)
+
+print(blue_car)
+print(red_car)
+
+# Mutate blue_car's internal state
+blue_car.drive(100)
+print(f"Updated: {blue_car}")`}
+/>
+
+---
+
+### Sandbox 2: Farm Hierarchy, Polymorphism & `super()`
+
+Explore class inheritance, constructor chaining via `super()`, and specialized methods. Observe how child classes reuse parent methods while adding custom behaviors:
+
+<PythonRunner
+  client:visible
+  title="Interactive Sandbox: Farm Hierarchy & Polymorphism"
+  expectedOutput="Bessie says Moo!
+Bessie is eating grain.
+Charlotte says Cluck!
+Charlotte is eating grain.
+Bessie produced a bucket of fresh milk.
+Charlotte laid an egg."
+  initialCode={`class Animal:
+    def __init__(self, name, age, sound):
+        self.name = name
+        self.age = age
+        self.sound = sound
+
+    def make_sound(self):
+        return f"{self.name} says {self.sound}!"
+
+    def eat(self, food):
+        return f"{self.name} is eating {food}."
+
+class Cow(Animal):
+    def __init__(self, name, age):
+        super().__init__(name, age, sound="Moo")
+
+    def produce_milk(self):
+        return f"{self.name} produced a bucket of fresh milk."
+
+class Chicken(Animal):
+    def __init__(self, name, age):
+        super().__init__(name, age, sound="Cluck")
+
+    def lay_egg(self):
+        return f"{self.name} laid an egg."
+
+# Farm Simulation
+bessie = Cow("Bessie", 5)
+charlotte = Chicken("Charlotte", 2)
+
+farm_animals = [bessie, charlotte]
+
+for animal in farm_animals:
+    print(animal.make_sound())
+    print(animal.eat("grain"))
+
+print(bessie.produce_milk())
+print(charlotte.lay_egg())`}
+/>
+
+---
+
+## Chapter Summary & Quick Reference
+
+* **Classes and Instances**:
+  * A **class** is a blueprint declared via `class ClassName:`.
+  * An **instance** is a concrete object created by invoking the class: `obj = ClassName()`.
+* **The Initializer (`.__init__`) & `self`**:
+  * `.__init__(self, ...)` sets up initial instance attributes.
+  * `self` references the current instance and must be the first parameter of any instance method.
+* **Attributes**:
+  * **Instance attributes** (`self.name`): Bound to the specific instance's namespace; independent across objects.
+  * **Class attributes** (`species = "..."`): Declared at the class level; shared across all instances.
+  * Modifying an attribute through an instance (`instance.attr = ...`) assigns to the instance namespace and shadows the class attribute.
+* **Special Dunder Methods**:
+  * `.__str__(self)`: Defines user-readable string output for `print()` and `str()`.
+* **Inheritance & Polymorphism**:
+  * Child classes inherit attributes and methods via `class Child(Parent):`.
+  * `super()` accesses parent class methods and constructors, enabling clean constructor chaining (`super().__init__(...)`).
+  * `isinstance(obj, Class)` verifies whether an object is an instance of a class or any of its base classes.
+  * **Polymorphism** allows treating instances of different child classes through a uniform shared interface.
