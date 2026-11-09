@@ -1,0 +1,459 @@
+---
+title: "Finding and Fixing Code Bugs in Python"
+track: "python"
+category: "Python Tutorial"
+order: 6
+difficulty: "beginner"
+xp: 60
+description: "Master Python debugging: learn the difference between syntax, runtime, and logic errors, inspect program state using IDLE's Debugger, set breakpoints, and apply the 4-step debugging cycle."
+topic: "Debugging & Errors"
+prerequisites: ["python-zero-to-hero/05-functions-and-loops"]
+---
+import PythonRunner from '../../../components/islands/PythonRunner';
+import QuizCard from '../../../components/islands/QuizCard';
+
+## Introduction to Finding and Fixing Code Bugs
+
+In software engineering, writing source code is only the initial phase of development. A significant portion of a programmer's daily work involves diagnosing why programs behave unexpectedly, isolating flawed assumptions, and correcting discrepancies between intended and actual program execution.
+
+When writing Python programs, errors are inevitable. While the Python interpreter and development environments like IDLE provide automated mechanisms to catch typographical violations and runtime exceptions, they cannot determine whether your program calculates the correct mathematical outcome or fulfills your business requirements.
+
+In this chapter, you will examine the three foundational categories of software errors, master Python's built-in IDLE **Debug Control Window**, understand how to set **breakpoints** and inspect internal state via the **Stack** and **Locals** panels, apply a structured **four-step debugging process**, and explore both print-based debugging and idiomatic Python refactoring.
+
+---
+
+## 6.1 Classifying Software Errors: Syntax, Runtime, and Logic
+
+To fix defects effectively, you must first understand the classification of errors encountered in Python programming. Errors fall into three distinct tiers:
+
+```
++-------------------------------------------------------------------+
+|                     Python Error Classification                   |
++-------------------------------------------------------------------+
+|  1. Syntax Errors   --> Caught during parsing (before execution)  |
+|  2. Runtime Errors  --> Exceptions raised during active execution |
+|  3. Logic Errors    --> Program runs cleanly, but output is wrong |
++-------------------------------------------------------------------+
+```
+
+### 1. Syntax Errors (Parse-Time Failures)
+
+A **syntax error** occurs when code violates the formal grammatical rules of the Python language. Common examples include omitting a terminating colon `:` after a `def` or `for` statement, mismatched parentheses `( )`, or invalid indentation.
+
+Because Python compiles source code into bytecode prior to execution, the interpreter detects syntax errors during the parsing phase. If a syntax error exists, execution never begins:
+
+```python
+# Syntax Error Example: Missing colon at end of statement
+def greet(name)
+    return "Hello, " + name
+```
+
+When you attempt to run this script, IDLE highlights the offending code in red and displays an alert stating `SyntaxError: invalid syntax`.
+
+### 2. Runtime Errors (Exceptions and Tracebacks)
+
+A **runtime error** occurs when syntactically valid code encounters an illegal operation while the program is actively executing. When a runtime error occurs, the Python interpreter immediately halts execution and emits an exception report known as a **traceback**:
+
+```python
+# Runtime Error Example: ZeroDivisionError
+numerator = 100
+denominator = 0
+result = numerator / denominator  # Halts here!
+print("Calculation complete")
+```
+
+The resulting traceback pinpointing line 4 is explicit:
+
+```text
+Traceback (most recent call last):
+  File "calculate.py", line 4, in <module>
+    result = numerator / denominator
+ZeroDivisionError: division by zero
+```
+
+Other frequent runtime exceptions include `NameError` (referencing an undefined variable), `TypeError` (operating on incompatible data types), and `IndexError` (accessing an out-of-bounds sequence index).
+
+### 3. Logic Errors (The Invisible Bugs)
+
+A **logic error** occurs when a program contains valid syntax and executes to completion without raising an exception, but yields incorrect, unintended, or nonsensical output:
+
+$$\text{Program}(x) \downarrow \quad \text{and} \quad \text{Output}(x) \neq \text{Expected}(x)$$
+
+Because the Python interpreter cannot know your intended algorithmic goal, it executes every instruction faithfully. These unexpected flaws are formally known as **bugs**, and the structured practice of detecting and resolving them is known as **debugging**.
+
+### Error Classification Summary
+
+| Error Category | Detected At | Execution Halts? | Automated Error Message? | Primary Diagnostic Strategy |
+| :--- | :--- | :--- | :--- | :--- |
+| **Syntax Error** | Parse / Compile time | Yes (prior to start) | Yes (`SyntaxError`) | Inspect syntax highlighting and red markers in editor. |
+| **Runtime Error** | Active execution | Yes (at failing line) | Yes (Traceback / Exception) | Read traceback file path, line number, and exception type. |
+| **Logic Error** | Post-execution | No (runs to completion) | **No** (Output is wrong) | Step-by-step debugger, variable inspection, or unit tests. |
+
+---
+
+## 6.2 The IDLE Debug Control Window & Inspection Architecture
+
+When addressing a logic error, guessing blindly is inefficient. Instead, developers use a **debugger**—a dedicated diagnostic tool that pauses program execution at chosen moments, allowing real-time inspection of variable bindings and call stack frames.
+
+Python's built-in IDLE environment contains an integrated debugger accessible directly through the interactive shell.
+
+### Activating the Debugger
+
+To enable debugging in IDLE:
+1. Open the IDLE Interactive Shell.
+2. Select **Debug $\to$ Debugger** from the top menu bar.
+3. The **Debug Control Window** opens, and the shell prompt displays `[DEBUG ON]` directly above the `>>>` prompt, confirming active inspection mode.
+
+```
++--------------------------------------------------------+
+|                  Debug Control Window                  |
++--------------------------------------------------------+
+| [ Stack ]  '__main__'.<module>(), line 1               |
+|                                                        |
+| [ Locals ] phrase: 'hello'                             |
+|                                                        |
+| [ Go ]  [ Step ]  [ Over ]  [ Out ]  [ Quit ]          |
++--------------------------------------------------------+
+```
+
+### Core Inspection Panels
+
+The Debug Control Window divides program telemetry into two primary observation panels:
+
+* **Stack Panel**: Displays the **call stack**—the hierarchy of active execution frames. For top-level scripts, it identifies `'__main__'.<module>()` and shows the exact line number Python is poised to evaluate next. When functions call other subroutines, each invocation adds a new frame to the stack.
+* **Locals Panel**: Displays the current local namespace dictionary. Every variable currently bound in the active execution scope appears here alongside its real-time value.
+
+### Debugger Control Buttons
+
+Once paused, you control execution velocity using five navigation buttons:
+
+| Button | Primary Action | When to Use |
+| :--- | :--- | :--- |
+| **Step** | Executes the highlighted statement and pauses immediately before the next line. | Stepping through suspected loops or functions line-by-line while watching the **Locals** panel. |
+| **Go** | Resumes execution at normal speed until hitting a breakpoint or reaching the end of the script. | Skipping past initialization code to jump straight to the area of interest. |
+| **Over** | Executes a function call or loop at full speed without entering its internal lines. | When calling a trusted helper or built-in function that you know does not contain the bug. |
+| **Out** | Runs the remaining lines of the current subroutine and pauses immediately after exiting back to the caller. | When you have finished inspecting a loop or function body and want to return to the calling scope. |
+| **Quit** | Immediately terminates the debugging session and halts execution. | Exiting debug mode. |
+
+> [!WARNING]
+> Always conclude an active debugging session by clicking **Go** or **Quit** before closing the Debug Control Window. Abruptly closing the debugger window while Python is paused can freeze IDLE and require restarting the development environment.
+
+### Breakpoints
+
+Manually clicking **Step** hundreds of times through setup statements is tedious. A **breakpoint** is an intentional pause marker set on a specific line of code.
+
+In IDLE, right-click any statement in your editor window and select **Set Breakpoint**. The line highlights in bright yellow. When you run the script (**F5**) with the debugger open and click **Go**, Python runs at full speed until reaching that yellow line, pausing execution right before that statement runs.
+
+---
+
+## Conceptual Knowledge Check
+
+Test your understanding of debugger controls and state inspection before stepping through a hands-on case study.
+
+<QuizCard
+  client:visible
+  question="You are debugging a loop that calculates a running total. Execution is currently paused at a breakpoint right before the loop begins. You need to inspect how the 'total' variable updates in the Locals panel after each individual iteration. Which debugger button should you click?"
+  options={[
+    "Click Go to execute all loop iterations at full speed.",
+    "Click Step repeatedly to execute one statement at a time while monitoring the Locals panel.",
+    "Click Over to skip the loop entirely and continue to the next script.",
+    "Click Quit to reset the variable to its initial zero state."
+  ]}
+  correctAnswer={1}
+  explanation="The Step button advances execution by exactly one statement, pausing immediately before the next instruction. This allows you to monitor how variables evolve inside the Locals panel after each iteration. In contrast, Go runs continuously until the next breakpoint or script termination, Over bypasses line-by-line inspection of the loop body, and Quit aborts the session."
+/>
+
+---
+
+## 6.3 The 4-Step Debugging Process
+
+Isolating logic errors requires a structured scientific approach rather than random trial and error. Chapter 6 formalizes this workflow into a reliable **four-step debugging cycle**:
+
+```
+           +-----------------------------------------------+
+           |  Step 1: Formulate a Hypothesis (Guess Location) |
+           +-----------------------+-----------------------+
+                                   |
+                                   v
+           +-----------------------------------------------+
+           |  Step 2: Set a Breakpoint & Inspect Variables |
+           +-----------------------+-----------------------+
+                                   |
+                                   v
+           +-----------------------------------------------+
+           |  Step 3: Identify the Error & Apply a Fix     |
+           +-----------------------+-----------------------+
+                                   |
+                                   v
+           +-----------------------------------------------+
+           |  Step 4: Verify Resolution Across Test Cases  |
+           +-----------------------+-----------------------+
+                                   | (If bug persists)
+                                   +----------> Return to Step 1
+```
+
+1. **Step 1: Make a guess about where the bug is located.** Deconstruct your program into isolated components (data inputs, function declarations, iterative loops, returns). Eliminate components that simply pass verified data to narrow down the suspect block.
+2. **Step 2: Set a breakpoint and inspect the code.** Place a breakpoint directly before the suspected block. Run the debugger, advance to the breakpoint with **Go**, and examine the starting values in the **Locals panel**. Step through the block one line at a time.
+3. **Step 3: Identify the error and attempt to fix it.** Compare the actual variable transformations in the Locals panel against your intended mental model. Once you spot where the assignment or calculation diverges, edit the source code to apply a targeted correction.
+4. **Step 4: Repeat steps 1–3 until the error is resolved.** Re-run the script with the debugger or test cases. If the output matches expectations, the bug is solved; if an anomaly remains, formulate a revised hypothesis and repeat the cycle.
+
+---
+
+## 6.4 Practical Case Study: Debugging `add_underscores()`
+
+To see the four-step debugging process in action, consider a concrete challenge: writing a function `add_underscores(word)` that takes a string input and returns a new string where every character is enclosed by underscores.
+
+For example, calling `add_underscores("hello")` must evaluate to:
+
+$$\text{add\_underscores}("hello") \implies "\_h\_e\_l\_l\_o\_"$$
+
+### 1. The Scenario & Buggy Implementation
+
+An initial developer writes the following implementation:
+
+```python
+def add_underscores(word):
+    new_word = "_"
+    for i in range(0, len(word)):
+        new_word = word[i] + "_"
+    return new_word
+
+phrase = "hello"
+print(add_underscores(phrase))
+```
+
+When you execute this script, the console prints:
+
+```text
+o_
+```
+
+Instead of the formatted string `_h_e_l_l_o_`, the program outputs only `o_`. No syntax error was reported, and no traceback was triggered. This is a quintessential **logic error**.
+
+---
+
+### 2. Step 1: Make a Guess About Where the Bug Is Located
+
+Examine the architecture of the script:
+* The main block defines `phrase = "hello"` and passes it to `print(add_underscores(phrase))`. These two lines are standard calls.
+* Inside `add_underscores()`, the initial statement `new_word = "_"` assigns a valid prefix string.
+* The loop `for i in range(0, len(word)):` iterates through the indices of `"hello"` ($0, 1, 2, 3, 4$).
+
+The error must reside inside the body of the `for` loop on line 4, where `new_word` is computed.
+
+---
+
+### 3. Step 2: Set a Breakpoint & Inspect Execution
+
+1. In IDLE, right-click line 3 (`for i in range(0, len(word)):`) and choose **Set Breakpoint**.
+2. Open the Debug Control Window (**Debug $\to$ Debugger**) and press **F5** to run the script.
+3. In the debugger window, click **Go**. Python pauses directly before line 3.
+4. Check the **Locals panel**:
+   * `word = 'hello'`
+   * `new_word = '_'`
+5. Click **Step** to advance into the loop. Variable `i` appears in **Locals** with value `0`.
+6. Click **Step** to evaluate line 4 (`new_word = word[i] + "_"`).
+7. Inspect the **Locals panel** again: `new_word` now holds `'h_'`.
+
+### Tracking the Flawed State in the Locals Panel
+
+The table below traces what the Locals panel reveals on each iteration of the flawed code:
+
+| Iteration | Variable `i` | Character `word[i]` | Computed Expression `word[i] + "_"` | Variable `new_word` in Locals | Expected Accumulated Value |
+| :---: | :---: | :---: | :---: | :---: | :---: |
+| *Pre-loop* | — | — | — | `'_'` | `'_'` |
+| **1** | `0` | `'h'` | `'h_'` | `'h_'` | `'_h_'` |
+| **2** | `1` | `'e'` | `'e_'` | `'e_'` | `'_h_e_'` |
+| **3** | `2` | `'l'` | `'l_'` | `'l_'` | `'_h_e_l_'` |
+| **4** | `3` | `'l'` | `'l_'` | `'l_'` | `'_h_e_l_l_'` |
+| **5** | `4` | `'o'` | `'o_'` | `'o_'` (Returned!) | `'_h_e_l_l_o_'` |
+
+---
+
+### 4. Step 3: Identify the Error & Apply the Fix
+
+The telemetry in the Locals panel exposes the root cause:
+* On iteration 1, `new_word` replaced the initial `'_'` with `'h_'` instead of appending to it.
+* On every subsequent iteration, the statement `new_word = word[i] + "_"` completely **overwrites** `new_word` with only the current character plus an underscore, discarding all previously accumulated characters.
+* On the final iteration ($i = 4$), `'o'` + `'_'` yields `'o_'`, which is returned.
+
+To fix the bug, modify line 4 so that each character and trailing underscore are **concatenated onto the existing contents** of `new_word`:
+
+```python
+def add_underscores(word):
+    new_word = "_"
+    for i in range(0, len(word)):
+        new_word = new_word + word[i] + "_"  # Concatenate onto accumulated string
+    return new_word
+```
+
+---
+
+### 5. Step 4: Verify the Resolution
+
+Save the file and run it again under the debugger. Stepping through the corrected loop produces the intended progression:
+
+* $i = 0 \implies \text{new\_word} = \text{"\_h\_"}$
+* $i = 1 \implies \text{new\_word} = \text{"\_h\_e\_"}$
+* $i = 2 \implies \text{new\_word} = \text{"\_h\_e\_l\_"}$
+* $i = 3 \implies \text{new\_word} = \text{"\_h\_e\_l\_l\_"}$
+* $i = 4 \implies \text{new\_word} = \text{"\_h\_e\_l\_l\_o\_"}$
+
+When the loop terminates, `add_underscores("hello")` returns `"_h_e_l_l_o_"`, proving the bug has been resolved.
+
+---
+
+### Interactive Sandbox: Diagnosing and Fixing `add_underscores()`
+
+Practice fixing the logic error below. Run the starter code to observe the bug (`o_`), then modify the assignment inside the loop to accumulate characters properly. When your code produces `_h_e_l_l_o_`, the sandbox marks your solution as passed.
+
+<PythonRunner
+  client:visible
+  title="Exercise: Fixing the add_underscores() Logic Bug"
+  expectedOutput="_h_e_l_l_o_"
+  initialCode={`def add_underscores(word):
+    new_word = "_"
+    for i in range(0, len(word)):
+        # BUG: The line below overwrites new_word on each iteration!
+        # Modify this statement to accumulate onto existing new_word:
+        new_word = word[i] + "_"
+    return new_word
+
+phrase = "hello"
+print(add_underscores(phrase))`}
+/>
+
+---
+
+## 6.5 Alternative Debugging Techniques & Pythonic Refactoring
+
+While IDLE's Debug Control Window is invaluable for stepping through unfamiliar or complex control flows, developers also employ complementary diagnostic techniques and refactoring strategies.
+
+### Print Statement Debugging
+
+**Print statement debugging** involves inserting temporary `print()` calls inside suspect code blocks to emit variable state directly to the console:
+
+```python
+def add_underscores(word):
+    new_word = "_"
+    for i in range(0, len(word)):
+        new_word = word[i] + "_"
+        # Diagnostic print statement:
+        print(f"DEBUG: i={i}, char={word[i]}, new_word={new_word}")
+    return new_word
+
+phrase = "hello"
+print(add_underscores(phrase))
+```
+
+When run, the console immediately displays the overwrite in action:
+
+```text
+DEBUG: i=0, char=h, new_word=h_
+DEBUG: i=1, char=e, new_word=e_
+DEBUG: i=2, char=l, new_word=l_
+DEBUG: i=3, char=l, new_word=l_
+DEBUG: i=4, char=o, new_word=o_
+o_
+```
+
+#### Print Debugging Trade-offs
+
+* **Advantages**: Fast setup, requires no specialized tooling, and works identically across terminal sessions, remote servers, and simple scripts.
+* **Drawbacks**: Pollutes standard output, becomes unmanageable across large nested functions, and requires manual removal before deploying code to production.
+
+> [!TIP]
+> If you use diagnostic `print()` statements during development, prefix them with a searchable keyword like `print(f"DEBUG: ...")`. This ensures you can quickly locate and remove them using Find & Replace before committing your code.
+
+---
+
+### Refactoring for Pythonic Code
+
+**Refactoring** is the practice of restructuring existing code to improve its readability, maintainability, and efficiency without altering its external behavior.
+
+In the original `add_underscores()` function, the loop used `range(0, len(word))` to index through characters:
+
+```python
+# Non-idiomatic: Manual index tracking
+for i in range(0, len(word)):
+    new_word = new_word + word[i] + "_"
+```
+
+In Python, sequences like strings are directly iterable. Indexing via `i` adds cognitive clutter and introduces potential `IndexError` risks. A more **Pythonic** implementation iterates over characters directly:
+
+```python
+# Idiomatic: Direct character iteration
+def add_underscores(word):
+    """Enclose each character of word with underscores."""
+    new_word = "_"
+    for char in word:
+        new_word = new_word + char + "_"
+    return new_word
+```
+
+### Algorithmic Considerations: String Immutability and Complexity
+
+In Python, strings are **immutable objects**. When you execute `new_word = new_word + char + "_"`, Python cannot modify the string in place. Instead, it allocates a completely new string in memory and copies over all characters from both operands.
+
+For a string containing $n$ characters, repeated concatenation in a loop copies an increasing number of characters at each step:
+
+$$T(n) = \sum_{k=1}^n k = \frac{n(n + 1)}{2} = \mathcal{O}(n^2)$$
+
+For short strings like `"hello"`, this quadratic overhead is negligible. However, for large texts containing tens of thousands of characters, repeated string concatenation can cause noticeable performance degradation.
+
+The high-performance idiom for joining strings in Python uses the built-in `str.join()` method with a generator or list comprehension, achieving linear $\mathcal{O}(n)$ time complexity:
+
+```python
+# High-performance linear O(n) alternative using join()
+def add_underscores_fast(word):
+    return "_" + "_".join(word) + "_"
+```
+
+---
+
+### Interactive Sandbox: Pythonic Iteration
+
+Test the refactored, idiomatic implementation below using direct character iteration. Notice how removing index counters makes the loop cleaner and easier to reason about:
+
+<PythonRunner
+  client:visible
+  title="Interactive Sandbox: Direct Character Iteration"
+  expectedOutput="_P_y_t_h_o_n_"
+  initialCode={`def add_underscores_pythonic(word):
+    """Surround each character with underscores using direct iteration."""
+    new_word = "_"
+    for char in word:
+        new_word = new_word + char + "_"
+    return new_word
+
+sample = "Python"
+result = add_underscores_pythonic(sample)
+print(result)`}
+/>
+
+---
+
+## Chapter Summary
+
+* **Three error categories**:
+  * **Syntax errors** are caught during compilation before execution begins.
+  * **Runtime errors** trigger exceptions and print detailed **tracebacks**.
+  * **Logic errors** execute without crashing but yield incorrect output ($\text{Output} \neq \text{Expected}$).
+* **IDLE Debug Control Window**: Opened via **Debug $\to$ Debugger** in the shell (`[DEBUG ON]`).
+* **Inspection panels**:
+  * **Stack panel** displays call frames and active line numbers.
+  * **Locals panel** displays all variables and their bound values in real time.
+* **Control buttons**:
+  * **Step**: Advances execution by one statement to observe variable updates in **Locals**.
+  * **Go**: Runs continuously until the next breakpoint or script termination.
+  * **Over**: Steps over subroutines without entering internal lines.
+  * **Out**: Completes the active function/loop and returns to caller scope.
+  * **Quit**: Aborts the active debugging session.
+* **Breakpoints**: Yellow-highlighted pause markers that allow you to skip past boilerplate code directly to suspect logic.
+* **4-Step Debugging Process**:
+  1. Make a guess about where the bug is located.
+  2. Set a breakpoint and inspect variable state in the Locals panel.
+  3. Identify the discrepancy and apply a targeted fix.
+  4. Repeat steps 1–3 across test cases until verified.
+* **Print debugging**: Inserting temporary `print(f"DEBUG: ...")` statements is useful for rapid checks, but must be removed prior to code release.
+* **Pythonic refactoring**: Prefer iterating directly over sequence items (`for char in word:`) rather than using manual index counters (`range(0, len(word))`).
