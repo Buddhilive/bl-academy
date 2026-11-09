@@ -1,0 +1,598 @@
+---
+title: "Tuples, Lists, and Dictionaries in Python"
+track: "python"
+category: "Python Tutorial"
+order: 8
+difficulty: "beginner"
+xp: 80
+description: "Master Python compound data structures: immutable tuples, mutable lists, hash-mapped dictionaries, shallow vs deep copying, list comprehensions, and data structure selection."
+topic: "Compound Data Structures"
+prerequisites: ["python-zero-to-hero/07-conditional-logic-and-control-flow"]
+---
+import PythonRunner from '../../../components/islands/PythonRunner';
+import QuizCard from '../../../components/islands/QuizCard';
+
+## Introduction: From Primitives to Compound Data Structures
+
+In earlier chapters, you worked primarily with Python's **primitive data types**: integers (`int`), floating-point numbers (`float`), strings (`str`), and booleans (`bool`). Each primitive variable holds a single, atomic value—such as a single temperature reading, a user's age, or a person's first name.
+
+However, real-world engineering and data analysis problems require organizing and managing collections of related data. Consider these common scenarios:
+* Representing geographic coordinates as an immutable pair of values: $(x, y) = (37.7749, -122.4194)$.
+* Maintaining an ordered sequence of sensor readings that arrives over time: $[21.2, 21.8, 22.4, 21.9]$.
+* Looking up employee contact records by an identifier or employee ID: `10042 -> "Elena Rostova"`.
+
+To address these requirements, Python provides three foundational built-in **compound data structures**:
+1. **Tuples** (`tuple`): Ordered, immutable sequences of arbitrary objects.
+2. **Lists** (`list`): Ordered, mutable sequences that support in-place resizing, element insertion, and item modification.
+3. **Dictionaries** (`dict`): Associative collections of key-value pairs backed by high-performance hash tables for rapid lookup.
+
+Understanding how each data structure allocates memory, manages mutability, and executes common operations is essential for writing efficient, idiomatic Python code.
+
+---
+
+## 8.1 Tuples: Immutable Sequences
+
+### What is a Tuple?
+
+A **tuple** is an ordered sequence of elements borrowed directly from mathematical notation. In mathematics, an ordered $k$-tuple is denoted as:
+
+$$\tau = (x_0, x_1, x_2, \dots, x_{k-1})$$
+
+In Python, tuples share several defining characteristics:
+* **Zero-Indexed**: The first element resides at index $0$, and the last element resides at index $k-1$ (where $k = \text{len}(\tau)$).
+* **Heterogeneous**: A single tuple can hold elements of differing data types simultaneously.
+* **Immutable**: Once instantiated, the size, sequence, and object references of a tuple cannot be changed.
+
+### Creating Tuples
+
+Python offers several syntax forms for tuple instantiation:
+
+```python
+# 1. Tuple literal containing mixed data types
+coordinates = (37.7749, -122.4194, "San Francisco")
+
+# 2. Empty tuple
+empty_record = ()
+
+# 3. Tuple constructor converting an iterable
+letters = tuple("Python")
+# Evaluates to: ('P', 'y', 't', 'h', 'o', 'n')
+```
+
+> [!WARNING]
+> ### The Single-Element Trailing Comma Pitfall
+> In Python syntax, parentheses `(...)` are overloaded: they serve both as tuple delimiters and as mathematical grouping operators. Because of this ambiguity, writing `(42)` evaluates to the **integer** `42`, not a tuple.
+> 
+> To define a single-element tuple, you **must include a trailing comma**:
+> ```python
+> single_item = (42,)   # Type: tuple
+> not_a_tuple = (42)    # Type: int
+> 
+> print(type(single_item))  # <class 'tuple'>
+> print(type(not_a_tuple))  # <class 'int'>
+> ```
+
+Passing a non-iterable type (such as a single integer or boolean) directly into the `tuple()` constructor raises a `TypeError`:
+
+```python
+tuple(100)  # TypeError: 'int' object is not iterable
+```
+
+### Accessing Elements: Indexing and Slicing
+
+Because tuples are sequential containers, accessing individual items and subsets works identically to string indexing and slicing:
+
+```python
+measurements = (10.5, 20.2, 30.8, 40.1, 50.9)
+
+# Forward indexing (0-indexed)
+print(measurements[0])   # 10.5
+
+# Negative indexing (from the end)
+print(measurements[-1])  # 50.9
+
+# Sub-slice extraction: measurements[start:stop]
+subset = measurements[1:4]
+print(subset)            # (20.2, 30.8, 40.1)
+```
+
+Index retrieval executes in constant time, $\mathcal{O}(1)$, because tuple items are stored in contiguous memory pointers.
+
+### The Invariant of Immutability
+
+Tuples are strictly **immutable**. Once created in memory, attempting to assign a new value to an index or delete an element raises a `TypeError`:
+
+```python
+profile = ("Alice", 28, "Engineer")
+
+# Attempting in-place mutation triggers an error:
+profile[1] = 29
+# TypeError: 'tuple' object does not support item assignment
+```
+
+Immutability provides two critical engineering advantages:
+1. **Thread Safety & Data Integrity**: When passing tuples between functions or concurrent tasks, you are guaranteed that receiving functions cannot alter the original data.
+2. **Hashability**: Because their values cannot change, tuples containing only immutable items are **hashable** and can serve as dictionary keys or set elements.
+
+### Packing, Unpacking, and Multiple Return Values
+
+Python allows you to omit parentheses when defining comma-separated values; this process is known as **tuple packing**:
+
+```python
+# Tuple packing
+point = 4.21, 9.29
+print(type(point))  # <class 'tuple'>
+```
+
+Conversely, **tuple unpacking** assigns every element of a tuple into distinct target variables in a single statement:
+
+```python
+# Tuple unpacking
+x, y = point
+print(f"X: {x}, Y: {y}")  # X: 4.21, Y: 9.29
+
+# Parallel variable assignment
+name, age, profession = ("David", 34, "Programmer")
+```
+
+> [!NOTE]
+> When unpacking, the number of target variables on the left-hand side must exactly match the length of the tuple. If the counts do not align, Python raises a `ValueError`:
+> ```python
+> a, b = (1, 2, 3)
+> # ValueError: too many values to unpack (expected 2, got 3)
+> ```
+
+Tuples are the canonical mechanism Python uses when a function returns multiple values:
+
+```python
+def compute_statistics(numbers):
+    total = sum(numbers)
+    count = len(numbers)
+    mean = total / count
+    return (count, total, mean)
+
+# Unpack the returned tuple directly at the call site
+sample_count, sample_sum, sample_mean = compute_statistics((12, 18, 24, 30))
+print(f"Count: {sample_count}, Mean: {sample_mean:.2f}")
+```
+
+---
+
+## 8.2 Lists: Mutable Sequences
+
+### What is a List?
+
+A **list** is an ordered, **mutable** collection of items. Unlike tuples, lists can grow, shrink, and modify their elements in place throughout program execution.
+
+Lists are defined using square brackets `[...]`:
+
+```python
+# List literal
+inventory = ["laptop", "mouse", "keyboard", "monitor"]
+
+# Converting an iterable to a list
+digits = list(range(1, 6))  # [1, 2, 3, 4, 5]
+
+# Splitting a formatted string into a list of tokens
+raw_csv = "CPU,8-Core,3.2GHz,65W"
+specs = raw_csv.split(",")  # ['CPU', '8-Core', '3.2GHz', '65W']
+```
+
+### Mutating Lists: In-Place Assignment
+
+Because lists are mutable, you can reassign any valid index or slice directly:
+
+```python
+colors = ["red", "yellow", "green", "blue"]
+
+# Modify index 0
+colors[0] = "burgundy"
+
+# Modify a contiguous slice in-place
+colors[1:3] = ["amber", "emerald"]
+
+print(colors)
+# Output: ['burgundy', 'amber', 'emerald', 'blue']
+```
+
+### Essential List Methods
+
+Python lists provide built-in methods for dynamic mutation:
+
+| Method | Signature | Behavioral Description | Return Value | Algorithmic Complexity |
+| :--- | :--- | :--- | :--- | :--- |
+| `.append(x)` | `append(object)` | Appends object `x` to the end of the list | `None` | $\mathcal{O}(1)$ amortized |
+| `.extend(iterable)` | `extend(iterable)` | Iterates through `iterable`, appending each item | `None` | $\mathcal{O}(k)$ where $k = \text{len(iterable)}$ |
+| `.insert(i, x)` | `insert(index, object)` | Inserts `x` before position `i`, shifting elements right | `None` | $\mathcal{O}(n)$ |
+| `.pop([i])` | `pop([index])` | Removes and returns item at index `i` (defaults to last) | Removed object | $\mathcal{O}(1)$ for end, $\mathcal{O}(n)$ for arbitrary index |
+
+```python
+cities = ["Tokyo", "Berlin"]
+
+# Append a single item
+cities.append("Nairobi")          # ['Tokyo', 'Berlin', 'Nairobi']
+
+# Extend with multiple items
+cities.extend(["Lima", "Seoul"])  # ['Tokyo', 'Berlin', 'Nairobi', 'Lima', 'Seoul']
+
+# Insert at index 1 (shifts subsequent items to the right)
+cities.insert(1, "Toronto")       # ['Tokyo', 'Toronto', 'Berlin', 'Nairobi', 'Lima', 'Seoul']
+
+# Pop the last element
+departed = cities.pop()           # Returns 'Seoul'
+print(f"Removed: {departed}")
+```
+
+> [!WARNING]
+> ### The In-Place Mutation Pitfall
+> Methods that mutate lists in place—such as `.append()`, `.extend()`, `.insert()`, and `.sort()`—return `None`. Reassigning the variable to the method call overwrites your list:
+> ```python
+> items = [1, 2, 3]
+> items = items.append(4)  # BUG! items is now None
+> print(items)             # Output: None
+> ```
+
+### Numeric Aggregations on Sequences
+
+Python includes built-in functions that operate on numerical lists and tuples:
+
+```python
+temperatures = [19.5, 24.2, 17.8, 31.0, 22.4]
+
+print(f"Minimum: {min(temperatures)}")      # 17.8
+print(f"Maximum: {max(temperatures)}")      # 31.0
+print(f"Total Sum: {sum(temperatures)}")    # 114.9
+print(f"Average:  {sum(temperatures) / len(temperatures):.2f}")  # 22.98
+```
+
+### List Comprehensions: Expressive Transformations
+
+A **list comprehension** provides a compact, declarative syntax for transforming one iterable into a new list. It corresponds directly to mathematical **set-builder notation**:
+
+$$S_{\text{new}} = \{ f(x) \mid x \in S_{\text{old}} \land P(x) \}$$
+
+In Python syntax:
+```python
+new_list = [expression for item in iterable if condition]
+```
+
+Consider transforming and filtering data:
+
+```python
+# 1. Square all numbers from 1 to 5
+squares = [n**2 for n in range(1, 6)]
+# [1, 4, 9, 16, 25]
+
+# 2. Type-casting string numbers to floating-point values
+raw_readings = ["1.25", "3.50", "7.80", "12.05"]
+clean_floats = [float(val) for val in raw_readings]
+# [1.25, 3.5, 7.8, 12.05]
+
+# 3. Filtering elements conditionally
+even_squares = [n**2 for n in range(1, 11) if n % 2 == 0]
+# [4, 16, 36, 64, 100]
+```
+
+List comprehensions execute faster than standard `for` loops with `.append()` calls because Python optimizes the bytecode loop instructions at the C level.
+
+---
+
+## 8.3 Nesting, Copying, and Sorting
+
+### Nested Data Structures and Matrices
+
+Lists and tuples can store any Python objects, including other lists and tuples. This nesting capability makes it straightforward to represent tabular data, coordinate grids, and mathematical matrices:
+
+$$M = \begin{pmatrix} 1 & 2 & 3 \\ 4 & 5 & 6 \\ 7 & 8 & 9 \end{pmatrix}$$
+
+```python
+# Representing a 3x3 matrix as a nested list
+matrix = [
+    [1, 2, 3],
+    [4, 5, 6],
+    [7, 8, 9]
+]
+
+# Accessing elements: matrix[row_index][column_index]
+# Access row 1, column 0 (value 4)
+print(matrix[1][0])  # 4
+
+# Access row 2, column 2 (value 9)
+print(matrix[2][2])  # 9
+```
+
+### Object References vs. Shallow and Deep Copies
+
+When you assign an existing list variable to a new variable name (`b = a`), Python **does not create a duplicate copy** of the list. Instead, both identifiers point to the identical object in system memory:
+
+```python
+original = [10, 20, 30]
+alias = original  # Both point to the exact same memory address!
+
+alias.append(40)
+print(original)  # [10, 20, 30, 40] — original was mutated!
+```
+
+To create an independent copy, you must distinguish between **shallow copies** and **deep copies**:
+
+1. **Shallow Copy (`list.copy()` or `a[:]`)**:
+   Creates a new top-level list container, but copies the references of elements inside it.
+   ```python
+   flat_list = ["apple", "banana"]
+   shallow = flat_list[:]
+   shallow.append("cherry")
+   print(flat_list)  # ['apple', 'banana'] (unmodified)
+   ```
+   *Caveat with Nested Lists*: If elements inside the list are mutable containers, a shallow copy still references the original child lists:
+   ```python
+   grid = [[1, 2], [3, 4]]
+   shallow_grid = grid[:]
+   shallow_grid[0].append(99)
+   print(grid)  # [[1, 2, 99], [3, 4]] — child list was mutated!
+   ```
+
+2. **Deep Copy (`copy.deepcopy()`)**:
+   Recursively clones all parent and child objects, ensuring complete memory independence:
+   ```python
+   import copy
+
+   nested_data = [[1, 2], [3, 4]]
+   independent_clone = copy.deepcopy(nested_data)
+   independent_clone[0].append(999)
+
+   print(nested_data)        # [[1, 2], [3, 4]] (isolated!)
+   print(independent_clone)  # [[1, 2, 999], [3, 4]]
+   ```
+
+### Sorting: `.sort()` vs. `sorted()`
+
+Python provides two approaches for sorting collections:
+
+1. **The In-Place Method (`list.sort()`)**:
+   Sorts the caller list in place using Timsort with $\mathcal{O}(n \log n)$ time complexity and returns `None`.
+2. **The Built-In Function (`sorted(iterable)`)**:
+   Accepts any iterable (tuples, lists, string iterators) and returns a **newly created sorted list**, leaving the input sequence unmodified.
+
+Both accept an optional `key` parameter (a single-argument function mapping each element to its comparison key) and a `reverse` boolean flag:
+
+```python
+words = ["elephant", "cat", "hippopotamus", "dog"]
+
+# Sort strings by character length
+words.sort(key=len)
+print(words)
+# ['cat', 'dog', 'elephant', 'hippopotamus']
+
+# Sorting tuples with reverse order
+scores = [("Alice", 88), ("Bob", 95), ("Charlie", 72)]
+ranked = sorted(scores, key=lambda item: item[1], reverse=True)
+print(ranked)
+# [('Bob', 95), ('Alice', 88), ('Charlie', 72)]
+```
+
+---
+
+## 8.4 Dictionaries: Key-Value Relationships
+
+### What is a Dictionary?
+
+A **dictionary** (`dict`) is an associative collection that maps unique, immutable **keys** to arbitrary **values**. While sequences (tuples and lists) index items by contiguous integer positions ($0, 1, 2, \dots$), dictionaries index items using semantic labels:
+
+```python
+# Creating a dictionary literal
+capitals = {
+    "California": "Sacramento",
+    "New York": "Albany",
+    "Texas": "Austin"
+}
+
+# Lookup by key
+print(capitals["Texas"])  # 'Austin'
+```
+
+Under the hood, Python dictionaries use **hash tables**. Finding an item by key achieves an average time complexity of $\mathcal{O}(1)$, making key lookups practically instantaneous regardless of whether the dictionary contains 10 items or 10,000,000 items.
+
+### Modifying and Querying Dictionaries
+
+```python
+user_stats = {"level": 12, "score": 2450}
+
+# 1. Add or Update a key-value pair
+user_stats["score"] = 2600    # Updates existing key
+user_stats["guild"] = "Titan"  # Adds new key
+
+# 2. Delete a key-value pair
+del user_stats["level"]
+
+# 3. Safe Lookup via .get()
+# Accessing user_stats["missing"] directly raises KeyError!
+badge = user_stats.get("badge", "Novice")  # Returns default 'Novice'
+print(f"Badge: {badge}")
+
+# 4. Checking membership (checks keys only)
+if "guild" in user_stats:
+    print(f"Guild: {user_stats['guild']}")
+```
+
+### Iteration Patterns: Keys, Values, and Items
+
+When iterating over a dictionary with a `for` loop, Python defaults to iterating across its **keys**:
+
+```python
+product_prices = {"laptop": 999.99, "mouse": 29.50, "keyboard": 75.00}
+
+# Default iteration: yields keys
+for product in product_prices:
+    print(f"{product}: ${product_prices[product]:.2f}")
+
+# Iterating over key-value pairs via .items()
+for product, price in product_prices.items():
+    print(f"Item: {product:<10} | Price: ${price:.2f}")
+
+# Iterating strictly over values via .values()
+average_price = sum(product_prices.values()) / len(product_prices)
+print(f"Average Price: ${average_price:.2f}")
+```
+
+### The Key Hashability Rule
+
+In Python dictionaries, values can be of any data type, including lists, tuples, or other nested dictionaries.
+
+However, **keys must be immutable and hashable**. Python computes an internal hash value $h(\text{key})$ to determine the key's storage bucket in memory. If an object is mutable, its state could change after insertion, corrupting the hash table index:
+
+```python
+# VALID keys: str, int, float, bool, and tuples of immutable items
+valid_dict = {
+    "title": "Quantum Computing",
+    42: "The Answer",
+    (10, 20): "Point A"
+}
+
+# INVALID key: list (mutable)
+invalid_dict = {
+    [1, 2, 3]: "Sensor Cluster"
+}
+# Raises: TypeError: unhashable type: 'list'
+```
+
+---
+
+## Conceptual Self-Check: Key Hashability & Mutability
+
+Test your understanding of Python's mutability and hash table rules before moving to the interactive sandbox:
+
+<QuizCard
+  client:visible
+  question="Which of the following Python dictionary declarations will raise an unhandled TypeError when executed?"
+  options={[
+    'grid_map = {("x", 0): "origin", ("x", 1): "step_one"}',
+    'cache = {[192, 168, 1, 1]: "router_gateway"}',
+    'student_grades = {"Elena": [94, 88, 92], "Marcus": [79, 85, 91]}',
+    'constants = {(3.14159, 2.71828): "transcendental_constants"}'
+  ]}
+  correctAnswer={1}
+  explanation="In Python, dictionary keys must be immutable and hashable. A list ([192, 168, 1, 1]) is mutable and cannot be hashed, triggering 'TypeError: unhashable type: list'. In contrast, tuples containing immutable primitives (Options 0 and 3) are valid keys, and dictionary values (Option 2) are completely permitted to be mutable lists."
+/>
+
+---
+
+## 8.5 Choosing the Right Data Structure
+
+Choosing the correct compound data structure is a core software design decision. Use the criteria in this reference matrix:
+
+| Feature / Criterion | **List** (`list`) | **Tuple** (`tuple`) | **Dictionary** (`dict`) |
+| :--- | :--- | :--- | :--- |
+| **Ordering** | Natural insertion order | Natural insertion order | Key insertion order (Python 3.7+) |
+| **Mutability** | **Mutable** (can add, remove, mutate) | **Immutable** (frozen once created) | **Mutable** (keys/values can be modified) |
+| **Indexing Model** | Continuous integer index $0, 1, \dots$ | Continuous integer index $0, 1, \dots$ | Unique hashable key label |
+| **Lookup Performance** | $\mathcal{O}(1)$ by index; $\mathcal{O}(n)$ by value search | $\mathcal{O}(1)$ by index; $\mathcal{O}(n)$ by value search | $\mathcal{O}(1)$ average by key |
+| **Primary Use Cases** | Dynamic queues, stacks, data sets undergoing frequent updates | Fixed schemas, coordinate records, multi-value function returns, dict keys | Lookup tables, entity records, frequency counters, fast associations |
+
+---
+
+## Interactive Code Sandboxes
+
+### Sandbox 1: List Processing & Dynamic Comprehensions
+
+Practice string splitting, in-place list mutation, float conversions with list comprehensions, and sequence statistics. Run the script below:
+
+<PythonRunner
+  client:visible
+  title="Interactive Sandbox: List Parsing & Comprehension Analytics"
+  expectedOutput="Original readings: ['20.5C', '18.2C', '25.0C', '30.1C', '15.4C']
+Extracted Celsius floats: [20.5, 18.2, 25.0, 30.1, 15.4]
+Fahrenheit values (>= 75F): [77.0, 86.18]
+Statistics: Min = 15.4C, Max = 30.1C, Mean = 21.84C"
+  initialCode={`# Raw telemetry data as a comma-separated string
+raw_telemetry = "20.5C, 18.2C, 25.0C, 30.1C, 15.4C"
+
+# 1. Parse string into a list of strings
+readings = [item.strip() for item in raw_telemetry.split(",")]
+print(f"Original readings: {readings}")
+
+# 2. Extract numeric Celsius values using a list comprehension
+celsius_vals = [float(reading[:-1]) for reading in readings]
+print(f"Extracted Celsius floats: {celsius_vals}")
+
+# 3. Convert Celsius to Fahrenheit: F = (C * 9/5) + 32
+# Filter for readings that are at least 75 degrees Fahrenheit
+warm_f = [round((c * 9/5) + 32, 2) for c in celsius_vals if (c * 9/5) + 32 >= 75.0]
+print(f"Fahrenheit values (>= 75F): {warm_f}")
+
+# 4. Compute aggregate statistics using sum(), min(), max(), and len()
+min_temp = min(celsius_vals)
+max_temp = max(celsius_vals)
+mean_temp = sum(celsius_vals) / len(celsius_vals)
+
+print(f"Statistics: Min = {min_temp}C, Max = {max_temp}C, Mean = {mean_temp:.2f}C")`}
+/>
+
+---
+
+### Sandbox 2: Nested Dictionaries & Inventory Valuation
+
+Explore dictionary construction, updating, and iteration with `.items()` to calculate inventory totals and product valuations:
+
+<PythonRunner
+  client:visible
+  title="Interactive Sandbox: Nested Dictionaries & Product Valuation"
+  expectedOutput="=== Warehouse Inventory Report ===
+Product: apples     | Stock: 45 units  | Price: $1.20 | Value: $54.00
+Product: bananas    | Stock: 120 units | Price: $0.50 | Value: $60.00
+Product: oranges    | Stock: 30 units  | Price: $1.50 | Value: $45.00
+------------------------------------------------------------
+Total Stock Quantity : 195 units
+Total Inventory Value: $159.00"
+  initialCode={`# Nested dictionary representing a warehouse product catalog
+catalog = {
+    "apples": {"quantity": 50, "price": 1.20},
+    "bananas": {"quantity": 120, "price": 0.50},
+    "oranges": {"quantity": 30, "price": 1.50}
+}
+
+# Update: sell 5 units of apples
+catalog["apples"]["quantity"] -= 5
+
+print("=== Warehouse Inventory Report ===")
+total_stock = 0
+total_valuation = 0.0
+
+# Iterate through dictionary using .items()
+for item_name, details in catalog.items():
+    qty = details["quantity"]
+    unit_price = details["price"]
+    subtotal = qty * unit_price
+    
+    total_stock += qty
+    total_valuation += subtotal
+    
+    print(f"Product: {item_name:<10} | Stock: {qty:<3} units  | Price: \${unit_price:.2f} | Value: \${subtotal:.2f}")
+
+print("-" * 60)
+print(f"Total Stock Quantity : {total_stock} units")
+print(f"Total Inventory Value: \${total_valuation:.2f}")`}
+/>
+
+---
+
+## Chapter Summary & Quick Reference
+
+* **Tuples (`tuple`)**:
+  * Immutable sequence defined via parentheses `(...)` or packing `a, b = 1, 2`.
+  * Single-element tuples require a trailing comma: `(42,)`.
+  * Unpacking matches left-hand variables to tuple items; length mismatch causes `ValueError`.
+  * Hashable and safe for use as dictionary keys when containing only immutable items.
+* **Lists (`list`)**:
+  * Mutable sequence defined via square brackets `[...]`.
+  * Common methods: `.append()` (add one to end), `.extend()` (add all from iterable), `.insert()` (add at index), `.pop()` (remove and return by index).
+  * In-place methods return `None`; avoid assigning `x = x.append(...)`.
+  * List comprehensions offer declarative syntax: `[f(x) for x in seq if cond]`.
+* **Nesting & Memory Semantics**:
+  * Variable assignment (`b = a`) creates an alias, not a copy.
+  * Shallow copy (`a[:]` or `a.copy()`) copies only the outer list container.
+  * Deep copy (`copy.deepcopy()`) recursively copies all nested containers.
+* **Dictionaries (`dict`)**:
+  * Unordered (Python 3.6: insertion-ordered) key-value hash mappings with $\mathcal{O}(1)$ average lookup.
+  * Keys **must be immutable and hashable** (`str`, `int`, `tuple`). Mutable objects like `list` raise `TypeError: unhashable type: 'list'`.
+  * Iterate with `.items()` for key-value pairs, `.keys()` for keys, and `.values()` for values.
+  * Use `.get(key, default)` for defensive lookups without triggering `KeyError`.
