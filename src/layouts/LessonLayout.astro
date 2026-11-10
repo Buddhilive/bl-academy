@@ -1,0 +1,140 @@
+---
+import 'katex/dist/katex.min.css';
+import Layout from './Layout.astro';
+import LessonSidebar from '../components/static/LessonSidebar.astro';
+import LessonProgressPanel from '../components/islands/LessonProgressPanel';
+import LessonFooter from '../components/islands/LessonFooter';
+import AdSlot from '../components/static/AdSlot.astro';
+import type { CollectionEntry } from 'astro:content';
+
+interface Props {
+  entry: CollectionEntry<'lessons'>;
+  allLessons?: CollectionEntry<'lessons'>[];
+}
+
+const { entry, allLessons = [] } = Astro.props;
+const { title, description } = entry.data;
+
+// Filter track and sort ascending by order
+const trackLessons = allLessons
+  .filter((l) => l.data.track === entry.data.track)
+  .sort((a, b) => a.data.order - b.data.order || a.id.localeCompare(b.id));
+
+// Summary for progress panel
+const trackLessonSummaries = trackLessons.map((l) => ({
+  id: l.id,
+  order: l.data.order,
+  xp: l.data.xp,
+}));
+
+// Previous and Next topics
+const currentIndex = trackLessons.findIndex((l) => l.id === entry.id);
+const prevLesson = currentIndex > 0 ? trackLessons[currentIndex - 1] : null;
+const nextLesson = currentIndex >= 0 && currentIndex < trackLessons.length - 1 ? trackLessons[currentIndex + 1] : null;
+
+const prevUrl = prevLesson ? `/learn/${prevLesson.data.track}/${prevLesson.id}` : null;
+const nextUrl = nextLesson ? `/learn/${nextLesson.data.track}/${nextLesson.id}` : null;
+---
+
+<Layout title={`${title} | BuddhiLive Academy`} description={description}>
+  <slot name="head" slot="head" />
+  
+  <div class="min-h-screen flex flex-col bg-neutral-950 text-neutral-100">
+    {/* Top Navigation & Live Progress Panel */}
+    <slot name="top-nav">
+      <LessonProgressPanel
+        client:load
+        currentSlug={entry.id}
+        trackLessons={trackLessonSummaries}
+      />
+    </slot>
+
+    <div class="flex-1 max-w-7xl w-full mx-auto flex flex-col lg:flex-row px-4 sm:px-6 lg:px-8 py-6 gap-8">
+      {/* Dynamic sidebar */}
+      <slot name="sidebar">
+        <LessonSidebar
+          currentTrack={entry.data.track}
+          currentSlug={entry.id}
+          lessons={allLessons}
+        />
+      </slot>
+
+      {/* Main lesson content */}
+      <main id="main-content" class="flex-1 min-w-0 max-w-4xl">
+        <slot name="top-banner">
+          <AdSlot slotId="top-lesson-banner" className="mb-6" />
+        </slot>
+
+        <article class="prose prose-invert prose-neutral max-w-none prose-headings:font-semibold prose-headings:text-neutral-100 prose-a:text-[#E07A5F] hover:prose-a:underline prose-code:text-[#E07A5F] prose-pre:bg-neutral-900 prose-pre:border prose-pre:border-neutral-800">
+          <header class="mb-6 border-b border-neutral-800 pb-4">
+            <div class="flex items-center gap-3 text-sm text-neutral-400 mb-2">
+              <span class="capitalize px-2 py-0.5 rounded bg-neutral-900 border border-neutral-800 text-xs font-mono">
+                {entry.data.track}
+              </span>
+              <span>•</span>
+              <span class="text-xs font-medium text-neutral-300">
+                {entry.data.category}
+              </span>
+              <span>•</span>
+              <span class="text-xs font-medium text-amber-400">
+                +{entry.data.xp} XP
+              </span>
+            </div>
+            <h1 class="text-3xl sm:text-4xl font-extrabold tracking-tight text-white mb-2">
+              {entry.data.title}
+            </h1>
+            <p class="text-base sm:text-lg text-neutral-400 mb-4">
+              {entry.data.description}
+            </p>
+
+            {/* W3Schools-style Top Prev / Next Navigation */}
+            <div class="flex items-center justify-between pt-2 border-t border-neutral-800/60 not-prose">
+              {prevUrl ? (
+                <a
+                  href={prevUrl}
+                  class="inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs sm:text-sm font-semibold rounded-md bg-neutral-800 hover:bg-neutral-700 text-neutral-200 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#E07A5F]"
+                >
+                  ❮ Previous
+                </a>
+              ) : (
+                <span class="inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs sm:text-sm font-semibold rounded-md bg-neutral-900/40 text-neutral-600 cursor-not-allowed">
+                  ❮ Previous
+                </span>
+              )}
+
+              {nextUrl ? (
+                <a
+                  href={nextUrl}
+                  class="inline-flex items-center gap-1.5 px-4 py-1.5 text-xs sm:text-sm font-semibold rounded-md bg-[#A7452A] hover:bg-[#93371E] dark:bg-[#E07A5F] dark:hover:bg-[#E58A73] text-white dark:text-neutral-950 shadow-sm transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#E07A5F]"
+                >
+                  Next ❯
+                </a>
+              ) : (
+                <span class="inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs sm:text-sm font-semibold rounded-md bg-neutral-900/40 text-neutral-600 cursor-not-allowed">
+                  Next ❯
+                </span>
+              )}
+            </div>
+          </header>
+
+          <slot />
+        </article>
+
+        {/* Bottom Navigation with Pathfinder XP & Complete */}
+        <div class="mt-12 not-prose">
+          <LessonFooter
+            client:load
+            xp={entry.data.xp}
+            nextLessonUrl={nextUrl || undefined}
+            nextLessonTitle={nextLesson?.data.title}
+            sticky={false}
+          />
+        </div>
+
+        <slot name="bottom-banner">
+          <AdSlot slotId="bottom-lesson-banner" className="mt-8" />
+        </slot>
+      </main>
+    </div>
+  </div>
+</Layout>

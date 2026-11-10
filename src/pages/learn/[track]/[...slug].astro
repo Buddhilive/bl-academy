@@ -1,0 +1,32 @@
+---
+import { getCollection, render, type CollectionEntry } from 'astro:content';
+import LessonLayout from '../../../layouts/LessonLayout.astro';
+
+export async function getStaticPaths() {
+  const lessons = await getCollection('lessons');
+
+  return lessons.map((entry) => ({
+    params: {
+      track: entry.data.track,
+      slug: entry.id,
+    },
+    props: {
+      entry,
+      allLessons: lessons.filter((l) => l.data.track === entry.data.track),
+    },
+  }));
+}
+
+interface Props {
+  entry: CollectionEntry<'lessons'>;
+  allLessons: CollectionEntry<'lessons'>[];
+}
+
+const { entry, allLessons } = Astro.props;
+const { Content } = await render(entry);
+---
+
+<LessonLayout entry={entry} allLessons={allLessons}>
+  <Content />
+</LessonLayout>
+

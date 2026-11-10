@@ -1,0 +1,90 @@
+---
+import Layout from '../layouts/Layout.astro';
+import PythonRunner from '../components/islands/PythonRunner';
+import QuizCard from '../components/islands/QuizCard';
+import LessonFooter from '../components/islands/LessonFooter';
+---
+
+<Layout>
+  <main class="max-w-4xl mx-auto px-4 py-8 space-y-12">
+    <!-- Header -->
+    <header class="border-b border-stone-800 pb-6">
+      <div class="flex items-center gap-2 text-sm text-[#E07A5F] font-semibold mb-2">
+        <span class="w-2 h-2 rounded-full bg-[#E07A5F]"></span>
+        <span>Spec 003 Verification Harness</span>
+      </div>
+      <h1 class="text-3xl font-bold tracking-tight text-white mb-2">
+        Interactive Island Components
+      </h1>
+      <p class="text-stone-400 text-sm max-w-2xl">
+        Verifying PythonRunner, QuizCard, and LessonFooter client-side islands under Astro client:visible hydration with Pyodide Web Worker execution.
+      </p>
+    </header>
+
+    <!-- Component 1: PythonRunner with expectedOutput -->
+    <section class="space-y-4">
+      <div class="flex items-center justify-between">
+        <h2 class="text-xl font-semibold text-stone-100">
+          1. Interactive Python Runner (P1 🎯 MVP)
+        </h2>
+        <span class="text-xs px-2.5 py-1 rounded bg-stone-800 text-stone-300 font-mono">
+          &lt;PythonRunner client:visible /&gt;
+        </span>
+      </div>
+      <p class="text-sm text-stone-400">
+        Run the Python snippet below. When the output evaluates to <code>42</code>, celebratory confetti will trigger and display the Pass status.
+      </p>
+
+      <PythonRunner
+        client:visible
+        title="Challenge: The Answer to Everything"
+        initialCode={`# Calculate 6 * 7 and print the result\nresult = 6 * 7\nprint(result)`}
+        expectedOutput="42"
+        minLines={5}
+      />
+    </section>
+
+    <!-- Component 2: QuizCard -->
+    <section class="space-y-4">
+      <div class="flex items-center justify-between">
+        <h2 class="text-xl font-semibold text-stone-100">
+          2. Conceptual Assessment Island (P2)
+        </h2>
+        <span class="text-xs px-2.5 py-1 rounded bg-stone-800 text-stone-300 font-mono">
+          &lt;QuizCard client:visible /&gt;
+        </span>
+      </div>
+      <p class="text-sm text-stone-400">
+        Select an answer to see instant visual feedback and conceptual explanation.
+      </p>
+
+      <QuizCard
+        client:visible
+        question="What is the average-case time complexity of searching for a key in a Python dictionary?"
+        options={[
+          "O(1) - Constant Time",
+          "O(log n) - Logarithmic Time",
+          "O(n) - Linear Time",
+          "O(n log n) - Linearithmic Time"
+        ]}
+        correctAnswer={0}
+        explanation="Python dictionaries are implemented using hash tables. Under good distribution with low collision rates, key retrieval has an average time complexity of O(1)."
+      />
+    </section>
+
+    <!-- Space for scroll demonstration before sticky footer -->
+    <div class="py-6 text-center text-xs text-stone-500">
+      --- Scroll down to inspect the sticky lesson footer ---
+    </div>
+  </main>
+
+  <!-- Component 3: LessonFooter -->
+  <LessonFooter
+    client:visible
+    xp={30}
+    nextLessonTitle="Next: Pyodide Sandbox Diagnostics"
+    nextLessonUrl="/test-pyodide"
+    sticky={true}
+  />
+</Layout>
+

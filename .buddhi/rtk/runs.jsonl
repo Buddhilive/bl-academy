@@ -1,0 +1,5 @@
+{"timestamp": 1793540621, "command": "pnpm build", "filter_name": "npm", "raw_tokens": 109, "filtered_tokens": 93, "saved_tokens": 16, "exit_code": 1}
+{"timestamp": 1793580325, "command": "pnpm build", "filter_name": "npm", "raw_tokens": 109, "filtered_tokens": 93, "saved_tokens": 16, "exit_code": 1}
+{"timestamp": 1794293178, "command": "buddhi [args redacted]", "filter_name": "generic", "raw_tokens": 112, "filtered_tokens": 112, "saved_tokens": 0, "exit_code": 0}
+{"timestamp": 1794293186, "command": "buddhi [args redacted]", "filter_name": "generic", "raw_tokens": 39, "filtered_tokens": 39, "saved_tokens": 0, "exit_code": 0}
+{"timestamp": 1794295353, "command": "buddhi [args redacted]", "filter_name": "generic", "raw_tokens": 112, "filtered_tokens": 112, "saved_tokens": 0, "exit_code": 0}

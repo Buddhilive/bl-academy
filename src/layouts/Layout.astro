@@ -1,23 +1,29 @@
+---
+import 'katex/dist/katex.min.css';
+
+interface Props {
+	title?: string;
+	description?: string;
+}
+
+const {
+	title = 'BuddhiLive Academy',
+	description = 'Interactive zero-backend programming academy with live client-side Python execution.',
+} = Astro.props;
+---
 <!doctype html>
-<html lang="en">
+<html lang="en" class="dark">
 	<head>
 		<meta charset="utf-8" />
 		<meta name="viewport" content="width=device-width" />
 		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
 		<link rel="icon" href="/favicon.ico" />
 		<meta name="generator" content={Astro.generator} />
-		<title>Astro Basics</title>
+		<title>{title}</title>
+		<meta name="description" content={description} />
+		<slot name="head" />
 	</head>
-	<body>
+	<body class="bg-neutral-950 text-neutral-100 min-h-screen antialiased">
 		<slot />
 	</body>
 </html>
-
-<style>
-	html,
-	body {
-		margin: 0;
-		width: 100%;
-		height: 100%;
-	}
-</style>

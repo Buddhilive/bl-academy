@@ -1,0 +1,417 @@
+---
+title: "Functions and Loops in Python"
+track: "python"
+category: "Python Tutorial"
+order: 5
+difficulty: "beginner"
+xp: 60
+description: "Master Python functions and loops: custom definitions, return values vs side effects, while and for iteration, nested loops, docstrings, and variable scope with the LEGB rule."
+topic: "Functions & Loops"
+prerequisites: ["python-zero-to-hero/04-numbers-and-math"]
+---
+import PythonRunner from '../../../components/islands/PythonRunner';
+import QuizCard from '../../../components/islands/QuizCard';
+
+## Introduction to Functions and Control Flow Loops
+
+In modern software engineering, programs must accomplish two foundational objectives: eliminate redundant code through modular abstractions, and execute repetitive tasks deterministically without manual duplication. Python satisfies these requirements through **functions** and **loops**.
+
+Functions allow developers to compartmentalize complex operations into reusable, testable subroutines adhering to the **DRY (Don't Repeat Yourself)** paradigm. Meanwhile, iteration structures—comprising indefinite `while` loops and definite `for` loops—allow computers to process sequences, numerical datasets, and recurring conditions with minimal computational overhead. 
+
+In this chapter, you will dissect what a function represents in Python's object model, author custom functions with documentation docstrings, control program flow using loops and the `range()` generator, and master variable resolution mechanics under the **LEGB (Local, Enclosing, Global, Built-in)** scoping hierarchy.
+
+---
+
+## 5.1 What is a Function, Really?
+
+Many programmers initially conceptualize a function merely as a named recipe of instructions. In Python, however, **functions are first-class values**—they are concrete objects residing in memory, equivalent to integers, floating-point numbers, or strings.
+
+### 1. Functions Are Values
+
+When you reference a built-in function such as `len` without parentheses, Python does not execute the function. Instead, it yields the function object itself:
+
+```python
+print(len)        # Output: <built-in function len>
+print(type(len))  # Output: <class 'builtin_function_or_method'>
+```
+
+Because a function identifier is simply a variable pointing to an executable object in memory, functions can be assigned to alternative variable names, stored within data structures, or passed as arguments to other functions:
+
+```python
+calculate_length = len
+print(calculate_length("Python"))  # Output: 6
+```
+
+> [!WARNING]
+> Because function names are ordinary variable bindings, reassigning a built-in name like `len = "hello"` overrides the reference in the global namespace. Attempting subsequent calls like `len("world")` raises a `TypeError: 'str' object is not callable`. Always avoid naming custom variables after built-in identifiers.
+
+### 2. How Python Executes a Function
+
+To invoke a function object, append parentheses `()` containing any required arguments. Python executes a function call through three formal phases:
+
+1. **Call & Input**: The caller halts execution, transfers control to the function subroutine, and evaluates arguments to bind them to formal parameters within a new local execution frame.
+2. **Execution**: The interpreter executes each statement inside the function body sequentially from top to bottom.
+3. **Return**: Execution terminates at a `return` statement (or the end of the body). The evaluated expression is returned to the call site, replacing the function invocation expression:
+
+$$\text{Call Site: } x = \text{len}("four") \implies x = 4$$
+
+### 3. Return Values vs. Side Effects
+
+Understanding the architectural boundary between **return values** and **side effects** is critical for writing clean, predictable code:
+
+* **Return Value**: The discrete data value evaluated by a function and handed back to the caller frame. It can be stored in a variable, composed inside mathematical expressions, or passed to further routines:
+  $$y = f(x)$$
+* **Side Effect**: An observable modification to the environment outside the function's internal scope, such as writing characters to the terminal screen, persisting data to disk, or changing a mutable data structure.
+
+The built-in `print()` function is a classic demonstration of this distinction. Calling `print("Hello")` displays text on the screen as a **side effect**, but its actual return value evaluates to `None` (an instance of `NoneType`):
+
+```python
+result = print("Displaying text!")  # Displays text to standard output
+print("Return value:", result)       # Output: Return value: None
+print("Type of result:", type(result))  # Output: <class 'NoneType'>
+```
+
+---
+
+## 5.2 Writing Custom Functions
+
+Writing custom functions modularizes software, isolates bugs to discrete blocks, and prevents copy-paste errors across codebases.
+
+### 1. The Anatomy of a Function Definition
+
+Every custom function adheres to a strict structural declaration:
+
+```python
+def multiply(x, y):  # 1. Signature (def keyword, name, parameters, colon)
+    """Return the product of two numbers x and y."""  # 2. Docstring
+    product = x * y  # 3. Indented body
+    return product   # 4. Explicit return statement
+```
+
+| Component | Role & Syntax Rule |
+| :--- | :--- |
+| `def` Keyword | Informs the Python compiler that a function definition begins. |
+| Function Name | Unique identifier conforming to PEP 8 snake_case conventions. |
+| Parameter List | Parenthesized comma-separated identifiers receiving inputs: `(param1, param2)`. |
+| Terminating Colon `:` | Demarcates the header and opens a new indented block. |
+| Function Body | Unified block indented by exactly **four spaces**. |
+| `return` Statement | Terminates function execution and yields a value. If omitted, Python defaults to `return None`. |
+
+### 2. Indentation & Syntax Rules
+
+Python enforces code grouping via indentation rather than curly braces `{}`. Under **PEP 8**:
+* Every statement within a function body must be indented by exactly **4 spaces**.
+* Inconsistent indentation levels within the same block trigger an `IndentationError`.
+* Functions must be **defined prior to invocation**. Calling a function before its `def` statement executes raises a `NameError`.
+
+```python
+# Valid definition before invocation
+def greet(name):
+    return f"Welcome to Academy, {name}!"
+
+message = greet("Alex")
+print(message)  # Output: Welcome to Academy, Alex!
+```
+
+### 3. Documenting Functions with Docstrings
+
+A **docstring** (documentation string) is a string literal placed immediately as the first statement in a function body. Enclosed in triple quotes `"""..."""`, docstrings document the subroutine's purpose, expected argument types, and return values:
+
+```python
+def calculate_area(length, width):
+    """Calculate and return the rectangular area given length and width."""
+    return length * width
+```
+
+Docstrings are preserved in the function object's `__doc__` attribute and surfaced interactively whenever developers query `help(calculate_area)`:
+
+```python
+print(calculate_area.__doc__)
+# Output: Calculate and return the rectangular area given length and width.
+```
+
+### 4. Practical Challenge 6.3: Temperature Conversion
+
+Temperature calculations provide a clear application of mathematical function definitions. Converting between degrees Celsius ($C$) and degrees Fahrenheit ($F$) relies on two inverse linear equations:
+
+$$F = C \times \frac{9}{5} + 32$$
+
+$$C = (F - 32) \times \frac{5}{9}$$
+
+We implement these relationships as two dedicated, documented functions:
+
+```python
+def convert_cel_to_far(celsius):
+    """Convert degrees Celsius to degrees Fahrenheit."""
+    return celsius * 9 / 5 + 32
+
+def convert_far_to_cel(fahrenheit):
+    """Convert degrees Fahrenheit to degrees Celsius."""
+    return (fahrenheit - 32) * 5 / 9
+
+temp_f = 72
+temp_c = convert_far_to_cel(temp_f)
+print(f"{temp_f}°F = {temp_c:.2f}°C")  # Output: 72°F = 22.22°C
+```
+
+---
+
+## 5.3 Mastering Loops (Iteration)
+
+Loops automate repeated actions. Python provides two primary loop constructs: **indefinite iteration** via `while` loops, and **definite iteration** via `for` loops.
+
+### 1. `while` Loops (Indefinite Iteration)
+
+A `while` loop continues executing its indented body repeatedly as long as its boolean condition evaluates to `True`.
+
+```python
+n = 1
+while n < 5:
+    print(f"Current count: {n}")
+    n = n + 1  # Increment loop counter
+```
+
+#### The Mechanics of Infinite Loops
+If a `while` loop's test condition never becomes `False`, the loop enters an **infinite loop**. In desktop environments, infinite loops exhaust CPU resources and freeze processes. In the browser runtime of Buddhilive Academy, Pyodide executes inside a background Web Worker guarded by a hard 5-second watchdog timer to terminate runaway loops safely.
+
+```python
+# Dangerous: Condition never becomes False if 'n' is not updated
+# while n > 0:
+#     print("Stuck forever!")
+```
+
+### 2. `for` Loops (Definite Iteration)
+
+A `for` loop executes a code block once for each element in an iterable sequence (such as strings, lists, or ranges). Rather than manually maintaining index counters, Python `for` loops consume elements directly:
+
+```python
+for letter in "Python":
+    print(f"Character: {letter}")
+```
+
+This direct traversal is concise, readable, and idiomatic (**Pythonic**) compared to traditional C-style index arithmetic.
+
+### 3. Generating Numeric Sequences with `range()`
+
+The built-in `range()` constructor generates immutable arithmetic sequences of integers. It supports three call signatures:
+
+1. `range(stop)`: Generates numbers from $0$ up to, but not including, `stop`:
+   $$\text{range}(3) \implies [0, 1, 2]$$
+2. `range(start, stop)`: Generates numbers starting at `start` up to, but not including, `stop`:
+   $$\text{range}(1, 5) \implies [1, 2, 3, 4]$$
+3. `range(start, stop, step)`: Generates numbers with an explicit increment `step`:
+   $$\text{range}(0, 10, 2) \implies [0, 2, 4, 6, 8]$$
+
+> [!NOTE]
+> Unlike a standard `list`, `range` does not allocate all numbers in memory at once. It computes elements on demand in $O(1)$ constant space, allowing iteration over massive ranges like `range(1_000_000)` without memory strain.
+
+```python
+for i in range(1, 4):
+    print(f"Iteration step: {i}")
+```
+
+### 4. Nested Loops
+
+When one loop is nested inside another, the inner loop executes its complete lifecycle for **every single iteration** of the outer loop:
+
+```python
+for outer in range(1, 4):
+    for inner in range(4, 7):
+        print(f"outer={outer}, inner={inner}")
+```
+
+The total number of loop body executions equals the product of both loop counts:
+
+$$N_{\text{total}} = N_{\text{outer}} \times N_{\text{inner}} = 3 \times 3 = 9 \text{ iterations}$$
+
+### 5. Practical Challenge 6.5: Compound Investment Tracker
+
+Tracking compound financial growth over multiple years demonstrates loops combined with mathematical accumulators. When an initial principal amount $A_0$ grows at an annual rate $r$ over $t$ years, the balance at the end of each consecutive year evolves according to:
+
+$$A_t = A_{t-1} \times (1 + r) = A_0 \times (1 + r)^t$$
+
+```python
+def invest(amount, rate, years):
+    """Track the compound annual growth of an investment over time."""
+    for year in range(1, years + 1):
+        amount = amount * (1 + rate)
+        print(f"Year {year:2d}: ${amount:,.2f}")
+
+# Track $100 invested at 5% annual return for 4 years:
+invest(100, 0.05, 4)
+```
+
+---
+
+## 5.4 Variable Scope & The LEGB Rule
+
+**Scope** defines the architectural boundary and visibility of variable names within a program. Where a variable is assigned determines where it can be inspected and updated.
+
+### The LEGB Scope Resolution Order
+
+Whenever Python references a variable identifier in code, it searches four hierarchical namespaces in order. Python uses the first matching definition it encounters:
+
+```
+ [ 1. Local (L) ]  --->  [ 2. Enclosing (E) ]  --->  [ 3. Global (G) ]  --->  [ 4. Built-in (B) ]
+```
+
+1. **L — Local Scope**: Variables declared and assigned inside the currently executing function. Created during function invocation and destroyed upon return.
+2. **E — Enclosing Scope**: Variables residing in the local scope of enclosing (outer) functions, relevant when working with nested functions and closures.
+3. **G — Global Scope**: Identifiers declared at the top level of a module or script file, outside any function definitions.
+4. **B — Built-in Scope**: The built-in namespace automatically loaded by the Python runtime, holding pre-defined keywords and functions (`len`, `range`, `abs`, `print`, `None`).
+
+If an identifier cannot be located across all four namespaces, Python raises a runtime `NameError`.
+
+### Common Scope Pitfall: `UnboundLocalError`
+
+When Python compiles a function body, it inspects all assignments. If a variable is assigned anywhere inside the function body, Python marks that variable as **local to the function for its entire execution**:
+
+```python
+total = 100
+
+def add_bonus():
+    # Attempting to read 'total' before assignment triggers an error!
+    total = total + 10  # Raises UnboundLocalError
+    return total
+```
+
+Even though `total` exists globally, Python detects the local assignment `total = ...`. When executing `total + 10` on the right side of the equals sign, Python looks exclusively within the local scope, finds that `total` has not yet received a value locally, and raises:
+
+```
+UnboundLocalError: cannot access local variable 'total' where it is not associated with a value
+```
+
+### The `global` Keyword Anti-Pattern
+
+Python allows developers to bypass this constraint using the `global` keyword:
+
+```python
+total = 100
+
+def add_bonus():
+    global total
+    total = total + 10
+    return total
+```
+
+> [!CAUTION]
+> Relying on the `global` keyword is widely considered an architectural **code smell**. Mutating global variables introduces hidden side effects, breaks pure function isolation, and causes unpredictable bugs across distributed modules. Instead, pass values into functions as **parameters** and return updated values explicitly:
+>
+> ```python
+> def calculate_bonus(current_total, bonus=10):
+>     return current_total + bonus
+> ```
+
+---
+
+## 5.5 Interactive Execution Sandboxes
+
+Test and verify the concepts covered in this chapter directly in the browser using the interactive sandboxes below.
+
+### Sandbox 1: Functions, Return Values & Temperature Conversion
+
+<PythonRunner 
+  client:visible 
+  title="Interactive Sandbox 1: Functions, Return Values & Docstrings"
+  initialCode={`# 1. Inspecting function objects
+print("Type of len:", type(len))
+print("Type of print:", type(print))
+
+# 2. Return value vs. Side Effect
+output_val = print("This string is printed as a side effect!")
+print("Return value of print():", output_val)
+print("Is output_val None?", output_val is None)
+
+# 3. Custom Temperature Converter Functions
+def convert_cel_to_far(celsius):
+    """Convert degrees Celsius to degrees Fahrenheit."""
+    return celsius * 9 / 5 + 32
+
+def convert_far_to_cel(fahrenheit):
+    """Convert degrees Fahrenheit to degrees Celsius."""
+    return (fahrenheit - 32) * 5 / 9
+
+# Convert 72 degrees Fahrenheit to Celsius
+temp_f = 72
+temp_c = convert_far_to_cel(temp_f)
+print(f"\\nTemperature Conversion:")
+print(f"{temp_f}°F = {temp_c:.2f}°C")
+
+# Convert back to verify
+print(f"{temp_c:.2f}°C = {convert_cel_to_far(temp_c):.2f}°F")`}
+/>
+
+### Sandbox 2: Loops, range(), and the Compound Investment Tracker
+
+<PythonRunner 
+  client:visible 
+  title="Interactive Sandbox 2: while, for, range(), and Investment Tracker"
+  initialCode={`# 1. Definite iteration using for and range()
+print("--- Counting with range(1, 4) ---")
+for i in range(1, 4):
+    print(f"Step {i}")
+
+# 2. Indefinite iteration using while
+print("\\n--- While Loop Countdown ---")
+count = 3
+while count > 0:
+    print(f"T-minus {count}...")
+    count -= 1
+print("Liftoff!")
+
+# 3. Nested coordinate grid
+print("\\n--- Nested Coordinate Grid ---")
+for row in range(1, 3):
+    for col in range(1, 3):
+        print(f"Cell ({row}, {col})")
+
+# 4. Challenge 6.5: Investment Growth Tracker
+print("\\n--- Compound Investment Growth ---")
+def invest(amount, rate, years):
+    """Track the compound growth of an investment over time."""
+    for year in range(1, years + 1):
+        amount = amount * (1 + rate)
+        print(f"Year {year:2d}: \${amount:,.2f}")
+
+# Track $1,000 at 7% annual interest for 5 years
+invest(1000, 0.07, 5)`}
+/>
+
+---
+
+## 5.6 Conceptual Knowledge Check
+
+Test your understanding of Python scope and variable resolution before proceeding to the next chapter.
+
+<QuizCard
+  client:visible
+  question="Examine the code snippet below. What happens when increment() is called?
+
+counter = 10
+
+def increment():
+    counter = counter + 1
+    return counter
+
+increment()"
+  options={[
+    "The function executes cleanly and returns 11.",
+    "Python raises an UnboundLocalError: cannot access local variable 'counter' where it is not associated with a value.",
+    "The global counter remains 10, and a new local variable is returned with value 10.",
+    "Python raises a NameError: name 'counter' is not defined."
+  ]}
+  correctAnswer={1}
+  explanation="During compilation, Python inspects the function body and detects an assignment to 'counter' (counter = ...). Consequently, Python treats 'counter' as a local variable across the entire function scope. When evaluating the expression 'counter + 1' on the right-hand side, Python checks the local namespace, finds that 'counter' has not yet been assigned a local value, and immediately triggers an UnboundLocalError rather than falling back to the global variable."
+/>
+
+---
+
+## Chapter Summary
+
+* **Functions are values**: Stored as objects of `<class 'builtin_function_or_method'>` or `<class 'function'>`.
+* **Execution model**: Functions evaluate input arguments, execute the body block, and replace the invocation with their **return value**.
+* **Side effects vs Returns**: `print()` produces an I/O side effect on screen but returns `None` of type `NoneType`.
+* **PEP 8 style**: Indent function bodies with 4 spaces. Document functions using triple-quoted `"""docstrings"""`.
+* **Loops**: Use `while` for indefinite conditions and `for` with `range()` for definite iteration.
+* **LEGB scoping rule**: Python resolves variables sequentially across **Local**, **Enclosing**, **Global**, and **Built-in** namespaces.
+* **Scope hygiene**: Assignments inside functions create local scope variables; avoid `UnboundLocalError` by passing parameters and returning results instead of mutating state via `global`.

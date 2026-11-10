@@ -1,0 +1,26 @@
+---
+import Layout from '../layouts/Layout.astro';
+import StorageAuthTester from '../components/islands/StorageAuthTester';
+---
+
+<Layout>
+  <main class="max-w-4xl mx-auto px-4 py-8 space-y-8">
+    <header class="border-b border-stone-800 pb-6">
+      <div class="flex items-center gap-2 text-sm text-[#E07A5F] font-semibold mb-2">
+        <span class="w-2 h-2 rounded-full bg-[#E07A5F]"></span>
+        <span>Spec 004 Verification Harness</span>
+      </div>
+      <h1 class="text-3xl font-bold tracking-tight text-white mb-2">
+        Local-First State & Supabase Integration
+      </h1>
+      <p class="text-stone-400 text-sm max-w-2xl">
+        Verifying anonymous local-first progress caching in localStorage, Supabase write-through synchronization, AuthModal (Google OAuth + Email Magic Link), and one-time login migration.
+      </p>
+    </header>
+
+    <section>
+      <StorageAuthTester client:load />
+    </section>
+  </main>
+</Layout>
+

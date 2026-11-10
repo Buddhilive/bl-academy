@@ -1,0 +1,541 @@
+---
+title: "Strings and Text Manipulation in Python"
+track: "python"
+category: "Python Tutorial"
+order: 3
+difficulty: "beginner"
+xp: 50
+description: "Master Python strings: string literals, indexing, slicing, immutability, built-in methods, user input, type conversions, f-strings, and substring search."
+topic: "Strings & Text Manipulation"
+prerequisites: ["python-zero-to-hero/02-writing-and-running-python"]
+---
+import PythonRunner from '../../../components/islands/PythonRunner';
+import QuizCard from '../../../components/islands/QuizCard';
+
+## Introduction to Text Manipulation in Python
+
+Text is one of the most common forms of data processed by software applications. Whether you are parsing user credentials, formatting financial invoices, sanitizing web form submissions, or generating automated messages, programming requires robust tools for handling characters and text sequences.
+
+In Python, all textual data is represented using **strings**. This lesson introduces Python's fundamental string architecture: how text is stored and delimited, how characters are retrieved via indexing and slicing, why strings cannot be modified in-place (immutability), and how to leverage built-in methods, user inputs, type conversions, f-strings, and substring search algorithms.
+
+---
+
+## 3.1 What is a String?
+
+### The `str` Fundamental Data Type
+
+A **string** in Python is an ordered, immutable collection of characters. In computational terms, a string $s$ of length $n$ represents a finite sequence:
+
+$$s = (c_0, c_1, c_2, \dots, c_{n-1})$$
+
+where each character $c_i$ belongs to an alphabet or character set (specifically, Python uses Unicode code points). 
+
+In Python, text belongs to the built-in primitive type abbreviated as **`str`**. Strings are considered fundamental data types because they cannot be decomposed into smaller values of a distinct character type—individual characters are themselves simply single-character `str` instances.
+
+You can verify the data type of any literal or variable using Python's built-in `type()` function:
+
+```python
+>>> type("Hello, world")
+<class 'str'>
+
+>>> phrase = "Hello, world"
+>>> type(phrase)
+<class 'str'>
+```
+
+Strings exhibit three foundational properties:
+1. **Characters**: The discrete symbols, letters, digits, punctuation marks, or whitespace units that constitute the text.
+2. **Length**: The total cardinality or count of characters contained within the string ($|s| = n$).
+3. **Sequence**: Characters occupy an ordered spatial sequence, meaning every character is addressed by a specific numerical coordinate known as its **index**.
+
+### String Literals and Delimiters
+
+A **string literal** is a sequence of characters written directly into Python source code surrounded by quotation marks, also called **delimiters**. Python supports both single quotation marks (`'`) and double quotation marks (`"`):
+
+```python
+string1 = 'Hello, world'
+string2 = "1234"
+```
+
+Both forms create identical `str` objects in memory. The primary advantage of offering two delimiter styles is that you can include one quotation mark inside a string literal delimited by the other without triggering a parsing error:
+
+```python
+string3 = "We're #1!"
+string4 = 'I said, "Put it over by the llama."'
+```
+
+If you attempt to use the same delimiter inside the string without escaping it (e.g., `"She said "Hello""`), the Python parser interprets the second quotation mark as the end of the literal, causing an immediate `SyntaxError: invalid syntax`.
+
+**PEP 8 Style Recommendation**: Choose one delimiter style (single or double quotes) and stick with it consistently across your entire codebase. Double quotes are commonly preferred when text frequently contains apostrophes.
+
+### Measuring String Length with `len()`
+
+To determine the number of characters in a string, pass the string as an argument to the built-in `len()` function. The length includes all letters, numbers, punctuation, and whitespace characters:
+
+```python
+>>> len("abc")
+3
+
+>>> letters = "abc"
+>>> num_letters = len(letters)
+>>> num_letters
+3
+```
+
+For an empty string `""`, `len("")` returns $0$.
+
+### Multiline Strings and Docstrings
+
+PEP 8 guidelines recommend limiting code line lengths to a maximum of **79 characters** for improved readability on splits and terminal screens. When dealing with extended paragraphs, Python offers two mechanisms to span text across multiple lines:
+
+#### 1. Backslash Continuation (`\`)
+Placing a backslash (`\`) at the end of a line instructs the Python parser to treat the subsequent line as a direct continuation of the current statement. Printing a backslash-continued string outputs the text on a single continuous line:
+
+```python
+long_string = "This multiline string is \
+displayed on one line"
+print(long_string)
+# Output: This multiline string is displayed on one line
+```
+
+#### 2. Triple Quotes (`"""` or `'''`)
+Enclosing text within three consecutive single or double quotation marks creates a multiline string literal that **preserves literal line breaks and whitespace**:
+
+```python
+print("""An example of a
+string that spans across multiple lines
+that also preserves whitespace.""")
+```
+
+When triple-quoted strings are placed immediately below a module header, function definition, or class declaration, Python registers them as **docstrings** (*documentation strings*), accessible via the `__doc__` attribute and the interactive `help()` tool.
+
+---
+
+## 3.2 Concatenation, Indexing, Slicing, and Immutability
+
+### String Concatenation
+
+You can concatenate (combine) two or more strings into a single string using the `+` operator:
+
+```python
+string1 = "abra"
+string2 = "cadabra"
+magic_string = string1 + string2
+print(magic_string)  # 'abracadabra'
+
+first_name = "Arthur"
+last_name = "Dent"
+full_name = first_name + " " + last_name
+print(full_name)     # 'Arthur Dent'
+```
+
+### Zero-Based Indexing
+
+Every character in a string occupies a fixed numerical coordinate called its **index**. Python adheres to **zero-based indexing**, meaning the first character is located at index $0$. For a string of length $n = |s|$, valid positive indices span the discrete interval:
+
+$$I_{\text{pos}} = \{0, 1, 2, \dots, n - 1\}$$
+
+```python
+flavor = "apple pie"
+print(flavor[0])  # 'a'
+print(flavor[1])  # 'p'
+```
+
+Attempting to retrieve the first character using `flavor[1]` is an **off-by-one error**. Furthermore, querying an index equal to or greater than the string's length ($i \ge n$) causes Python to raise an `IndexError: string index out of range`.
+
+### Negative Indexing
+
+Python uniquely supports **negative indexing** to access characters starting from the end of the sequence without manually computing `len(s) - 1`. The last character is indexed at $-1$, the second-to-last at $-2$, continuing backward to $-n$:
+
+$$I_{\text{neg}} = \{-1, -2, \dots, -n\}$$
+
+Mathematically, a negative index $-k$ maps directly to its positive counterpart via the transformation:
+
+$$\text{index}_{\text{pos}} = n - k \quad (\text{where } n = |s|)$$
+
+Consider the string `"apple pie"` of length $n = 9$:
+
+| Character | `a` | `p` | `p` | `l` | `e` | ` ` | `p` | `i` | `e` |
+| :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
+| **Positive Index** | `0` | `1` | `2` | `3` | `4` | `5` | `6` | `7` | `8` |
+| **Negative Index** | `-9` | `-8` | `-7` | `-6` | `-5` | `-4` | `-3` | `-2` | `-1` |
+
+Using `flavor[-1]` immediately extracts the final character `'e'`.
+
+### String Slicing
+
+To extract a consecutive segment (a **substring**) from a string, use Python's slice syntax: `string[start:end]`. 
+
+Slicing evaluates to a **half-open interval** $[start, end)$: it includes the character at `start`, but **excludes** the character at index `end`. The length of the resulting substring equals:
+
+$$L_{\text{slice}} = \max(0, end - start)$$
+
+```python
+flavor = "apple pie"
+print(flavor[0:3])  # 'app' (indices 0, 1, 2)
+```
+
+#### Omitting Slice Bounds
+- **Omitted Start (`[:end]`)**: Defaults to index $0$. `flavor[:5]` produces `'apple'`.
+- **Omitted End (`[start:]`)**: Defaults to the end of the string ($n$). `flavor[5:]` produces `' pie'`.
+- **Omitted Both (`[:]`)**: Returns a shallow copy of the entire string (`'apple pie'`).
+
+#### Out-of-Bounds Slicing Grace Period
+Unlike indexing—which raises an `IndexError` on invalid bounds—**slicing is forgiving**. If `start` or `end` exceeds the string boundaries, Python clamps the indices to the string length $[0, n]$ without raising an error:
+
+```python
+print(flavor[0:100])  # 'apple pie'
+print(flavor[20:30])  # '' (empty string)
+```
+
+### The Immutability Contract
+
+Strings in Python are strictly **immutable**. Once created in memory, the contents of a `str` object cannot be altered, replaced, or mutated in-place:
+
+```python
+word = "goal"
+word[0] = "f"
+# Raises: TypeError: 'str' object does not support item assignment
+```
+
+To modify textual data stored in a variable, you must construct a **new string** via concatenation and slicing, and reassign the variable:
+
+```python
+word = "goal"
+word = "f" + word[1:]
+print(word)  # 'foal'
+```
+
+---
+
+## 3.3 Manipulating Strings with Built-in Methods
+
+Strings come equipped with an array of built-in functions called **methods**. Methods are invoked using **dot notation** (`object.method(arguments)`). Because strings are immutable, methods **never modify the original string**; they always return a newly allocated string or value.
+
+### Case Transformations
+
+- `.lower()`: Returns a copy of the string with all cased characters converted to lowercase.
+- `.upper()`: Returns a copy of the string with all cased characters converted to uppercase.
+
+```python
+name = "Jean-luc Picard"
+print(name.lower())  # 'jean-luc picard'
+print(name.upper())  # 'JEAN-LUC PICARD'
+```
+
+### Whitespace Hygiene
+
+When processing user input or reading external text files, strings frequently contain unwanted leading or trailing spaces, tabs (`\t`), or newline characters (`\n`). Python provides three methods to strip external whitespace:
+
+- `.lstrip()`: Strips whitespace characters from the **left side** (beginning).
+- `.rstrip()`: Strips whitespace characters from the **right side** (end).
+- `.strip()`: Strips whitespace from **both sides** simultaneously.
+
+```python
+name = "  Jean-luc Picard  "
+print(name.strip())   # 'Jean-luc Picard'
+print(name.lstrip())  # 'Jean-luc Picard  '
+print(name.rstrip())  # '  Jean-luc Picard'
+```
+
+*Note:* Whitespace residing between non-space characters is preserved.
+
+### Suffix and Prefix Validation
+
+To verify whether a string begins or terminates with a specific substring, use `.startswith()` and `.endswith()`. Both return a boolean value (`True` or `False`) and are **case-sensitive**:
+
+```python
+starship = "Enterprise"
+print(starship.startswith("En"))  # True
+print(starship.startswith("en"))  # False (case-sensitive)
+print(starship.endswith("rise"))  # True
+```
+
+---
+
+## 3.4 Interacting with User Input
+
+### The `input()` Function
+
+Programs often require dynamic input supplied by a human user via the keyboard. Python provides the built-in `input()` function to pause execution, display an optional prompt message, and capture keyboard input until the user presses `Enter`:
+
+```python
+prompt = "Enter your username: "
+user_input = input(prompt)
+print("Welcome,", user_input)
+```
+
+### The Critical Rule of `input()`
+
+> [!IMPORTANT]
+> The `input()` function **always returns user input as a string (`str`)**, regardless of what characters the user typed. Even if the user inputs `42` or `3.14159`, the resulting variable holds `"42"` or `"3.14159"`.
+
+### Practical Challenge: `first_letter.py`
+
+Consider a program that prompts the user for a password, isolates the very first character, normalizes it to uppercase, and reports it back to the terminal:
+
+```python
+# first_letter.py
+user_password = input("Tell me your password: ")
+first_letter = user_password[0].upper()
+print("The first letter you entered was:", first_letter)
+```
+
+In browser-based sandboxes (such as WebAssembly Pyodide execution), interactive standard input (`stdin`) is simulated using predefined test variables, as demonstrated in the interactive runner below.
+
+---
+
+## 3.5 Working with Strings and Numbers
+
+### Type Mismatches and String Arithmetic
+
+In Python, operators exhibit polymorphic behavior depending on the operands' data types:
+
+- **String Concatenation (`+`)**: When applied to two strings, `+` glues them together rather than computing a sum:
+  ```python
+  "2" + "2"  # Evaluates to '22', NOT 4
+  ```
+- **String Repetition (`*`)**: When multiplying a string $s$ by an integer $k \in \mathbb{Z}_{\ge 0}$, Python concatenates $s$ with itself $k$ times:
+  ```python
+  "12" * 3   # Evaluates to '121212'
+  ```
+- **Type Errors**: Combining incompatible types with `+` or `*` raises a runtime `TypeError`:
+  ```python
+  "3" + 3    # TypeError: can only concatenate str (not "int") to str
+  "12" * "3" # TypeError: can't multiply sequence by non-int of type 'str'
+  ```
+
+### Converting Between Types
+
+To perform mathematical arithmetic on numbers captured via `input()`, you must explicitly convert the string to a numeric type using `int()` or `float()`:
+
+- **`int(value)`**: Parses a string containing integer digits into a whole number.
+- **`float(value)`**: Parses a string containing decimal numbers into a 64-bit IEEE 754 floating-point number.
+- **`str(value)`**: Converts numbers, booleans, or objects back into their string representations.
+
+```python
+num_str = "15"
+doubled = int(num_str) * 2
+print(doubled)  # 30
+
+price_str = "19.99"
+total_price = float(price_str) * 1.08  # Adding 8% tax
+print(total_price)
+```
+
+> [!WARNING]
+> Attempting to pass a floating-point string directly to `int()` raises a `ValueError`:
+> ```python
+> int("12.0")  # ValueError: invalid literal for int() with base 10: '12.0'
+> ```
+> To safely convert a decimal string to an integer, convert to a float first: `int(float("12.0"))`.
+
+---
+
+## 3.6 Streamlining Output with f-Strings
+
+Inserting variable values into formatted strings is known as **string interpolation**. Prior to Python 3.6, programmers relied on manual string concatenation or the `.format()` method:
+
+```python
+name = "Zaphod"
+heads = 2
+arms = 3
+
+# Legacy Concatenation: Verbose and requires manual type conversions
+print(name + " has " + str(heads) + " heads and " + str(arms) + " arms")
+```
+
+Python 3.6 introduced **f-strings** (Formatted String Literals, PEP 498). An f-string is created by prefixing the opening quotation mark with the letter `f` (or `F`). Inside the literal, any Python expression enclosed in curly braces `{}` is automatically evaluated at runtime and converted to a string:
+
+```python
+# Modern f-String
+print(f"{name} has {heads} heads and {arms} arms")
+# Output: Zaphod has 2 heads and 3 arms
+```
+
+Expressions inside curly braces are not limited to variable names; they can execute arithmetic operations, call functions, and run methods directly:
+
+```python
+radius = 5
+print(f"Area for radius {radius} is {3.14159 * radius ** 2:.2f}")
+# Output: Area for radius 5 is 78.54
+```
+
+---
+
+## 3.7 Finding and Replacing Substrings
+
+### Locating Substrings with `.find()`
+
+The `.find(sub)` method searches a string for a specified target substring `sub` and returns the **lowest 0-based index** where `sub` begins. If the substring does not exist in the string, `.find()` returns `-1`:
+
+```python
+phrase = "the surprise is in here somewhere"
+print(phrase.find("surprise"))          # 4
+print(phrase.find("eyjafjallajökull"))  # -1
+```
+
+*Note:* `.find()` is strictly case-sensitive and accepts an optional start and end search range: `phrase.find("in", 5, 20)`.
+
+### Replacing Substrings with `.replace()`
+
+The `.replace(old, new)` method scans a string and replaces **every occurrence** of the substring `old` with `new`, returning a fresh string:
+
+```python
+my_story = "I'm telling you the truth; nothing but the truth!"
+updated_story = my_story.replace("the truth", "lies")
+print(updated_story)
+# Output: I'm telling you lies; nothing but lies!
+```
+
+Because `.replace()` returns a new string, you can chain multiple replacements sequentially:
+
+```python
+text = "some of the stuff"
+new_text = text.replace("some of", "all").replace("stuff", "things")
+print(new_text)  # 'all the things'
+```
+
+### Practical Challenge: `translate.py` (L33t H4x0r)
+
+A classic programming exercise is creating a text translator that transforms lowercase characters into "leetspeak" numbers according to the substitution mapping:
+
+$$a \to 4, \quad b \to 8, \quad e \to 3, \quad l \to 1, \quad o \to 0, \quad s \to 5, \quad t \to 7$$
+
+Using chained `.replace()` calls, this substitution executes cleanly:
+
+```python
+text = "I like to eat eggs and spam."
+
+translated = text.replace("a", "4") \
+                 .replace("b", "8") \
+                 .replace("e", "3") \
+                 .replace("l", "1") \
+                 .replace("o", "0") \
+                 .replace("s", "5") \
+                 .replace("t", "7")
+
+print(translated)
+# Output: I 1ik3 70 347 3gg5 4nd 5p4m.
+```
+
+---
+
+## Interactive Code Practice
+
+### Sandbox 1: Indexing, Slicing, and Immutability
+
+Experiment with zero-based indexing, negative indexing, slice intervals, and string recreation in the interactive sandbox below:
+
+<PythonRunner 
+  client:visible 
+  title="Example 1: Positive/Negative Indexing, Slicing, and Immutability"
+  initialCode={`# 1. Zero-based indexing and negative coordinates
+flavor = "apple pie"
+length = len(flavor)
+
+print("Original string  :", repr(flavor))
+print("String length |s|:", length)
+print("First character  :", repr(flavor[0]))
+print("Last character   :", repr(flavor[-1]))
+
+# 2. Extracting half-open slice intervals [start:end)
+print("\\n--- Slicing Experiments ---")
+print("flavor[0:5] (first word) :", repr(flavor[0:5]))
+print("flavor[6:]  (from index 6):", repr(flavor[6:]))
+print("flavor[:5]  (omitted start):", repr(flavor[:5]))
+print("flavor[:]   (full copy)   :", repr(flavor[:]))
+
+# 3. Handling out-of-bounds slicing safely
+print("flavor[0:100] (overbound) :", repr(flavor[0:100]))
+
+# 4. Immutability in practice: Rebuilding a string
+word = "goal"
+print("\\n--- Immutability & Reassignment ---")
+# word[0] = "f"  <-- Uncommenting this line causes a TypeError!
+word = "f" + word[1:]
+print("Modified word :", repr(word))
+`} 
+/>
+
+### Sandbox 2: String Methods, f-Strings, and Leetspeak Translation
+
+Test whitespace cleaning, casing transformations, modern f-string interpolation, and substring replacement:
+
+<PythonRunner 
+  client:visible 
+  title="Example 2: Methods, f-Strings, and Leetspeak Translation"
+  initialCode={`# 1. Whitespace hygiene and case normalization
+raw_user = "   Arthur Dent   "
+clean_user = raw_user.strip()
+loud_user = clean_user.upper()
+
+print("Raw input   :", repr(raw_user))
+print("Cleaned     :", repr(clean_user))
+print("Uppercase   :", repr(loud_user))
+print("Starts with 'AR'?", loud_user.startswith("AR"))
+
+# 2. Modern string interpolation with f-strings
+heads = 2
+arms = 3
+status_msg = f"{clean_user} has {heads} heads and {arms} arms (Total appendages: {heads + arms})"
+print("\\n--- f-String Output ---")
+print(status_msg)
+
+# 3. Leetspeak Translator Challenge (translate.py)
+print("\\n--- Leetspeak Translator ---")
+sample_text = "I like to eat eggs and spam."
+leetspeak = sample_text.replace("a", "4") \\
+                       .replace("b", "8") \\
+                       .replace("e", "3") \\
+                       .replace("l", "1") \\
+                       .replace("o", "0") \\
+                       .replace("s", "5") \\
+                       .replace("t", "7")
+
+print("Original   :", sample_text)
+print("Translated :", leetspeak)
+`} 
+/>
+
+---
+
+## Python String Operations & Methods Reference
+
+The table below catalogs the essential operations, indexing patterns, and built-in methods covered in this chapter:
+
+| Operation / Method | Syntax Example | Return Type | Description & Behavior |
+| :--- | :--- | :---: | :--- |
+| **Length** | `len(s)` | `int` | Returns the total character count of string $s$. |
+| **Indexing** | `s[0]`, `s[-1]` | `str` | Retrieves character at 0-based or negative index; raises `IndexError` if out-of-range. |
+| **Slicing** | `s[start:end]` | `str` | Extracts half-open range $[start, end)$; safe with out-of-bounds values. |
+| **Concatenation** | `s1 + s2` | `str` | Concatenates two string instances. |
+| **Repetition** | `s * 3` | `str` | Concatenates string $s$ with itself $k$ times. |
+| **Lowercase** | `s.lower()` | `str` | Returns a copy of $s$ with all letters converted to lowercase. |
+| **Uppercase** | `s.upper()` | `str` | Returns a copy of $s$ with all letters converted to uppercase. |
+| **Strip Whitespace**| `s.strip()` | `str` | Returns a copy of $s$ with leading and trailing whitespace removed. |
+| **Prefix Check** | `s.startswith("sub")` | `bool` | Returns `True` if $s$ begins with the specified prefix (case-sensitive). |
+| **Suffix Check** | `s.endswith("sub")` | `bool` | Returns `True` if $s$ terminates with the specified suffix. |
+| **Type Conversion** | `int("42")`, `float("3.14")` | `int` / `float` | Converts numeric string to number; raises `ValueError` if invalid. |
+| **f-String** | `f"Val: {x}"` | `str` | Evaluates inline variables and expressions directly into a formatted string. |
+| **Find Substring** | `s.find("target")` | `int` | Returns 0-based starting index of first match, or `-1` if absent. |
+| **Replace Substring**| `s.replace("a", "b")` | `str` | Replaces all occurrences of `old` with `new`. |
+
+---
+
+## Quick Self-Check
+
+Test your understanding of string indexing, slicing bounds, and immutability before continuing:
+
+<QuizCard
+  client:visible
+  question="Given the string assignment `flavor = 'apple pie'`, what is the evaluated result of `flavor[-3:]` and what happens if you execute `flavor[0] = 'A'`?"
+  options={[
+    "flavor[-3:] evaluates to 'pie', and flavor[0] = 'A' successfully capitalizes the string in-place.",
+    "flavor[-3:] evaluates to 'pie', and flavor[0] = 'A' raises a TypeError because Python strings are immutable.",
+    "flavor[-3:] evaluates to 'app', and flavor[0] = 'A' raises an IndexError.",
+    "flavor[-3:] raises an IndexError because negative indices are invalid in slices, and flavor[0] = 'A' creates a new string."
+  ]}
+  correctAnswer={1}
+  explanation="Negative index -3 corresponds to the character 'p' in 'pie'. Slicing with [-3:] extracts from index -3 through the end of the string, producing 'pie'. Furthermore, because Python strings are immutable, attempting item assignment (flavor[0] = 'A') triggers a TypeError: 'str' object does not support item assignment."
+/>

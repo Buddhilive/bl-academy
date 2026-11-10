@@ -1,0 +1,30 @@
+---
+import Layout from '../layouts/Layout.astro';
+import { PyodideTester } from '../components/islands/PyodideTester';
+---
+
+<Layout title="Pyodide Web Worker Engine Verification">
+  <main class="min-h-screen bg-stone-100 dark:bg-[#121212] text-stone-900 dark:text-stone-100 py-12 px-4 sm:px-6 lg:px-8">
+    <div class="max-w-4xl mx-auto space-y-6">
+      <header class="space-y-2">
+        <a
+          href="/"
+          class="inline-flex items-center text-xs font-medium text-[#A7452A] dark:text-[#E07A5F] hover:underline mb-2"
+        >
+          &larr; Back to Academy Home
+        </a>
+        <h1 class="text-3xl font-extrabold tracking-tight text-stone-900 dark:text-stone-50">
+          Client-Side Python Engine (WASM + Web Worker)
+        </h1>
+        <p class="text-stone-600 dark:text-stone-400 text-sm">
+          Off-main-thread execution testing harness powered by Pyodide v0.26.4. Features on-demand package resolution, stdout capturing, and a 5-second execution watchdog.
+        </p>
+      </header>
+
+      <section aria-labelledby="runner-section">
+        <h2 id="runner-section" class="sr-only">Interactive Python Runner</h2>
+        <PyodideTester client:only="react" />
+      </section>
+    </div>
+  </main>
+</Layout>

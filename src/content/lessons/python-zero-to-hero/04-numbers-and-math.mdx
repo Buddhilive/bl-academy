@@ -1,0 +1,525 @@
+---
+title: "Numbers and Math in Python"
+track: "python"
+category: "Python Tutorial"
+order: 4
+difficulty: "beginner"
+xp: 50
+description: "Master Python numbers: integers, floats, arithmetic operators, floor division caveats, floating-point representation errors, math functions, f-strings, and complex numbers."
+topic: "Numbers & Math"
+prerequisites: ["python-zero-to-hero/03-strings-and-text-manipulation"]
+---
+import PythonRunner from '../../../components/islands/PythonRunner';
+import QuizCard from '../../../components/islands/QuizCard';
+
+## Introduction to Numbers and Mathematical Operations in Python
+
+Every digital program, from small automation scripts to high-performance scientific simulations and machine learning pipelines, requires working with numerical data. While writing Python software does not require an advanced background in pure mathematics, understanding how computers represent, compute, round, and display numbers is essential for every developer.
+
+In this chapter, you will explore Python's built-in numeric ecosystem. You will examine the foundational differences between integers and floating-point numbers, master the standard arithmetic operators and their precedence rules, uncover why floating-point representation errors occur in digital computers, leverage built-in mathematical functions like `round()`, `abs()`, and `pow()`, format numbers within modern f-strings, and work with complex numbers.
+
+---
+
+## 4.1 Built-in Number Types: Integers and Floating-Point Numbers
+
+Python features three native numeric types: **integers** (`int`), **floating-point numbers** (`float`), and **complex numbers** (`complex`). In everyday software engineering, the vast majority of mathematical logic revolves around integers and floats.
+
+### Integers (`int`)
+
+An **integer** is a whole number that contains no fractional or decimal component:
+
+$$n \in \mathbb{Z} = \{\dots, -3, -2, -1, 0, 1, 2, 3, \dots\}$$
+
+In Python source code, integer literals can be typed directly as digits or instantiated explicitly through the built-in `int()` constructor:
+
+```python
+num1 = 42
+num2 = int("100")
+print(type(num1))  # Output: <class 'int'>
+```
+
+#### Underscores as Visual Digit Separators
+When working with large numbers—such as financial budgets, timestamps, or physical constants—long digit sequences can be challenging for developers to read. Under **PEP 515**, Python allows single underscores (`_`) between digits as visual separators. The Python interpreter strips these underscores during lexical analysis, leaving the numeric value completely identical:
+
+```python
+num1 = 25000000
+num2 = 25_000_000
+
+print(num1 == num2)  # Output: True
+print(num2)          # Output: 25000000
+```
+
+#### Arbitrary Precision (Unlimited Integer Size)
+In lower-level languages such as C, C++, or Java, integers are constrained by fixed hardware register sizes (e.g., 32-bit signed integers overflow above $2^{31} - 1 = 2,147,483,647$; 64-bit integers overflow above $2^{63} - 1$). Exceeding these bounds causes integer overflow errors or wraps values into negative territory.
+
+Python implements **arbitrary-precision integers** (often called *bignums*). Python integers allocate memory dynamically as values expand, meaning an integer can grow as large as your computer's available random-access memory (RAM) permits:
+
+```python
+huge_number = 10 ** 100  # A googol: 1 followed by 100 zeros
+print(huge_number)
+```
+
+### Floating-Point Numbers (`float`)
+
+A **floating-point number** (commonly referred to as a **float**) represents a real number that includes a decimal point:
+
+$$x \in \mathbb{R}$$
+
+Examples of float literals include `1.0`, `-2.75`, and `0.003`. You can create float objects directly or convert numbers and numeric strings using the `float()` function:
+
+```python
+val1 = 3.14159
+val2 = float("42")   # Converts to 42.0
+val3 = float(5)      # Converts to 5.0
+print(type(val1))    # Output: <class 'float'>
+```
+
+#### Scientific Exponential Notation (E-Notation)
+For exceptionally large or microscopic numbers, Python supports **E-notation** (scientific exponential notation), where the letter `e` or `E` stands for "times ten raised to the power of":
+
+$$a\text{e}b = a \times 10^b$$
+
+```python
+exp_num1 = 1e6    # 1.0 * 10^6 = 1000000.0
+exp_num2 = 2.5e3  # 2.5 * 10^3 = 2500.0
+exp_num3 = 1e-4   # 1.0 * 10^-4 = 0.0001
+
+print(exp_num1)   # Output: 1000000.0
+print(exp_num3)   # Output: 0.0001
+```
+
+Notice that numbers defined with E-notation always produce `float` objects, even when the resulting value represents a whole number.
+
+#### Float Bounds and Infinity
+Unlike integers, floating-point numbers in Python adhere to the **IEEE 754 standard for double-precision (64-bit) floating-point numbers**. Because memory allocated per float is capped at 64 bits, floats have an absolute upper bound of approximately $1.79 \times 10^{308}$. Any calculation that exceeds this magnitude results in the special floating-point constant `inf` (infinity) or `-inf` (negative infinity):
+
+```python
+print(2e400)   # Output: inf
+print(-2e400)  # Output: -inf
+```
+
+---
+
+## 4.2 Arithmetic Operators and Expressions
+
+Python provides seven built-in arithmetic operators for carrying out mathematical calculations between numeric operands.
+
+| Operator | Mathematical Name | Formal Operation | Code Example | Result | Result Type |
+| :---: | :--- | :--- | :--- | :---: | :---: |
+| `+` | **Addition** | $x + y$ | `1 + 2.0` | `3.0` | `float` |
+| `-` | **Subtraction** | $x - y$ | `5 - 3` | `2` | `int` |
+| `*` | **Multiplication**| $x \times y$ | `3 * 4` | `12` | `int` |
+| `/` | **True Division** | $x \div y$ | `9 / 3` | `3.0` | `float` |
+| `//`| **Floor Division**| $\lfloor x / y \rfloor$ | `5.0 // 2` | `2.0` | `float` |
+| `**`| **Exponentiation**| $x^y$ | `2 ** 3` | `8` | `int` |
+| `%` | **Modulus** | $x \pmod y$ | `5 % 3` | `2` | `int` |
+
+### Key Execution Rules & Caveats
+
+#### 1. Automatic Float Promotion
+Whenever an arithmetic expression combines an integer and a floating-point number, Python automatically coerces the integer into a float before calculating the result. The returned value is always a `float`:
+
+```python
+result = 10 + 2.5  # 10 is promoted to 10.0, evaluating to 12.5
+```
+
+#### 2. True Division (`/`) Always Produces a Float
+In Python 3, the single forward slash `/` performs **true division**. Even when two integers divide evenly without a remainder, Python returns a `float`:
+
+```python
+print(8 / 4)   # Output: 2.0 (not 2)
+print(7 / 2)   # Output: 3.5
+```
+
+#### 3. Floor Division (`//`) Rounds Toward Negative Infinity
+The double slash `//` operator performs **floor division** (often termed integer division). It computes the division and rounds the quotient downward to the nearest integer toward negative infinity:
+
+$$\lfloor x / y \rfloor = \max \{ n \in \mathbb{Z} \mid n \le x / y \}$$
+
+When applied to positive numbers, floor division appears to truncate the decimal part:
+
+```python
+print(9 // 4)    # Output: 2 (2.25 rounded down)
+print(5.0 // 2)  # Output: 2.0 (preserves float type if an operand is float)
+```
+
+However, when applied to **negative operands**, the result surprises many beginners:
+
+```python
+print(-3 // 2)   # Output: -2
+```
+
+Because $-3 / 2 = -1.5$, rounding **down** toward $-\infty$ yields `-2`, not `-1`.
+
+#### 4. Division by Zero Raises `ZeroDivisionError`
+Attempting to divide by zero using `/`, `//`, or `%` causes an immediate exception and halts execution:
+
+```python
+>>> 10 / 0
+Traceback (most recent call last):
+  File "<stdin>", line 1, in <module>
+ZeroDivisionError: division by zero
+```
+
+#### 5. Modulus (`%`) Mechanics and Parity Checks
+The modulus operator `%` returns the remainder of division. Python defines modulus mathematically via the quotient of floor division:
+
+$$r = x - (y \times (x // y))$$
+
+Because floor division rounds toward $-\infty$, the sign of the remainder in Python always matches the sign of the divisor $y$.
+
+The most common application of `%` in programming is checking whether an integer is even or odd (parity test):
+
+```python
+n = 17
+if n % 2 == 0:
+    print("Even number")
+else:
+    print("Odd number")  # Output: Odd number
+```
+
+#### 6. Operator Precedence and PEP 8 Formatting
+When an expression contains multiple operators, Python evaluates them according to strict **operator precedence**:
+1. **Parentheses**: `( )` (highest precedence, overrides all others)
+2. **Exponentiation**: `**`
+3. **Multiplication, Division, Floor Division, Modulus**: `*`, `/`, `//`, `%`
+4. **Addition, Subtraction**: `+`, `-` (lowest precedence)
+
+```python
+print(4 / 2 + 2 ** 3)  # Evaluates: 4/2 + 8 -> 2.0 + 8 -> 10.0
+```
+
+**PEP 8 Style Guideline**: Add whitespace around low-precedence operators (`+`, `-`) in complex expressions while keeping high-precedence operators tightly grouped to communicate evaluation order clearly:
+
+```python
+# Recommended PEP 8 style:
+x = 4/2 + 2**3
+
+# Discouraged (misleading spacing):
+x = 4 / 2+2 ** 3
+```
+
+---
+
+## 4.3 Floating-Point Representation Errors
+
+A famous rite of passage for every programmer is encountering this unexpected calculation in Python:
+
+```python
+>>> 0.1 + 0.2
+0.30000000000000004
+```
+
+This behavior is **not a bug in Python**. It is a fundamental characteristic of how digital computers store and compute floating-point numbers in binary hardware.
+
+### Base 10 (Decimal) vs. Base 2 (Binary)
+
+Humans perform mental arithmetic in **base 10** (decimal), which uses digits $0$ through $9$. In base 10, fractions terminate into clean decimal expansions if and only if the prime factors of the denominator divide the base $10$ (namely, prime factors $2$ and $5$):
+
+* $\frac{1}{2} = 0.5$ (terminates)
+* $\frac{1}{5} = 0.2$ (terminates)
+* $\frac{1}{10} = 0.1$ (terminates)
+* $\frac{1}{3} = 0.3333333333\dots$ (infinitely repeating decimal)
+
+Computers, however, operate in **base 2** (binary), using only digits $0$ and $1$. In base 2, fractions terminate if and only if the denominator is a power of 2 ($2^1, 2^2, 2^3, \dots$). 
+
+Fractions whose denominators contain prime factors other than 2 become **infinitely repeating binary fractions**. The fraction $\frac{1}{10}$ ($0.1_{10}$) produces an infinite repeating binary sequence:
+
+$$\frac{1}{10} = 0.0001100110011001100110011\dots_2$$
+
+Just as a digital calculator cannot write down the infinite digits of $\frac{1}{3}$ and must truncate the sequence to $0.3333333333$, a computer must store $0.1$ and $0.2$ inside a finite 64-bit IEEE 754 binary floating-point register.
+
+### Accumulation of Rounding Inaccuracies
+
+Because both $0.1$ and $0.2$ are stored as approximate binary fractions, adding them together combines two slight approximations:
+
+$$\text{Stored}(0.1) \approx 0.1000000000000000055511151231257827021181583404541015625$$
+$$\text{Stored}(0.2) \approx 0.200000000000000011102230246251565404236316680908203125$$
+
+When Python computes their sum and converts the binary representation back into base 10 for display on your screen, the accumulated microscopic difference surfaces as `0.30000000000000004`.
+
+When comparing floats for equality in production software (such as financial or engineering calculations), never compare them with `==`. Instead, check if their absolute difference falls within an acceptable tolerance (an $\epsilon$ margin):
+
+```python
+import math
+print(math.isclose(0.1 + 0.2, 0.3))  # Output: True
+```
+
+---
+
+## 4.4 Math Functions and Number Methods
+
+Python includes several built-in functions and numeric object methods designed for processing numerical quantities.
+
+### Rounding Numbers with `round()`
+
+The built-in function `round(number, ndigits)` rounds a number to a specified number of decimal digits:
+
+```python
+print(round(3.14159, 2))  # Output: 3.14
+print(round(7.8))         # Output: 8
+```
+
+#### Banker's Rounding ("Round Half to Even")
+When a number falls exactly halfway between two integers (e.g., $2.5$ or $3.5$), many people expect Python to always round upward. However, Python 3 employs **Banker's Rounding** (round ties to the nearest even number):
+
+```python
+print(round(2.5))  # Output: 2  (2 is even, 3 is odd)
+print(round(3.5))  # Output: 4  (4 is even, 3 is odd)
+```
+
+**Why Banker's Rounding?** In statistics and financial modeling, rounding `.5` upward every single time introduces an upward statistical bias over thousands of calculations. Rounding to the nearest even integer distributes round-offs symmetrically (half rounded down, half rounded up), neutralizing cumulative rounding drift.
+
+### Absolute Value with `abs()`
+
+The `abs(number)` function computes the magnitude or **absolute value** of a number ($|x|$), stripping any negative sign. Crucially, `abs()` preserves the exact numeric type of the operand:
+
+```python
+print(abs(-5))    # Output: 5 (int)
+print(abs(-5.0))  # Output: 5.0 (float)
+print(abs(3.7))   # Output: 3.7 (float)
+```
+
+### Power Calculations with `pow()`
+
+Python offers the built-in function `pow(x, y, [z])` to compute powers:
+
+* Two arguments (`pow(x, y)`): Computes $x^y$, equivalent to `x ** y`.
+* Three arguments (`pow(x, y, z)`): Computes **modular exponentiation** $(x^y) \pmod z$.
+
+```python
+print(pow(2, 3))     # Output: 8 (2 ** 3)
+print(pow(2, 3, 5))  # Output: 3 ((2 ** 3) % 5 = 8 % 5 = 3)
+```
+
+**Performance Advantage**: Calling `pow(x, y, z)` is significantly faster and uses less memory than `(x ** y) % z` when calculating huge cryptographic keys, because Python applies binary modular exponentiation algorithms without computing the massive intermediate $x^y$ integer in memory.
+
+### Float Method: `.is_integer()`
+
+Float objects in Python possess a built-in method called `.is_integer()`. This method inspects the floating-point value and returns `True` if the number represents a whole integer with zero fractional remainder, and `False` otherwise:
+
+```python
+val_a = 4.0
+val_b = 4.25
+
+print(val_a.is_integer())  # Output: True
+print(val_b.is_integer())  # Output: False
+```
+
+---
+
+## 4.5 Formatting Numbers in Strings (f-Strings)
+
+When generating output for users—such as prices, statistical percentages, or scientific reports—unformatted floating-point numbers can look untidy. Modern Python formatted string literals (**f-strings**, introduced in Python 3.6) allow you to specify exact display formats by appending a colon `:` followed by a **format specifier** inside the curly braces.
+
+### 1. Fixed-Point Precision (`:.nf`)
+The specifier `:.2f` formats a number as a fixed-point floating-point value rounded to exactly two decimal places (utilizing Banker's rounding on ties):
+
+```python
+val = 7.126
+print(f"Value: {val:.2f}")  # Output: Value: 7.13
+```
+
+### 2. Comma Thousands Separators (`:,.2f`)
+Adding a comma `,` to the format specifier inserts commas as thousand grouping separators, making large financial figures readable at a glance:
+
+```python
+balance = 1743.654
+print(f"Account Balance: ${balance:,.2f}")  # Output: Account Balance: $1,743.65
+```
+
+### 3. Percentage Formatting (`:.0%` or `:.2%`)
+The `%` specifier automatically multiplies the number by 100, formats it according to the requested decimal precision, and appends a percent sign:
+
+```python
+accuracy = 0.8526
+print(f"Accuracy: {accuracy:.0%}")  # Output: Accuracy: 85%
+print(f"Accuracy: {accuracy:.2%}")  # Output: Accuracy: 85.26%
+```
+
+---
+
+## 4.6 Complex Numbers
+
+Python provides first-class, built-in support for **complex numbers**, which consist of a real component and an imaginary component:
+
+$$z = a + bj \quad (a, b \in \mathbb{R}, \quad j = \sqrt{-1})$$
+
+In Python, the imaginary unit is denoted by the letter `j` (or `J`), following engineering conventions:
+
+```python
+z = 1 + 2j
+print(type(z))  # Output: <class 'complex'>
+```
+
+### Properties and Methods of Complex Numbers
+
+* **`.real`**: Returns the real component $a$ as a `float`.
+* **`.imag`**: Returns the imaginary component $b$ as a `float`.
+* **`.conjugate()`**: Returns the complex conjugate $a - bj$.
+
+```python
+c = 3 + 4j
+
+print("Real part :", c.real)         # Output: 3.0
+print("Imag part :", c.imag)         # Output: 4.0
+print("Conjugate :", c.conjugate())  # Output: (3-4j)
+```
+
+### Complex Arithmetic Rules
+Standard arithmetic operations (`+`, `-`, `*`, `/`, `**`) operate smoothly on complex numbers:
+
+```python
+z1 = 2 + 3j
+z2 = 1 - 1j
+
+print(z1 + z2)  # Output: (3+2j)
+print(z1 * z2)  # Output: (5+1j)
+```
+
+However, **floor division (`//`) is not mathematically defined for complex numbers** in Python. Attempting floor division on a complex number raises a `TypeError`:
+
+```python
+>>> (2 + 3j) // 2
+TypeError: can't take floor of complex number.
+```
+
+**Numeric Interface Uniformity**: Integers and floating-point numbers also implement `.real`, `.imag`, and `.conjugate()` to maintain interface compatibility (duck typing) across numerical algorithms:
+
+```python
+n = 42
+print(n.real)        # Output: 42
+print(n.imag)        # Output: 0
+print(n.conjugate()) # Output: 42
+```
+
+---
+
+## 4.7 Interactive Sandboxes & Practical Challenges
+
+### Sandbox 1: Numeric Types, Operators, and Representation Caveats
+
+Use the interactive runner below to explore digit separators, E-notation, the distinction between true division `/` and floor division `//` (especially with negative values), and observe binary floating-point inaccuracy:
+
+<PythonRunner 
+  client:visible 
+  title="Example 1: Types, Operators, and Representation Errors"
+  initialCode={`# 1. Integers with visual digit separators and arbitrary size
+large_int = 25_000_000
+googol = 10 ** 100
+print("Large Integer :", large_int)
+print("Type of large :", type(large_int))
+print("Digits in googol :", len(str(googol)))
+
+# 2. Floats and scientific E-notation
+speed_of_light = 3e8       # 3.0 * 10^8
+planck_constant = 6.626e-34 # 6.626 * 10^-34
+print("\\nSpeed of Light :", speed_of_light, "m/s")
+print("Planck Constant:", planck_constant)
+
+# 3. True Division vs Floor Division
+print("\\n--- Division Mechanics ---")
+print("9 / 3     =", 9 / 3)      # Always produces a float: 3.0
+print("5.0 // 2  =", 5.0 // 2)   # Floor division with float: 2.0
+print("-3 // 2   =", -3 // 2)    # Rounds toward -infinity: -2
+print("17 % 5    =", 17 % 5)     # Modulus remainder: 2
+
+# 4. Floating-Point Inaccuracy in Binary Hardware
+print("\\n--- Floating-Point Representation ---")
+sum_floats = 0.1 + 0.2
+print("0.1 + 0.2 =", sum_floats)
+print("Is 0.1 + 0.2 == 0.3?", sum_floats == 0.3)
+`} 
+/>
+
+### Sandbox 2: Math Functions, f-Strings, Complex Numbers, and Challenges
+
+Experiment with Banker's rounding, modular exponentiation, string formatting with f-strings, complex arithmetic, and test whether differences are exact integers:
+
+<PythonRunner 
+  client:visible 
+  title="Example 2: Math Functions, f-Strings, Complex Numbers & Challenges"
+  initialCode={`# 1. Banker's Rounding (Round Ties to Even)
+print("round(2.5)   =", round(2.5))    # Rounds to nearest EVEN: 2
+print("round(3.5)   =", round(3.5))    # Rounds to nearest EVEN: 4
+print("round(3.14159, 2) =", round(3.14159, 2))
+
+# 2. Math functions: abs, modular pow, is_integer
+print("\\n--- Math Functions ---")
+print("abs(-42.0)   =", abs(-42.0))
+print("pow(2, 3, 5) =", pow(2, 3, 5))  # (2**3) % 5 = 8 % 5 = 3
+float_val = 5.0
+print(f"{float_val} is an integer?", float_val.is_integer())
+
+# 3. Number formatting in f-strings
+balance = 1254367.892
+completion = 0.854
+print("\\n--- f-String Formatting ---")
+print(f"Bank Balance    : \${balance:,.2f}")
+print(f"Task Completion : {completion:.1%}")
+
+# 4. Complex numbers
+z = 3 + 4j
+print("\\n--- Complex Numbers ---")
+print("Complex value :", z)
+print("Real part     :", z.real)
+print("Imag part     :", z.imag)
+print("Conjugate     :", z.conjugate())
+
+# 5. Challenge: Exponent Calculation & Integer Difference Validation
+base = 3.0
+exp = 4.0
+power_result = base ** exp
+print(f"\\nChallenge: {base} to the power of {exp} = {power_result}")
+
+# Difference test
+val1 = 10.75
+val2 = 2.75
+diff = val1 - val2
+print(f"Difference between {val1} and {val2} is integer? {diff.is_integer()} (Result = {diff})")
+`} 
+/>
+
+---
+
+## Python Numbers and Math Quick Reference
+
+The table below catalogs the essential numeric operators, functions, formatting specifiers, and methods covered in this chapter:
+
+| Category | Syntax / Expression | Return Type | Description & Example |
+| :--- | :--- | :---: | :--- |
+| **Addition** | `x + y` | `int` or `float` | Sums operands; returns `float` if either operand is float. |
+| **Subtraction** | `x - y` | `int` or `float` | Subtracts right operand from left operand. |
+| **Multiplication**| `x * y` | `int` or `float` | Multiplies two numbers. |
+| **True Division** | `x / y` | `float` | Divides numbers; always returns a `float` (`8 / 4 -> 2.0`). |
+| **Floor Division**| `x // y` | `int` or `float` | Rounds quotient down toward $-\infty$ (`-3 // 2 -> -2`). |
+| **Exponentiation**| `x ** y` | `int` or `float` | Raises base `x` to power `y`. |
+| **Modulus** | `x % y` | `int` or `float` | Computes remainder $x - y \times (x // y)$; parity test: `n % 2 == 0`. |
+| **Round** | `round(x, [n])` | `int` or `float` | Rounds to $n$ decimal places; ties round to nearest even integer. |
+| **Absolute** | `abs(x)` | `int` or `float` | Computes magnitude $|x|$; preserves numeric type. |
+| **Power** | `pow(x, y, [z])` | `int` or `float` | Computes $x^y$ or modular exponentiation $(x^y) \pmod z$. |
+| **Float Method** | `f.is_integer()` | `bool` | Returns `True` if float has no fractional remainder. |
+| **Fixed Decimals**| `f"{x:.2f}"` | `str` | Formats float to 2 decimal places using Banker's rounding. |
+| **Currency Style**| `f"{x:,.2f}"` | `str` | Groups thousands with commas and formats 2 decimal places. |
+| **Percentage** | `f"{x:.1%}"` | `str` | Multiplies by 100 and formats with `%` symbol. |
+| **Complex Parts** | `z.real`, `z.imag`| `float` | Accesses real and imaginary floating-point components. |
+| **Conjugate** | `z.conjugate()` | `complex` | Computes complex conjugate $a - bj$; `//` raises `TypeError`. |
+
+---
+
+## Quick Self-Check
+
+Test your understanding of Python floor division, negative numbers, and Banker's rounding before continuing:
+
+<QuizCard
+  client:visible
+  question="What are the evaluated results of the expressions `-7 // 2` and `round(2.5)` in Python 3?"
+  options={[
+    "-3 and 3",
+    "-4 and 2",
+    "-3 and 2",
+    "-4 and 3"
+  ]}
+  correctAnswer={1}
+  explanation="Floor division (//) rounds down toward negative infinity. Since -7 / 2 = -3.5, rounding down to the nearest lower integer evaluates to -4. Additionally, Python 3 implements Banker's Rounding ('round half to even'), where numbers terminating in an exact .5 round to the nearest even integer. Therefore, round(2.5) evaluates down to 2 (an even number), whereas round(3.5) would round up to 4."
+/>
