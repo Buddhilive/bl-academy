@@ -1,0 +1,569 @@
+---
+title: "File Input and Output (I/O) in Python"
+track: "python"
+category: "Python Tutorial"
+order: 11
+difficulty: "intermediate"
+xp: 100
+description: "Master modern Python file I/O: manipulate cross-platform paths with pathlib, safely read and write text files using context managers, and process structured tabular CSV datasets."
+topic: "File Input and Output"
+prerequisites: ["python-zero-to-hero/10-modules-and-packages"]
+---
+import PythonRunner from '../../../components/islands/PythonRunner';
+import QuizCard from '../../../components/islands/QuizCard';
+
+## Introduction: Persistent State and the Physical Byte Model
+
+In preceding chapters, every program executed inside volatile random-access memory (RAM). Variables, calculated data structures, and user entries received via `input()` existed strictly within the lifecycle of the Python process. The moment the interpreter process terminated, the runtime stack collapsed, clearing all program state:
+
+$$\text{State}_{\text{RAM}}(t) \xrightarrow{\text{process exit}} \emptyset$$
+
+To build production software—such as data science pipelines, web backends, machine learning training harnesses, and automation utilities—systems must achieve **state persistence**. Persistent data outlives the execution cycle by residing on non-volatile secondary storage (such as NVMe SSDs or optical drives) managed by an operating system **file system**.
+
+```
+    Volatile Execution (RAM)                     Persistent Storage (Disk)
+  ┌───────────────────────────┐                 ┌──────────────────────────┐
+  │      Python Process       │                 │       File System        │
+  │                           │                 │                          │
+  │   variables, objects,     │  file.write()   │   data.txt               │
+  │   dataframes, lists       │ ──────────────> │   [ 0x48 0x65 0x6C ... ] │
+  │                           │  file.read()    │                          │
+  │   (Destroyed on exit)     │ <────────────── │   temperatures.csv       │
+  └───────────────────────────┘                 └──────────────────────────┘
+```
+
+### The Fundamental Physics of a File
+
+At the physical and operating system levels, a **file** is simply a contiguous sequence of binary digits grouped into 8-bit bytes:
+
+$$S = (b_0, b_1, b_2, \dots, b_{n-1}) \quad \text{where } b_i \in \{0, 1, \dots, 255\} = \mathbb{Z}_{256}$$
+
+The total physical information capacity of a file with $n$ bytes is given by:
+
+$$\mathcal{B}(S) = 8n \text{ bits}$$
+
+A file contains no intrinsic metadata dictating its human interpretation. An image, a compiled bytecode artifact, an audio waveform, and a plain text document are all identical sequences of integers between $0$ and $255$. It is solely the responsibility of the executing software to apply a decoding schema or **character encoding** $E$:
+
+$$E: \Sigma^* \longleftrightarrow (\mathbb{Z}_{256})^*$$
+
+The universal modern standard for decoding textual characters into bytes is **UTF-8**, which variable-length encodes Unicode code points from $1$ to $4$ bytes.
+
+### Filesystem Hierarchies: POSIX vs. Windows
+
+Filesystems organize millions of individual files into a directed acyclic tree graph $T = (V, E)$, originating at a designated root node $v_{\text{root}}$:
+
+1. **POSIX (macOS, Linux, Unix)**:
+   * Single unified root denoted by a forward slash (`/`).
+   * Path separator: forward slash (`/`).
+   * Example: `/Users/David/Documents/dataset.csv`.
+2. **Windows**:
+   * Multi-rooted system partitioned by drive volumes (e.g., `C:\`, `D:\`).
+   * Path separator: backslash (`\`).
+   * Example: `C:\Users\David\Documents\dataset.csv`.
+
+In legacy Python codebases, developers manually concatenated path strings using string concatenation or `os.path.join()`. This frequently introduced escape-sequence bugs on Windows (where `\n` or `\t` in paths triggered control characters) and caused brittle, non-portable code. Python 3.4 introduced the `pathlib` module, establishing a modern, object-oriented, cross-platform standard.
+
+---
+
+## 11.1 Working with Modern Paths: `pathlib`
+
+The built-in `pathlib` module models filesystem paths not as raw, error-prone string primitives, but as rich, first-class Python objects.
+
+To begin working with paths, import the `Path` class:
+
+```python
+from pathlib import Path
+```
+
+### Instantiating `Path` Objects
+
+You can construct `Path` instances through three primary mechanisms:
+
+#### 1. From a String
+```python
+# POSIX style
+posix_path = Path("/home/developer/projects/report.txt")
+
+# Windows style: Always use raw string literals (r"...") to prevent escape parsing
+win_path = Path(r"C:\Users\Developer\projects\report.txt")
+```
+
+#### 2. Using Class Methods
+* `Path.home()`: Returns an absolute `Path` pointing to the current user's profile home directory (`/home/username` on Linux or `C:\Users\Username` on Windows).
+* `Path.cwd()`: Returns an absolute `Path` representing the process's Current Working Directory.
+
+```python
+home_dir = Path.home()
+current_dir = Path.cwd()
+
+print(f"User Home: {home_dir}")
+print(f"Working Dir: {current_dir}")
+```
+
+#### 3. Path Concatenation via the Division Operator (`/`)
+`Path` overrides Python's division operator dunder method (`__truediv__`), allowing clean, intuitive path assembly across operating systems:
+
+$$P_{\text{child}} = P_{\text{parent}} \mathbin{/} \text{"subfolder"} \mathbin{/} \text{"target.csv"}$$
+
+```python
+data_path = Path.home() / "analytics" / "raw_data" / "metrics.csv"
+print(data_path)
+```
+
+The `/` operator handles OS-specific separator conversions automatically, eliminating manual string replacements.
+
+### Absolute vs. Relative Paths
+
+* **Absolute Path**: An unambiguous path originating directly from the filesystem root (`/` on Linux/macOS, `C:\` on Windows). It identifies a unique resource regardless of the process's working directory.
+* **Relative Path**: A path evaluated relative to `Path.cwd()`. Converting a relative path to an absolute path can be accomplished via `.resolve()`:
+
+```python
+rel_path = Path("reports/summary.txt")
+abs_path = rel_path.resolve()
+
+print(f"Relative: {rel_path}")
+print(f"Resolved Absolute: {abs_path}")
+```
+
+### Path Component Inspection
+
+`Path` instances supply properties for decomposing and analyzing path anatomy:
+
+```python
+sample_path = Path.home() / "workspace" / "telemetry_v1.tar.gz"
+
+print(sample_path.name)    # "telemetry_v1.tar.gz" (full filename)
+print(sample_path.stem)    # "telemetry_v1.tar"    (final component without trailing extension)
+print(sample_path.suffix)  # ".gz"                 (final extension component)
+print(sample_path.suffixes)# [".tar", ".gz"]       (all extensions in composite archive)
+print(sample_path.parent)  # Path representing immediate containing folder
+print(sample_path.anchor)  # "/" on POSIX, "C:\" on Windows
+```
+
+### Path Predicates and Validation
+
+Before reading or writing to a path, you can verify its status and type using boolean predicates:
+
+```python
+target = Path("config.json")
+
+print(target.exists())   # True if a file or directory exists at the path
+print(target.is_file())  # True strictly if the target exists and is a file
+print(target.is_dir())   # True strictly if the target exists and is a directory
+```
+
+---
+
+## 11.2 Common File System Operations
+
+Beyond inspecting existing locations, `pathlib.Path` objects expose methods for creating, searching, renaming, and removing files and directories.
+
+### Creating Directories with `mkdir()`
+
+When creating directories in automated pipelines, intermediate folders may not yet exist, or the folder might already have been initialized on a previous run. The `mkdir()` method handles both cases gracefully:
+
+```python
+archive_dir = Path.home() / "data" / "backups" / "daily"
+
+# Safe, idempotent directory creation
+archive_dir.mkdir(parents=True, exist_ok=True)
+```
+
+* `parents=True`: Recursively creates any missing parent directories (analogous to Unix `mkdir -p`).
+* `exist_ok=True`: Prevents raising a `FileExistsError` if the target folder already exists.
+
+### Creating Empty Files with `touch()`
+
+The `touch()` method creates an empty file at the designated location or updates the last modified timestamp if the file already exists:
+
+```python
+flag_file = archive_dir / ".complete.lock"
+flag_file.touch(exist_ok=True)
+```
+
+### Iterating and Filtering Directory Contents
+
+#### 1. Shallow Directory Listing: `iterdir()`
+The `iterdir()` generator yields `Path` objects for all direct children inside a directory:
+
+```python
+target_folder = Path.cwd()
+
+for item in target_folder.iterdir():
+    kind = "DIR " if item.is_dir() else "FILE"
+    print(f"[{kind}] {item.name}")
+```
+
+#### 2. Pattern Matching with `glob()` and `rglob()`
+The `glob()` method searches directory contents using pattern wildcards:
+* `*`: Matches zero or more arbitrary characters (e.g., `"*.py"` matches all Python scripts).
+* `?`: Matches exactly one character (e.g., `"test_?.py"`).
+* `[seq]`: Matches any character defined within the brackets (e.g., `"image_[0-9].png"`).
+
+To search recursively across all nested subdirectories, use `rglob()`:
+
+```python
+project_root = Path.cwd()
+
+# Find all Markdown documents across the entire project tree
+for doc in project_root.rglob("*.md"):
+    print(f"Documentation file: {doc.relative_to(project_root)}")
+```
+
+### Moving, Renaming, and Deleting
+
+#### Renaming and Relocating Files: `replace()`
+The `replace()` method renames a file or moves it to a new directory path:
+
+```python
+src = Path("draft_report.txt")
+dest = Path("archive") / "final_report.txt"
+
+# Atomically moves/renames src to dest
+src.replace(dest)
+```
+
+> **Warning**: If `dest` already exists, `replace()` will overwrite it silently on POSIX systems without prompting.
+
+#### Deleting Files and Folders
+* `path.unlink(missing_ok=True)`: Permanently deletes a single file. Passing `missing_ok=True` prevents a `FileNotFoundError` if the file does not exist.
+* `dir_path.rmdir()`: Deletes an empty directory. If the directory contains any files or subdirectories, Python raises an `OSError`.
+* `shutil.rmtree(dir_path)`: Recursively deletes a non-empty directory and its entire subtree. Use with caution.
+
+```python
+import shutil
+
+temp_file = Path("temp_cache.bin")
+temp_file.unlink(missing_ok=True)
+
+temp_dir = Path("scratch_dir")
+if temp_dir.exists():
+    shutil.rmtree(temp_dir)
+```
+
+---
+
+## 11.3 Conceptual Checkpoint
+
+Test your understanding of safe directory generation and path operations before proceeding to file stream I/O:
+
+<QuizCard
+  client:visible
+  question="You are writing an automated batch script that must scaffold a deeply nested directory path ('output/2026/summaries') on a server. If any intermediate directories do not exist, they must be created automatically. If the directory already exists from an earlier run, the script must continue without throwing an exception. Which statement implements this correctly?"
+  options={[
+    "Path('output/2026/summaries').touch(parents=True, exist_ok=True)",
+    "Path('output/2026/summaries').mkdir(parents=True, exist_ok=True)",
+    "Path('output/2026/summaries').make_dirs(recursive=True, force=True)",
+    "Path('output/2026/summaries').mkdir(recursive=True, silent=True)"
+  ]}
+  correctAnswer={1}
+  explanation="The pathlib.Path.mkdir() method accepts 'parents=True' to recursively construct non-existent parent directories, and 'exist_ok=True' to prevent FileExistsError if the target directory already exists. The touch() method is used for file creation, not directory construction."
+/>
+
+---
+
+## 11.4 Reading and Writing Plain Text Files
+
+Operating systems track open file handles through integer indices known as **file descriptors** ($\mathcal{F} \subset \mathbb{N}$). Operating systems enforce strict limits on the maximum number of concurrent open file descriptors permitted per process:
+
+$$\text{Capacity}(\mathcal{F}) \le \text{FD\_LIMIT} \quad (\text{e.g., } 1024 \text{ or } 4096)$$
+
+If a script opens files without closing them, file descriptors leak until the process raises an `OSError: [Errno 24] Too many open files`.
+
+### The Context Manager Invariant (`with` Statement)
+
+To guarantee that file descriptors are immediately and deterministically closed upon completion, Python provides the **context manager** pattern via the `with` statement:
+
+```python
+file_path = Path("notes.txt")
+
+with file_path.open(mode="r", encoding="utf-8") as file:
+    content = file.read()
+# The file descriptor is guaranteed to be closed here, even if exceptions occur!
+```
+
+Behind the scenes, the context manager binds the file handle and executes two dunder methods:
+1. `__enter__()`: Opens the file stream and returns the handle object.
+2. `__exit__()`: Executes cleanup code, closing the underlying file descriptor $\mathcal{F} \to \emptyset$ with $\mathcal{O}(1)$ time complexity, whether execution finishes normally or terminates prematurely with an unhandled exception.
+
+### File Modes Summary
+
+| Mode | Name | Description | Pointer Position | Overwrites? |
+| :--- | :--- | :--- | :--- | :--- |
+| `"r"` | Read | Opens existing file for reading. Raises `FileNotFoundError` if missing. | Beginning ($0$) | No |
+| `"w"` | Write | Opens for writing. Creates file if missing; truncates to $0$ bytes if present. | Beginning ($0$) | **Yes** |
+| `"a"` | Append | Opens for writing. Creates file if missing; appends new data to end. | End ($N$) | No |
+| `"r+"`| Read/Write | Updates existing file without truncating. | Beginning ($0$) | In-place |
+
+### Reading Techniques & Space Complexity
+
+How you read a file dictates your program's memory consumption. Consider a log file with $N$ total bytes and $L$ lines:
+
+#### 1. Whole File Slurp: `file.read()`
+Reads the entire byte sequence into a single string in memory:
+
+$$\text{Space Complexity} = \mathcal{O}(N)$$
+
+```python
+with file_path.open(mode="r", encoding="utf-8") as f:
+    full_text = f.read()
+```
+*Best for*: Small configuration files, JSON payloads, or templates under a few megabytes.
+
+#### 2. Line List Loading: `file.readlines()`
+Reads all lines into a Python list of strings:
+
+$$\text{Space Complexity} = \mathcal{O}(N)$$
+
+```python
+with file_path.open(mode="r", encoding="utf-8") as f:
+    lines = f.readlines()
+```
+
+#### 3. Streaming Line-by-Line Iteration
+Iterates through the file object directly as a generator stream:
+
+$$\text{Space Complexity} = \mathcal{O}(\text{max line length}) \approx \mathcal{O}(1)$$
+
+```python
+with file_path.open(mode="r", encoding="utf-8") as f:
+    for line in f:
+        # Each line includes trailing newline character '\n'
+        print(line.rstrip("\r\n"))
+```
+*Best for*: Large datasets, multi-gigabyte log archives, and memory-constrained production microservices.
+
+### Writing Plain Text Files
+
+Writing to a text file requires specifying `mode="w"` (to overwrite/create) or `mode="a"` (to append):
+
+```python
+output_path = Path("greeting.txt")
+
+# Writing single strings
+with output_path.open(mode="w", encoding="utf-8") as f:
+    f.write("Line 1: Foundations of Python I/O\n")
+    f.write("Line 2: Built-in safety with context managers\n")
+
+# Appending lines
+with output_path.open(mode="a", encoding="utf-8") as f:
+    f.write("Line 3: Appended without overwriting\n")
+
+# Writing an iterable collection of strings
+bulk_lines = ["Entry A\n", "Entry B\n", "Entry C\n"]
+with output_path.open(mode="w", encoding="utf-8") as f:
+    f.writelines(bulk_lines)
+```
+
+---
+
+## 11.5 Structured Tabular Data with the `csv` Module
+
+Text files frequently represent structured two-dimensional tabular matrices:
+
+$$M \in \mathcal{T}^{R \times C}$$
+
+where $R$ represents the total records (rows) and $C$ represents the feature attributes (columns). The standard format for sharing tabular records across platforms and databases is **CSV (Comma-Separated Values)** (RFC 4180).
+
+Python provides the standard library module `csv` to parse quotes, commas, escapes, and newlines accurately.
+
+### List-Based Processing: `csv.reader` and `csv.writer`
+
+#### Writing Matrix Rows (`csv.writer`)
+When opening a file for writing with `csv`, always specify `newline=""` to prevent blank lines from being injected on Windows platforms:
+
+```python
+import csv
+from pathlib import Path
+
+csv_path = Path("temperatures.csv")
+daily_readings = [
+    ["Day", "High_C", "Low_C"],
+    ["Monday", 28, 17],
+    ["Tuesday", 31, 19],
+    ["Wednesday", 25, 14],
+]
+
+with csv_path.open(mode="w", encoding="utf-8", newline="") as f:
+    writer = csv.writer(f)
+    writer.writerows(daily_readings)
+```
+
+#### Reading Matrix Rows (`csv.reader`)
+Values parsed by `csv.reader` are returned exclusively as `str` tokens. Numerical values must be explicitly coerced:
+
+```python
+with csv_path.open(mode="r", encoding="utf-8") as f:
+    reader = csv.reader(f)
+    header = next(reader)  # Skip header row ['Day', 'High_C', 'Low_C']
+    
+    for row in reader:
+        day = row[0]
+        high = float(row[1])
+        low = float(row[2])
+        print(f"{day}: High={high}°C, Low={low}°C")
+```
+
+### Dictionary-Based Processing: `DictReader` and `DictWriter`
+
+When datasets feature an explicit header row, dictionary readers and writers provide self-documenting code and immunity to column ordering variations.
+
+#### Reading Datasets as Dictionaries (`csv.DictReader`)
+`DictReader` reads the first row to establish dictionary keys, mapping each subsequent row into a Python dictionary:
+
+```python
+employee_file = Path("employees.csv")
+
+with employee_file.open(mode="r", encoding="utf-8") as f:
+    reader = csv.DictReader(f)
+    print(f"Detected columns: {reader.fieldnames}")
+    
+    for record in reader:
+        print(f"Employee: {record['name']} | Dept: {record['department']}")
+```
+
+#### Writing Dictionaries to CSV (`csv.DictWriter`)
+`DictWriter` requires an explicit `fieldnames` sequence and must invoke `writer.writeheader()` before emitting rows:
+
+```python
+inventory_path = Path("inventory.csv")
+items = [
+    {"sku": "A101", "product": "Mechanical Keyboard", "quantity": 14, "price": 89.99},
+    {"sku": "B204", "product": "Ergonomic Mouse", "quantity": 28, "price": 49.50},
+    {"sku": "C305", "product": "USB-C Dock", "quantity": 8, "price": 129.00},
+]
+
+fieldnames = ["sku", "product", "quantity", "price"]
+
+with inventory_path.open(mode="w", encoding="utf-8", newline="") as f:
+    writer = csv.DictWriter(f, fieldnames=fieldnames)
+    writer.writeheader()
+    writer.writerows(items)
+```
+
+---
+
+## 11.6 Interactive Sandboxes
+
+Execute real filesystem manipulations and data processing in the interactive Pyodide environments below. Both sandboxes run directly within an isolated Web Worker in your browser using Pyodide's virtual in-memory filesystem.
+
+### Sandbox 1: Filesystem Scaffolding & Pattern Matching (`pathlib`)
+
+This sandbox demonstrates creating a directory tree, creating simulated log and text files, inspecting path metadata (`stem`, `suffix`), and filtering files using `.glob()` and `.rglob()`:
+
+<PythonRunner
+  client:visible
+  title="Interactive Sandbox: Pathlib Scaffolding & Globbing"
+  expectedOutput="Workspace path: workspace
+Subdirectories: ['docs', 'logs']
+Discovered log files:
+- audit.log (stem: audit, suffix: .log)
+- system.log (stem: system, suffix: .log)
+Total files cataloged: 3"
+  initialCode={`from pathlib import Path
+
+# Step 1: Initialize workspace directory tree
+workspace = Path("workspace")
+logs_dir = workspace / "logs"
+docs_dir = workspace / "docs"
+
+# Create directories safely (idempotent)
+logs_dir.mkdir(parents=True, exist_ok=True)
+docs_dir.mkdir(parents=True, exist_ok=True)
+
+# Step 2: Touch simulated sample files
+(logs_dir / "system.log").write_text("System startup OK\\n", encoding="utf-8")
+(logs_dir / "audit.log").write_text("Audit pass: 0 errors\\n", encoding="utf-8")
+(docs_dir / "readme.txt").write_text("Project Documentation\\n", encoding="utf-8")
+
+print(f"Workspace path: {workspace.name}")
+subdirs = sorted([d.name for d in workspace.iterdir() if d.is_dir()])
+print(f"Subdirectories: {subdirs}")
+
+# Step 3: Pattern matching with glob
+print("Discovered log files:")
+for log_file in sorted(logs_dir.glob("*.log")):
+    print(f"- {log_file.name} (stem: {log_file.stem}, suffix: {log_file.suffix})")
+
+# Step 4: Recursive search with rglob
+all_files = sorted(workspace.rglob("*.*"))
+print(f"Total files cataloged: {len(all_files)}")`}
+/>
+
+---
+
+### Sandbox 2: Tabular High-Scores Aggregator (`csv.DictReader` & `csv.DictWriter`)
+
+This sandbox creates raw gaming score logs, aggregates the maximum score achieved by each player across multiple game sessions using `csv.DictReader`, exports the resulting leaderboard to a new CSV file using `csv.DictWriter`, and verifies the exported data:
+
+<PythonRunner
+  client:visible
+  title="Interactive Sandbox: CSV Leaderboard Aggregator"
+  expectedOutput="Aggregated High Scores:
+- Alice: 940
+- Bob: 880
+- Charlie: 910
+Leaderboard export completed successfully."
+  initialCode={`import csv
+from pathlib import Path
+
+# Step 1: Write raw game session scores to CSV
+data_dir = Path("data")
+data_dir.mkdir(exist_ok=True)
+scores_file = data_dir / "scores.csv"
+
+raw_records = [
+    {"player": "Alice", "game": "CyberQuest", "score": "820"},
+    {"player": "Bob", "game": "CyberQuest", "score": "750"},
+    {"player": "Alice", "game": "GridRunner", "score": "940"},
+    {"player": "Charlie", "game": "CyberQuest", "score": "910"},
+    {"player": "Bob", "game": "GridRunner", "score": "880"},
+    {"player": "Charlie", "game": "GridRunner", "score": "630"},
+]
+
+with scores_file.open(mode="w", encoding="utf-8", newline="") as f:
+    writer = csv.DictWriter(f, fieldnames=["player", "game", "score"])
+    writer.writeheader()
+    writer.writerows(raw_records)
+
+# Step 2: Read and aggregate highest score per player
+high_scores = {}
+with scores_file.open(mode="r", encoding="utf-8") as f:
+    reader = csv.DictReader(f)
+    for row in reader:
+        player = row["player"]
+        score = int(row["score"])
+        if player not in high_scores or score > high_scores[player]:
+            high_scores[player] = score
+
+# Step 3: Export aggregated leaderboard to high_scores.csv
+leaderboard_file = data_dir / "high_scores.csv"
+sorted_leaderboard = [
+    {"player": player, "top_score": score}
+    for player, score in sorted(high_scores.items())
+]
+
+with leaderboard_file.open(mode="w", encoding="utf-8", newline="") as f:
+    writer = csv.DictWriter(f, fieldnames=["player", "top_score"])
+    writer.writeheader()
+    writer.writerows(sorted_leaderboard)
+
+# Step 4: Display leaderboard verification
+print("Aggregated High Scores:")
+with leaderboard_file.open(mode="r", encoding="utf-8") as f:
+    reader = csv.DictReader(f)
+    for row in reader:
+        print(f"- {row['player']}: {row['top_score']}")
+
+print("Leaderboard export completed successfully.")`}
+/>
+
+---
+
+## 11.7 Chapter Summary & Best Practices
+
+1. **Object-Oriented Paths**: Use `pathlib.Path` exclusively instead of brittle string concatenation or legacy `os.path`. The `/` operator standardizes separator resolution across operating systems.
+2. **Context Managers for I/O**: Never open a file without a `with` statement. Context managers enforce deterministic teardown ($\mathcal{F} \to \emptyset$), guarding against file descriptor exhaustion.
+3. **Mandatory UTF-8 Encodings**: Explicitly pass `encoding="utf-8"` to all `open()` calls to protect software against operating system default encoding discrepancies.
+4. **Memory-Safe Streaming**: For large or unpredictable file sizes, iterate over lines using `for line in file:`. This streams records with an $\mathcal{O}(1)$ memory buffer rather than slurping the entire dataset into memory.
+5. **Structured CSV Pipelines**: When tabular data includes header labels, use `csv.DictReader` and `csv.DictWriter`. Always set `newline=""` when writing CSV files to prevent unintended blank lines across operating systems.
