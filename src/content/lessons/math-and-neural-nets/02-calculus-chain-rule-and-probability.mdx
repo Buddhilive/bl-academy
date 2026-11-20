@@ -1,0 +1,163 @@
+---
+title: "Calculus, Chain Rule, Probability & Optimization"
+track: "math-neural-nets"
+category: "Phase 2: Math & Neural Networks from First Principles"
+order: 2
+difficulty: "intermediate"
+xp: 55
+description: "Implement numerical gradients, reverse-mode chain rule, Bayes' theorem, stable softmax, and gradient descent from scratch in NumPy."
+topic: "Calculus, Probability & Optimization"
+prerequisites: ["math-and-neural-nets/01-linear-algebra-vectors-and-matrices"]
+---
+import PythonRunner from '../../../components/islands/PythonRunner';
+import QuizCard from '../../../components/islands/QuizCard';
+import ColabButton from '../../../components/static/ColabButton.astro';
+
+Neural networks learn by nudging millions of weights in the direction that lowers a loss function. **Calculus** tells us which direction is downhill, **the chain rule** propagates that signal across composed layers, and **probability** gives us calibrated predictions and cross-entropy objectives to minimize.
+
+> **Runtime Tier**: **Colab CPU** (Free Tier) — Numerical differentiation, Bayes updates, softmax, and 2D gradient descent run smoothly in pure `numpy` on Pyodide and Google Colab CPU.
+
+## Learning Objectives
+
+By the end of this lesson, you will be able to:
+
+- Approximate derivatives via central finite differences and compare them against analytical gradients.
+- Apply the chain rule across composed operations in a computational graph.
+- Compute numerically stable softmax probabilities, cross-entropy loss, and Bayes' theorem posteriors.
+- Run a vanilla gradient descent loop to minimize a convex quadratic objective in NumPy.
+
+---
+
+## Concept Walkthrough: Gradients, Uncertainty & Descent
+
+### Derivatives & The Chain Rule
+
+For a scalar loss $L(w)$, the derivative $\frac{dL}{dw}$ measures how fast $L$ changes when $w$ increases by a tiny step. Numerically, the central finite difference gives an accurate check:
+
+$$\frac{dL}{dw} \approx \frac{L(w + h) - L(w - h)}{2h}, \qquad h = 10^{-5}$$
+
+When functions are composed as $y = f(g(x))$, the **chain rule** multiplies local derivatives along the path:
+
+$$\frac{dy}{dx} = \frac{dy}{dg} \cdot \frac{dg}{dx} = f'(g(x)) \cdot g'(x)$$
+
+Every modern autograd engine—from a 50-line Python `Value` class to PyTorch's `autograd`—automates this exact rule over a directed acyclic graph of operations.
+
+### Probability, Bayes & Cross-Entropy
+
+Classifiers output raw scores called **logits** $\mathbf{z}$, which **softmax** converts into a valid probability distribution by subtracting $\max(\mathbf{z})$ first to prevent floating-point overflow:
+
+$$\text{softmax}(z_i) = \frac{e^{z_i - \max(\mathbf{z})}}{\sum_j e^{z_j - \max(\mathbf{z})}}$$
+
+Given true distribution $p$ and predicted distribution $q$, **cross-entropy** measures the surprise (in nats) of using $q$ when reality follows $p$:
+
+$$H(p, q) = -\sum_{i} p_i \log(q_i)$$
+
+### Gradient Descent Update Rule
+
+To minimize $L(\theta)$, step opposite to the gradient scaled by learning rate $\eta$:
+
+$$\theta_{t+1} = \theta_t - \eta \nabla_\theta L(\theta_t)$$
+
+| Concept | Formula / NumPy Pattern | Why It Matters in AI |
+| :--- | :--- | :--- |
+| Central difference | `(f(x + h) - f(x - h)) / (2 * h)` | Verifies custom backward passes |
+| Stable softmax | `e = np.exp(z - z.max()); e / e.sum()` | Prevents `inf` / `NaN` in logits |
+| Cross-entropy | `-np.sum(y_true * np.log(y_pred + 1e-12))` | Standard classification loss |
+| Bayes posterior | `P(H\|E) = P(E\|H) * P(H) / P(E)` | Updates belief with new evidence |
+| Gradient step | `w -= lr * grad` | Core parameter optimization loop |
+
+---
+
+## Runnable Python Code
+
+### 1. Try It in Browser (NumPy Gradients, Softmax & Descent)
+
+Run this pure NumPy script to verify the chain rule numerically, compute stable softmax + cross-entropy, and minimize $f(x) = (x - 3)^2 + 2$:
+
+<PythonRunner
+  client:visible
+  title="Chain Rule Check, Stable Softmax & Gradient Descent"
+  packages={["numpy"]}
+  initialCode={`import numpy as np
+
+# 1. Chain rule check for y = (3x + 1)^2 -> dy/dx = 6(3x + 1)
+def f(x):
+    return (3.0 * x + 1.0) ** 2
+
+x = 2.0
+h = 1e-5
+num_grad = (f(x + h) - f(x - h)) / (2 * h)
+ana_grad = 6.0 * (3.0 * x + 1.0)
+print(f"Numerical grad: {num_grad:.6f} | Analytical grad: {ana_grad:.6f}")
+
+# 2. Numerically stable softmax & cross-entropy
+logits = np.array([1000.0, 1002.0, 999.0])
+shifted = logits - np.max(logits)
+probs = np.exp(shifted) / np.sum(np.exp(shifted))
+y_true = np.array([0.0, 1.0, 0.0])
+ce_loss = -np.sum(y_true * np.log(probs + 1e-12))
+print("Softmax probs:", np.round(probs, 4), "| Cross-Entropy:", round(float(ce_loss), 4))
+
+# 3. Gradient descent on g(w) = (w - 3)^2 + 2
+w, lr = -4.0, 0.15
+for step in range(15):
+    grad = 2.0 * (w - 3.0)
+    w -= lr * grad
+print(f"Converged w = {w:.4f} (target: 3.0000)")`}
+/>
+
+### 2. Full Lab in Google Colab (Colab CPU)
+
+Open the companion notebook on **Google Colab Free Tier CPU** to build a mini reverse-mode `Value` autograd node, run a Bayesian spam-filter update, and plot gradient descent trajectories across learning rates:
+
+<ColabButton
+  course="math-and-neural-nets"
+  notebook="02-calculus-chain-rule-and-probability.ipynb"
+  runtime="Free Tier CPU"
+/>
+
+```python
+import numpy as np
+
+# Bayes' Theorem: Medical test with 1% prevalence, 95% sensitivity, 5% false positive
+p_disease = 0.01
+p_pos_given_disease = 0.95
+p_pos_given_healthy = 0.05
+
+p_pos = p_pos_given_disease * p_disease + p_pos_given_healthy * (1 - p_disease)
+posterior = (p_pos_given_disease * p_disease) / p_pos
+print(f"P(Disease | Positive Test) = {posterior:.4f}")
+```
+
+---
+
+## Exercises & Checkpoints
+
+1. **Colab Checkpoint**: In the companion notebook, increase the gradient descent learning rate $\eta$ from `0.15` to `1.05` on $g(w) = (w - 3)^2 + 2$ and observe what happens to convergence.
+2. **Self-Check**: Why do we subtract `np.max(logits)` before exponentiating inside `softmax`?
+
+<QuizCard
+  client:visible
+  question="Why does subtracting max(logits) before calling np.exp() leave softmax probabilities unchanged while preventing errors?"
+  options={[
+    "It centers the gradient at zero so weights never vanish",
+    "Adding or subtracting a constant shifts both numerator and denominator by the same factor e^c, which cancels out while keeping exponents <= 0",
+    "It converts cross-entropy into mean squared error automatically",
+    "It forces all output probabilities to equal 1/K"
+  ]}
+  correctAnswer={1}
+  explanation="Because exp(z_i - c) / sum(exp(z_j - c)) = (e^-c * exp(z_i)) / (e^-c * sum(exp(z_j))), the e^-c factor cancels out exactly while preventing exp() overflow."
+/>
+
+---
+
+## Reference Mapping
+
+| Buddhilive Academy Section | Source Repository Reference |
+| :--- | :--- |
+| Derivatives & Numerical Gradients | `.ref/ai-engineering-from-scratch/phases/01-math-foundations/04-calculus-for-ml/docs/en.md` |
+| Chain Rule & Reverse-Mode Autodiff | `.ref/ai-engineering-from-scratch/phases/01-math-foundations/05-chain-rule-and-autodiff/docs/en.md` |
+| Probability, Softmax & Cross-Entropy | `.ref/ai-engineering-from-scratch/phases/01-math-foundations/06-probability-and-distributions/docs/en.md` |
+| Bayes' Theorem & Posterior Updates | `.ref/ai-engineering-from-scratch/phases/01-math-foundations/07-bayes-theorem/docs/en.md` |
+| Gradient Descent & Optimization | `.ref/ai-engineering-from-scratch/phases/01-math-foundations/08-optimization/docs/en.md` |
+| Entropy & Information Theory | `.ref/ai-engineering-from-scratch/phases/01-math-foundations/09-information-theory/docs/en.md` |

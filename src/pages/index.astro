@@ -16,6 +16,12 @@ const dataMlLessons = allLessons
 const firstDataMlLesson = dataMlLessons[0];
 const firstDataMlLessonUrl = firstDataMlLesson ? `/learn/${firstDataMlLesson.data.track}/${firstDataMlLesson.id}` : '#';
 
+const mathNeuralLessons = allLessons
+  .filter((l) => l.data.track === 'math-neural-nets')
+  .sort((a, b) => a.data.order - b.data.order);
+const firstMathNeuralLesson = mathNeuralLessons[0];
+const firstMathNeuralLessonUrl = firstMathNeuralLesson ? `/learn/${firstMathNeuralLesson.data.track}/${firstMathNeuralLesson.id}` : '#';
+
 const subjects = [
   {
     name: 'Python',
@@ -28,8 +34,15 @@ const subjects = [
     name: 'Data Foundations & Classical ML',
     description: 'Data cleaning, EDA, visualization, regression, classification, clustering, and time series in Python & Colab.',
     href: firstDataMlLessonUrl,
-    badge: 'New • 8 Lessons',
+    badge: '8 Lessons',
     color: '#E07A5F',
+  },
+  {
+    name: 'Math & Neural Networks',
+    description: 'Linear algebra, calculus, backpropagation in raw NumPy, PyTorch training loops, CNNs, RNNs, and Transformer attention.',
+    href: firstMathNeuralLessonUrl,
+    badge: 'New • 6 Lessons',
+    color: '#A7452A',
   },
   {
     name: 'NumPy',

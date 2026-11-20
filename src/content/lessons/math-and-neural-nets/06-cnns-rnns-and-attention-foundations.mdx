@@ -1,0 +1,157 @@
+---
+title: "CNNs, Sequence Models & Transformer Attention Mechanics"
+track: "math-neural-nets"
+category: "Phase 2: Math & Neural Networks from First Principles"
+order: 6
+difficulty: "intermediate"
+xp: 80
+description: "Explore spatial convolutions (CNNs), recurrent hidden states (RNNs/LSTMs), and scaled dot-product self-attention in NumPy and PyTorch."
+topic: "CNNs, RNNs & Transformer Attention"
+prerequisites: ["math-and-neural-nets/05-optimizers-regularization-and-pytorch"]
+---
+import PythonRunner from '../../../components/islands/PythonRunner';
+import QuizCard from '../../../components/islands/QuizCard';
+import ColabButton from '../../../components/static/ColabButton.astro';
+
+MLPs treat every input feature independently—flattening an image destroys 2D spatial structure, and averaging word embeddings destroys word order. Modern AI architectures solve both with specialized inductive biases: **CNNs** slide learned spatial filters over grids, **RNNs/LSTMs** carry a recurrent state across time, and **Transformers** replace recurrence with parallel **self-attention**.
+
+> **Runtime Tier**: **Colab T4 GPU** (Free Tier) — Scaled dot-product attention in NumPy runs instantly in your browser, while PyTorch `Conv2d`, `LSTM`, and mini-Transformer training run on Google Colab's free T4 GPU.
+
+## Learning Objectives
+
+By the end of this lesson, you will be able to:
+
+- Explain how 2D convolutional kernels (`nn.Conv2d`) and pooling layers build hierarchical spatial features.
+- Contrast sequential hidden-state recurrence (`nn.RNN` / `nn.LSTM`) with parallel self-attention.
+- Implement scaled dot-product self-attention $\text{Attention}(Q, K, V) = \text{softmax}\left(\frac{QK^T}{\sqrt{d_k}}\right)V$ and causal masking in NumPy.
+- Build and train a PyTorch `Conv2d` classifier and a multi-head Transformer encoder/decoder block on Colab T4 GPU.
+
+---
+
+## Concept Walkthrough: Spatial Filters, Sequences & Attention
+
+### Convolutional Neural Networks (CNNs)
+
+A 2D convolution slides a small learnable kernel (for example, $3 \times 3$) across an image. Early layers detect edges and textures; deeper layers combine them into shapes and objects—while sharing weights across every spatial location.
+
+### Recurrent Neural Networks (RNNs & LSTMs)
+
+An RNN processes a sequence one token $\mathbf{x}_t$ at a time, updating a hidden state $\mathbf{h}_t = \tanh(W \mathbf{x}_t + U \mathbf{h}_{t-1} + \mathbf{b})$. Because long sequences suffer from vanishing gradients, **LSTMs** add forget, input, and output gates. Still, token-by-token recurrence is hard to parallelize across long contexts.
+
+### Scaled Dot-Product Self-Attention
+
+Transformers let every token attend to every other token in a single matrix operation. Each token projects into **Query ($Q$)**, **Key ($K$)**, and **Value ($V$)** vectors:
+
+$$\text{Attention}(Q, K, V) = \text{softmax}\left(\frac{QK^T}{\sqrt{d_k}} + M\right) V$$
+
+Dividing by $\sqrt{d_k}$ keeps dot-product variance near $1$ so softmax does not saturate into near-zero gradients. For autoregressive language models, a causal mask $M$ sets future positions ($j > i$) to $-\infty$ before softmax. Adding **sinusoidal or learned positional encodings** restores word order without recurrence.
+
+| Architecture | Core Operation | Sequence / Spatial Bias | Parallelism |
+| :--- | :--- | :--- | :--- |
+| `CNN` (`nn.Conv2d`) | Sliding local kernel | Translation equivariance (2D/1D grid) | High across spatial positions |
+| `RNN` / `LSTM` | Recurrent state $\mathbf{h}_t$ | Strict left-to-right order | Sequential ($O(T)$ steps) |
+| `Transformer` | $\text{softmax}(QK^T / \sqrt{d_k})V$ | Global pairwise + positional encoding | High ($O(1)$ sequential steps) |
+
+---
+
+## Runnable Python Code
+
+### 1. Try It in Browser (NumPy Causal Self-Attention)
+
+Run this pure NumPy implementation of scaled dot-product self-attention with a causal mask for a 4-token sequence:
+
+<PythonRunner
+  client:visible
+  title="Scaled Dot-Product Causal Self-Attention in NumPy"
+  packages={["numpy"]}
+  initialCode={`import numpy as np
+
+rng = np.random.default_rng(123)
+n_tokens, d_model, d_k = 4, 8, 4
+
+X = rng.normal(size=(n_tokens, d_model))
+Wq = rng.normal(scale=0.5, size=(d_model, d_k))
+Wk = rng.normal(scale=0.5, size=(d_model, d_k))
+Wv = rng.normal(scale=0.5, size=(d_model, d_k))
+
+Q, K, V = X @ Wq, X @ Wk, X @ Wv
+scores = (Q @ K.T) / np.sqrt(d_k)
+
+# Causal mask: prevent token i from attending to future token j > i
+mask = np.triu(np.ones((n_tokens, n_tokens)) * -1e9, k=1)
+scores_masked = scores + mask
+
+# Numerically stable row-wise softmax
+exp_s = np.exp(scores_masked - scores_masked.max(axis=-1, keepdims=True))
+attn_weights = exp_s / exp_s.sum(axis=-1, keepdims=True)
+output = attn_weights @ V
+
+print("Causal attention weights (rows sum to 1):\n", np.round(attn_weights, 3))
+print("Output shape:", output.shape)`}
+/>
+
+### 2. Full PyTorch Lab in Google Colab (Colab T4 GPU)
+
+Open the companion notebook on **Google Colab Free Tier T4 GPU** to train a PyTorch `Conv2d` image classifier, an `nn.LSTM` sequence classifier, and a Multi-Head Self-Attention block end-to-end:
+
+<ColabButton
+  course="math-and-neural-nets"
+  notebook="06-cnns-rnns-and-attention-foundations.ipynb"
+  runtime="Free Tier T4 GPU"
+/>
+
+```python
+import math
+import torch
+import torch.nn as nn
+
+class MultiHeadSelfAttention(nn.Module):
+    def __init__(self, d_model=64, n_heads=4):
+        super().__init__()
+        self.n_heads = n_heads
+        self.d_k = d_model // n_heads
+        self.qkv = nn.Linear(d_model, 3 * d_model)
+        self.proj = nn.Linear(d_model, d_model)
+
+    def forward(self, x):
+        B, T, C = x.shape
+        qkv = self.qkv(x).view(B, T, 3, self.n_heads, self.d_k).permute(2, 0, 3, 1, 4)
+        q, k, v = qkv[0], qkv[1], qkv[2]
+        att = (q @ k.transpose(-2, -1)) / math.sqrt(self.d_k)
+        att = torch.softmax(att, dim=-1)
+        out = (att @ v).transpose(1, 2).contiguous().view(B, T, C)
+        return self.proj(out)
+```
+
+---
+
+## Exercises & Checkpoints
+
+1. **Colab Checkpoint**: In the companion notebook, toggle the causal mask on and off in `MultiHeadSelfAttention` and inspect the upper triangle of the attention weight matrix.
+2. **Self-Check**: Why does scaled dot-product attention divide $QK^T$ by $\sqrt{d_k}$ before applying `softmax`?
+
+<QuizCard
+  client:visible
+  question="Why does scaled dot-product attention divide Q @ K^T by sqrt(d_k) before softmax?"
+  options={[
+    "To reduce the matrix dimensions from (T, T) to (T, d_k)",
+    "To prevent large dot products from pushing softmax into regions with tiny gradients",
+    "To convert bidirectional attention into causal decoder attention",
+    "To replace the need for positional encodings"
+  ]}
+  correctAnswer={1}
+  explanation="As d_k grows, the variance of Q @ K^T grows proportionally to d_k. Dividing by sqrt(d_k) restores unit variance so softmax stays in a well-behaved gradient regime."
+/>
+
+---
+
+## Reference Mapping
+
+| Buddhilive Academy Section | Source Repository Reference |
+| :--- | :--- |
+| Convolutional Filters & CNNs | `.ref/AI-For-Beginners/lessons/4-ComputerVision/07-ConvNets/README.md` |
+| Recurrent Neural Networks & LSTMs | `.ref/AI-For-Beginners/lessons/5-NLP/16-RNN/README.md` |
+| Transformers & Attention Overview | `.ref/AI-For-Beginners/lessons/5-NLP/18-Transformers/README.md` |
+| Self-Attention & Causal Masking | `.ref/ai-engineering-from-scratch/phases/07-transformers-deep-dive/02-self-attention-from-scratch/docs/en.md` |
+| Multi-Head Attention | `.ref/ai-engineering-from-scratch/phases/07-transformers-deep-dive/03-multi-head-attention/docs/en.md` |
+| Positional Encoding | `.ref/ai-engineering-from-scratch/phases/07-transformers-deep-dive/04-positional-encoding/docs/en.md` |

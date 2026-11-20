@@ -1,0 +1,140 @@
+---
+title: "Optimizers, Regularization & PyTorch Training Loops"
+track: "math-neural-nets"
+category: "Phase 2: Math & Neural Networks from First Principles"
+order: 5
+difficulty: "intermediate"
+xp: 70
+description: "Implement AdamW and dropout intuition in NumPy, then transition to GPU-accelerated PyTorch nn.Module training loops on Colab T4 GPU."
+topic: "Optimizers, Regularization & PyTorch"
+prerequisites: ["math-and-neural-nets/04-backpropagation-activations-and-losses"]
+---
+import PythonRunner from '../../../components/islands/PythonRunner';
+import QuizCard from '../../../components/islands/QuizCard';
+import ColabButton from '../../../components/static/ColabButton.astro';
+
+You built backpropagation from scratch in NumPy. Now it is time to upgrade both the **math** (adaptive optimizers and regularization) and the **engine** (**PyTorch** on GPU). Plain SGD treats every weight identically and oscillates in narrow loss valleys; **AdamW** adapts per-parameter step sizes while decoupling weight decay.
+
+> **Runtime Tier**: **Colab T4 GPU** (Free Tier) — Lightweight AdamW math runs in-browser in NumPy, while full PyTorch `nn.Module` + `DataLoader` training runs on Google Colab's free T4 GPU (`Runtime -> Change runtime type -> T4 GPU`).
+
+## Learning Objectives
+
+By the end of this lesson, you will be able to:
+
+- Implement Momentum, RMSProp, and bias-corrected Adam / AdamW update rules in NumPy.
+- Prevent overfitting using **Dropout**, **Weight Decay** (L2), and **Batch/Layer Normalization**.
+- Translate a from-scratch NumPy MLP into a PyTorch `nn.Module` with `autograd` and `DataLoader`.
+- Execute the canonical 5-step PyTorch training loop (`zero_grad`, forward, `loss`, `backward`, `step`) on a T4 GPU with CPU fallback.
+
+---
+
+## Concept Walkthrough: Adaptive Optimizers & PyTorch
+
+### How AdamW Works
+
+Adam tracks two exponential moving averages per parameter: the first moment $m_t$ (momentum) and the second moment $v_t$ (uncentered gradient variance), with bias correction for early steps:
+
+$$m_t = \beta_1 m_{t-1} + (1 - \beta_1) g_t, \qquad v_t = \beta_2 v_{t-1} + (1 - \beta_2) g_t^2$$
+
+$$\hat{m}_t = \frac{m_t}{1 - \beta_1^t}, \qquad \hat{v}_t = \frac{v_t}{1 - \beta_2^t}, \qquad \theta_t = \theta_{t-1} - \eta \left(\frac{\hat{m}_t}{\sqrt{\hat{v}_t} + \epsilon} + \lambda \theta_{t-1}\right)$$
+
+Decoupling weight decay ($\lambda \theta_{t-1}$) from the adaptive gradient term—the **W** in **AdamW**—gives consistently better generalization than classic L2 regularization inside Adam.
+
+### Mapping Your Mini-Framework to PyTorch
+
+| From-Scratch Concept | PyTorch Equivalent | Key Behavior |
+| :--- | :--- | :--- |
+| `Linear.forward()` / `backward()` | `nn.Linear(in_f, out_f)` | Autograd builds graph automatically |
+| Manual `W -= lr * dW` | `torch.optim.AdamW(model.parameters(), lr=1e-3)` | Adaptive per-parameter updates |
+| Inverted Dropout mask | `nn.Dropout(p=0.2)` | Active in `model.train()`, off in `model.eval()` |
+| Manual mini-batch slicing | `DataLoader(dataset, batch_size=64, shuffle=True)` | Shuffled batch iteration |
+| NumPy CPU arrays | `.to(device)` (`cuda` / `cpu`) | Dispatches kernels to Colab T4 GPU |
+
+---
+
+## Runnable Python Code
+
+### 1. Try It in Browser (AdamW Step in Pure NumPy)
+
+Run this pure NumPy snippet in-browser to see how AdamW's bias-corrected moments and decoupled weight decay update a parameter vector:
+
+<PythonRunner
+  client:visible
+  title="AdamW Optimizer Step in Raw NumPy"
+  packages={["numpy"]}
+  initialCode={`import numpy as np
+
+# Minimize f(w) = 0.5 * (w[0]^2 + 10 * w[1]^2) using AdamW
+w = np.array([4.0, 4.0])
+m = np.zeros_like(w)
+v = np.zeros_like(w)
+
+lr, beta1, beta2, eps, wd = 0.2, 0.9, 0.999, 1e-8, 0.01
+
+for t in range(1, 51):
+    grad = np.array([w[0], 10.0 * w[1]])
+    m = beta1 * m + (1 - beta1) * grad
+    v = beta2 * v + (1 - beta2) * (grad ** 2)
+    m_hat = m / (1 - beta1 ** t)
+    v_hat = v / (1 - beta2 ** t)
+    w = w - lr * (m_hat / (np.sqrt(v_hat) + eps) + wd * w)
+
+print("AdamW converged w:", np.round(w, 5))`}
+/>
+
+### 2. Full PyTorch Lab in Google Colab (Colab T4 GPU)
+
+Switch your Colab runtime to **T4 GPU** (`Runtime -> Change runtime type -> T4 GPU`) and open the companion notebook to train a regularized PyTorch MLP on non-linear synthetic data:
+
+<ColabButton
+  course="math-and-neural-nets"
+  notebook="05-optimizers-regularization-and-pytorch.ipynb"
+  runtime="Free Tier T4 GPU"
+/>
+
+```python
+import torch
+import torch.nn as nn
+
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+model = nn.Sequential(
+    nn.Linear(2, 64),
+    nn.ReLU(),
+    nn.Dropout(0.1),
+    nn.Linear(64, 2),
+).to(device)
+
+optimizer = torch.optim.AdamW(model.parameters(), lr=1e-2, weight_decay=1e-4)
+criterion = nn.CrossEntropyLoss()
+```
+
+---
+
+## Exercises & Checkpoints
+
+1. **Colab Checkpoint**: In the companion notebook, compare `model.train()` vs. `model.eval()` on a network with `nn.Dropout(0.5)` and `nn.BatchNorm1d(64)`. Why must you call `model.eval()` before validation?
+2. **Self-Check**: What happens in a PyTorch training loop if you forget to call `optimizer.zero_grad()` before `loss.backward()`?
+
+<QuizCard
+  client:visible
+  question="What happens in PyTorch if you omit optimizer.zero_grad() inside your training loop?"
+  options={[
+    "PyTorch raises a RuntimeError on the second iteration",
+    "Gradients from the current batch are added onto gradients from previous batches instead of being replaced",
+    "The learning rate resets to zero automatically",
+    "Dropout layers are permanently disabled"
+  ]}
+  correctAnswer={1}
+  explanation="PyTorch accumulates gradients into .grad buffers by default (useful for gradient accumulation across micro-batches). Omitting zero_grad() corrupts standard mini-batch updates."
+/>
+
+---
+
+## Reference Mapping
+
+| Buddhilive Academy Section | Source Repository Reference |
+| :--- | :--- |
+| SGD, Momentum, RMSProp & AdamW | `.ref/ai-engineering-from-scratch/phases/03-deep-learning-core/06-optimizers/docs/en.md` |
+| Dropout, Weight Decay & Normalization | `.ref/ai-engineering-from-scratch/phases/03-deep-learning-core/07-regularization/docs/en.md` |
+| PyTorch Tensors, Autograd & Training Loop | `.ref/ai-engineering-from-scratch/phases/03-deep-learning-core/11-intro-to-pytorch/docs/en.md` |
+| Deep Learning Frameworks Overview | `.ref/AI-For-Beginners/lessons/3-NeuralNetworks/05-Frameworks/README.md` |
