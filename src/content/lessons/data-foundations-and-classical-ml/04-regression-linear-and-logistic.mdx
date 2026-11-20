@@ -1,0 +1,138 @@
+---
+title: "Regression: Linear, Polynomial & Logistic"
+track: "data-ml"
+category: "Phase 1: Data Foundations & Classical ML"
+order: 4
+difficulty: "beginner"
+xp: 50
+description: "Build and evaluate linear, polynomial, and logistic regression models from scratch in NumPy and with Scikit-Learn on Google Colab."
+topic: "Supervised Regression Models"
+prerequisites: ["data-foundations-and-classical-ml/03-stats-probability-and-visualization"]
+---
+import PythonRunner from '../../../components/islands/PythonRunner';
+import QuizCard from '../../../components/islands/QuizCard';
+import ColabButton from '../../../components/static/ColabButton.astro';
+
+Once you can clean and visualize a dataset, the next step is prediction. **Regression** answers two everyday questions: "How much?" (continuous numbers via linear and polynomial regression) and "How likely?" (binary probabilities via logistic regression).
+
+In `.ref/ML-For-Beginners`, these ideas are taught through pumpkin pricing—predicting price per bushel or whether a pumpkin is orange or white. Let's strip away the setup boilerplate and look directly at the math and Scikit-Learn workflow.
+
+## Learning Objectives
+
+By the end of this lesson, you will be able to:
+
+- Fit a simple Ordinary Least Squares (OLS) line and interpret slope, intercept, RMSE, and $R^2$.
+- Capture curved trends with `PolynomialFeatures` inside a Scikit-Learn pipeline without manual feature loops.
+- Explain why **Logistic Regression** uses the sigmoid function and log-loss to predict binary class probabilities.
+
+---
+
+## Concept Walkthrough: Lines, Curves & Probabilities
+
+### Linear & Polynomial Regression
+
+Linear regression models a continuous target $y$ as a weighted sum of features:
+
+$$\hat{y} = w_0 + w_1 x$$
+
+Ordinary Least Squares chooses $w_0$ and $w_1$ to minimize the **Mean Squared Error (MSE)**:
+
+$$\text{MSE} = \frac{1}{n}\sum_{i=1}^{n}(y_i - \hat{y}_i)^2$$
+
+When the relationship bends—like seasonal pumpkin prices peaking and dipping across months—we expand $x$ into $[1, x, x^2, \dots, x^d]$ using `PolynomialFeatures(degree=d)` and fit a linear model on those transformed features.
+
+### Logistic Regression (Binary Classification)
+
+Despite its name, **Logistic Regression** predicts a probability $p \in (0, 1)$ for binary labels $y \in \{0, 1\}$ by passing a linear score $z = w_0 + w^\top x$ through the **sigmoid** function:
+
+$$\sigma(z) = \frac{1}{1 + e^{-z}}$$
+
+Instead of MSE, it minimizes binary cross-entropy (**log-loss**), heavily penalizing confident wrong predictions.
+
+| Model | Target Type | Core Scikit-Learn Class | Primary Metrics |
+| :--- | :--- | :--- | :--- |
+| Linear Regression | Continuous | `LinearRegression()` | RMSE, MAE, $R^2$ |
+| Polynomial Regression | Curved continuous | `make_pipeline(PolynomialFeatures(2), LinearRegression())` | RMSE, $R^2$ |
+| Logistic Regression | Binary (`0` / `1`) | `LogisticRegression()` | Accuracy, ROC-AUC, Log-Loss |
+
+---
+
+## Runnable Python Code
+
+### 1. Try It in Browser (OLS + Sigmoid in Pure NumPy)
+
+Run this NumPy snippet to fit a 1D least-squares line analytically and verify the sigmoid probability curve:
+
+<PythonRunner
+  client:visible
+  title="OLS Line Fit & Sigmoid Probability in NumPy"
+  packages={["numpy"]}
+  initialCode={`import numpy as np
+
+# Simple OLS: y = w0 + w1 * x
+x = np.array([1, 2, 3, 4, 5], dtype=float)
+y = np.array([2.8, 5.1, 6.9, 9.2, 11.0], dtype=float)
+
+w1 = np.cov(x, y, ddof=1)[0, 1] / np.var(x, ddof=1)
+w0 = y.mean() - w1 * x.mean()
+y_pred = w0 + w1 * x
+rmse = np.sqrt(np.mean((y - y_pred) ** 2))
+
+print(f"Fitted line: y = {w0:.2f} + {w1:.2f}x | RMSE: {rmse:.3f}")
+
+# Sigmoid function for Logistic Regression
+z = np.array([-3.0, 0.0, 3.0])
+probs = 1.0 / (1.0 + np.exp(-z))
+print("Sigmoid probs for z=[-3, 0, 3]:", np.round(probs, 4))`}
+/>
+
+### 2. Scikit-Learn Regression & Logistic Lab in Google Colab
+
+Open the Colab notebook to train `LinearRegression`, `PolynomialFeatures`, and `LogisticRegression` on structured tabular data with train/test splits and diagnostic plots:
+
+<ColabButton notebook="04-regression-linear-and-logistic.ipynb" />
+
+```python
+from sklearn.datasets import make_regression
+from sklearn.linear_model import LinearRegression, Ridge
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import root_mean_squared_error, r2_score
+
+X, y = make_regression(n_samples=200, n_features=1, noise=12.0, random_state=42)
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+model = LinearRegression().fit(X_train, y_train)
+preds = model.predict(X_test)
+print(f"RMSE: {root_mean_squared_error(y_test, preds):.2f} | R2: {r2_score(y_test, preds):.3f}")
+```
+
+---
+
+## Exercises & Checkpoints
+
+1. **Colab Checkpoint**: Increase `PolynomialFeatures(degree=...)` from `2` to `8` in the companion notebook and compare train RMSE vs. test RMSE. At what degree does overfitting appear?
+2. **Self-Check**: Why does Logistic Regression output values strictly between `0` and `1` instead of unbounded numbers?
+
+<QuizCard
+  client:visible
+  question="What happens when you add PolynomialFeatures(degree=2) before LinearRegression()?"
+  options={[
+    "The model switches from supervised to unsupervised learning",
+    "The model remains linear in its weights w, while fitting a quadratic curve in x",
+    "The target y is automatically converted into binary classes",
+    "Gradient descent is disabled"
+  ]}
+  correctAnswer={1}
+  explanation="Polynomial regression transforms the input features (x, x^2, ...) so a standard linear model in those expanded features can fit a non-linear curve."
+/>
+
+---
+
+## Reference Mapping
+
+| Buddhilive Academy Section | Source Repository Reference |
+| :--- | :--- |
+| Regression Tools & Workflow | `.ref/ML-For-Beginners/ML-For-Beginners-main/2-Regression/1-Tools/README.md` |
+| Preparing Regression Data | `.ref/ML-For-Beginners/ML-For-Beginners-main/2-Regression/2-Data/README.md` |
+| Linear & Polynomial Regression | `.ref/ML-For-Beginners/ML-For-Beginners-main/2-Regression/3-Linear/README.md` |
+| Logistic Regression | `.ref/ML-For-Beginners/ML-For-Beginners-main/2-Regression/4-Logistic/README.md` |

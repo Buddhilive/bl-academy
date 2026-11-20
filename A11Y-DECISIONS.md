@@ -76,3 +76,14 @@ Record of conformant accessibility choices made during development.
 
 
 
+
+## 2026-11-20: Google Colab Launch Button & Phase 1 Lessons (`009-phase-1-data-tutorials`)
+
+### Decision 8: Forced-Colors Safe Focus Indicator & External Link Semantics in `ColabButton.astro`
+- **Pattern**: External notebook launch link styled as a primary CTA button (`src/components/static/ColabButton.astro`).
+- **Rule**: WCAG 2.2 SC 2.4.7 (Focus Visible), SC 1.4.3 (Contrast Minimum), SC 2.5.8 (Target Size Minimum).
+- **Choice**:
+  1. Used semantic `<a href={colabUrl} target="_blank" rel="noopener noreferrer">` instead of a clickable `<div>`, with `min-h-[44px]` touch target and `<span class="sr-only"> (opens in a new tab)</span>`.
+  2. Avoided `focus:outline-none` so focus indicators remain visible in Windows Forced Colors / High Contrast mode, using `focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#E07A5F]`.
+  3. Verified contrast via `buddhi scripts contrast` (`#A7452A` on `#FFFFFF` = 5.95:1 PASS AA; `#E07A5F` on `#121212` = 6.35:1 PASS AA).
+- **Evidence**: `src/components/static/ColabButton.astro`.

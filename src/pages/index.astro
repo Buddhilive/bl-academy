@@ -10,6 +10,12 @@ const pythonLessons = allLessons
 const firstLesson = pythonLessons[0];
 const firstLessonUrl = firstLesson ? `/learn/${firstLesson.data.track}/${firstLesson.id}` : '#';
 
+const dataMlLessons = allLessons
+  .filter((l) => l.data.track === 'data-ml')
+  .sort((a, b) => a.data.order - b.data.order);
+const firstDataMlLesson = dataMlLessons[0];
+const firstDataMlLessonUrl = firstDataMlLesson ? `/learn/${firstDataMlLesson.data.track}/${firstDataMlLesson.id}` : '#';
+
 const subjects = [
   {
     name: 'Python',
@@ -17,6 +23,13 @@ const subjects = [
     href: firstLessonUrl,
     badge: 'Popular',
     color: '#A7452A',
+  },
+  {
+    name: 'Data Foundations & Classical ML',
+    description: 'Data cleaning, EDA, visualization, regression, classification, clustering, and time series in Python & Colab.',
+    href: firstDataMlLessonUrl,
+    badge: 'New • 8 Lessons',
+    color: '#E07A5F',
   },
   {
     name: 'NumPy',

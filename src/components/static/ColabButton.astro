@@ -1,0 +1,44 @@
+---
+interface Props {
+  notebook: string;
+  course?: string;
+  label?: string;
+}
+
+const {
+  notebook,
+  course = 'data-foundations-and-classical-ml',
+  label = 'Open with Google Colab',
+} = Astro.props;
+
+const colabUrl = `https://colab.research.google.com/github/buddhilive/bl-academy/blob/main/notebook/${course}/${notebook}`;
+---
+
+<div class="not-prose my-5 flex flex-wrap items-center gap-3 rounded-lg border border-neutral-800 bg-neutral-900/70 px-4 py-3">
+  <a
+    href={colabUrl}
+    target="_blank"
+    rel="noopener noreferrer"
+    class="inline-flex min-h-[44px] items-center gap-2 rounded-md bg-[#A7452A] px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-[#93371E] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#E07A5F]"
+  >
+    <svg
+      class="h-4 w-4 shrink-0"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      stroke-width="2"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+      aria-hidden="true"
+    >
+      <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+      <polyline points="15 3 21 3 21 9" />
+      <line x1="10" y1="14" x2="21" y2="3" />
+    </svg>
+    <span>{label}</span>
+    <span class="sr-only"> (opens in a new tab)</span>
+  </a>
+  <span class="text-xs text-neutral-400 font-mono">
+    notebook/{course}/{notebook} • Free Tier CPU
+  </span>
+</div>
