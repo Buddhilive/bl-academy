@@ -1,49 +1,37 @@
 # A11y Verification Report
 
-This report compiles the compliance evidence for the **Core Foundation & Integrations Setup** feature (`001-core-foundation-integrations`).
-
----
-
-## 📌 Validation Context
-- **Feature/Epic:** Core Foundation & Integrations Setup (001-core-foundation-integrations)
-- **Test Date:** 11/01/2026
-- **Covers interface as of:** develop branch (foundation setup)
-- **Standard version:** 2.2.0 (WCAG 2.2 AA Standard Profile)
-- **Compliance Status:** ✅ PASS
-- **Verification Independence:** fresh-context verification
-- **Static gate (`verify-a11y.py`):** PASS — run on: 2026-11-01
+## Validation Context
+- **Feature/Epic:** Phase 1 Data Foundations & Classical ML Tutorials (`009-phase-1-data-tutorials`)
+- **Test Date:** 11/20/2026
+- **Covers interface as of:** `009-phase-1-data-tutorials` (`ColabButton.astro`, `index.astro`, `01..08` Phase 1 `.mdx` lessons)
+- **Standard version:** 2.5.0
+- **Compliance Status:** ⚠️ CONDITIONAL (Headless automated checks run; browser/screen-reader checkpoints pending human verification)
+- **Verification Independence:** self-reported (automated static checks + `check_contrast` / `buddhi scripts contrast`)
+- **Static gate (`verify-a11y.py`):** Run on 2026-11-20 (see latest `buddhi scripts verify-a11y` output)
 
 ## 1. Technical Verification (Automated & Semantics)
-- [x] **Axe-Core / Static Gate:** Automated checks pass with zero syntax or semantic errors.
-- [x] **HTML Semantics:** Semantic elements used throughout (`<main>`, `<article>`, `<h1>`, `<h2>`, `<button>`, `<math>`, `<semantics>`).
-- [x] **Heading Hierarchy (H1-H6):** Linear progression from H1 to H2 without skips.
+- [ ] **Axe-Core / Lighthouse:** Not verified — headless environment without live browser DOM runner.
+- [x] **HTML Semantics:** `ColabButton.astro` uses native `<a href target="_blank" rel="noopener noreferrer">` with `aria-hidden="true"` on decorative SVG and `<span class="sr-only"> (opens in a new tab)</span>`.
+- [x] **Heading Hierarchy (H1-H6):** All 8 Phase 1 `.mdx` lessons use `H1` in `LessonLayout.astro` followed sequentially by `H2` and `H3` sections.
 
 ## 2. Tab Order and Focus Management
-- [x] **Focus Indicator:** Default focus rings preserved on interactive buttons using `focus-visible:ring-2 focus-visible:ring-indigo-400`.
-- [x] **Logical Navigation:** Natural DOM tab sequence followed across all interactive islands.
-- [ ] **Captured Focus (Modals/Overlays):** N/A — no modal dialogues present in core foundation setup.
+- [x] **Focus Indicator:** `ColabButton.astro` preserves native outline in forced-colors mode and applies `focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#E07A5F]`.
+- [ ] **Logical Navigation:** Not verified — requires interactive browser keyboard walkthrough.
+- [ ] **Captured Focus (Modals/Overlays):** N/A for `ColabButton.astro` (no modal/overlay added).
 
 ## 3. Behavior and Task Return
-- [x] **Screen Reader Test:** Semantic MathML tags generated via KaTeX (`<math xmlns="http://www.w3.org/1998/Math/MathML">`) paired with visual elements marked `aria-hidden="true"`.
-- [x] **Status Change / Feedback:** Celebratory confetti triggers conditionally without interfering with screen reader announcements.
-- [ ] **Form Filling:** N/A — no form inputs in this core setup.
+- [ ] **Screen Reader Test:** Not verified — headless environment without NVDA/JAWS/VoiceOver.
+- [x] **Voice Control:** Visible label `"Open with Google Colab"` matches the accessible link text prefix (`SC 2.5.3` checked by reading).
+- [ ] **Interactive states inventoried:** Reuses existing `PythonRunner.tsx` and `QuizCard.tsx` (verified in `A11Y-DECISIONS.md` Decisions 1–4); `ColabButton.astro` is stateless static link.
 
 ## 4. Visual Perception and Comprehension
-- [x] **Text & UI Contrast:** Measured contrast ratio exceeds WCAG 2.2 AA requirement (>= 4.5:1).
-  
+- [x] **Text & UI Contrast:** Measured via `buddhi scripts contrast`:
   | Pair | Foreground | Background | Ratio | Floor | Result |
   | :--- | :--- | :--- | ---: | ---: | :--- |
-  | Base text / Body | #f5f5f5 | #0a0a0a | 18.16:1 | 4.5:1 | ✅ |
-
-- [x] **Scale / Zoom:** Flexible typography with Tailwind Prose plugin supporting reflow and 200% zoom.
+  | ColabButton Primary | `#A7452A` | `#FFFFFF` | 5.95:1 | 4.5:1 | ✅ |
+  | Dark Mode Primary / Focus | `#E07A5F` | `#121212` | 6.35:1 | 4.5:1 | ✅ |
+- [x] **Redundancy:** External link status is conveyed with text, icon, and screen-reader hint.
+- [ ] **Scale / Zoom:** Not verified — requires browser viewport testing at 200%/320px.
 
 ## 5. Time-Based Media and Motion
-- [x] **Classification:** Confetti animations classified as decorative gamification reward.
-- [x] **Reduced Motion:** `src/lib/confetti.ts` explicitly guards execution with `window.matchMedia('(prefers-reduced-motion: reduce)')`, returning immediately when reduced motion is preferred.
-
----
-
-## 📝 Assessment Notes
-- Baseline dark theme aesthetic verified with high-contrast neutral palette (`text-neutral-100` on `bg-neutral-950`).
-- MathML expressions provide accessible fallback tree for assistive tech.
-
+N/A — no time-based media added in `009-phase-1-data-tutorials`.

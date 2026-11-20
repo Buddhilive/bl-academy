@@ -3,3 +3,7 @@
 {"timestamp": 1794293178, "command": "buddhi [args redacted]", "filter_name": "generic", "raw_tokens": 112, "filtered_tokens": 112, "saved_tokens": 0, "exit_code": 0}
 {"timestamp": 1794293186, "command": "buddhi [args redacted]", "filter_name": "generic", "raw_tokens": 39, "filtered_tokens": 39, "saved_tokens": 0, "exit_code": 0}
 {"timestamp": 1794295353, "command": "buddhi [args redacted]", "filter_name": "generic", "raw_tokens": 112, "filtered_tokens": 112, "saved_tokens": 0, "exit_code": 0}
+{"timestamp": 1795184839, "command": "buddhi [args redacted]", "filter_name": "generic", "raw_tokens": 124, "filtered_tokens": 124, "saved_tokens": 0, "exit_code": 0}
+{"timestamp": 1795186997, "command": "buddhi [args redacted]", "filter_name": "generic", "raw_tokens": 41, "filtered_tokens": 41, "saved_tokens": 0, "exit_code": 0}
+{"timestamp": 1795187933, "command": "pnpm [args redacted]", "filter_name": "generic", "raw_tokens": 309, "filtered_tokens": 299, "saved_tokens": 10, "exit_code": 1}
+{"timestamp": 1795187943, "command": "pnpm build", "filter_name": "npm", "raw_tokens": 308, "filtered_tokens": 283, "saved_tokens": 25, "exit_code": 1}

@@ -25,5 +25,6 @@ Following the completion of the 12-lesson `python` track (`src/content/lessons/p
 3. **Hybrid Execution Model**:
    - Preserve `<PythonRunner client:visible />` (Pyodide Web Worker) for lightweight in-browser Python/NumPy/math/JSON-schema snippets.
    - Pair heavier ML, PyTorch, LoRA, MCP server, harness, and quantization labs with explicit `Colab CPU`, `Colab T4 GPU`, or `Local + Colab` runbooks.
-4. **Source Gap Recorded**:
-   - `.ref/ML-For-Beginners/` currently contains only an empty `.git/` directory. Phase 1 Classical ML lessons are grounded in `.ref/Data-Science-For-Beginners/` and `.ref/ai-engineering-from-scratch/phases/02-ml-fundamentals/` until `.ref/ML-For-Beginners` is populated.
+4. **Phase 1 Grounding & Colab Notebooks (`009-phase-1-data-tutorials`)**:
+   - `.ref/ML-For-Beginners/ML-For-Beginners-main/` is now populated; Phase 1 (`track: "data-ml"`, folder `src/content/lessons/data-foundations-and-classical-ml/`, `order: 1..8`) is grounded in `.ref/Data-Science-For-Beginners/` and `.ref/ML-For-Beginners/ML-For-Beginners-main/` (EDA, cleaning, stats/viz, regression, classification, K-Means clustering, ARIMA/SVR time series, and tabular evaluation/pipelines).
+   - Companion Google Colab notebooks live in `notebook/data-foundations-and-classical-ml/` and are linked from each lesson via `src/components/static/ColabButton.astro` (`https://colab.research.google.com/github/buddhilive/bl-academy/blob/main/notebook/data-foundations-and-classical-ml/<notebook>.ipynb`).

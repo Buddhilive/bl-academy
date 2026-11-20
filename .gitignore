@@ -22,3 +22,6 @@ pnpm-debug.log*
 
 # jetbrains setting folder
 .idea/
+
+# generated buddhi docs plan (can exceed GitHub 100 MB limit)
+.buddhi/docs-plan.json
