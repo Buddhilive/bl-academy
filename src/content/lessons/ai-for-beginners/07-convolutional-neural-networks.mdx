@@ -1,0 +1,132 @@
+---
+title: "Convolutional Neural Networks (CNNs) & Classic Architectures"
+track: "ai-for-beginners"
+category: "Module 3: Computer Vision"
+order: 8
+difficulty: "intermediate"
+xp: 80
+description: "Learn 2D convolutional filters, stride, padding, pooling, pyramid CNN hierarchies, and classic architectures including VGG, Inception, ResNet, and MobileNet."
+topic: "Convolutional Neural Networks"
+prerequisites: ["ai-for-beginners/06-introduction-to-computer-vision-and-opencv"]
+---
+import PythonRunner from '../../../components/islands/PythonRunner';
+import QuizCard from '../../../components/islands/QuizCard';
+import ColabButton from '../../../components/static/ColabButton.astro';
+
+Standard fully connected networks flatten an image into a 1D vector, throwing away 2D spatial structure. Worse, if a cat moves 10 pixels to the left, a dense network treats it as a completely different set of input features.
+
+**Convolutional Neural Networks (CNNs)** solve this by sliding small, trainable **filter kernels** across the image. Instead of memorizing where every pixel sits, a CNN learns *local visual patterns*—edges in early layers, textures in middle layers, and eyes, wheels, or faces in deeper layers.
+
+---
+
+## 2D Convolution & Output Dimensions
+
+Given a 2D input matrix $I$ and a $K \times K$ filter kernel $W$, the 2D convolution (technically cross-correlation in deep learning frameworks) computes a weighted sum at every position $(i, j)$:
+
+$$S(i, j) = \sum_{m=0}^{K-1} \sum_{n=0}^{K-1} I(i \cdot S_{\text{stride}} + m,\, j \cdot S_{\text{stride}} + n) \cdot W(m, n)$$
+
+With input width $W_{\text{in}}$, kernel size $K$, padding $P$, and stride $S$, the output spatial size is:
+
+$$W_{\text{out}} = \left\lfloor \frac{W_{\text{in}} - K + 2P}{S} \right\rfloor + 1$$
+
+Following convolution + ReLU, **Pooling layers** (`MaxPool2d` or `AvgPool2d`) downsample spatial dimensions (typically $2 \times 2$ with stride 2), reducing compute and granting local translation invariance.
+
+---
+
+## Pyramid Architecture & Classic CNN Families
+
+Most CNNs follow a **pyramid architecture**: as spatial resolution shrinks ($224 \to 112 \to 56 \to \dots$), channel depth grows ($3 \to 64 \to 128 \to 512$).
+
+| Architecture | Year | Key Innovation | When to Choose |
+| :--- | :--- | :--- | :--- |
+| **LeNet-5** | 1998 | First practical Conv + Pooling + FC pipeline for digits. | Lightweight educational benchmarks. |
+| **VGG-16** | 2014 | Uniform stack of $3 \times 3$ convolutions and $2 \times 2$ max pooling. | Simple baseline; great for feature visualization. |
+| **GoogLeNet / Inception** | 2014 | Parallel multi-scale filters ($1\times1$, $3\times3$, $5\times5$) + $1\times1$ channel bottlenecks. | Multi-scale feature efficiency. |
+| **ResNet (50/101/152)** | 2015 | **Residual skip connections** ($\mathcal{F}(\mathbf{x}) + \mathbf{x}$) solving vanishing gradients in very deep nets. | Default backbone for most vision tasks. |
+| **MobileNet** | 2017 | **Depthwise separable convolutions** splitting spatial and channel filtering. | Mobile, browser, and edge devices. |
+
+<ColabButton
+  course="ai-for-beginners"
+  notebook="07-convolutional-neural-networks.ipynb"
+  runtime="Free Tier T4 GPU"
+/>
+
+---
+
+## Hands-On: 2D Edge-Detection Convolution & Max Pooling
+
+Let's apply a $3 \times 3$ **vertical edge kernel** over a $5 \times 5$ synthetic digit stroke and downsample the feature map with $2 \times 2$ Max Pooling in pure Python.
+
+<PythonRunner
+  client:visible
+  title="Try it Yourself: 2D Convolution & MaxPool2D"
+  expectedOutput="Conv2D Output (3x3):
+  [3, -3, -3]
+  [3, -3, -3]
+  [3, -3, -3]
+MaxPool2D Output (2x2 stride 1):
+  [3, -3]
+  [3, -3]"
+  initialCode={`# 5x5 grayscale image with a vertical bright bar in columns 1 and 2
+image = [
+    [0, 1, 1, 0, 0],
+    [0, 1, 1, 0, 0],
+    [0, 1, 1, 0, 0],
+    [0, 1, 1, 0, 0],
+    [0, 1, 1, 0, 0],
+]
+
+# 3x3 vertical edge filter
+kernel = [
+    [-1, 0, 1],
+    [-1, 0, 1],
+    [-1, 0, 1],
+]
+
+def conv2d(img, kern):
+    h, w = len(img), len(img[0])
+    k = len(kern)
+    out = []
+    for i in range(h - k + 1):
+        row = []
+        for j in range(w - k + 1):
+            val = sum(img[i+m][j+n] * kern[m][n] for m in range(k) for n in range(k))
+            row.append(val)
+        out.append(row)
+    return out
+
+def maxpool2d(feat, size=2):
+    h, w = len(feat), len(feat[0])
+    return [
+        [max(feat[i+m][j+n] for m in range(size) for n in range(size)) for j in range(w - size + 1)]
+        for i in range(h - size + 1)
+    ]
+
+conv_out = conv2d(image, kernel)
+pool_out = maxpool2d(conv_out)
+print("Conv2D Output (3x3):")
+for r in conv_out:
+    print(f"  {r}")
+print("MaxPool2D Output (2x2 stride 1):")
+for r in pool_out:
+    print(f"  {r}")`}
+/>
+
+---
+
+## Check Your Understanding
+
+<QuizCard
+  client:visible
+  question="What problem do ResNet's identity skip connections F(x) + x solve?"
+  options={[
+    "They eliminate the need for labeled training data.",
+    "They allow gradients to flow directly backward through identity paths, preventing vanishing gradients in very deep networks (50–152+ layers).",
+    "They convert RGB images into BGR format automatically.",
+    "They replace all 3x3 convolutions with 11x11 convolutions."
+  ]}
+  correctAnswer={1}
+  explanation="By letting layers learn residual corrections F(x) added to the identity input x, gradients bypass deep blocks cleanly during backpropagation instead of vanishing to zero."
+/>
+
+Next, instead of training CNNs from scratch on huge datasets, let's learn how to reuse ImageNet backbones in **Lesson 08: Pre-Trained Networks, Transfer Learning & Training Tricks**.

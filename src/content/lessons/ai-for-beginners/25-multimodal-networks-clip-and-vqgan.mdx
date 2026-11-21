@@ -1,0 +1,107 @@
+---
+title: "Multi-Modal Networks: CLIP & VQGAN"
+track: "ai-for-beginners"
+category: "Module 5: Alternative Paradigms & Ethics"
+order: 26
+difficulty: "advanced"
+xp: 90
+description: "Bridge vision and language with Contrastive Language-Image Pre-Training (CLIP), zero-shot image classification, semantic search, and VQGAN."
+topic: "Multimodal AI and CLIP"
+prerequisites: ["ai-for-beginners/24-ai-ethics-and-responsible-ai"]
+---
+import PythonRunner from '../../../components/islands/PythonRunner';
+import QuizCard from '../../../components/islands/QuizCard';
+import ColabButton from '../../../components/static/ColabButton.astro';
+
+Throughout this course, we studied Computer Vision (Module 3) and Natural Language Processing (Module 4) in separate tracks. Yet humans don't experience the world in isolated modalities—we read captions, look at photos, and connect words to visual concepts effortlessly.
+
+**Multi-Modal Networks** bridge vision and language inside a single shared embedding space, enabling zero-shot image classification, natural-language image search, and text-to-image synthesis.
+
+---
+
+## Contrastive Language–Image Pre-Training (CLIP)
+
+**CLIP** trains two encoders simultaneously on hundreds of millions of `(image, caption)` pairs:
+1. An **Image Encoder** (ResNet or Vision Transformer) mapping image $i$ to vector $\mathbf{I}_i \in \mathbb{R}^d$.
+2. A **Text Encoder** (Transformer) mapping caption $j$ to vector $\mathbf{T}_j \in \mathbb{R}^d$.
+
+For a batch of $N$ `(image, text)` pairs, CLIP computes an $N \times N$ matrix of scaled **Cosine Similarities** and optimizes a symmetric **contrastive loss** (InfoNCE) that pulls matching pairs $(\mathbf{I}_i, \mathbf{T}_i)$ together along the diagonal while pushing all mismatched pairs $(\mathbf{I}_i, \mathbf{T}_j)_{i \neq j}$ apart:
+
+$$\text{sim}(\mathbf{I}_i, \mathbf{T}_j) = \frac{\mathbf{I}_i \cdot \mathbf{T}_j}{\|\mathbf{I}_i\|_2 \, \|\mathbf{T}_j\|_2} \cdot e^{\tau}$$
+
+| Multimodal Capability | How CLIP Solves It |
+| :--- | :--- |
+| **Zero-Shot Image Classification** | Encode candidate prompts (`"a photo of a cat"`, `"a photo of a dog"`) and pick the prompt with highest cosine similarity to the image. |
+| **Text-to-Image Semantic Search** | Pre-compute image embeddings for a photo library, then rank images against any free-form text query. |
+| **CLIP-Guided Generation (VQGAN + CLIP)** | Start from a latent code $\mathbf{z}$, generate an image with **VQGAN**, and backpropagate CLIP's text–image similarity loss to steer $\mathbf{z}$ toward the prompt. |
+
+Unlike standard GANs that sample a single global vector, **VQGAN** (Vector-Quantized GAN) combines a CNN encoder/decoder with an autoregressive Transformer over discrete visual tokens and a patch-based discriminator. Pairing VQGAN with CLIP's multimodal gradient signal paved the way for modern text-to-image diffusion models and unified multimodal foundation models capable of reasoning seamlessly across pixels, text, and audio.
+
+<ColabButton
+  course="ai-for-beginners"
+  notebook="25-multimodal-networks-clip-and-vqgan.ipynb"
+  runtime="Free Tier T4 GPU"
+/>
+
+---
+
+## Hands-On: CLIP Contrastive Similarity & Zero-Shot Classifier
+
+Let's simulate a 2-image, 3-prompt CLIP embedding space in pure Python, compute the cosine similarity logits, and classify an image zero-shot with Softmax!
+
+<PythonRunner
+  client:visible
+  title="Try it Yourself: CLIP Zero-Shot Image Classification"
+  expectedOutput="Zero-Shot Prompt Probabilities for Image 0:
+  'a photo of a cat': 0.9948
+  'a photo of a dog': 0.0047
+  'a photo of a car': 0.0005
+Predicted Class: 'a photo of a cat'"
+  initialCode={`import math
+
+# Normalized 3D shared multimodal embeddings: [feline, canine, vehicle]
+img_0 = [0.98, 0.18, 0.05]
+prompts = {
+    "a photo of a cat": [0.99, 0.12, 0.00],
+    "a photo of a dog": [0.15, 0.98, 0.00],
+    "a photo of a car": [0.00, 0.05, 0.99],
+}
+
+def cosine(a: list[float], b: list[float]) -> float:
+    dot = sum(x * y for x, y in zip(a, b))
+    na = math.sqrt(sum(x * x for x in a))
+    nb = math.sqrt(sum(y * y for y in b))
+    return dot / (na * nb)
+
+temp_scale = 8.0
+logits = {label: cosine(img_0, vec) * temp_scale for label, vec in prompts.items()}
+max_l = max(logits.values())
+exps = {k: math.exp(v - max_l) for k, v in logits.items()}
+total = sum(exps.values())
+probs = {k: v / total for k, v in exps.items()}
+
+print("Zero-Shot Prompt Probabilities for Image 0:")
+for label, p in probs.items():
+    print(f"  '{label}': {p:.4f}")
+best_label = max(probs, key=probs.get)
+print(f"Predicted Class: '{best_label}'")`}
+/>
+
+---
+
+## Check Your Understanding
+
+<QuizCard
+  client:visible
+  question="How does CLIP perform Zero-Shot Image Classification on categories it was never explicitly fine-tuned to classify?"
+  options={[
+    "It encodes candidate class labels as natural language prompts and picks the prompt whose text embedding has the highest cosine similarity to the image embedding.",
+    "It runs a backward-chaining Prolog rule engine on every pixel.",
+    "It trains a brand-new ResNet from scratch at inference time.",
+    "It converts images into TF-IDF unigrams."
+  ]}
+  correctAnswer={0}
+  explanation="Because CLIP aligns images and text captions in a shared embedding space during contrastive pre-training, any new class can be scored zero-shot by comparing image embeddings against text prompt embeddings."
+/>
+
+Congratulations on completing **Course 01: AI for Beginners**! You've traveled from Symbolic AI and Perceptrons all the way to CNNs, Transformers, LLMs, Reinforcement Learning, Ethics, and Multimodal CLIP. Click **Complete & Continue to Course 02** below to master data wrangling and visualization in **Data Science for Beginners**.

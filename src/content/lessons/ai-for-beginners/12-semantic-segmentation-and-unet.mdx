@@ -1,0 +1,110 @@
+---
+title: "Semantic Segmentation & U-Net Architecture"
+track: "ai-for-beginners"
+category: "Module 3: Computer Vision"
+order: 13
+difficulty: "intermediate"
+xp: 85
+description: "Learn pixel-level classification, Semantic vs Instance Segmentation, U-Net encoder-decoder skip connections, and Dice/IoU mask evaluation."
+topic: "Semantic Segmentation and U-Net"
+prerequisites: ["ai-for-beginners/11-object-detection"]
+---
+import PythonRunner from '../../../components/islands/PythonRunner';
+import QuizCard from '../../../components/islands/QuizCard';
+import ColabButton from '../../../components/static/ColabButton.astro';
+
+For self-driving cars or medical diagnostics (like outlining a skin lesion or tumor), a rough rectangle isn't accurate enough. **Segmentation** solves **pixel-level classification**—assigning a class label to *every single pixel* in an image.
+
+---
+
+## Semantic vs. Instance Segmentation
+
+| Task | What It Predicts | Example on a Photo of Three Sheep |
+| :--- | :--- | :--- |
+| **Semantic Segmentation** | Class label per pixel (`sheep` vs `grass`). | All three sheep share one merged `"sheep"` mask. |
+| **Instance Segmentation** | Class label **plus** unique object ID per pixel. | Predicts three distinct masks: `sheep_1`, `sheep_2`, `sheep_3`. |
+| **Panoptic Segmentation** | Unifies semantic background ("stuff") and instance objects ("things"). | Distinguishes `sky`/`grass` plus individual `sheep_1..3`. |
+
+---
+
+## The U-Net Architecture & Loss Functions
+
+A segmentation network looks like an autoencoder, except instead of reconstructing the input RGB photo, the **Decoder** reconstructs a **pixel class mask** of shape $(H, W, C)$.
+
+**U-Net** (originally built for biomedical imaging) makes one crucial upgrade: **skip connections** that concatenate high-resolution feature maps from the Encoder directly into the matching Decoder stage. That lets the network combine *global context* ("this is a cat") with *razor-sharp pixel boundaries* ("the exact edge of the whisker").
+
+### Evaluating Masks: Jaccard (IoU) & Dice Coefficient
+
+Because background pixels often outnumber foreground pixels (for example, a small skin mole or road lane occupies less than 5% of an image), raw pixel accuracy can look artificially high even when a model predicts all zeros. Instead, segmentation pipelines optimize **Binary Cross-Entropy (BCE)** or **Dice Loss** ($1 - \text{Dice}$) and evaluate masks with **Jaccard Index ($\text{IoU}$)** and the **Sørensen–Dice Coefficient**:
+
+$$\text{IoU}(X, Y) = \frac{|X \cap Y|}{|X \cup Y|}, \qquad \text{Dice}(X, Y) = \frac{2|X \cap Y|}{|X| + |Y|}$$
+
+Both metrics range from `0.0` (no overlap) to `1.0` (perfect pixel-by-pixel match), with Dice weighting true positive overlap slightly more generously than IoU. In medical imaging—such as segmenting dermoscopy lesions—and human body pose or background removal, combining BCE with Dice Loss produces crisp, well-calibrated boundaries across even small foreground regions. In the companion Colab notebook, you'll build a compact U-Net in PyTorch and evaluate both BCE loss and validation IoU on segmentation masks.
+
+<ColabButton
+  course="ai-for-beginners"
+  notebook="12-semantic-segmentation-and-unet.ipynb"
+  runtime="Free Tier T4 GPU"
+/>
+
+---
+
+## Hands-On: Pixel Mask IoU & Dice Loss Evaluator
+
+Let's compute Pixel Accuracy, Intersection over Union ($\text{IoU}$), and Dice Score on a $4 \times 4$ binary segmentation mask in pure Python.
+
+<PythonRunner
+  client:visible
+  title="Try it Yourself: Segmentation IoU & Dice Score"
+  expectedOutput="Pixel Accuracy: 0.8750 (14/16)
+Foreground IoU: 0.6000
+Dice Score:     0.7500
+Dice Loss:      0.2500"
+  initialCode={`gt_mask = [
+    [0, 0, 0, 0],
+    [0, 1, 1, 0],
+    [0, 1, 1, 0],
+    [0, 0, 0, 0],
+]
+pred_mask = [
+    [0, 0, 0, 0],
+    [0, 1, 1, 1],
+    [0, 1, 0, 0],
+    [0, 0, 0, 0],
+]
+
+gt_flat = [px for row in gt_mask for px in row]
+pr_flat = [px for row in pred_mask for px in row]
+
+correct = sum(1 for g, p in zip(gt_flat, pr_flat) if g == p)
+tp = sum(1 for g, p in zip(gt_flat, pr_flat) if g == 1 and p == 1)
+fp = sum(1 for g, p in zip(gt_flat, pr_flat) if g == 0 and p == 1)
+fn = sum(1 for g, p in zip(gt_flat, pr_flat) if g == 1 and p == 0)
+
+iou = tp / (tp + fp + fn)
+dice = (2 * tp) / (2 * tp + fp + fn)
+
+print(f"Pixel Accuracy: {correct / len(gt_flat):.4f} ({correct}/{len(gt_flat)})")
+print(f"Foreground IoU: {iou:.4f}")
+print(f"Dice Score:     {dice:.4f}")
+print(f"Dice Loss:      {1.0 - dice:.4f}")`}
+/>
+
+---
+
+## Check Your Understanding
+
+<QuizCard
+  client:visible
+  question="Why does U-Net concatenate Encoder feature maps directly onto Decoder feature maps via skip connections?"
+  options={[
+    "To preserve fine-grained spatial edge details lost during pooling/downsampling in the Encoder.",
+    "To convert segmentation into an unsupervised clustering algorithm.",
+    "To eliminate all convolutional layers from the Decoder.",
+    "To reduce the image channels from 3 to 1."
+  ]}
+  correctAnswer={0}
+  explanation="Downsampling in the encoder captures semantic 'what' context but blurs exact pixel locations; skip connections restore high-resolution spatial boundaries for crisp mask edges."
+/>
+
+Congratulations—you've completed **Module 3: Computer Vision**! Next, let's teach neural networks to understand human language in **Module 4: Natural Language Processing**.

@@ -1,0 +1,103 @@
+---
+title: "AI Ethics, Fairness, Interpretability & Responsible AI"
+track: "ai-for-beginners"
+category: "Module 5: Alternative Paradigms & Ethics"
+order: 25
+difficulty: "beginner"
+xp: 75
+description: "Audit model bias, measure Demographic Parity and Disparate Impact, and apply open-source Responsible AI tools including Fairlearn and InterpretML."
+topic: "AI Ethics and Responsible AI"
+prerequisites: ["ai-for-beginners/23-multi-agent-systems"]
+---
+import PythonRunner from '../../../components/islands/PythonRunner';
+import QuizCard from '../../../components/islands/QuizCard';
+import ColabButton from '../../../components/static/ColabButton.astro';
+
+After building perceptrons, CNNs, Transformers, and RL agents, one truth becomes clear: AI is not a sentient sci-fi character plotting rebellion. Under the hood, it is large-scale matrix arithmetic trained to extract statistical patterns from historical data. Precisely *because* it mirrors historical data at massive scale, an unexamined model can quietly amplify human biases, fail on underrepresented groups, or make high-stakes mistakes with high confidence.
+
+Deploying AI responsibly is an engineering discipline—not an afterthought.
+
+---
+
+## Six Core Principles of Responsible AI
+
+| Principle | Core Engineering Concern | Practical Mitigation |
+| :--- | :--- | :--- |
+| **Fairness** | Models trained on skewed historical data inherit and amplify demographic bias (e.g., hiring or loan scoring). | Balance datasets, audit group selection rates, and apply `Fairlearn` constraints. |
+| **Reliability & Safety** | Neural nets output *probabilities*, not certainties; false positives/negatives carry real-world harm. | Track Precision, Recall, calibration, and out-of-distribution edge cases. |
+| **Privacy & Security** | Models can memorize sensitive training records or fall victim to adversarial inputs. | Minimize PII in training corpora; apply differential privacy and access controls. |
+| **Inclusiveness** | AI should augment diverse human abilities rather than excluding underrepresented communities. | Evaluate performance across all demographic slices before release. |
+| **Transparency** | Users deserve to know when they are interacting with AI and *why* a decision was made. | Use interpretable glass-box models (`InterpretML`), SHAP, or counterfactuals (`DiCE`). |
+| **Accountability** | Someone must own the consequences of automated decisions. | Keep a **Human-in-the-Loop** for high-stakes medical, legal, or financial calls. |
+
+---
+
+## Quantifying Fairness & Open-Source Tooling
+
+We don't have to guess whether a classifier is fair—we can measure it mathematically. Given a binary prediction $\hat{Y} \in \{0, 1\}$ and a sensitive group attribute $A \in \{0, 1\}$, two foundational metrics are **Demographic Parity Difference ($\Delta_{\text{DP}}$)** and **Disparate Impact Ratio ($\text{DI}$)**:
+
+$$\Delta_{\text{DP}} = \left| P(\hat{Y}=1 \mid A=0) - P(\hat{Y}=1 \mid A=1) \right|, \qquad \text{DI} = \frac{P(\hat{Y}=1 \mid A=0)}{P(\hat{Y}=1 \mid A=1)}$$
+
+Under the widely used **four-fifths (80%) rule**, a Disparate Impact ratio below `0.80` signals potential adverse impact requiring investigation. Open-source Python libraries—including **`fairlearn`** (for fairness metrics and bias mitigation), **`interpret`** (InterpretML glass-box Explainable Boosting Machines), and **`dice-ml`** (counterfactual *"what would need to change?"* explanations)—let you run these audits directly in Google Colab.
+
+<ColabButton
+  course="ai-for-beginners"
+  notebook="24-ai-ethics-and-responsible-ai.ipynb"
+  runtime="Free Tier CPU"
+/>
+
+---
+
+## Hands-On: Algorithmic Fairness Auditor in Python
+
+Let's audit a hiring screening model's predictions across two applicant groups in pure Python and check whether it passes the 80% Disparate Impact threshold.
+
+<PythonRunner
+  client:visible
+  title="Try it Yourself: Demographic Parity & Disparate Impact Audit"
+  expectedOutput="Group A Selection Rate: 0.750 (3/4)
+Group B Selection Rate: 0.250 (1/4)
+Demographic Parity Diff: 0.500
+Disparate Impact Ratio:  0.333
+Passes 80% Rule (>=0.80): False"
+  initialCode={`# (group, predicted_hire: 1 or 0)
+predictions = [
+    ("A", 1), ("A", 1), ("A", 1), ("A", 0),
+    ("B", 1), ("B", 0), ("B", 0), ("B", 0),
+]
+
+def selection_rate(group_name: str) -> tuple[float, int, int]:
+    rows = [pred for g, pred in predictions if g == group_name]
+    pos = sum(rows)
+    return pos / len(rows), pos, len(rows)
+
+rate_a, pos_a, n_a = selection_rate("A")
+rate_b, pos_b, n_b = selection_rate("B")
+dp_diff = abs(rate_a - rate_b)
+di_ratio = min(rate_a, rate_b) / max(rate_a, rate_b)
+
+print(f"Group A Selection Rate: {rate_a:.3f} ({pos_a}/{n_a})")
+print(f"Group B Selection Rate: {rate_b:.3f} ({pos_b}/{n_b})")
+print(f"Demographic Parity Diff: {dp_diff:.3f}")
+print(f"Disparate Impact Ratio:  {di_ratio:.3f}")
+print(f"Passes 80% Rule (>=0.80): {di_ratio >= 0.80}")`}
+/>
+
+---
+
+## Check Your Understanding
+
+<QuizCard
+  client:visible
+  question="A resume-screening model trained on 10 years of historical hiring data gives significantly higher scores to male applicants even when 'gender' is removed from the input table. Why can this happen?"
+  options={[
+    "Proxy variables (such as specific clubs, colleges, or phrasing) correlate with gender in biased historical data.",
+    "Removing one column automatically doubles the learning rate.",
+    "Matrix multiplication always prefers even-numbered rows.",
+    "The model is using Reinforcement Learning."
+  ]}
+  correctAnswer={0}
+  explanation="'Fairness through unawareness' (just dropping the sensitive column) rarely eliminates bias because other correlated proxy features leak demographic information."
+/>
+
+Next, let's finish Course 01 on the frontier of vision and language combined in **Lesson 25: Multi-Modal Networks — CLIP & VQGAN**.

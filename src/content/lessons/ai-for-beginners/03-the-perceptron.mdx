@@ -1,0 +1,129 @@
+---
+title: "The Perceptron: Linear Binary Classification from Scratch"
+track: "ai-for-beginners"
+category: "Module 2: Neural Networks from Scratch"
+order: 4
+difficulty: "beginner"
+xp: 70
+description: "Understand Frank Rosenblatt's Perceptron, step activation functions, the Perceptron learning rule, and multi-class one-vs-rest classification."
+topic: "Single-Layer Perceptron"
+prerequisites: ["ai-for-beginners/02-knowledge-representation-and-expert-systems"]
+---
+import PythonRunner from '../../../components/islands/PythonRunner';
+import QuizCard from '../../../components/islands/QuizCard';
+import ColabButton from '../../../components/static/ColabButton.astro';
+
+In 1957, Frank Rosenblatt built the **Mark I Perceptron**—a physical hardware machine wired with a $20 \times 20$ grid of photocells (400 inputs) and motorized potentiometers that adjusted weights during training. It was one of the earliest working artificial neural networks, and it laid the mathematical foundation for everything we call deep learning today.
+
+At its core, a perceptron is a **linear binary classifier**: it takes a vector of numerical features $\mathbf{x} \in \mathbb{R}^N$, computes a weighted sum, and decides whether the input belongs to the positive class ($+1$) or negative class ($-1$).
+
+---
+
+## The Mathematical Model
+
+Given an input feature vector $\mathbf{x} = [x_1, x_2, \dots, x_N]^{\top}$, a weight vector $\mathbf{w} = [w_1, w_2, \dots, w_N]^{\top}$, and a scalar bias $b$, the perceptron computes:
+
+$$y(\mathbf{x}) = f(\mathbf{w}^{\top}\mathbf{x} + b)$$
+
+Using **homogeneous coordinates** (appending a constant $1$ to $\mathbf{x}$ and folding $b$ into $\mathbf{w}$), we can write the linear score compactly as $\mathbf{w}^{\top}\mathbf{x}$, passed through the **step activation function**:
+
+$$f(z) = \begin{cases} +1 & \text{if } z \ge 0 \\ -1 & \text{if } z < 0 \end{cases}$$
+
+Geometrically, the equation $\mathbf{w}^{\top}\mathbf{x} + b = 0$ defines a **hyperplane** (a line in 2D, a flat plane in 3D) that slices the feature space into two half-spaces.
+
+---
+
+## The Perceptron Learning Rule
+
+How does the perceptron find the right weights $\mathbf{w}$? We define the **perceptron criterion** error over all misclassified training samples $i$:
+
+$$E(\mathbf{w}) = -\sum_{i \in \mathcal{M}} \mathbf{w}^{\top}\mathbf{x}_i t_i$$
+
+where $t_i \in \{-1, +1\}$ is the true label. Notice that whenever a point is misclassified, $\mathbf{w}^{\top}\mathbf{x}_i$ and $t_i$ have opposite signs, making $-\mathbf{w}^{\top}\mathbf{x}_i t_i > 0$. Applying gradient descent with learning rate $\eta$ gives the **Perceptron Update Rule** whenever a prediction $\hat{y}_i \neq t_i$:
+
+$$\mathbf{w}^{(t+1)} = \mathbf{w}^{(t)} + \eta \cdot t_i \mathbf{x}_i$$
+
+| Parameter / Symbol | Meaning | Role in Training |
+| :--- | :--- | :--- |
+| $\mathbf{x}_i$ | Input feature vector (with bias $1$ appended) | Represents one training sample in $\mathbb{R}^{N+1}$. |
+| $\mathbf{w}$ | Learned weight vector | Defines the orientation and offset of the separating hyperplane. |
+| $t_i \in \{-1, +1\}$ | Ground-truth class label | Pushes weights toward $\mathbf{x}_i$ when $t_i=+1$ and away when $t_i=-1$. |
+| $\eta$ (`eta`) | Learning rate (e.g., `0.1` or `1.0`) | Controls step size during each misclassification correction. |
+
+### Scaling to Multi-Class Classification
+
+A single perceptron only separates two classes. To classify $K$ classes (such as the 10 handwritten digits `0`–`9` in MNIST), we train $K$ independent **One-vs-Rest** perceptrons—one per digit—and pick the class whose neuron produces the highest raw score $\mathbf{w}_k^{\top}\mathbf{x}$.
+
+<ColabButton
+  course="ai-for-beginners"
+  notebook="03-the-perceptron.ipynb"
+  runtime="Free Tier CPU"
+/>
+
+---
+
+## Hands-On: Training a Binary Perceptron in Python
+
+Let's train a perceptron from scratch on two linearly separable 2D clusters right here in your browser. Watch how the weights start at `[0.0, 0.0, 0.0]` and converge to 100% accuracy in just a few epochs.
+
+<PythonRunner
+  client:visible
+  title="Try it Yourself: Perceptron Training Loop"
+  expectedOutput="Epoch 1: errors=1, weights=[-0.05, -0.05, -0.1]
+Epoch 2: errors=3, weights=[0.0, 0.18, -0.2]
+Epoch 3: errors=0, weights=[0.0, 0.18, -0.2]
+Converged at epoch 3!
+Test (3.0, 3.0) -> +1 (expected +1)
+Test (0.2, 0.4) -> -1 (expected -1)"
+  initialCode={`# Dataset: (x1, x2, bias=1.0) -> label (+1 or -1)
+dataset = [
+    ([2.0, 3.0, 1.0], +1),
+    ([3.0, 2.0, 1.0], +1),
+    ([0.5, 0.5, 1.0], -1),
+    ([1.0, 0.2, 1.0], -1),
+]
+
+def dot(a: list[float], b: list[float]) -> float:
+    return sum(x * y for x, y in zip(a, b))
+
+def predict(x: list[float], w: list[float]) -> int:
+    return 1 if dot(x, w) >= 0.0 else -1
+
+weights = [0.0, 0.0, 0.0]
+eta = 0.1
+
+for epoch in range(1, 20):
+    errors = 0
+    for x, target in dataset:
+        y_hat = predict(x, weights)
+        if y_hat != target:
+            weights = [round(w_j + eta * target * x_j, 4) for w_j, x_j in zip(weights, x)]
+            errors += 1
+    print(f"Epoch {epoch}: errors={errors}, weights={weights}")
+    if errors == 0:
+        print(f"Converged at epoch {epoch}!")
+        break
+
+for pt, expected in [([3.0, 3.0, 1.0], "+1"), ([0.2, 0.4, 1.0], "-1")]:
+    pred = "+1" if predict(pt, weights) == 1 else "-1"
+    print(f"Test ({pt[0]}, {pt[1]}) -> {pred} (expected {expected})")`}
+/>
+
+---
+
+## Check Your Understanding
+
+<QuizCard
+  client:visible
+  question="What happens if you try to train a single-layer perceptron on the logical XOR problem?"
+  options={[
+    "It converges in 1 epoch with 100% accuracy.",
+    "It never converges to 100% accuracy because XOR is not linearly separable by a single hyperplane.",
+    "It automatically adds a hidden layer during training.",
+    "It requires changing the learning rate eta to 100."
+  ]}
+  correctAnswer={1}
+  explanation="A single-layer perceptron can only draw one straight line (hyperplane) to separate classes. Since XOR points cannot be separated by a single line, you need a Multi-Layered Perceptron (covered in Lesson 04)."
+/>
+
+Next, we'll overcome the single-layer limit by stacking layers and building our very own neural network framework from scratch in **Lesson 04**.

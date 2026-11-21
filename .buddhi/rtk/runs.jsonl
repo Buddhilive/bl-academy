@@ -31,3 +31,15 @@
 {"timestamp": 1795226935, "command": "buddhi [args redacted]", "filter_name": "generic", "raw_tokens": 53963, "filtered_tokens": 805, "saved_tokens": 53158, "exit_code": 1}
 {"timestamp": 1795226985, "command": "pwsh [args redacted]", "filter_name": "generic", "raw_tokens": 509, "filtered_tokens": 473, "saved_tokens": 36, "exit_code": 1}
 {"timestamp": 1795226991, "command": "python [args redacted]", "filter_name": "generic", "raw_tokens": 136, "filtered_tokens": 136, "saved_tokens": 0, "exit_code": 1}
+{"timestamp": 1795230175, "command": "buddhi [args redacted]", "filter_name": "generic", "raw_tokens": 124, "filtered_tokens": 124, "saved_tokens": 0, "exit_code": 0}
+{"timestamp": 1795241207, "command": "pnpm [args redacted]", "filter_name": "generic", "raw_tokens": 309, "filtered_tokens": 299, "saved_tokens": 10, "exit_code": 1}
+{"timestamp": 1795241390, "command": "pnpm [args redacted]", "filter_name": "generic", "raw_tokens": 132, "filtered_tokens": 110, "saved_tokens": 22, "exit_code": 0}
+{"timestamp": 1795241790, "command": "python [args redacted]", "filter_name": "generic", "raw_tokens": 155, "filtered_tokens": 155, "saved_tokens": 0, "exit_code": 1}
+{"timestamp": 1795241810, "command": "pnpm [args redacted]", "filter_name": "generic", "raw_tokens": 132, "filtered_tokens": 110, "saved_tokens": 22, "exit_code": 0}
+{"timestamp": 1795241834, "command": "pnpm build", "filter_name": "npm", "raw_tokens": 1979, "filtered_tokens": 1085, "saved_tokens": 894, "exit_code": 0}
+{"timestamp": 1795241846, "command": "uv run [args redacted]", "filter_name": "generic", "raw_tokens": 105, "filtered_tokens": 104, "saved_tokens": 1, "exit_code": 1}
+{"timestamp": 1795242179, "command": "buddhi [args redacted]", "filter_name": "generic", "raw_tokens": 54013, "filtered_tokens": 805, "saved_tokens": 53208, "exit_code": 1}
+{"timestamp": 1795242281, "command": "pnpm [args redacted]", "filter_name": "generic", "raw_tokens": 132, "filtered_tokens": 110, "saved_tokens": 22, "exit_code": 0}
+{"timestamp": 1795242302, "command": "pnpm build", "filter_name": "npm", "raw_tokens": 1980, "filtered_tokens": 1085, "saved_tokens": 895, "exit_code": 0}
+{"timestamp": 1795242352, "command": "pnpm [args redacted]", "filter_name": "generic", "raw_tokens": 132, "filtered_tokens": 110, "saved_tokens": 22, "exit_code": 0}
+{"timestamp": 1795242362, "command": "pnpm build", "filter_name": "npm", "raw_tokens": 1981, "filtered_tokens": 1086, "saved_tokens": 895, "exit_code": 0}

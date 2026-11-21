@@ -1,0 +1,111 @@
+---
+title: "Object Detection: Bounding Boxes, R-CNN, YOLO & RetinaNet"
+track: "ai-for-beginners"
+category: "Module 3: Computer Vision"
+order: 12
+difficulty: "intermediate"
+xp: 85
+description: "Master bounding box regression, Intersection over Union (IoU), Non-Maximum Suppression (NMS), mAP, and two-stage vs one-stage object detectors."
+topic: "Object Detection"
+prerequisites: ["ai-for-beginners/10-gans-and-artistic-style-transfer"]
+---
+import PythonRunner from '../../../components/islands/PythonRunner';
+import QuizCard from '../../../components/islands/QuizCard';
+import ColabButton from '../../../components/static/ColabButton.astro';
+
+Image classification tells you *what* is in a picture. **Object Detection** goes further: it finds *every* object in a scene, classifies each one, and draws a tight **bounding box** $(x_{\min}, y_{\min}, x_{\max}, y_{\max})$ around it.
+
+---
+
+## Core Metrics: IoU, NMS & Mean Average Precision (mAP)
+
+How do we score whether a predicted bounding box matches the ground truth—and how do we clean up duplicate overlapping predictions?
+
+1. **Intersection over Union (IoU)**: Measures the overlap ratio between predicted box $A$ and ground-truth box $B$:
+
+$$\text{IoU}(A, B) = \frac{\text{Area}(A \cap B)}{\text{Area}(A \cup B)} \in [0, 1]$$
+
+2. **Non-Maximum Suppression (NMS)**: Detectors often fire multiple overlapping boxes around the same object. NMS keeps the highest-confidence box and suppresses any remaining box whose $\text{IoU}$ with the kept box exceeds a threshold (typically `0.5`).
+3. **Mean Average Precision (mAP)**: Computes the area under the Precision–Recall curve (**AP**) per class at an $\text{IoU}$ threshold (e.g., $\text{IoU} \ge 0.5$ on PASCAL VOC, or averaged over `0.50:0.95` on COCO) and averages across all classes.
+
+---
+
+## Two-Stage vs. One-Stage Detectors
+
+| Family | Representative Models | How It Works | Speed / Accuracy Trade-off |
+| :--- | :--- | :--- | :--- |
+| **Two-Stage (Region Proposal)** | **R-CNN**, **Fast R-CNN**, **Faster R-CNN** | Stage 1 proposes candidate Regions of Interest (RPN); Stage 2 classifies and refines each box. | High localization precision; slower inference. |
+| **One-Stage (Single Pass)** | **YOLO**, **SSD**, **RetinaNet** | Divides the image into an $S \times S$ grid and predicts classes + boxes in one forward pass (RetinaNet adds Focal Loss). | Real-time speed (30–100+ FPS). |
+| **Transformer-Based** | **DETR** | Predicts a fixed set of boxes directly via self-attention without hand-crafted anchors or NMS. | Clean end-to-end pipeline. |
+
+In practice, you rarely train an object detector from scratch on raw images—instead, you start from a pre-trained **COCO** (80 classes) or **PASCAL VOC** (20 classes) backbone in `torchvision` or HuggingFace `transformers` and fine-tune it on your domain-specific bounding boxes. Tuning the **confidence score threshold** alongside the **NMS IoU threshold** gives you direct control over the trade-off between missed detections and duplicate false alarms.
+
+<ColabButton
+  course="ai-for-beginners"
+  notebook="11-object-detection.ipynb"
+  runtime="Free Tier T4 GPU"
+/>
+
+---
+
+## Hands-On: IoU & Non-Maximum Suppression (NMS) in Python
+
+Let's implement exact bounding box **IoU** and **NMS** in pure Python to see how duplicate detections around a single object get filtered down cleanly.
+
+<PythonRunner
+  client:visible
+  title="Try it Yourself: Bounding Box IoU & Non-Maximum Suppression"
+  expectedOutput="IoU(boxA, boxB): 0.6203
+NMS Kept Boxes (iou_thresh=0.5):
+  score=0.95 box=[10, 10, 50, 50]
+  score=0.88 box=[100, 100, 140, 140]"
+  initialCode={`def compute_iou(a: list[int], b: list[int]) -> float:
+    x1 = max(a[0], b[0])
+    y1 = max(a[1], b[1])
+    x2 = min(a[2], b[2])
+    y2 = min(a[3], b[3])
+    inter = max(0, x2 - x1) * max(0, y2 - y1)
+    area_a = (a[2] - a[0]) * (a[3] - a[1])
+    area_b = (b[2] - b[0]) * (b[3] - b[1])
+    union = area_a + area_b - inter
+    return inter / union if union > 0 else 0.0
+
+def nms(detections: list[tuple[float, list[int]]], iou_thresh: float = 0.5):
+    ordered = sorted(detections, key=lambda d: d[0], reverse=True)
+    kept = []
+    while ordered:
+        best = ordered.pop(0)
+        kept.append(best)
+        ordered = [d for d in ordered if compute_iou(best[1], d[1]) <= iou_thresh]
+    return kept
+
+print(f"IoU(boxA, boxB): {compute_iou([10, 10, 50, 50], [15, 15, 55, 55]):.4f}")
+
+raw_preds = [
+    (0.95, [10, 10, 50, 50]),
+    (0.82, [14, 14, 54, 54]),   # overlaps heavily with 0.95 -> suppressed
+    (0.88, [100, 100, 140, 140]),
+]
+print("NMS Kept Boxes (iou_thresh=0.5):")
+for score, box in nms(raw_preds, 0.5):
+    print(f"  score={score} box={box}")`}
+/>
+
+---
+
+## Check Your Understanding
+
+<QuizCard
+  client:visible
+  question="What is the primary role of Non-Maximum Suppression (NMS) at the end of an object detection pipeline?"
+  options={[
+    "To resize input images to 224x224.",
+    "To remove duplicate overlapping bounding boxes around the same object by keeping only the highest-confidence box.",
+    "To convert RGB images to grayscale.",
+    "To compute the Gram matrix for style transfer."
+  ]}
+  correctAnswer={1}
+  explanation="Detectors predict multiple candidate boxes around a single object; NMS sorts them by confidence and discards overlapping boxes whose IoU exceeds the threshold."
+/>
+
+Next, let's go from rectangular bounding boxes down to exact pixel-by-pixel masks in **Lesson 12: Semantic Segmentation & U-Net Architecture**.

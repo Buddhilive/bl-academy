@@ -1,0 +1,106 @@
+---
+title: "Semantic Word Embeddings: Word2Vec, Skip-Gram & GloVe"
+track: "ai-for-beginners"
+category: "Module 4: Natural Language Processing"
+order: 15
+difficulty: "intermediate"
+xp: 75
+description: "Replace sparse one-hot vectors with dense semantic embeddings using PyTorch nn.Embedding, Cosine Similarity, Word2Vec, and GloVe."
+topic: "Word Embeddings"
+prerequisites: ["ai-for-beginners/13-text-representation-bow-and-tfidf"]
+---
+import PythonRunner from '../../../components/islands/PythonRunner';
+import QuizCard from '../../../components/islands/QuizCard';
+import ColabButton from '../../../components/static/ColabButton.astro';
+
+Sparse one-hot and Bag-of-Words vectors suffer from two major flaws: they waste memory across tens of thousands of zeros, and every word is orthogonal to every other word—so `"king"` and `"monarch"` look just as unrelated as `"king"` and `"banana"`.
+
+**Word Embeddings** solve both problems by mapping each word ID into a compact, dense vector $\mathbf{v} \in \mathbb{R}^d$ (typically $d = 100\text{–}300$) where **geometric proximity reflects semantic meaning**.
+
+---
+
+## `nn.Embedding` & EmbeddingBag Classifiers
+
+In PyTorch, `nn.Embedding(vocab_size, embed_dim)` acts like a trainable lookup table. Instead of multiplying a giant one-hot vector by a weight matrix, it indexes directly into row `word_id` in $O(1)$ time. For sentence classification, an **EmbeddingBag** model looks up every word's vector and aggregates them via `mean`, `sum`, or `max` before passing the pooled vector to a linear classifier.
+
+---
+
+## Semantic Vector Spaces: Word2Vec & GloVe
+
+When trained on billions of words using self-supervised context prediction (**Word2Vec** CBoW/Skip-Gram or **GloVe** co-occurrence factorization), word vectors organize themselves into meaningful linear directions:
+
+$$\cos(\theta) = \frac{\mathbf{u} \cdot \mathbf{v}}{\|\mathbf{u}\|_2 \, \|\mathbf{v}\|_2}, \qquad \mathbf{v}_{\text{king}} - \mathbf{v}_{\text{man}} + \mathbf{v}_{\text{woman}} \approx \mathbf{v}_{\text{queen}}$$
+
+| Embedding Family | Training Signal | Key Trade-off |
+| :--- | :--- | :--- |
+| **Word2Vec (CBoW)** | Predicts center word from surrounding window. | Faster to train; smooths over frequent words. |
+| **Word2Vec (Skip-Gram)** | Predicts surrounding context words from center word. | Slower, but sharper representations for rare words. |
+| **GloVe** | Factorizes global word–word co-occurrence matrix. | Combines local context with global corpus statistics. |
+| **FastText** | Sums character $n$-gram embeddings per word. | Handles typos and unseen out-of-vocabulary words. |
+
+> **Limitation:** Static embeddings assign one single vector per word spelling. The word *"play"* gets the same vector in *"a play at the theatre"* and *"play with friends"*—a limitation we will solve with RNNs and Transformers. Also, when loading pre-trained Word2Vec or GloVe weights into your own model, remember to align your tokenizer's vocabulary IDs carefully and initialize any unseen domain words randomly so gradients can fine-tune them during training. This simple alignment step prevents out-of-vocabulary words from silently collapsing to zero.
+
+<ColabButton
+  course="ai-for-beginners"
+  notebook="14-semantic-word-embeddings.ipynb"
+  runtime="Free Tier T4 GPU"
+/>
+
+---
+
+## Hands-On: Cosine Similarity & Vector Analogy Solver
+
+Let's run vector arithmetic (`king - man + woman`) on a miniature 4D semantic embedding table in pure Python and find the closest word by **Cosine Similarity**.
+
+<PythonRunner
+  client:visible
+  title="Try it Yourself: Semantic Vector Analogy (king - man + woman)"
+  expectedOutput="cos(king, queen): -0.2564
+cos(king, apple): 0.0336
+Analogy 'king - man + woman' -> nearest word: 'queen' (sim=0.9987)"
+  initialCode={`import math
+
+# Toy 4D embeddings: [royalty, masculinity, femininity, food]
+EMB = {
+    "king":  [0.95,  0.90, -0.85, 0.05],
+    "queen": [0.95, -0.85,  0.90, 0.05],
+    "man":   [0.05,  0.95, -0.90, 0.05],
+    "woman": [0.05, -0.90,  0.95, 0.05],
+    "apple": [0.00,  0.05,  0.05, 0.98],
+}
+
+def cosine_sim(u: list[float], v: list[float]) -> float:
+    dot = sum(a * b for a, b in zip(u, v))
+    nu = math.sqrt(sum(a * a for a in u))
+    nv = math.sqrt(sum(b * b for b in v))
+    return dot / (nu * nv)
+
+print(f"cos(king, queen): {cosine_sim(EMB['king'], EMB['queen']):.4f}")
+print(f"cos(king, apple): {cosine_sim(EMB['king'], EMB['apple']):.4f}")
+
+target = [k - m + w for k, m, w in zip(EMB["king"], EMB["man"], EMB["woman"])]
+best_word, best_sim = max(
+    ((word, cosine_sim(target, vec)) for word, vec in EMB.items() if word not in {"king", "man", "woman"}),
+    key=lambda x: x[1],
+)
+print(f"Analogy 'king - man + woman' -> nearest word: '{best_word}' (sim={best_sim:.4f})")`}
+/>
+
+---
+
+## Check Your Understanding
+
+<QuizCard
+  client:visible
+  question="What is a key limitation of static word embeddings like Word2Vec and GloVe?"
+  options={[
+    "They require 100,000-dimensional one-hot vectors at inference time.",
+    "They assign a single fixed vector per word regardless of context, failing to distinguish polysemous meanings like 'bank' (river) vs 'bank' (finance).",
+    "They cannot be used with Cosine Similarity.",
+    "They only work on grayscale images."
+  ]}
+  correctAnswer={1}
+  explanation="Word2Vec and GloVe store one static vector per vocabulary entry; contextualized meaning requires sequence models like LSTMs or Transformers."
+/>
+
+Next, let's train our own domain-specific word embeddings from scratch using CBoW and Skip-Gram in **Lesson 15: Language Modeling & Training Custom Embeddings**.

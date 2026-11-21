@@ -1,0 +1,98 @@
+---
+title: "Language Modeling & Training Custom CBoW / Skip-Gram Embeddings"
+track: "ai-for-beginners"
+category: "Module 4: Natural Language Processing"
+order: 16
+difficulty: "intermediate"
+xp: 80
+description: "Train custom domain word embeddings from unlabeled text using self-supervised Continuous Bag-of-Words (CBoW) and Skip-Gram language models."
+topic: "Language Modeling and Custom Embeddings"
+prerequisites: ["ai-for-beginners/14-semantic-word-embeddings"]
+---
+import PythonRunner from '../../../components/islands/PythonRunner';
+import QuizCard from '../../../components/islands/QuizCard';
+import ColabButton from '../../../components/static/ColabButton.astro';
+
+Labeled datasets are always scarce, whereas unlabeled text is practically infinite. **Language Modeling** turns raw, unlabeled text into a self-supervised training signal: mask out a word and train a neural network to predict it from its neighbors. As a side effect of solving this prediction task, the network's embedding layer learns rich semantic representations tailored to your exact domain.
+
+---
+
+## CBoW vs. Skip-Gram Objectives
+
+Given a sliding context window of radius $C$ around center token $w_t$, Word2Vec defines two classic self-supervised training objectives:
+
+| Architecture | Input | Prediction Target | Objective Intuition |
+| :--- | :--- | :--- | :--- |
+| **Continuous Bag-of-Words (CBoW)** | Average of context embeddings $\{w_{t-C}, \dots, w_{t-1}, w_{t+1}, \dots, w_{t+C}\}$ | Center word $w_t$ | Fast; acts as a smoothed context-to-word classifier. |
+| **Skip-Gram** | Center word $w_t$ | Each surrounding context word $w_{t+j}$ ($j \neq 0$) | Generates more training pairs per sentence; excels on rare domain terms. |
+
+In practice, computing a full Softmax over a $100{,}000$-word vocabulary on every step is expensive. Modern implementations speed this up using **Negative Sampling**: instead of updating all $100{,}000$ output rows, the model only contrasts the true context word against $k \approx 5\text{–}20$ randomly sampled negative words.
+
+Why train your own embeddings instead of downloading generic ones? Suppose you are building a classifier for biomedical papers, legal contracts, or software error logs. Generic news-trained embeddings may lump specialized acronyms together or miss domain relationships altogether. Training a lightweight CBoW or Skip-Gram model on your own unlabeled corpus takes just minutes in PyTorch and produces crisp, domain-aligned word vectors where technical synonyms cluster together naturally.
+
+You can also evaluate custom embeddings immediately by checking **nearest neighbors** via Cosine Similarity—confirming that related terms sit close in vector space before plugging the `nn.Embedding` weights into downstream classifiers. Even a small domain-specific corpus of a few thousand sentences is enough to surface meaningful clusters around your core technical vocabulary.
+
+<ColabButton
+  course="ai-for-beginners"
+  notebook="15-language-modeling-and-custom-embeddings.ipynb"
+  runtime="Free Tier T4 GPU"
+/>
+
+---
+
+## Hands-On: Sliding-Window CBoW & Skip-Gram Dataset Builder
+
+Let's generate CBoW and Skip-Gram training pairs from a sentence with context window radius $C = 2$ in pure Python.
+
+<PythonRunner
+  client:visible
+  title="Try it Yourself: CBoW & Skip-Gram Window Pair Generator"
+  expectedOutput="CBoW Pairs (context -> center):
+  (['deep', 'learning', 'with', 'pytorch'], 'models')
+  (['learning', 'models', 'pytorch', 'rocks'], 'with')
+Skip-Gram Pairs (center -> context) for 'models':
+  ('models', 'deep')
+  ('models', 'learning')
+  ('models', 'with')
+  ('models', 'pytorch')"
+  initialCode={`tokens = "deep learning models with pytorch rocks".split()
+window = 2
+
+cbow_pairs = []
+skipgram_pairs = []
+
+for idx in range(window, len(tokens) - window):
+    center = tokens[idx]
+    context = [tokens[i] for i in range(idx - window, idx + window + 1) if i != idx]
+    cbow_pairs.append((context, center))
+    for ctx_word in context:
+        skipgram_pairs.append((center, ctx_word))
+
+print("CBoW Pairs (context -> center):")
+for pair in cbow_pairs:
+    print(f"  {pair}")
+
+print("Skip-Gram Pairs (center -> context) for 'models':")
+for c, ctx in skipgram_pairs:
+    if c == "models":
+        print(f"  {(c, ctx)}")`}
+/>
+
+---
+
+## Check Your Understanding
+
+<QuizCard
+  client:visible
+  question="Why does Skip-Gram generally produce better embeddings for rare words than CBoW?"
+  options={[
+    "Skip-Gram averages all context words together, hiding rare words.",
+    "Skip-Gram creates a separate (center, context) training pair for every neighbor, giving rare center words direct gradient updates without smoothing.",
+    "Skip-Gram does not use an embedding layer.",
+    "Skip-Gram only trains on punctuation."
+  ]}
+  correctAnswer={1}
+  explanation="CBoW averages context vectors, which smooths over infrequent words. Skip-Gram pairs each center word directly with every neighbor, preserving rare-word signals."
+/>
+
+Even with custom word embeddings, averaging vectors across a sentence ignores word order. Next, let's model sequences step-by-step in **Lesson 16: Recurrent Neural Networks (RNNs), LSTMs & GRUs**.

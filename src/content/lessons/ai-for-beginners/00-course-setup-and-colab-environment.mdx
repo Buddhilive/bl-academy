@@ -1,0 +1,143 @@
+---
+title: "Course Setup, Google Colab & Google AI Studio Free Tier"
+track: "ai-for-beginners"
+category: "Module 1: Symbolic AI & Foundations"
+order: 1
+difficulty: "beginner"
+xp: 40
+description: "Set up your zero-cost AI engineering workspace using in-browser Pyodide, Google Colab Free Tier GPUs, and a Google AI Studio Gemini API key."
+topic: "AI Environment Setup"
+prerequisites: ["python-zero-to-hero/12-installing-third-party-packages-with-pip"]
+---
+import PythonRunner from '../../../components/islands/PythonRunner';
+import QuizCard from '../../../components/islands/QuizCard';
+import ColabButton from '../../../components/static/ColabButton.astro';
+
+Welcome to **AI for Beginners**—your bridge from core Python programming into neural networks, computer vision, natural language processing, and modern AI systems. You don't need an expensive workstation or paid cloud credits to build real models here. Everything in this 26-lesson course runs on two zero-cost environments: our instant **In-Browser Python Sandbox** for math and core algorithms, and **Google Colab Free Tier** for GPU-accelerated PyTorch and Transformer notebooks.
+
+Before we write our first perceptron or train a convolutional network, let's get your workspace wired up cleanly so every notebook and API call works on the first try.
+
+---
+
+## How This Course Runs Your Code
+
+Every lesson combines two complementary execution layers so you learn both the mathematical mechanics and real-world engineering workflows:
+
+1. **In-Browser Pyodide Sandbox**: Runs pure Python directly inside your browser via WebAssembly with a strict 5-second timeout. We use this to step through core algorithms—gradient updates, 2D convolutions, attention matrices, and Q-learning tables—without hiding behind heavy framework abstractions.
+2. **Google Colab Free Tier Notebooks**: Gives you a free cloud Jupyter runtime with pre-installed `PyTorch`, `NumPy`, `OpenCV`, and optional **NVIDIA T4 GPUs (16 GB VRAM)** for training deep learning models on real datasets.
+
+| Environment | Best Used For | Hardware Tier | Setup Required |
+| :--- | :--- | :--- | :--- |
+| **In-Browser Pyodide** | Algorithm math, logic engines, quick experiments | Local Browser (WASM) | None — runs inline |
+| **Google Colab (CPU)** | Symbolic AI, tabular ML, genetic algorithms, ethics audits | Free Cloud CPU (~12 GB RAM) | Google Account |
+| **Google Colab (T4 GPU)** | CNNs, Autoencoders, GANs, BERT, CLIP | Free NVIDIA T4 (16 GB VRAM) | Select **Runtime → Change runtime type → T4 GPU** |
+| **Google AI Studio** | Cloud LLM prompting and multimodal inference (`google-genai`) | Free Tier API (`GEMINI_API_KEY`) | Free API key stored in Colab Secrets |
+
+---
+
+## Setting Up Google Colab Free Tier
+
+Whenever you see an **Open with Google Colab** button in a lesson, clicking it opens that lesson's self-contained `.ipynb` notebook directly in Colab—no local Conda environments or manual helper-file downloads needed.
+
+<ColabButton
+  course="ai-for-beginners"
+  notebook="00-course-setup-and-colab-environment.ipynb"
+  runtime="Free Tier CPU / T4 GPU"
+/>
+
+To switch a Colab notebook onto a free GPU when training vision or language models:
+
+1. Open the notebook in Google Colab and click **Connect** in the top-right corner.
+2. From the top menu, select **Runtime** → **Change runtime type**.
+3. Choose **T4 GPU** under Hardware Accelerator and click **Save**.
+
+> **Tip:** Free T4 GPU sessions are ideal for training CNNs and fine-tuning Transformers, while CPU runtimes are faster to start for Symbolic AI, Reinforcement Learning, and Genetic Algorithms. Always disconnect or switch back to CPU when you don't need a GPU so you preserve your daily free quota.
+
+---
+
+## Getting Your Free Google AI Studio API Key (`GEMINI_API_KEY`)
+
+Later in this course (and throughout our upcoming Generative AI, MCP, and AI Agents tracks), we'll run live Large Language Model experiments using the official `google-genai` Python SDK. Google AI Studio provides a generous **Free Tier** so you can prototype prompts without entering a credit card.
+
+### Step 1: Generate the Key
+1. Visit [aistudio.google.com/apikey](https://aistudio.google.com/apikey) and sign in with your Google account.
+2. Click **Create API Key** and select or create a Google Cloud project when prompted.
+3. Copy the generated key string immediately—never commit API keys directly into code or public Git repositories.
+
+### Step 2: Store It Safely in Colab Secrets
+1. Open your Google Colab notebook and click the **Secrets (key icon)** in the left sidebar.
+2. Click **Add new secret**.
+3. Set the **Name** to `GEMINI_API_KEY` and paste your key into **Value**.
+4. Toggle **Notebook access** to **On**.
+
+### Step 3: Load It in Python
+Inside any Colab cell, load your key securely via `google.colab.userdata`:
+
+```python
+from google.colab import userdata
+from google import genai
+
+api_key = userdata.get("GEMINI_API_KEY")
+client = genai.Client(api_key=api_key)
+
+response = client.models.generate_content(
+    model="gemini-2.5-flash",
+    contents="Explain what a neural network is in two sentences.",
+)
+print(response.text)
+```
+
+---
+
+## Understanding Model Memory & Precision
+
+Why do we care about CPU RAM vs. T4 GPU VRAM? Every neural network parameter is stored as a floating-point number. In standard 32-bit floating point (`FP32`), each parameter consumes $4$ bytes. In half precision (`FP16`), it consumes $2$ bytes, and in 8-bit integer quantization (`INT8`), it consumes $1$ byte:
+
+$$\text{Memory (GB)} = \frac{N_{\text{params}} \times B_{\text{bytes/param}}}{1024^3}$$
+
+Let's run a quick pure-Python memory estimator right here in the browser to see which models fit comfortably inside a free 16 GB T4 GPU.
+
+<PythonRunner
+  client:visible
+  title="Try it Yourself: Model VRAM Footprint Estimator"
+  expectedOutput="=== Colab Free T4 GPU (16.0 GB VRAM) Capacity Check ===
+ResNet-50 (25.6M params): FP32=0.10 GB | FP16=0.05 GB | Fits T4=True
+BERT-Base (110.0M params): FP32=0.41 GB | FP16=0.20 GB | Fits T4=True
+GPT-2 Large (774.0M params): FP32=2.88 GB | FP16=1.44 GB | Fits T4=True
+7B Open LLM (7000.0M params): FP32=26.08 GB | FP16=13.04 GB | Fits T4=True"
+  initialCode={`T4_VRAM_GB = 16.0
+BYTES_PER_GB = 1024 ** 3
+
+models = [
+    ("ResNet-50", 25.6e6),
+    ("BERT-Base", 110.0e6),
+    ("GPT-2 Large", 774.0e6),
+    ("7B Open LLM", 7000.0e6),
+]
+
+print(f"=== Colab Free T4 GPU ({T4_VRAM_GB} GB VRAM) Capacity Check ===")
+for name, params in models:
+    fp32_gb = (params * 4) / BYTES_PER_GB
+    fp16_gb = (params * 2) / BYTES_PER_GB
+    fits_fp16 = fp16_gb <= T4_VRAM_GB
+    print(f"{name} ({params/1e6:.1f}M params): FP32={fp32_gb:.2f} GB | FP16={fp16_gb:.2f} GB | Fits T4={fits_fp16}")`}
+/>
+
+---
+
+## Check Your Understanding
+
+<QuizCard
+  client:visible
+  question="What is the safest way to store and access your free Google AI Studio GEMINI_API_KEY inside a Google Colab notebook?"
+  options={[
+    "Hardcode the key string directly inside a Python code cell so it runs automatically.",
+    "Save it in Colab's left-sidebar Secrets tab as GEMINI_API_KEY and read it via google.colab.userdata.get('GEMINI_API_KEY').",
+    "Post the key in a public GitHub Gist and fetch it with urllib.",
+    "Pass the key inside the Colab notebook's filename."
+  ]}
+  correctAnswer={1}
+  explanation="Storing GEMINI_API_KEY in Colab Secrets keeps credentials out of your notebook JSON and Git history while letting your Python code retrieve it securely at runtime."
+/>
+
+You're all set! Open the setup notebook above to verify your Colab environment, then click **Next** to dive into the history and core paradigms of Artificial Intelligence.

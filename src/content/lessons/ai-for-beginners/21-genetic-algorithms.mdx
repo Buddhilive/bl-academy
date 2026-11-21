@@ -1,0 +1,113 @@
+---
+title: "Genetic Algorithms & Evolutionary Optimization"
+track: "ai-for-beginners"
+category: "Module 5: Alternative Paradigms & Ethics"
+order: 22
+difficulty: "intermediate"
+xp: 75
+description: "Solve combinatorial and non-differentiable optimization problems using Genetic Algorithms: genes, fitness functions, selection, crossover, and mutation."
+topic: "Genetic Algorithms"
+prerequisites: ["ai-for-beginners/20-large-language-models-and-prompting"]
+---
+import PythonRunner from '../../../components/islands/PythonRunner';
+import QuizCard from '../../../components/islands/QuizCard';
+import ColabButton from '../../../components/static/ColabButton.astro';
+
+Gradient descent works brilliantly when your loss function is smooth and differentiable. However, what if you are optimizing a factory delivery schedule, packing cargo containers, placing 8 queens on a chessboard, or solving a discrete integer equation where derivatives don't even exist?
+
+**Genetic Algorithms (GAs)**, introduced by John Henry Holland in 1975, solve hard search problems by mimicking Darwinian evolution inside a population of candidate solutions.
+
+---
+
+## Core Evolutionary Operators
+
+Every Genetic Algorithm models a candidate solution as a **chromosome** (often a list of numbers or bits called **genes** $g \in \Gamma$) and evolves a population over generations using four building blocks:
+
+| Operator | Mathematical Role | How It Works |
+| :--- | :--- | :--- |
+| **Fitness Function** | $\text{fit}: \Gamma \to \mathbb{R}$ | Scores how close a candidate solution is to the target objective (e.g., error $= 0$). |
+| **Selection** | Survival of the fittest | Picks top-performing parents (via Tournament or Roulette-Wheel sampling) to reproduce. |
+| **Crossover** | $\text{crossover}: \Gamma^2 \to \Gamma$ | Combines slices from two parent chromosomes to produce offspring sharing both parents' traits. |
+| **Mutation** | $\text{mutate}: \Gamma \to \Gamma$ | Randomly perturbs a gene with low probability $p_m$ to escape local minima and preserve diversity. |
+
+---
+
+## The Evolutionary Loop
+
+1. Initialize a random population $G \subset \Gamma$ of $N$ chromosomes.
+2. Score every chromosome using the fitness function.
+3. Keep the best individuals (**elitism**) and generate new offspring via **selection + crossover + mutation**.
+4. Repeat until an optimal solution ($\text{error} = 0$) is found or a generation budget is reached.
+
+Genetic Algorithms shine on **NP-hard combinatorial problems** like timetable scheduling, vehicle routing, circuit layout, fair treasure partitioning, and solving **Diophantine equations** ($a + 2b + 3c + 4d = 30$) where brute-force search is too slow. Because GAs never require gradients, you can even use them to evolve neural network architectures or game-playing policies directly from sparse fitness scores.
+
+<ColabButton
+  course="ai-for-beginners"
+  notebook="21-genetic-algorithms.ipynb"
+  runtime="Free Tier CPU"
+/>
+
+---
+
+## Hands-On: Solving a Diophantine Equation via Evolution
+
+Let's evolve a population of 4-integer chromosomes $[a, b, c, d] \in [0, 30]^4$ in pure Python until it discovers an exact root of $a + 2b + 3c + 4d = 30$.
+
+<PythonRunner
+  client:visible
+  title="Try it Yourself: Genetic Algorithm Diophantine Solver"
+  expectedOutput="Generation 0 | Best Error: 2 | Best Gene: [7, 4, 3, 2]
+Solved at Generation 15!
+Solution: a=5, b=4, c=3, d=2 -> 5 + 2(4) + 3(3) + 4(2) = 30"
+  initialCode={`import random
+
+random.seed(42)
+
+def error(gene: list[int]) -> int:
+    a, b, c, d = gene
+    return abs((a + 2*b + 3*c + 4*d) - 30)
+
+pop = [[random.randint(0, 15) for _ in range(4)] for _ in range(20)]
+
+for gen in range(100):
+    pop.sort(key=error)
+    best = pop[0]
+    best_err = error(best)
+    if gen == 0:
+        print(f"Generation 0 | Best Error: {best_err} | Best Gene: {best}")
+    if best_err == 0:
+        a, b, c, d = best
+        print(f"Solved at Generation {gen}!")
+        print(f"Solution: a={a}, b={b}, c={c}, d={d} -> {a} + 2({b}) + 3({c}) + 4({d}) = {a + 2*b + 3*c + 4*d}")
+        break
+
+    # Elitism + single-point crossover + mutation
+    next_pop = pop[:4]
+    while len(next_pop) < 20:
+        p1, p2 = random.sample(pop[:10], 2)
+        cut = random.randint(1, 3)
+        child = p1[:cut] + p2[cut:]
+        if random.random() < 0.3:
+            child[random.randint(0, 3)] = random.randint(0, 15)
+        next_pop.append(child)
+    pop = next_pop`}
+/>
+
+---
+
+## Check Your Understanding
+
+<QuizCard
+  client:visible
+  question="Why is random Mutation necessary in a Genetic Algorithm alongside Crossover?"
+  options={[
+    "Mutation injects fresh genetic diversity so the population can escape local optima that crossover alone cannot reach.",
+    "Mutation computes the exact Hessian matrix of the loss.",
+    "Mutation sorts the population in descending order.",
+    "Mutation deletes the fitness function after generation 1."
+  ]}
+  correctAnswer={0}
+  explanation="Crossover only recombines existing gene values in the population; mutation introduces new variations to prevent premature convergence to a suboptimal solution."
+/>
+
+Next, let's see how agents learn optimal policies by interacting with an environment through trial and error in **Lesson 22: Deep Reinforcement Learning**.
