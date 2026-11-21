@@ -85,6 +85,11 @@ export interface LessonFooterProps {
   nextLessonTitle?: string;
 
   /**
+   * Optional custom label for the primary completion CTA button.
+   */
+  nextActionLabel?: string;
+
+  /**
    * Optional callback fired when the completion button is clicked.
    */
   onComplete?: () => void;

@@ -1,0 +1,247 @@
+---
+import { getCollection } from 'astro:content';
+import Layout from '../../../layouts/Layout.astro';
+import LessonProgressPanel from '../../../components/islands/LessonProgressPanel';
+import {
+  CURRICULUM_COURSES,
+  buildTrackUrlMap,
+  getAdjacentCourses,
+  getSortedLessonsForTrack,
+  resolveCourseEntryUrl,
+  type CourseMeta,
+} from '../../../lib/curriculum';
+
+export async function getStaticPaths() {
+  const allLessons = await getCollection('lessons');
+
+  return CURRICULUM_COURSES.map((course) => ({
+    params: { track: course.track },
+    props: {
+      course,
+      allLessons,
+    },
+  }));
+}
+
+interface Props {
+  course: CourseMeta;
+  allLessons: Awaited<ReturnType<typeof getCollection<'lessons'>>>;
+}
+
+const { course, allLessons } = Astro.props;
+const trackLessons = getSortedLessonsForTrack(course.track, allLessons);
+const trackLessonSummaries = trackLessons.map((l) => ({
+  id: l.id,
+  order: l.data.order,
+  xp: l.data.xp,
+}));
+const trackUrls = buildTrackUrlMap(allLessons);
+const { prevCourse, nextCourse } = getAdjacentCourses(course.track);
+const prevCourseUrl = prevCourse ? resolveCourseEntryUrl(prevCourse.track, allLessons) : null;
+const nextCourseUrl = nextCourse ? resolveCourseEntryUrl(nextCourse.track, allLessons) : null;
+
+const categoriesMap = new Map<string, typeof trackLessons>();
+for (const lesson of trackLessons) {
+  const cat = lesson.data.category || 'Lessons';
+  if (!categoriesMap.has(cat)) {
+    categoriesMap.set(cat, []);
+  }
+  categoriesMap.get(cat)!.push(lesson);
+}
+const categories = Array.from(categoriesMap.entries());
+---
+
+<Layout
+  title={`Course ${course.stepCode}: ${course.title} | BuddhiLive Academy`}
+  description={course.summary}
+>
+  <div class="min-h-screen flex flex-col bg-neutral-950 text-neutral-100">
+    <LessonProgressPanel
+      client:load
+      currentTrack={course.track}
+      trackLessons={trackLessonSummaries}
+      trackUrls={trackUrls}
+    />
+
+    <main class="flex-1 max-w-5xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-10">
+      {/* Breadcrumb & Path Position */}
+      <nav aria-label="Breadcrumb" class="flex items-center gap-2 text-xs font-mono text-neutral-400 mb-6">
+        <a href="/" class="hover:text-white transition-colors">Home</a>
+        <span>/</span>
+        <a href="/#learning-path" class="hover:text-white transition-colors">9-Course Path</a>
+        <span>/</span>
+        <span class="text-[#E07A5F]">Course {course.stepCode}</span>
+      </nav>
+
+      {/* Course Header */}
+      <header class="rounded-xl border border-neutral-800 bg-neutral-900/70 p-6 sm:p-8 mb-8">
+        <div class="flex flex-wrap items-center gap-2 mb-3">
+          <span class="px-2.5 py-1 rounded bg-[#A7452A] text-white font-mono text-xs font-bold uppercase tracking-wider">
+            Course {course.stepCode} of 08
+          </span>
+          <span class="px-2.5 py-1 rounded border border-neutral-700 bg-neutral-950 text-neutral-300 font-mono text-xs">
+            {course.difficulty}
+          </span>
+          {course.runtimeBadges.map((badge) => (
+            <span class="px-2.5 py-1 rounded border border-neutral-800 bg-neutral-950/70 text-neutral-300 font-mono text-xs">
+              {badge}
+            </span>
+          ))}
+        </div>
+
+        <h1 class="text-3xl sm:text-4xl font-extrabold tracking-tight text-white mb-3">
+          {course.title}
+        </h1>
+        <p class="text-base sm:text-lg text-neutral-300 leading-relaxed mb-4">
+          {course.summary}
+        </p>
+        <p class="text-sm font-mono text-[#E07A5F] mb-6">
+          Engineering Focus: {course.pedagogyFocus}
+        </p>
+
+        <div class="flex flex-wrap items-center gap-3 pt-4 border-t border-neutral-800">
+          {trackLessons.length > 0 ? (
+            <a
+              href={`/learn/${course.track}/${trackLessons[0].id}`}
+              class="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-[#A7452A] hover:bg-[#93371E] text-white text-sm font-semibold transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#E07A5F]"
+            >
+              Start Course {course.stepCode}: {trackLessons[0].data.title} ❯
+            </a>
+          ) : (
+            <span class="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-amber-700/60 bg-amber-950/30 text-amber-200 text-xs font-mono">
+              Syllabus Planned • {course.plannedLessonCount} Lessons Queued
+            </span>
+          )}
+
+          {prevCourse && prevCourseUrl && (
+            <a
+              href={prevCourseUrl}
+              class="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-lg border border-neutral-700 bg-neutral-950 hover:bg-neutral-800 text-neutral-200 text-xs sm:text-sm font-semibold transition-colors"
+            >
+              ❮ Prerequisite: {prevCourse.shortLabel}
+            </a>
+          )}
+
+          {nextCourse && nextCourseUrl && (
+            <a
+              href={nextCourseUrl}
+              class="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-lg border border-neutral-700 bg-neutral-950 hover:bg-neutral-800 text-neutral-200 text-xs sm:text-sm font-semibold transition-colors"
+            >
+              Next in Path: {nextCourse.shortLabel} ❯
+            </a>
+          )}
+        </div>
+      </header>
+
+      {/* Google AI Studio Free Tier & Colab Guide Callout (when relevant) */}
+      {course.usesGeminiApi && (
+        <section class="rounded-xl border border-[#A7452A]/50 bg-neutral-900/50 p-6 mb-8">
+          <h2 class="text-base font-bold text-[#E07A5F] uppercase tracking-wider font-mono mb-2">
+            Free-Tier Cloud Setup: Google AI Studio &amp; Colab Secrets
+          </h2>
+          <p class="text-sm text-neutral-300 leading-relaxed mb-3">
+            Every LLM and agent lab in this course uses the <strong class="text-white">Google AI Studio Free Tier</strong> (<code class="text-[#E07A5F]">gemini-2.5-flash</code> via <code class="text-[#E07A5F]">google-genai</code>) inside <strong class="text-white">Google Colab</strong> — no paid cloud credits required.
+          </p>
+          <ol class="list-decimal list-inside space-y-1.5 text-sm text-neutral-300">
+            <li>Visit <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener noreferrer" class="text-[#E07A5F] underline">aistudio.google.com/apikey</a> and click <strong>Create API Key</strong>.</li>
+            <li>In your Google Colab notebook, open the left sidebar <strong>Secrets (🔑)</strong> tab and add <code class="text-[#E07A5F]">GEMINI_API_KEY</code>.</li>
+            <li>Load it safely in Python with <code class="text-[#E07A5F]">from google.colab import userdata; api_key = userdata.get('GEMINI_API_KEY')</code>.</li>
+          </ol>
+        </section>
+      )}
+
+      {/* Live Lessons OR Planned Syllabus Modules */}
+      {trackLessons.length > 0 ? (
+        <section aria-labelledby="live-lessons-heading" class="space-y-6">
+          <div class="flex items-center justify-between">
+            <h2 id="live-lessons-heading" class="text-2xl font-bold text-white">
+              Course Lessons ({trackLessons.length} Live)
+            </h2>
+          </div>
+
+          {categories.map(([categoryName, catLessons]) => (
+            <div class="rounded-xl border border-neutral-800 bg-neutral-900/40 overflow-hidden">
+              <div class="px-5 py-3 border-b border-neutral-800 bg-neutral-900/80 flex items-center justify-between">
+                <h3 class="text-sm font-bold uppercase tracking-wider text-neutral-200">
+                  {categoryName}
+                </h3>
+                <span class="text-xs font-mono text-neutral-400">
+                  {catLessons.length} lessons
+                </span>
+              </div>
+              <div class="divide-y divide-neutral-800/80">
+                {catLessons.map((lesson) => (
+                  <a
+                    href={`/learn/${course.track}/${lesson.id}`}
+                    class="flex items-center justify-between gap-4 px-5 py-4 hover:bg-neutral-900 transition-colors group"
+                  >
+                    <div class="min-w-0">
+                      <div class="flex items-center gap-2.5 mb-1">
+                        <span class="text-xs font-mono text-[#E07A5F]">
+                          #{String(lesson.data.order).padStart(2, '0')}
+                        </span>
+                        <h4 class="text-base font-semibold text-white group-hover:text-[#E07A5F] transition-colors truncate">
+                          {lesson.data.title}
+                        </h4>
+                      </div>
+                      <p class="text-xs sm:text-sm text-neutral-400 line-clamp-1">
+                        {lesson.data.description}
+                      </p>
+                    </div>
+                    <div class="flex items-center gap-3 shrink-0">
+                      <span class="text-xs font-mono text-amber-400">+{lesson.data.xp} XP</span>
+                      <span class="text-neutral-400 group-hover:text-[#E07A5F]">→</span>
+                    </div>
+                  </a>
+                ))}
+              </div>
+            </div>
+          ))}
+        </section>
+      ) : (
+        <section aria-labelledby="syllabus-heading" class="space-y-6">
+          <div class="flex flex-wrap items-center justify-between gap-2">
+            <div>
+              <h2 id="syllabus-heading" class="text-2xl font-bold text-white">
+                Course Syllabus &amp; Module Plan
+              </h2>
+              <p class="text-sm text-neutral-400 mt-1">
+                {course.plannedLessonCount} comprehensive lessons and companion Google Colab notebooks in <code class="text-[#E07A5F]">notebook/{course.notebookFolder ?? course.track}/</code>.
+              </p>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {course.syllabusModules.map((mod, idx) => (
+              <div class="rounded-xl border border-neutral-800 bg-neutral-900/50 p-5">
+                <span class="text-xs font-mono uppercase tracking-wider text-[#E07A5F]">
+                  Module {String(idx + 1).padStart(2, '0')}
+                </span>
+                <h3 class="text-lg font-bold text-white mt-1 mb-3">
+                  {mod.title}
+                </h3>
+                <ul class="space-y-2 text-sm text-neutral-300">
+                  {mod.topics.map((topic) => (
+                    <li class="flex items-start gap-2">
+                      <span class="text-[#E07A5F] font-mono mt-0.5">›</span>
+                      <span>{topic}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+    </main>
+
+    <footer class="border-t border-neutral-800 bg-neutral-900/40 py-6 text-center text-xs text-neutral-400">
+      <div class="max-w-5xl mx-auto px-4 flex flex-wrap items-center justify-between gap-2">
+        <span>© 2026 BuddhiLive Academy</span>
+        <a href="/#acknowledgements" class="text-[#E07A5F] hover:underline">
+          Curriculum Acknowledgements
+        </a>
+      </div>
+    </footer>
+  </div>
+</Layout>

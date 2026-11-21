@@ -12,7 +12,7 @@ export async function getStaticPaths() {
     },
     props: {
       entry,
-      allLessons: lessons.filter((l) => l.data.track === entry.data.track),
+      allLessons: lessons,
     },
   }));
 }
@@ -29,4 +29,3 @@ const { Content } = await render(entry);
 <LessonLayout entry={entry} allLessons={allLessons}>
   <Content />
 </LessonLayout>
-

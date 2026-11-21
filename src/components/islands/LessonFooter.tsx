@@ -5,6 +5,7 @@ export const LessonFooter: React.FC<LessonFooterProps> = ({
   xp = 10,
   nextLessonUrl,
   nextLessonTitle,
+  nextActionLabel,
   onComplete,
   isCompleted = false,
   sticky = true,
@@ -115,7 +116,7 @@ export const LessonFooter: React.FC<LessonFooterProps> = ({
               </>
             ) : (
               <>
-                <span>Complete & Next Lesson</span>
+                <span>{nextActionLabel || 'Complete & Next Lesson'}</span>
                 <svg
                   className="w-4 h-4 fill-current"
                   viewBox="0 0 20 20"

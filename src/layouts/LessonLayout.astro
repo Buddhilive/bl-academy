@@ -6,6 +6,13 @@ import LessonProgressPanel from '../components/islands/LessonProgressPanel';
 import LessonFooter from '../components/islands/LessonFooter';
 import AdSlot from '../components/static/AdSlot.astro';
 import type { CollectionEntry } from 'astro:content';
+import {
+  buildTrackUrlMap,
+  getAdjacentCourses,
+  getCourseByTrack,
+  getSortedLessonsForTrack,
+  resolveCourseEntryUrl,
+} from '../lib/curriculum';
 
 interface Props {
   entry: CollectionEntry<'lessons'>;
@@ -15,10 +22,12 @@ interface Props {
 const { entry, allLessons = [] } = Astro.props;
 const { title, description } = entry.data;
 
+const currentCourse = getCourseByTrack(entry.data.track);
+const { prevCourse, nextCourse } = getAdjacentCourses(entry.data.track);
+const trackUrls = buildTrackUrlMap(allLessons);
+
 // Filter track and sort ascending by order
-const trackLessons = allLessons
-  .filter((l) => l.data.track === entry.data.track)
-  .sort((a, b) => a.data.order - b.data.order || a.id.localeCompare(b.id));
+const trackLessons = getSortedLessonsForTrack(entry.data.track, allLessons);
 
 // Summary for progress panel
 const trackLessonSummaries = trackLessons.map((l) => ({
@@ -27,13 +36,33 @@ const trackLessonSummaries = trackLessons.map((l) => ({
   xp: l.data.xp,
 }));
 
-// Previous and Next topics
+// Previous and Next topics (with cross-course boundary handoff)
 const currentIndex = trackLessons.findIndex((l) => l.id === entry.id);
 const prevLesson = currentIndex > 0 ? trackLessons[currentIndex - 1] : null;
 const nextLesson = currentIndex >= 0 && currentIndex < trackLessons.length - 1 ? trackLessons[currentIndex + 1] : null;
 
-const prevUrl = prevLesson ? `/learn/${prevLesson.data.track}/${prevLesson.id}` : null;
-const nextUrl = nextLesson ? `/learn/${nextLesson.data.track}/${nextLesson.id}` : null;
+let prevUrl: string | null = prevLesson ? `/learn/${prevLesson.data.track}/${prevLesson.id}` : null;
+let prevLabel = '❮ Previous';
+if (!prevUrl && prevCourse) {
+  const prevCourseLessons = getSortedLessonsForTrack(prevCourse.track, allLessons);
+  prevUrl =
+    prevCourseLessons.length > 0
+      ? `/learn/${prevCourse.track}/${prevCourseLessons[prevCourseLessons.length - 1].id}`
+      : `/learn/${prevCourse.track}`;
+  prevLabel = `❮ Course ${prevCourse.stepCode}: ${prevCourse.shortLabel}`;
+}
+
+let nextUrl: string | null = nextLesson ? `/learn/${nextLesson.data.track}/${nextLesson.id}` : null;
+let nextLabel = 'Next ❯';
+let nextTitle = nextLesson?.data.title;
+let nextFooterActionLabel: string | undefined = undefined;
+
+if (!nextUrl && nextCourse) {
+  nextUrl = resolveCourseEntryUrl(nextCourse.track, allLessons);
+  nextLabel = `Next Course: ${nextCourse.shortLabel} ❯`;
+  nextTitle = `Course ${nextCourse.stepCode}: ${nextCourse.title}`;
+  nextFooterActionLabel = `Complete & Continue to Course ${nextCourse.stepCode}`;
+}
 ---
 
 <Layout title={`${title} | BuddhiLive Academy`} description={description}>
@@ -44,8 +73,10 @@ const nextUrl = nextLesson ? `/learn/${nextLesson.data.track}/${nextLesson.id}` 
     <slot name="top-nav">
       <LessonProgressPanel
         client:load
+        currentTrack={entry.data.track}
         currentSlug={entry.id}
         trackLessons={trackLessonSummaries}
+        trackUrls={trackUrls}
       />
     </slot>
 
@@ -67,10 +98,13 @@ const nextUrl = nextLesson ? `/learn/${nextLesson.data.track}/${nextLesson.id}` 
 
         <article class="prose prose-invert prose-neutral max-w-none prose-headings:font-semibold prose-headings:text-neutral-100 prose-a:text-[#E07A5F] hover:prose-a:underline prose-code:text-[#E07A5F] prose-pre:bg-neutral-900 prose-pre:border prose-pre:border-neutral-800">
           <header class="mb-6 border-b border-neutral-800 pb-4">
-            <div class="flex items-center gap-3 text-sm text-neutral-400 mb-2">
-              <span class="capitalize px-2 py-0.5 rounded bg-neutral-900 border border-neutral-800 text-xs font-mono">
-                {entry.data.track}
-              </span>
+            <div class="flex flex-wrap items-center gap-2.5 text-sm text-neutral-400 mb-2">
+              <a
+                href={`/learn/${entry.data.track}`}
+                class="px-2 py-0.5 rounded bg-neutral-900 border border-neutral-800 text-xs font-mono text-neutral-200 hover:border-[#E07A5F] no-underline"
+              >
+                {currentCourse ? `Course ${currentCourse.stepCode}: ${currentCourse.title}` : entry.data.track}
+              </a>
               <span>•</span>
               <span class="text-xs font-medium text-neutral-300">
                 {entry.data.category}
@@ -88,13 +122,13 @@ const nextUrl = nextLesson ? `/learn/${nextLesson.data.track}/${nextLesson.id}` 
             </p>
 
             {/* W3Schools-style Top Prev / Next Navigation */}
-            <div class="flex items-center justify-between pt-2 border-t border-neutral-800/60 not-prose">
+            <div class="flex items-center justify-between gap-3 pt-2 border-t border-neutral-800/60 not-prose">
               {prevUrl ? (
                 <a
                   href={prevUrl}
                   class="inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs sm:text-sm font-semibold rounded-md bg-neutral-800 hover:bg-neutral-700 text-neutral-200 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#E07A5F]"
                 >
-                  ❮ Previous
+                  {prevLabel}
                 </a>
               ) : (
                 <span class="inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs sm:text-sm font-semibold rounded-md bg-neutral-900/40 text-neutral-600 cursor-not-allowed">
@@ -107,7 +141,7 @@ const nextUrl = nextLesson ? `/learn/${nextLesson.data.track}/${nextLesson.id}` 
                   href={nextUrl}
                   class="inline-flex items-center gap-1.5 px-4 py-1.5 text-xs sm:text-sm font-semibold rounded-md bg-[#A7452A] hover:bg-[#93371E] dark:bg-[#E07A5F] dark:hover:bg-[#E58A73] text-white dark:text-neutral-950 shadow-sm transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#E07A5F]"
                 >
-                  Next ❯
+                  {nextLabel}
                 </a>
               ) : (
                 <span class="inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs sm:text-sm font-semibold rounded-md bg-neutral-900/40 text-neutral-600 cursor-not-allowed">
@@ -126,7 +160,8 @@ const nextUrl = nextLesson ? `/learn/${nextLesson.data.track}/${nextLesson.id}` 
             client:load
             xp={entry.data.xp}
             nextLessonUrl={nextUrl || undefined}
-            nextLessonTitle={nextLesson?.data.title}
+            nextLessonTitle={nextTitle}
+            nextActionLabel={nextFooterActionLabel}
             sticky={false}
           />
         </div>

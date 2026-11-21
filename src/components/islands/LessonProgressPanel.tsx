@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { listLocalProgress, type LessonProgress } from '../../lib/storage';
+import { CURRICULUM_COURSES, getCourseByTrack } from '../../lib/curriculum';
 
 interface LessonSummary {
   id: string;
@@ -8,25 +9,22 @@ interface LessonSummary {
 }
 
 interface Props {
+  currentTrack?: string;
   currentSlug?: string;
   trackLessons: LessonSummary[];
+  trackUrls?: Record<string, string>;
 }
 
-const AVAILABLE_TRACKS = [
-  { id: 'python', label: 'Python', href: '/learn/python/01-hello-python' },
-  { id: 'numpy', label: 'NumPy', href: '#' },
-  { id: 'pandas', label: 'Pandas', href: '#' },
-  { id: 'dsa', label: 'DSA', href: '#' },
-  { id: 'sql', label: 'SQL', href: '#' },
-  { id: 'ai', label: 'AI & ML', href: '#' },
-];
-
-export default function LessonProgressPanel({ trackLessons }: Props) {
+export default function LessonProgressPanel({
+  currentTrack = 'python',
+  trackLessons,
+  trackUrls,
+}: Props) {
   const [completedCount, setCompletedCount] = useState<number>(0);
   const [totalXp, setTotalXp] = useState<number>(0);
 
   const totalLessons = trackLessons.length;
-  const firstPythonLessonSlug = trackLessons.length > 0 ? trackLessons[0].id : '01-hello-python';
+  const activeCourse = getCourseByTrack(currentTrack);
 
   const refreshProgress = () => {
     try {
@@ -39,7 +37,6 @@ export default function LessonProgressPanel({ trackLessons }: Props) {
       let completed = 0;
       let xpSum = 0;
 
-      // 1. Calculate stats for this track
       for (const lesson of trackLessons) {
         const item = recordMap.get(lesson.id);
         if (item?.completed) {
@@ -47,7 +44,6 @@ export default function LessonProgressPanel({ trackLessons }: Props) {
         }
       }
 
-      // 2. Calculate overall total XP across all completed lessons in storage
       for (const rec of records) {
         if (rec.completed) {
           xpSum += rec.xp_earned;
@@ -57,7 +53,6 @@ export default function LessonProgressPanel({ trackLessons }: Props) {
       setCompletedCount(completed);
       setTotalXp(xpSum);
 
-      // 3. Update sidebar checkmarks dynamically in the DOM
       const badges = document.querySelectorAll<HTMLElement>('[data-sidebar-lesson-slug]');
       badges.forEach((linkEl) => {
         const slug = linkEl.getAttribute('data-sidebar-lesson-slug');
@@ -81,13 +76,11 @@ export default function LessonProgressPanel({ trackLessons }: Props) {
   useEffect(() => {
     refreshProgress();
 
-    // Listen for storage events (multi-tab sync or code completion updates)
     const handleStorageChange = () => {
       refreshProgress();
     };
 
     window.addEventListener('storage', handleStorageChange);
-    // Support custom bl:progress-updated event dispatched by completion triggers
     window.addEventListener('bl:progress-updated', handleStorageChange);
 
     return () => {
@@ -100,10 +93,10 @@ export default function LessonProgressPanel({ trackLessons }: Props) {
 
   return (
     <header className="w-full bg-neutral-900 border-b border-neutral-800 transition-colors">
-      {/* Top Track & Subject Bar (W3Schools Style) */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2.5 flex flex-wrap items-center justify-between gap-4">
-        {/* Brand & Track Links */}
-        <div className="flex items-center gap-4 overflow-x-auto py-1 scrollbar-none">
+      {/* Top 9-Course Sequential Path Bar */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2.5 flex flex-wrap items-center justify-between gap-3">
+        {/* Brand & Sequential Track Links */}
+        <div className="flex items-center gap-3 min-w-0 flex-1 overflow-x-auto py-1 scrollbar-none">
           <a
             href="/"
             className="flex items-center gap-2 font-bold text-white text-base tracking-tight shrink-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#E07A5F] rounded"
@@ -111,27 +104,28 @@ export default function LessonProgressPanel({ trackLessons }: Props) {
             <span className="w-6 h-6 rounded bg-[#A7452A] flex items-center justify-center text-xs text-white font-extrabold">
               BL
             </span>
-            <span>BuddhiLive</span>
+            <span className="hidden sm:inline">BuddhiLive</span>
           </a>
 
           <div className="h-4 w-px bg-neutral-800 shrink-0" />
 
-          {/* Horizontal Track Selector */}
-          <nav aria-label="Tutorial subjects" className="flex items-center gap-1 shrink-0">
-            {AVAILABLE_TRACKS.map((t) => {
-              const isCurrent = t.id === 'python';
-              const trackHref = t.id === 'python' ? `/learn/python/${firstPythonLessonSlug}` : t.href;
+          <nav aria-label="9-Course AI Engineering Path" className="flex items-center gap-1 shrink-0">
+            {CURRICULUM_COURSES.map((course) => {
+              const isCurrent = course.track === currentTrack;
+              const trackHref = trackUrls?.[course.track] ?? `/learn/${course.track}`;
               return (
                 <a
-                  key={t.id}
+                  key={course.track}
                   href={trackHref}
-                  className={`px-3 py-1 rounded-md text-xs font-semibold transition-colors focus:outline-none focus-visible:ring-1 focus-visible:ring-[#E07A5F] ${
+                  title={`Course ${course.stepCode}: ${course.title}`}
+                  aria-current={isCurrent ? 'page' : undefined}
+                  className={`px-2.5 py-1 rounded-md text-xs font-semibold whitespace-nowrap transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#E07A5F] ${
                     isCurrent
                       ? 'bg-[#A7452A] text-white shadow-sm'
-                      : 'text-neutral-400 hover:text-white hover:bg-neutral-800'
+                      : 'text-neutral-300 hover:text-white hover:bg-neutral-800'
                   }`}
                 >
-                  {t.label}
+                  {course.shortLabel}
                 </a>
               );
             })}
@@ -139,25 +133,27 @@ export default function LessonProgressPanel({ trackLessons }: Props) {
         </div>
 
         {/* Pathfinder / My Learning Progress Indicator */}
-        <div className="flex items-center gap-4 shrink-0">
-          <div className="flex items-center gap-2.5">
-            <span className="text-xs text-neutral-400 hidden sm:inline-block">
-              Python: {completedCount}/{totalLessons} ({percentage}%)
-            </span>
-            <div
-              className="w-20 sm:w-28 h-2 bg-neutral-800 rounded-full overflow-hidden relative"
-              role="progressbar"
-              aria-valuenow={percentage}
-              aria-valuemin={0}
-              aria-valuemax={100}
-              aria-label="Track progress"
-            >
+        <div className="flex items-center gap-3 shrink-0">
+          {totalLessons > 0 && (
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-neutral-300 hidden md:inline-block font-mono">
+                {activeCourse?.shortLabel ?? currentTrack}: {completedCount}/{totalLessons} ({percentage}%)
+              </span>
               <div
-                className="h-full bg-gradient-to-r from-[#A7452A] to-[#E07A5F] transition-all duration-300 ease-out"
-                style={{ width: `${percentage}%` }}
-              />
+                className="w-20 sm:w-24 h-2 bg-neutral-800 rounded-full overflow-hidden relative"
+                role="progressbar"
+                aria-valuenow={percentage}
+                aria-valuemin={0}
+                aria-valuemax={100}
+                aria-label={`${activeCourse?.title ?? currentTrack} progress`}
+              >
+                <div
+                  className="h-full bg-[#E07A5F] transition-all duration-300 ease-out"
+                  style={{ width: `${percentage}%` }}
+                />
+              </div>
             </div>
-          </div>
+          )}
 
           {/* Pathfinder XP Pill */}
           <div
