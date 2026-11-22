@@ -1,0 +1,130 @@
+---
+title: "Local SLM Deployment: Parameter Tiers, Ollama Modelfiles & OpenAI-Compatible Serving"
+track: "edge-ai-for-beginners"
+category: "Module 3: Local & Containerized SLM Deployment, Quantization & Runtimes"
+order: 9
+difficulty: "intermediate"
+xp: 65
+description: "Classify Micro, Small, and Medium SLMs, configure Ollama Modelfiles, and expose OpenAI-compatible local REST endpoints for privacy-first edge applications."
+topic: "Local SLM Deployment"
+prerequisites: ["edge-ai-for-beginners/08-bitnet-1-58-bit-ternary-llms-and-ultra-low-power-npus"]
+---
+import PythonRunner from '../../../components/islands/PythonRunner';
+import QuizCard from '../../../components/islands/QuizCard';
+import ColabButton from '../../../components/static/ColabButton.astro';
+
+You may know that picking the wrong model tier for a target device is the fastest way to blow past your latency budget. A 14B model that feels snappy on a 16 GB desktop GPU will swap endlessly to disk on an 8 GB edge gateway. Conversely, a 0.5B model might miss complex JSON formatting instructions that a 3.8B model handles effortlessly.
+
+Here is an overview of the **SLM parameter classification framework** and how to deploy local models cleanly using **Ollama** and OpenAI-compatible REST endpoints.
+
+---
+
+## SLM Parameter Classification Tiers
+
+| Tier | Parameter Range | Typical INT4 RAM | Representative Models | Ideal Edge Target |
+| :--- | :--- | :--- | :--- | :--- |
+| **Micro SLMs** | 100M – 1.4B | 0.25 – 1.2 GB | `Qwen2.5-0.5B`, `Qwen3-0.6B`, `Gemma-3-1B`, `SmolLM2-360M` | Smartphones, IoT gateways, Raspberry Pi |
+| **Small SLMs** | 1.5B – 13.9B | 1.3 – 8.5 GB | `Gemma-3n-E2B/E4B`, `Phi-4-mini-3.8B`, `Qwen3-4B/8B`, `Mistral-7B` | Laptops, Jetson Orin Nano, Colab Free T4 |
+| **Medium SLMs** | 14B – 30B | 9.0 – 18.0 GB | `Phi-4-14B`, `Qwen3-14B`, `Qwen3-30B-A3B` | Workstations, on-prem edge servers |
+
+---
+
+## Ollama: Zero-Config Local Serving & `Modelfile` Customization
+
+Built on top of `llama.cpp` and the GGUF format, **Ollama** packages weights, chat templates, system prompts, and sampling hyperparameters into a single local daemon exposing an OpenAI-compatible API on `http://localhost:11434/v1`.
+
+A custom `Modelfile` locks down deterministic behavior for production edge apps:
+
+```dockerfile
+FROM phi4:mini
+PARAMETER temperature 0.2
+PARAMETER top_p 0.9
+PARAMETER num_ctx 4096
+SYSTEM """You are an offline industrial diagnostics assistant. Return concise JSON."""
+```
+
+With `ollama create diagnostics-slm -f ./Modelfile`, any standard `OpenAI(base_url="http://localhost:11434/v1", api_key="ollama")` client can switch between local and cloud models without rewriting application code. Under local batching of size $B$, throughput scales as:
+
+$$
+T(B) = \frac{B}{t_{\text{compute}}(B) + t_{\text{mem}}}
+$$
+
+until compute saturation is reached.
+
+---
+
+## Open the Companion Colab Notebook
+
+Launch the companion notebook to generate custom `Modelfile` specs and run OpenAI-compatible local serving with an automatic Hugging Face fallback.
+
+<ColabButton
+  course="edge-ai-for-beginners"
+  notebook="09-slm-deployment-foundations-ollama-and-local-serving.ipynb"
+  runtime="Colab Free T4 GPU"
+/>
+
+---
+
+## Try It Yourself: SLM Tier Classifier & Modelfile Validator
+
+Run this Python validator to classify candidate SLMs by parameter tier, verify `Modelfile` directives, and check whether a local device meets the memory threshold.
+
+<PythonRunner
+  client:visible
+  title="Try it Yourself: SLM Tier Classifier & Modelfile Validator"
+  expectedOutput="Model: Qwen3-0.6B       | Tier=Micro SLM  | INT4=0.45 GB | Device 4GB=OK
+Model: Phi-4-mini-3.8B  | Tier=Small SLM  | INT4=2.10 GB | Device 4GB=OK
+Model: Phi-4-14B        | Tier=Medium SLM | INT4=7.80 GB | Device 4GB=TOO_LARGE
+Modelfile Valid: True (FROM=qwen2.5:3b, temp=0.2, num_ctx=4096)"
+  initialCode={`def classify_slm(params_b):
+    if params_b <= 1.4:
+        return "Micro SLM"
+    if params_b <= 13.9:
+        return "Small SLM"
+    return "Medium SLM"
+
+catalog = [
+    ("Qwen3-0.6B", 0.6, 0.45),
+    ("Phi-4-mini-3.8B", 3.8, 2.10),
+    ("Phi-4-14B", 14.0, 7.80),
+]
+
+device_budget_gb = 3.5
+for name, params, mem_gb in catalog:
+    tier = classify_slm(params)
+    fit = "OK" if mem_gb <= device_budget_gb else "TOO_LARGE"
+    print(f"Model: {name:16s} | Tier={tier:10s} | INT4={mem_gb:.2f} GB | Device 4GB={fit}")
+
+modelfile_lines = [
+    "FROM qwen2.5:3b",
+    "PARAMETER temperature 0.2",
+    "PARAMETER num_ctx 4096",
+]
+parsed = {}
+for line in modelfile_lines:
+    parts = line.split()
+    if parts[0] == "FROM":
+        parsed["FROM"] = parts[1]
+    elif parts[0] == "PARAMETER":
+        parsed[parts[1]] = parts[2]
+
+is_valid = "FROM" in parsed and float(parsed.get("temperature", 1.0)) <= 1.0
+print(f"Modelfile Valid: {is_valid} (FROM={parsed['FROM']}, temp={parsed['temperature']}, num_ctx={parsed['num_ctx']})")`}
+/>
+
+---
+
+## Check Your Understanding
+
+<QuizCard
+  client:visible
+  question="Why does exposing an OpenAI-compatible /v1/chat/completions endpoint from Ollama simplify Edge AI engineering?"
+  options={[
+    "It forces all local requests to be billed per token.",
+    "It lets applications swap between local edge SLMs and cloud models by changing only base_url and model name, without rewriting client code.",
+    "It eliminates the need for a tokenizer.",
+    "It automatically converts PyTorch weights to 1-bit BitNet format."
+  ]}
+  correctAnswer={1}
+  explanation="Standardizing on the OpenAI-compatible REST schema decouples application logic from the underlying inference engine, making local-first and hybrid cloud fallback seamless."
+/>

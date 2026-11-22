@@ -1,0 +1,129 @@
+---
+title: "Edge AI Development Stack: Colab T4 GPU, Open-Source Runtimes & Google AI Studio"
+track: "edge-ai-for-beginners"
+category: "Module 1: Edge AI Foundations, Case Studies & Hardware Platforms"
+order: 3
+difficulty: "beginner"
+xp: 60
+description: "Set up a zero-cost Edge AI development environment on Google Colab Free Tier with open-source runtimes (llama.cpp, ONNX Runtime, Ollama) and Google AI Studio."
+topic: "Edge AI Environment Setup"
+prerequisites: ["edge-ai-for-beginners/02-real-world-edge-ai-case-studies-and-architectures"]
+---
+import PythonRunner from '../../../components/islands/PythonRunner';
+import QuizCard from '../../../components/islands/QuizCard';
+import ColabButton from '../../../components/static/ColabButton.astro';
+
+You may know that setting up an Edge AI workstation used to mean buying a high-end workstation GPU or signing up for paid enterprise cloud credits. In practice, you can build, quantize, fine-tune, and benchmark production-grade Small Language Models at zero cost using **Google Colab Free Tier** (CPU and NVIDIA T4 15 GB GPU) alongside **Google AI Studio Free Tier** (`GEMINI_API_KEY`).
+
+Here is an overview of the complete open-source Edge AI stack we will use throughout this course, plus how to budget memory before downloading a single weight file.
+
+---
+
+## The Open-Source Edge AI Stack
+
+Rather than locking your workflow into proprietary local services, we pair universal open-source runtimes with free-tier cloud tooling for teacher distillation and hybrid fallback:
+
+| Layer | Open-Source / Free Tool | Role in Edge AI Pipeline |
+| :--- | :--- | :--- |
+| **Model Hub** | Hugging Face (`transformers`, `huggingface_hub`) | Discover and pull open-weight SLMs (Phi-4, Qwen3, Gemma 3n, BitNet) |
+| **Local Inference** | `Ollama` & `llama.cpp` (GGUF) | Run quantized models on CPU/GPU/Metal with zero cloud dependency |
+| **Cross-Platform Runtime** | `ONNX Runtime` & `OpenVINO` | Hardware-abstracted execution across x86, ARM, and NPUs |
+| **Fine-Tuning** | `PEFT` (LoRA/QLoRA) & `bitsandbytes` | Adapt SLMs on a single 15 GB Colab T4 GPU |
+| **Cloud Teacher & Fallback** | Google AI Studio (`google-genai`, `gemini-2.5-flash`) | Generate synthetic distillation datasets and handle complex hybrid routing |
+
+---
+
+## Step-by-Step: Google AI Studio Free Tier (`GEMINI_API_KEY`)
+
+Later in Modules 4 and 5, we will use a cloud teacher model (`gemini-2.5-flash`) to distill reasoning traces into compact edge student models and act as a hybrid escalation target. Setting up your free key takes two minutes:
+
+1. **Create your free key**: Open [aistudio.google.com/apikey](https://aistudio.google.com/apikey), sign in with your Google account, and click **Create API Key**.
+2. **Store it in Google Colab Secrets**: In any Colab notebook, click the **Secrets (key icon)** in the left sidebar, add a secret named `GEMINI_API_KEY`, paste your key, and toggle **Notebook access** on.
+3. **Load it safely in Python**:
+   ```python
+   import os
+   from google import genai
+
+   try:
+       from google.colab import userdata
+       api_key = userdata.get("GEMINI_API_KEY")
+   except Exception:
+       api_key = os.environ.get("GEMINI_API_KEY")
+
+   client = genai.Client(api_key=api_key)
+   ```
+
+---
+
+## Budgeting Edge Memory: Weights + KV Cache
+
+Before deploying an SLM to a phone, laptop, or Colab T4 GPU, always calculate total inference memory $M_{\text{total}}$:
+
+$$
+M_{\text{total}} = P \cdot \frac{b_w}{8} + 2 \cdot L \cdot n_{\text{kv}} \cdot d_{\text{head}} \cdot S \cdot \frac{b_{\text{kv}}}{8} + M_{\text{overhead}}
+$$
+
+Here $P$ is the parameter count, $b_w$ is weight bit-width (4 for INT4, 16 for FP16), $L$ is the number of transformer layers, $n_{\text{kv}}$ is the number of key-value attention heads, $d_{\text{head}}$ is head dimension, $S$ is sequence length, and $b_{\text{kv}}$ is KV-cache precision. This formula explains why a 3.8B model in FP16 (~7.6 GB weights alone) struggles on an 8 GB laptop, whereas INT4 quantization (~1.9 GB weights) leaves ample headroom for a 4K context window.
+
+---
+
+## Open the Companion Colab Notebook
+
+Launch the companion notebook to inspect your Colab CPU/T4 GPU hardware, verify your `GEMINI_API_KEY` setup (with automatic offline fallback), and inspect available `onnxruntime` execution providers.
+
+<ColabButton
+  course="edge-ai-for-beginners"
+  notebook="03-edge-ai-development-stack-colab-and-gemini-setup.ipynb"
+  runtime="Colab Free T4 GPU"
+/>
+
+---
+
+## Try It Yourself: Edge Memory & Device Fit Profiler
+
+Run this pure-Python memory profiler in your browser to determine which SLM configurations fit within an 8 GB edge laptop, a 4 GB mobile device, and a 15 GB Colab Free T4 GPU.
+
+<PythonRunner
+  client:visible
+  title="Try it Yourself: SLM Memory Budget & Device Fit Profiler"
+  expectedOutput="Qwen2.5-0.5B (INT4)    | Total=0.53 GB | Mobile 4GB=FIT | Laptop 8GB=FIT | Colab T4 15GB=FIT
+Gemma-3n-E2B (INT4)    | Total=1.65 GB | Mobile 4GB=FIT | Laptop 8GB=FIT | Colab T4 15GB=FIT
+Phi-4-mini-3.8B (INT4) | Total=2.52 GB | Mobile 4GB=FIT | Laptop 8GB=FIT | Colab T4 15GB=FIT
+Phi-4-mini-3.8B (FP16) | Total=7.83 GB | Mobile 4GB=OOM | Laptop 8GB=OOM | Colab T4 15GB=FIT"
+  initialCode={`def memory_gb(params_b, w_bits, layers, kv_heads, head_dim, seq_len=4096, kv_bits=16):
+    w_bytes = params_b * 1e9 * (w_bits / 8.0)
+    kv_bytes = 2 * layers * kv_heads * head_dim * seq_len * (kv_bits / 8.0)
+    overhead = 0.25 * (1024 ** 3)  # runtime & activation buffer
+    return (w_bytes + kv_bytes + overhead) / (1024 ** 3)
+
+models = [
+    ("Qwen2.5-0.5B (INT4)",    0.5,  4, 24, 2, 64),
+    ("Gemma-3n-E2B (INT4)",    2.0,  4, 30, 4, 256),
+    ("Phi-4-mini-3.8B (INT4)", 3.8,  4, 32, 8, 128),
+    ("Phi-4-mini-3.8B (FP16)", 3.8, 16, 32, 8, 128),
+]
+
+for name, p, wb, l, kvh, hd in models:
+    mem = memory_gb(p, wb, l, kvh, hd)
+    m4 = "FIT" if mem <= 3.2 else "OOM"
+    l8 = "FIT" if mem <= 7.6 else "OOM"
+    t15 = "FIT" if mem <= 14.5 else "OOM"
+    print(f"{name:22s} | Total={mem:.2f} GB | Mobile 4GB={m4} | Laptop 8GB={l8} | Colab T4 15GB={t15}")`}
+/>
+
+---
+
+## Check Your Understanding
+
+<QuizCard
+  client:visible
+  question="You want to run Phi-4-mini (3.8B parameters) on a laptop with 8 GB of shared RAM while keeping room for the OS and a 4,096-token context window. What is the most effective change?"
+  options={[
+    "Keep the model in FP32 precision and reduce the OS pagefile.",
+    "Quantize the weights to INT4 (~1.9 GB) so weights, KV cache, and runtime buffers stay well below the 8 GB ceiling.",
+    "Increase the KV cache precision from FP16 to FP64.",
+    "Double the number of attention heads in the model configuration."
+  ]}
+  correctAnswer={1}
+  explanation="FP16 weights for a 3.8B model consume ~7.1 GB before KV cache or OS overhead. Quantizing weights to INT4 cuts weight memory by 4x (~1.8-1.9 GB), leaving ample headroom for the KV cache and applications."
+/>

@@ -1,0 +1,109 @@
+---
+title: "Edge Deployment Hardware Platforms: NPUs, Mobile SoCs & Embedded Accelerators"
+track: "edge-ai-for-beginners"
+category: "Module 1: Edge AI Foundations, Case Studies & Hardware Platforms"
+order: 4
+difficulty: "intermediate"
+xp: 60
+description: "Compare edge AI silicon across Intel NUC/Movidius VPU, Qualcomm Hexagon NPU, NVIDIA Jetson Orin Nano, and Copilot+ AI PCs using roofline performance modeling."
+topic: "Edge AI Hardware"
+prerequisites: ["edge-ai-for-beginners/03-edge-ai-development-stack-colab-and-gemini-setup"]
+---
+import PythonRunner from '../../../components/islands/PythonRunner';
+import QuizCard from '../../../components/islands/QuizCard';
+
+You may know that an AI model optimized for a cloud H100 can crawl on a Raspberry Pi or drain a phone battery in twenty minutes. Edge AI performance is fundamentally hardware-bound: choosing between a CPU, GPU, VPU, or Neural Processing Unit (NPU) determines your latency, thermal envelope, and runtime execution provider.
+
+Here is an overview of the major edge hardware platforms and how to use the **Roofline Model** to predict whether your workload is limited by compute (TOPS) or memory bandwidth (GB/s).
+
+---
+
+## Edge Silicon Taxonomy
+
+Different edge deployments demand completely different silicon trade-offs:
+
+| Platform | Compute & Architecture | Power Envelope | Best-Fit Runtime | Primary Edge Use Cases |
+| :--- | :--- | :--- | :--- | :--- |
+| **NVIDIA Jetson Orin Nano** | 1024 CUDA cores, 32 Tensor Cores, 6-core Arm CPU (**67 TOPS**) | 7 W to 15 W | TensorRT / CUDA / ONNX Runtime | Robotics, autonomous drones, local GenAI & vision-language |
+| **Qualcomm Hexagon NPU** | Heterogeneous Hexagon NPU + Adreno GPU + Kryo CPU | 2 W to 8 W | Qualcomm QNN / ONNX Runtime QNN EP | Smartphones, AR/VR, battery-powered mobile SLMs |
+| **Intel NUC & Movidius VPU** | Core i5/i7 + Iris Xe / Myriad X VPU | 1 W to 3 W (VPU), 15–45 W (NUC) | Intel OpenVINO Toolkit | Smart cameras, industrial vision, retail gateways |
+| **AI PC NPUs (x64 / ARM64)** | Dedicated 40+ TOPS NPU + integrated GPU | 1.5 W to 15 W | DirectML / ONNX Runtime / OpenVINO | Desktop copilots, offline RAG, local coding assistants |
+
+Notice the **NVIDIA Jetson Orin Nano**: priced around \$249, its 67 INT8 TOPS (a 1.7x leap over the previous generation) make it a workhorse for embedded generative AI, while **Intel Movidius VPUs** sip just 1 to 3 watts for dedicated computer vision pipelines. On mobile and Windows AI PCs, dedicated **NPUs** offload matrix multiplications from the CPU so laptops stay cool and silent.
+
+---
+
+## Prefill vs. Decode on the Roofline Model
+
+In LLM/SLM inference, **prompt prefill** (processing 512+ input tokens in parallel) and **token decode** (generating 1 token at a time) hit completely different hardware bottlenecks.
+
+The **Roofline Model** defines **Arithmetic Intensity** $I$ (FLOPs per byte moved from DRAM) and attainable performance:
+
+$$
+I = \frac{\text{Total FLOPs}}{\text{Bytes Transferred}}, \qquad \text{Attainable Perf} = \min\!\big(\text{Peak Compute},\; I \times \text{Memory Bandwidth}\big)
+$$
+
+During **prefill**, high batch/sequence parallelism yields high arithmetic intensity ($I \gg I_{\text{ridge}}$), making prefill **compute-bound** (governed by TOPS). During **autoregressive decode**, each generated token reads the entire model weight matrix once for a single vector-matrix multiply ($I \approx 1\text{–}2\text{ FLOP/byte}$), making decode strictly **memory-bandwidth-bound** (governed by GB/s). That is why INT4 quantization accelerates token generation almost linearly: cutting weight bytes by 4x reduces DRAM traffic by 4x!
+
+---
+
+## Try It Yourself: Edge Hardware Roofline Profiler
+
+Run this Python roofline analyzer to compare prefill (compute-bound) vs. decode (memory-bandwidth-bound) bottlenecks on a Jetson Orin Nano, a Mobile Hexagon NPU, and an Edge CPU.
+
+<PythonRunner
+  client:visible
+  title="Try it Yourself: Edge Roofline & Prefill vs. Decode Profiler"
+  expectedOutput="Device: NVIDIA Jetson Orin Nano  | Ridge=985.3 FLOP/B | Prefill=67000.0 GFLOP/s (Compute-Bound) | Decode=136.0 GFLOP/s (Memory-Bound)
+Device: Mobile Hexagon NPU       | Ridge=762.7 FLOP/B | Prefill=45000.0 GFLOP/s (Compute-Bound) | Decode=118.0 GFLOP/s (Memory-Bound)
+Device: Embedded Arm CPU         | Ridge=64.0 FLOP/B | Prefill=1600.0 GFLOP/s (Compute-Bound) | Decode=50.0 GFLOP/s (Memory-Bound)"
+  initialCode={`from dataclasses import dataclass
+
+@dataclass
+class EdgeDevice:
+    name: str
+    peak_gflops: float   # INT8/FP16 effective GFLOP/s
+    mem_bw_gbs: float    # DRAM bandwidth in GB/s
+
+devices = [
+    EdgeDevice("NVIDIA Jetson Orin Nano", 67000.0, 68.0),
+    EdgeDevice("Mobile Hexagon NPU", 45000.0, 59.0),
+    EdgeDevice("Embedded Arm CPU", 1600.0, 25.0),
+]
+
+prefill_intensity = 1024.0  # FLOP/byte (batched prompt tokens)
+decode_intensity = 2.0      # FLOP/byte (single-token matvec)
+
+def eval_roofline(dev, intensity):
+    mem_cap = intensity * dev.mem_bw_gbs
+    if mem_cap < dev.peak_gflops:
+        return mem_cap, "Memory-Bound"
+    return dev.peak_gflops, "Compute-Bound"
+
+for d in devices:
+    ridge = d.peak_gflops / d.mem_bw_gbs
+    p_perf, p_regime = eval_roofline(d, prefill_intensity)
+    d_perf, d_regime = eval_roofline(d, decode_intensity)
+    print(
+        f"Device: {d.name:24s} | Ridge={ridge:.1f} FLOP/B | "
+        f"Prefill={p_perf:.1f} GFLOP/s ({p_regime}) | "
+        f"Decode={d_perf:.1f} GFLOP/s ({d_regime})"
+    )`}
+/>
+
+---
+
+## Check Your Understanding
+
+<QuizCard
+  client:visible
+  question="During autoregressive token generation (batch size = 1), why does INT4 quantization speed up tokens-per-second far more than upgrading CPU clock speed alone?"
+  options={[
+    "Because single-token decoding has very low arithmetic intensity and is memory-bandwidth-bound, so shrinking weight size by 4x cuts DRAM reads by 4x.",
+    "Because INT4 weights skip the attention mechanism completely.",
+    "Because CPUs cannot execute floating-point addition.",
+    "Because INT4 weights automatically double DRAM bandwidth."
+  ]}
+  correctAnswer={0}
+  explanation="Single-token decode reads all model weights from memory for just one token's matrix-vector product (low arithmetic intensity). Quantizing from FP16 to INT4 cuts the bytes transferred per token by 4x, directly relieving the memory bandwidth bottleneck."
+/>

@@ -1,0 +1,100 @@
+---
+title: "The Gemma SLM Family: MatFormer, Per-Layer Embeddings (PLE) & Mobile Multimodal AI"
+track: "edge-ai-for-beginners"
+category: "Module 2: Small Language Model (SLM) Families & Architectures"
+order: 7
+difficulty: "intermediate"
+xp: 65
+description: "Master Google's Gemma 3 and mobile-first Gemma 3n architectures, MatFormer nested sub-networks, Per-Layer Embeddings (PLE), and 5:1 sliding-window attention."
+topic: "Gemma SLM Family"
+prerequisites: ["edge-ai-for-beginners/06-qwen-model-family-multilingual-and-thinking-modes"]
+---
+import PythonRunner from '../../../components/islands/PythonRunner';
+import QuizCard from '../../../components/islands/QuizCard';
+import ColabButton from '../../../components/static/ColabButton.astro';
+
+You may know that fitting a capable multimodal model into 2 GB of mobile RAM sounds contradictory: vision encoders, large vocabularies, and 128K context windows all fight for the same limited accelerator SRAM. Google's **Gemma 3** and mobile-first **Gemma 3n** families solve this tension with two architectural breakthroughs: **MatFormer** (Matryoshka Transformer) nested sub-networks and **Per-Layer Embeddings (PLE)**.
+
+Here is an overview of how Gemma scales from 1B text models to 27B single-GPU models and 2–3 GB mobile multimodal assistants.
+
+---
+
+## Gemma 3 & Gemma 3n Architectural Innovations
+
+Derived from Gemini research (using distillation, RLHF, RLMF for math, and RLEF for code execution feedback), Gemma introduces three edge-critical features:
+
+1. **128K Context with 5:1 Local-to-Global Attention**: Instead of running full quadratic global attention at every layer, Gemma 3 interleaves 5 local sliding-window attention layers (1,024-token span) for every 1 global attention layer, dramatically shrinking KV-cache memory at long contexts.
+2. **MatFormer (Matryoshka Transformer)**: Like nested Russian dolls, a smaller sub-network (such as **E2B** with 2B effective parameters) sits cleanly inside a larger parent network (**E4B** with 4B effective parameters). Developers can slice an intermediate FFN width $\alpha_{\text{sub}} \in (0, 1]$ without retraining:
+   $$
+   P_{\text{effective}} = P_{\text{backbone}} + \alpha_{\text{sub}} \, P_{\text{FFN}}
+   $$
+3. **Per-Layer Embeddings (PLE)**: Standard transformer embedding tables sit in precious GPU/NPU memory. PLE moves per-layer token-level conditioning tables into fast CPU DRAM/flash storage, reducing accelerator SRAM consumption by:
+   $$
+   \Delta M_{\text{SRAM}} = L \cdot V \cdot d_{\text{ple}} \cdot \frac{b}{8}
+   $$
+   This allows Gemma 3n E2B and E4B to run with **2 GB to 3 GB** active accelerator footprints while supporting interleaved text, vision, and automatic speech recognition/translation (ASR/AST).
+
+| Gemma Variant | Effective Footprint | Context Window | Modalities | Best Edge Target |
+| :--- | :--- | :--- | :--- | :--- |
+| **Gemma 3 1B** | ~0.7 GB (INT4) | 32K | Text | Ultra-lightweight CPU / mobile text tasks |
+| **Gemma 3 4B / 12B / 27B** | 2.5–16 GB (INT4) | 128K | Text + Vision | Laptops, edge workstations, single-GPU servers |
+| **Gemma 3n E2B / E4B** | **2 GB / 3 GB** active | 32K | Text + Vision + Audio | Smartphones, tablets, mobile NPUs |
+
+---
+
+## Open the Companion Colab Notebook
+
+Launch the companion notebook to calculate 5:1 sliding-window KV-cache savings and run mobile-scale generation on Google Colab.
+
+<ColabButton
+  course="edge-ai-for-beginners"
+  notebook="07-gemma-model-family-matformer-ple-and-multimodal-edge.ipynb"
+  runtime="Colab Free T4 GPU"
+/>
+
+---
+
+## Try It Yourself: MatFormer Slicing & 5:1 Sliding-Window KV Simulator
+
+Run this pure-Python simulator to measure how Gemma 3's 5:1 local-to-global attention ratio compresses KV-cache memory at 32K and 128K tokens, and how MatFormer slicing scales active FFN parameters.
+
+<PythonRunner
+  client:visible
+  title="Try it Yourself: Gemma 3n MatFormer & 5:1 Sliding-Window Simulator"
+  expectedOutput="Context=32768 | Full Global KV=100.0% | Gemma 5:1 Hybrid KV=19.3%
+Context=131072 | Full Global KV=100.0% | Gemma 5:1 Hybrid KV=17.3%
+MatFormer E4B (alpha=1.00): 4.00B active | MatFormer E2B (alpha=0.35): 2.05B active"
+  initialCode={`def hybrid_kv_pct(num_layers, ctx_len, window=1024):
+    global_layers = num_layers // 6
+    local_layers = num_layers - global_layers
+    full_tokens = num_layers * ctx_len
+    hybrid_tokens = global_layers * ctx_len + local_layers * min(ctx_len, window)
+    return (hybrid_tokens / full_tokens) * 100.0
+
+for ctx in (32768, 131072):
+    pct = hybrid_kv_pct(30, ctx)
+    print(f"Context={ctx} | Full Global KV=100.0% | Gemma 5:1 Hybrid KV={pct:.1f}%")
+
+backbone_b = 1.0
+ffn_b = 3.0
+e4b = backbone_b + 1.0 * ffn_b
+e2b = backbone_b + 0.35 * ffn_b
+print(f"MatFormer E4B (alpha=1.00): {e4b:.2f}B active | MatFormer E2B (alpha=0.35): {e2b:.2f}B active")`}
+/>
+
+---
+
+## Check Your Understanding
+
+<QuizCard
+  client:visible
+  question="How do Per-Layer Embeddings (PLE) allow Gemma 3n E2B/E4B to run with only 2-3 GB of active accelerator memory?"
+  options={[
+    "They delete the tokenizer vocabulary completely.",
+    "They offload per-layer embedding lookups to CPU RAM/storage so only core backbone weights and active activations occupy scarce GPU/NPU SRAM.",
+    "They restrict the context window to 128 tokens.",
+    "They replace transformer layers with linear regression."
+  ]}
+  correctAnswer={1}
+  explanation="PLE keeps high-capacity per-layer token embeddings in host CPU memory rather than accelerator SRAM, enabling a 5B-8B total parameter model to run inside a 2-3 GB mobile accelerator footprint."
+/>

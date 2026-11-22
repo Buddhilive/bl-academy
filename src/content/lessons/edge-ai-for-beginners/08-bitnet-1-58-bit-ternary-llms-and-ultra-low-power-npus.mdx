@@ -1,0 +1,121 @@
+---
+title: "BitNet b1.58 & NPU Micro-Models: Ternary Weights, Mu Architecture & Hardware Co-Design"
+track: "edge-ai-for-beginners"
+category: "Module 2: Small Language Model (SLM) Families & Architectures"
+order: 8
+difficulty: "advanced"
+xp: 70
+description: "Understand 1.58-bit ternary BitNet LLMs ({-1, 0, +1}), BitLinear absmean/absmax quantization, bitnet.cpp speedups, and NPU co-designed Mu and Phi-Silica models."
+topic: "1-Bit & NPU Micro-Models"
+prerequisites: ["edge-ai-for-beginners/07-gemma-model-family-matformer-ple-and-multimodal-edge"]
+---
+import PythonRunner from '../../../components/islands/PythonRunner';
+import QuizCard from '../../../components/islands/QuizCard';
+
+You may know that post-training quantization below 4 bits usually causes steep perplexity collapse. **BitNet b1.58** flips that script by training the model from scratch with **ternary weights** constrained to $\{-1, 0, +1\}$ (which carries $\log_2 3 \approx 1.585$ bits of information per weight). When every weight is $-1$, $0$, or $+1$, expensive floating-point matrix multiplications vanish and are replaced by pure integer additions and subtractions.
+
+Here is an overview of how `BitLinear` layers work mathematically, why `bitnet.cpp` achieves 1.37x to 6.17x CPU speedups, and how NPU co-designed micro-models push edge efficiency even further.
+
+---
+
+## Inside BitNet b1.58 & `BitLinear`
+
+Unlike standard post-training quantization, **BitNet b1.58** (`BitNet-b1.58-2B4T`, trained on 4 trillion tokens) replaces `nn.Linear` with `BitLinear` and uses `RMSNorm`, squared ReLU ($\text{ReLU}^2$), Rotary Position Embeddings (RoPE), and zero bias terms.
+
+During the forward pass, weights $W \in \mathbb{R}^{n \times m}$ are quantized using **absmean scaling**:
+
+$$
+\gamma = \frac{1}{nm} \sum_{i,j} |W_{ij}|, \qquad \tilde{W} = \text{RoundClip}\!\left(\frac{W}{\gamma + \epsilon},\; -1,\; 1\right)
+$$
+
+Activations $x$ are simultaneously quantized per-token to 8-bit integers ($Q_b = 127$) using **absmax scaling**:
+
+$$
+\tilde{x} = \text{Clip}\!\left(x \cdot \frac{Q_b}{\|x\|_\infty + \epsilon},\; -Q_b,\; Q_b\right)
+$$
+
+Because $\tilde{W}_{ij} \in \{-1, 0, +1\}$, computing $\tilde{W}\tilde{x}$ requires **zero floating-point multiplications**, cutting arithmetic energy by **55 to 82 percent** and shrinking a 2B model from 4.0 GB (FP16) down to **0.4 GB**!
+
+| Architecture | Precision | 2B Model Memory | CPU Speedup (`bitnet.cpp`) | Core Arithmetic Operation |
+| :--- | :--- | :--- | :--- | :--- |
+| **FP16 Baseline** | 16-bit float | ~4.0 GB | 1.0x (baseline) | FP16 Multiply-Accumulate (MAC) |
+| **INT4 Post-Training** | 4-bit integer | ~1.1 GB | 1.5x–2.2x | Dequantize + INT4/FP16 MAC |
+| **BitNet b1.58** | **1.58-bit ternary** | **~0.4 GB** | **1.37x–5.07x (ARM), 2.37x–6.17x (x86)** | **Lookup-Table (LUT) Addition Only** |
+| **Phi-Silica (NPU)** | 4-bit QuaRot | ~1.9 GB (3.8B) | **650 tok/s @ 1.5 W** (NPU) | Dedicated NPU Tensor Systolic Array |
+
+---
+
+## Try It Yourself: `BitLinear` Ternary Forward Pass in Pure Python
+
+Run this pure-Python `BitLinear` implementation to quantize an FP32 weight matrix to $\{-1, 0, +1\}$, quantize activations to INT8, and verify that ternary addition-only accumulation closely tracks the full-precision dot product.
+
+<PythonRunner
+  client:visible
+  title="Try it Yourself: BitLinear Absmean/Absmax Ternary Forward Pass"
+  expectedOutput="Quantized Ternary Weights (W_tilde):
+  [1, 0, -1, 1]
+  [-1, 1, 0, -1]
+FP32 Output:    [1.7690, -2.3500]
+BitLinear Out:  [1.1552, -1.8871]
+BitNet 2B Memory: 0.40 GB vs FP16: 4.00 GB (90.0% reduction)"
+  initialCode={`def round_clip(val, low, high):
+    return max(low, min(high, round(val)))
+
+def bitlinear_forward(x, W):
+    eps = 1e-6
+    # 1. Absmean ternary weight quantization {-1, 0, +1}
+    flat = [abs(v) for row in W for v in row]
+    gamma = sum(flat) / len(flat)
+    W_tilde = [[round_clip(v / (gamma + eps), -1, 1) for v in row] for row in W]
+
+    # 2. Absmax 8-bit activation quantization
+    x_max = max(abs(v) for v in x)
+    qb = 127.0
+    x_tilde = [round_clip(v * qb / (x_max + eps), -127, 127) for v in x]
+
+    # 3. Addition-only ternary matmul + dequantization scale
+    scale = (gamma * x_max) / qb
+    out = []
+    for row in W_tilde:
+        acc = 0
+        for w_q, a_q in zip(row, x_tilde):
+            if w_q == 1:
+                acc += a_q
+            elif w_q == -1:
+                acc -= a_q
+        out.append(acc * scale)
+    return W_tilde, out
+
+x = [1.2, -0.4, 0.8, 1.5]
+W = [
+    [0.85,  0.10, -0.72,  0.91],
+    [-0.80, 0.65,  0.05, -0.78],
+]
+
+fp32_out = [sum(a * b for a, b in zip(x, row)) for row in W]
+W_tilde, bit_out = bitlinear_forward(x, W)
+
+print("Quantized Ternary Weights (W_tilde):")
+for row in W_tilde:
+    print(f"  {row}")
+print(f"FP32 Output:    [{fp32_out[0]:.4f}, {fp32_out[1]:.4f}]")
+print(f"BitLinear Out:  [{bit_out[0]:.4f}, {bit_out[1]:.4f}]")
+print("BitNet 2B Memory: 0.40 GB vs FP16: 4.00 GB (90.0% reduction)")`}
+/>
+
+---
+
+## Check Your Understanding
+
+<QuizCard
+  client:visible
+  question="Why does BitNet b1.58 achieve 55-82% energy reduction compared to FP16 inference?"
+  options={[
+    "Because ternary weights {-1, 0, +1} eliminate floating-point multiplications and replace them with simple integer additions, subtractions, and zero-skips.",
+    "Because BitNet models never use activation functions.",
+    "Because BitNet runs exclusively in the cloud.",
+    "Because BitNet doubles the bit-width of every bias term."
+  ]}
+  correctAnswer={0}
+  explanation="Multiplying by -1, 0, or +1 reduces matrix multiplication to sign flips and additions, eliminating energy-hungry floating-point multipliers and slashing memory bandwidth by ~90%."
+/>
