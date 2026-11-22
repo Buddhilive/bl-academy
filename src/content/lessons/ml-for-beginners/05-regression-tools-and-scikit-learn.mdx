@@ -1,0 +1,114 @@
+---
+title: "Getting Started with Python & Scikit-Learn for Regression (Diabetes Dataset)"
+track: "ml-for-beginners"
+category: "Module 2: Regression Models & Web App Deployment"
+order: 5
+difficulty: "beginner"
+xp: 70
+description: "Set up Scikit-Learn for regression, slice and reshape 2D feature matrices on the 442-sample Diabetes dataset, and train your first LinearRegression estimator."
+topic: "Regression Tools"
+prerequisites: ["ml-for-beginners/04-techniques-of-machine-learning"]
+---
+import PythonRunner from '../../../components/islands/PythonRunner';
+import QuizCard from '../../../components/islands/QuizCard';
+import ColabButton from '../../../components/static/ColabButton.astro';
+
+When you want to predict a **continuous numeric value**—such as probable height from age, housing price from square footage, or disease progression from body mass index—you reach for **linear regression**. When you want to assign a category instead, you reach for classification or logistic regression. In this lesson, we wire up **Scikit-Learn** (`sklearn`) and train our very first regression model on the classic 442-patient **Diabetes Dataset**.
+
+---
+
+## The Scikit-Learn Estimator API
+
+Scikit-Learn gives you a remarkably consistent API across dozens of classical ML algorithms. Every supervised workflow boils down to three core methods:
+
+| Method / Module | Purpose | Example Call |
+| :--- | :--- | :--- |
+| `datasets.load_diabetes(return_X_y=True)` | Loads 442 samples with 10 normalized clinical features | `X, y = datasets.load_diabetes(return_X_y=True)` |
+| `model_selection.train_test_split(...)` | Splits features and targets into train/test folds | `train_test_split(X, y, test_size=0.33)` |
+| `linear_model.LinearRegression()` | Instantiates an Ordinary Least Squares regressor | `model = linear_model.LinearRegression()` |
+| `model.fit(X_train, y_train)` | Fits slope coefficients and intercept on training data | `model.fit(X_train, y_train)` |
+| `model.predict(X_test)` | Generates numeric predictions for unseen test samples | `y_pred = model.predict(X_test)` |
+
+---
+
+## Understanding the Diabetes Dataset & 2D Reshaping
+
+The built-in Diabetes dataset contains **442 patient records** and **10 standardized baseline features**: `age`, `sex`, `bmi` (body mass index), `bp` (average blood pressure), and six blood serum measurements (`s1`–`s6`). The target $y$ is a quantitative measure of disease progression one year after baseline.
+
+*Ethical Note*: Like many legacy medical datasets, `sex` is encoded as a binary numeric variable. Whenever you work with clinical features, always question how binary categorizations might exclude or misrepresent parts of a patient population.
+
+To train a single-feature regression model on `bmi` (column index `2`), we slice all rows with `:` and reshape the 1D vector into a **2D matrix** of shape $(N, 1)$ because Scikit-Learn estimators always expect a 2D feature matrix:
+
+```python
+X, y = datasets.load_diabetes(return_X_y=True)
+X = X[:, 2].reshape((-1, 1))
+X_train, X_test, y_train, y_test = model_selection.train_test_split(X, y, test_size=0.33)
+model = linear_model.LinearRegression()
+model.fit(X_train, y_train)
+y_pred = model.predict(X_test)
+```
+
+Passing `-1` to `reshape((-1, 1))` tells NumPy to calculate the row count automatically while fixing the column count to `1`.
+
+<ColabButton
+  course="ml-for-beginners"
+  notebook="05-regression-tools-and-scikit-learn.ipynb"
+  runtime="Free Tier CPU"
+/>
+
+---
+
+## Try It Yourself: Diabetes BMI Linear Regression
+
+Let's run the exact 2D reshape, 67/33 train-test split, and Ordinary Least Squares fit on normalized Diabetes BMI samples right in your browser.
+
+<PythonRunner
+  client:visible
+  title="Try it Yourself: Scikit-Learn Style BMI Regression"
+  expectedOutput="Matrix shape: (12, 1) -> Train: 8, Test: 4
+Fitted Line: y = 940.59 * bmi + 150.89
+Test Predictions: [180.1, 121.7, 208.3, 93.5]
+Actual Targets:   [182.0, 125.0, 210.0, 95.0]"
+  initialCode={`# Representative normalized BMI (X[:, 2]) and 1-year disease progression (y)
+bmi_values = [-0.061, -0.045, -0.031, -0.015, 0.002, 0.018, 0.031, 0.045, 0.061, 0.075, -0.052, 0.025]
+targets    = [95.0,   108.0,  125.0,  138.0,  152.0, 168.0, 182.0, 194.0, 210.0, 221.0, 102.0,  174.0]
+
+# Reshape 1D list into 2D matrix (N, 1)
+X = [[v] for v in bmi_values]
+# Deterministic 67/33 split (8 train, 4 test)
+test_idx = {6, 2, 8, 0}
+X_train = [X[i][0] for i in range(len(X)) if i not in test_idx]
+y_train = [targets[i] for i in range(len(X)) if i not in test_idx]
+X_test  = [X[i][0] for i in [6, 2, 8, 0]]
+y_test  = [targets[i] for i in [6, 2, 8, 0]]
+
+print(f"Matrix shape: ({len(X)}, 1) -> Train: {len(X_train)}, Test: {len(X_test)}")
+
+# Ordinary Least Squares fit
+mean_x = sum(X_train) / len(X_train)
+mean_y = sum(y_train) / len(y_train)
+slope = sum((x - mean_x) * (y - mean_y) for x, y in zip(X_train, y_train)) / sum((x - mean_x) ** 2 for x in X_train)
+intercept = mean_y - slope * mean_x
+
+print(f"Fitted Line: y = {slope:.2f} * bmi + {intercept:.2f}")
+preds = [round(slope * x + intercept, 1) for x in X_test]
+print(f"Test Predictions: {preds}")
+print(f"Actual Targets:   {y_test}")`}
+/>
+
+---
+
+## Check Your Understanding
+
+<QuizCard
+  client:visible
+  question="Why do we call X = X[:, 2].reshape((-1, 1)) before passing a single feature column to Scikit-Learn's LinearRegression().fit(X_train, y_train)?"
+  options={[
+    "To normalize all values between 0 and 1.",
+    "Scikit-Learn estimators require a 2D feature matrix (N rows by M columns), whereas slicing a single column produces a 1D array.",
+    "To remove missing NaN values automatically.",
+    "Because Matplotlib only plots 3D arrays."
+  ]}
+  correctAnswer={1}
+  explanation="Slicing X[:, 2] yields a 1D vector of shape (442,). Reshaping with (-1, 1) converts it into a 2D column matrix of shape (442, 1), which Scikit-Learn requires for feature inputs."
+/>

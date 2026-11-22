@@ -1,0 +1,89 @@
+---
+title: "Classical Machine Learning in the Real World: Finance, Healthcare, Ecology, Retail & Arts"
+track: "ml-for-beginners"
+category: "Module 5: Reinforcement Learning & Real-World ML"
+order: 26
+difficulty: "intermediate"
+xp: 75
+description: "Survey how classical machine learning powers production systems across Finance, Education, Retail, Healthcare, Ecology, Insurance, Arts/Culture, and Marketing."
+topic: "Real-World ML Applications"
+prerequisites: ["ml-for-beginners/25-reinforcement-learning-cartpole-gym"]
+---
+import PythonRunner from '../../../components/islands/PythonRunner';
+import QuizCard from '../../../components/islands/QuizCard';
+import ColabButton from '../../../components/static/ColabButton.astro';
+
+Deep learning grabs the headlines, yet **classical machine learning** quietly runs thousands of high-impact production pipelines every day. Why? Because on structured tabular data, time series, and resource-constrained sensors, Scikit-Learn models train in seconds, stay interpretable for regulators, and deliver reliable ROI. Here is how eight distinct industries apply the exact techniques you built in this course.
+
+---
+
+## Eight Industries Powered by Classical ML
+
+| Industry Sector | Classical ML Technique Used | Real-World Production Problem Solved |
+| :--- | :--- | :--- |
+| **1. Finance** | K-Means Outlier Detection & Multiple Linear Regression | Flagging anomalous credit card fraud; benchmarking investment fund returns |
+| **2. Education** | Controlled Regression & NLP Debiasing | Quantifying NPS impact on Coursera retention; mitigating gender bias in Grammarly |
+| **3. Retail** | NLP Entity/Sentiment Tagging & Genetic Algorithms | Wayfair's Query Intent Engine; StitchFix apparel styling & inventory optimization |
+| **4. Healthcare** | Random Forest, K-Means Clustering & ARIMA/SARIMA | Predicting drug trial toxicity; grouping hospital readmissions; epidemic spread |
+| **5. Ecology & Green Tech** | Inverted RL (MDP), ROC Classifiers & Smart-Meter Time Series | Modeling Canadian wildfire spread; tracking farm sheep posture; Irish energy grids |
+| **6. Insurance** | Binary/Ordinal Classification & Volatility Forecasting | MetLife financial risk ranking and actuarial volatility mitigation |
+| **7. Arts & Journalism** | Multi-Classifier Ensembles (NB, SVM, RF, LR) & Regression | Fake news detection; Art Institute of Chicago predicting attendance within 1% |
+| **8. Marketing** | Unsupervised Clustering | Customer segmentation for differentiated marketing campaigns |
+
+Notice how often **hybrid pipelines** win in practice—such as Ireland's smart-metering grid combining clustering, regression, and time-series forecasting, or fake news detectors combining NLP feature extraction with Naive Bayes, SVM, and Random Forest voting. Similarly, in healthcare, teams pair Random Forest classifiers for clinical trial toxicity screening with K-Means clustering to group hospital readmissions that share root causes. Across every sector, classical ML remains the fastest, most auditable way to turn domain data into measurable decisions without requiring expensive GPU clusters or massive labeled datasets.
+
+<ColabButton
+  course="ml-for-beginners"
+  notebook="26-real-world-ml-applications.ipynb"
+  runtime="Free Tier CPU"
+/>
+
+---
+
+## Try It Yourself: Multi-Industry Classical ML Workbench
+
+Let's run two real-world classical ML detectors in pure Python: a **Finance K-Means credit-card outlier fraud detector** and an **Education controlled regression** slope estimator.
+
+<PythonRunner
+  client:visible
+  title="Try it Yourself: Finance Fraud Outlier & Education Retention"
+  expectedOutput="Normal Transaction Cluster Center: ($45.00, 12.0 km)
+Tx #4 ($1250.00, 820.0 km) -> Distance: 1450.82 => FLAG: FRAUD OUTLIER!
+Education Regression: +1 NPS point -> +2.50% Course Retention"
+  initialCode={`import math
+
+# 1. Finance: Credit Card Fraud Outlier Detection via distance from normal cluster centroid
+normal_txs = [(38.0, 10.0), (52.0, 14.0), (41.0, 11.0), (49.0, 13.0)]
+cx = sum(x for x, _ in normal_txs) / len(normal_txs)
+cy = sum(y for _, y in normal_txs) / len(normal_txs)
+print("Normal Transaction Cluster Center: ($" + f"{cx:.2f}, {cy:.1f} km)")
+
+test_tx = (1250.0, 820.0)
+dist = math.sqrt((test_tx[0] - cx) ** 2 + (test_tx[1] - cy) ** 2)
+status = "FLAG: FRAUD OUTLIER!" if dist > 200 else "NORMAL"
+print("Tx #4 ($" + f"{test_tx[0]:.2f}, {test_tx[1]:.1f} km) -> Distance: {dist:.2f} => {status}")
+
+# 2. Education: Controlled OLS Regression (NPS Score vs. Course Retention %)
+nps = [2, 4, 6, 8, 10]
+retention = [60.0, 65.0, 70.0, 75.0, 80.0]
+mx, my = sum(nps) / len(nps), sum(retention) / len(retention)
+slope = sum((x - mx) * (y - my) for x, y in zip(nps, retention)) / sum((x - mx) ** 2 for x in nps)
+print(f"Education Regression: +1 NPS point -> +{slope:.2f}% Course Retention")`}
+/>
+
+---
+
+## Check Your Understanding
+
+<QuizCard
+  client:visible
+  question="How do Canadian wildfire researchers invert standard Reinforcement Learning to model forest fire spread?"
+  options={[
+    "They train a deep neural network on credit card transactions.",
+    "They treat the wildfire itself as the agent in a Markov Decision Process choosing spread directions (N, S, E, W, or stop) across landscape cells.",
+    "They use K-Means to delete satellite pixels.",
+    "They apply TextBlob sentiment analysis to weather reports."
+  ]}
+  correctAnswer={1}
+  explanation="By modeling the fire at each landscape cell as an RL agent with known local MDP transition dynamics, researchers simulate and predict wildfire propagation across satellite grids."
+/>

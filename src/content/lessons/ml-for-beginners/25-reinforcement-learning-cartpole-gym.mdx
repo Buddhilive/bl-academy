@@ -1,0 +1,129 @@
+---
+title: "Reinforcement Learning with Gymnasium: State Discretization & CartPole Balancing"
+track: "ml-for-beginners"
+category: "Module 5: Reinforcement Learning & Real-World ML"
+order: 25
+difficulty: "advanced"
+xp: 90
+description: "Scale Q-Learning to continuous state spaces using Gymnasium CartPole-v1, state discretization via scaling and np.digitize bins, sparse dictionary Q-Tables, and Qbest."
+topic: "Gymnasium CartPole"
+prerequisites: ["ml-for-beginners/24-reinforcement-learning-and-q-learning"]
+---
+import PythonRunner from '../../../components/islands/PythonRunner';
+import QuizCard from '../../../components/islands/QuizCard';
+import ColabButton from '../../../components/static/ColabButton.astro';
+
+Peter's $8 \times 8$ grid board had only $64$ discrete states, so a NumPy array held every Q-value easily. Real physical control tasks—like balancing a pole on a moving skateboard so Peter can outrun the wolf—have **continuous** real-valued states. Using open-source **Gymnasium** (`import gymnasium as gym`, the maintained successor to `gym`), we can discretize **CartPole-v1** observations into a sparse dictionary Q-Table and solve the balancing task.
+
+---
+
+## CartPole-v1 Observation Space & State Discretization
+
+Every step in `CartPole-v1` returns a 4D continuous observation vector (`[cart_pos, cart_vel, pole_angle, pole_ang_vel]`), a binary action (`0: Left`, `1: Right`), and a `+1.0` survival reward. The problem is formally **solved** when the agent averages **$\ge 195$** cumulative reward over 100 consecutive trials.
+
+To build a Q-Table over continuous numbers, we **discretize** observations using one of two methods:
+
+| Discretization Method | Implementation | Trade-off |
+| :--- | :--- | :--- |
+| **Scaling & Integer Rounding** | `tuple((x / np.array([0.25, 0.25, 0.01, 0.1])).astype(int))` | Simple; unbounded extremes handled via dictionary `Q[(state, a)]` |
+| **Interval Binning (`np.digitize`)** | `nbins = [20, 20, 10, 10]` across bounded intervals | Fixed finite state count (`20 x 20 x 10 x 10 x 2`) |
+
+---
+
+## Sparse Dictionary Q-Tables, `Qbest` & Running Averages
+
+Because some velocities are unbounded, we store `Q[(state, action)]` in a Python dictionary (`Q.get((state, a), 0)`). During training ($\alpha = 0.3, \gamma = 0.9, \epsilon = 0.90$), raw episode rewards bounce noisily, so we smooth progress with a 100-episode running average (`np.convolve(rewards, np.ones(100)/100, mode='valid')`) and snapshot **`Qbest`** whenever the periodic average hits a new `Qmax`—preventing late-training updates from overwriting our best policy. Gradually decaying $\alpha$ toward zero and increasing $\epsilon$ toward $1.0$ stabilizes convergence even further. When evaluating the final `Qbest` policy, you can either sample probabilistically or take `np.argmax` to pick the single highest-value action at every step.
+
+<ColabButton
+  course="ml-for-beginners"
+  notebook="25-reinforcement-learning-cartpole-gym.ipynb"
+  runtime="Free Tier CPU"
+/>
+
+---
+
+## Try It Yourself: CartPole State Discretizer & Kinematics Q-Solver
+
+Let's run a pure-Python CartPole physics simulator and discrete dictionary Q-Learner right in your browser to see discretized state tuples and survival step improvements.
+
+<PythonRunner
+  client:visible
+  title="Try it Yourself: CartPole Discretization & Dictionary Q-Learning"
+  expectedOutput="Sample Continuous Obs: [0.034, -0.243, 0.027, 0.29] -> Discrete State: (0, 0, 0, 0)
+Random Policy Avg Steps (20 trials): 18.7
+Trained Dict Q-Policy Avg Steps (20 trials): 132.3
+Unique Discretized States Learned: 479"
+  initialCode={`import math
+import random
+
+def discretize(obs):
+    scales = (1.0, 1.0, 0.04, 0.4)
+    return tuple(int(v / s) for v, s in zip(obs, scales))
+
+sample_obs = [0.034, -0.243, 0.027, 0.290]
+print(f"Sample Continuous Obs: {sample_obs} -> Discrete State: {discretize(sample_obs)}")
+
+# Simplified Euler CartPole kinematics
+def cartpole_step(state, action):
+    x, x_dot, theta, theta_dot = state
+    force = 10.0 if action == 1 else -10.0
+    cos_t, sin_t = math.cos(theta), math.sin(theta)
+    temp = (force + 0.05 * theta_dot ** 2 * sin_t) / 1.1
+    thetaacc = (9.8 * sin_t - cos_t * temp) / (0.5 * (4.0/3.0 - 0.1 * cos_t ** 2 / 1.1))
+    xacc = temp - 0.05 * thetaacc * cos_t / 1.1
+    dt = 0.02
+    x += dt * x_dot; x_dot += dt * xacc
+    theta += dt * theta_dot; theta_dot += dt * thetaacc
+    done = abs(x) > 2.4 or abs(theta) > 0.2094
+    return [x, x_dot, theta, theta_dot], done
+
+rng = random.Random(25)
+
+def run_trial(policy_fn, max_steps=150):
+    obs = [0.0, 0.0, rng.uniform(-0.04, 0.04), 0.0]
+    for step in range(1, max_steps + 1):
+        obs, done = cartpole_step(obs, policy_fn(obs))
+        if done:
+            return step
+    return max_steps
+
+rand_avg = sum(run_trial(lambda _: rng.randint(0, 1)) for _ in range(20)) / 20.0
+print(f"Random Policy Avg Steps (20 trials): {rand_avg:.1f}")
+
+Q = {}
+alpha, gamma = 0.3, 0.95
+for ep in range(1200):
+    obs = [0.0, 0.0, rng.uniform(-0.04, 0.04), 0.0]
+    for _ in range(150):
+        s = discretize(obs)
+        a = rng.randint(0, 1) if rng.random() < 0.15 else (1 if Q.get((s, 1), 0.0) > Q.get((s, 0), 0.0) else 0)
+        nobs, done = cartpole_step(obs, a)
+        ns = discretize(nobs)
+        rew = -10.0 if done else 1.0
+        best_next = 0.0 if done else max(Q.get((ns, 0), 0.0), Q.get((ns, 1), 0.0))
+        Q[(s, a)] = (1 - alpha) * Q.get((s, a), 0.0) + alpha * (rew + gamma * best_next)
+        obs = nobs
+        if done:
+            break
+
+q_avg = sum(run_trial(lambda o: 1 if Q.get((discretize(o), 1), 0.0) > Q.get((discretize(o), 0), 0.0) else 0) for _ in range(20)) / 20.0
+print(f"Trained Dict Q-Policy Avg Steps (20 trials): {q_avg:.1f}")
+print(f"Unique Discretized States Learned: {len({s for s, _ in Q})}")`}
+/>
+
+---
+
+## Check Your Understanding
+
+<QuizCard
+  client:visible
+  question="Why do we use a Python dictionary Q[(state, action)] instead of a fixed NumPy array when discretizing CartPole observations with integer scaling?"
+  options={[
+    "Dictionaries compute gradients faster than NumPy.",
+    "Unbounded velocity observations have no fixed upper/lower limit, so a sparse dictionary only stores visited states.",
+    "Gymnasium requires all Q-Tables to be JSON strings.",
+    "NumPy arrays cannot store floating-point rewards."
+  ]}
+  correctAnswer={1}
+  explanation="Cart velocity and pole angular velocity have infinite theoretical bounds. A dictionary Q-Table allocates entries only for discretized states the agent actually encounters."
+/>

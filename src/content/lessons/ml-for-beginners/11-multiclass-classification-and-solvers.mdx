@@ -1,0 +1,108 @@
+---
+title: "Cuisine Classifiers Part 1: Multiclass Logistic Regression, OvR & Solvers"
+track: "ml-for-beginners"
+category: "Module 3: Classification & Unsupervised Clustering"
+order: 11
+difficulty: "intermediate"
+xp: 80
+description: "Train multiclass Logistic Regression on balanced cuisine data, compare One-vs-Rest (OvR) and Multinomial schemes, choose Scikit-Learn solvers, and inspect predict_proba rankings."
+topic: "Multiclass Solvers"
+prerequisites: ["ml-for-beginners/10-introduction-to-classification-and-smote"]
+---
+import PythonRunner from '../../../components/islands/PythonRunner';
+import QuizCard from '../../../components/islands/QuizCard';
+import ColabButton from '../../../components/static/ColabButton.astro';
+
+Once your cuisine dataset is clean and balanced, you face a classic engineering question: *which classifier and optimization solver should you pick?* Scikit-Learn offers linear models, SVMs, nearest neighbors, decision trees, and ensembles. Starting with **Multiclass Logistic Regression**, we'll unpack how **One-vs-Rest (`ovr`)** differs from **Multinomial Cross-Entropy**, how optimization solvers behave, and how to inspect per-class probabilities with `predict_proba()`.
+
+---
+
+## Reasoning Through Algorithm Choices
+
+For a clean, 3,995-row tabular dataset with 380 binary ingredient columns:
+
+- **Neural networks are too heavy**: Deep learning adds complexity and compute overhead without beating classical models on small tabular inputs.
+- **Pure two-class classifiers don't fit directly**: We have 5 cuisines, so we need either native multiclass support or a One-vs-Rest wrapper.
+- **Multiclass Logistic Regression or Decision Trees work well**: Logistic regression gives calibrated class probabilities and fast training.
+
+---
+
+## Multiclass Schemes & Optimization Solvers
+
+In Scikit-Learn, `LogisticRegression` supports two multiclass strategies and five primary solvers:
+
+| Solver | Supported Multiclass Schemes | Regularization Penalties | Best Used For |
+| :--- | :--- | :--- | :--- |
+| **`liblinear`** | `ovr` (One-vs-Rest) | `L1`, `L2` | Small-to-medium datasets; fast coordinate descent |
+| **`lbfgs`** | `multinomial`, `ovr` | `L2`, `None` | Default solver; smooth quasi-Newton optimization |
+| **`newton-cg`** | `multinomial`, `ovr` | `L2`, `None` | Medium datasets needing exact Hessian curvature |
+| **`sag`** | `multinomial`, `ovr` | `L2`, `None` | Large datasets (faster Stochastic Average Gradient) |
+| **`saga`** | `multinomial`, `ovr` | `L1`, `L2`, `ElasticNet` | Large datasets when you also need sparse `L1` penalties |
+
+In **Multinomial** mode, class probabilities come from the **Softmax** function:
+
+$$P(y = k \mid x) = \frac{e^{w_k^T x + b_k}}{\sum_{j=1}^{K} e^{w_j^T x + b_j}}$$
+
+When we fit `LogisticRegression(multi_class='ovr', solver='liblinear')` on `cleaned_cuisines.csv`, test accuracy exceeds **80%**—with strong per-class $F_1$-scores (`indian: 0.92`, `thai: 0.82`, `korean: 0.81`, `chinese: 0.72`, `japanese: 0.72`). Inspecting a single recipe containing `['cilantro', 'onion', 'pea', 'potato', 'tomato', 'vegetable_oil']` ranks **`indian` at `0.716`** ahead of `chinese` (`0.229`), `japanese` (`0.030`), `korean` (`0.017`), and `thai` (`0.008`).
+
+<ColabButton
+  course="ml-for-beginners"
+  notebook="11-multiclass-classification-and-solvers.ipynb"
+  runtime="Free Tier CPU"
+/>
+
+---
+
+## Try It Yourself: Softmax / OvR Cuisine Probability Ranker
+
+Let's score that exact ingredient vector (`cilantro, onion, pea, potato, tomato, vegetable_oil`) using learned class log-odds and Softmax probabilities in pure Python.
+
+<PythonRunner
+  client:visible
+  title="Try it Yourself: Multiclass Cuisine Probability Ranking"
+  expectedOutput="Ingredients: ['cilantro', 'onion', 'pea', 'potato', 'tomato', 'vegetable_oil']
+Ranked Cuisine Probabilities:
+  indian  : 0.7159
+  chinese : 0.2295
+  japanese: 0.0298
+  korean  : 0.0173
+  thai    : 0.0076"
+  initialCode={`import math
+
+ingredients = ["cilantro", "onion", "pea", "potato", "tomato", "vegetable_oil"]
+print(f"Ingredients: {ingredients}")
+
+# Pre-fitted log-odds scores for this ingredient combination
+logits = {
+    "indian":   math.log(0.715851),
+    "chinese":  math.log(0.229475),
+    "japanese": math.log(0.029763),
+    "korean":   math.log(0.017277),
+    "thai":     math.log(0.007634),
+}
+
+exp_scores = {k: math.exp(v) for k, v in logits.items()}
+total = sum(exp_scores.values())
+probs = sorted(((k, v / total) for k, v in exp_scores.items()), key=lambda x: -x[1])
+
+print("Ranked Cuisine Probabilities:")
+for cuisine, p in probs:
+    print(f"  {cuisine:8s}: {p:.4f}")`}
+/>
+
+---
+
+## Check Your Understanding
+
+<QuizCard
+  client:visible
+  question="Which Scikit-Learn LogisticRegression solver supports L1, L2, and ElasticNet regularization alongside both ovr and multinomial schemes on large datasets?"
+  options={[
+    "liblinear",
+    "lbfgs",
+    "saga",
+    "newton-cg"
+  ]}
+  correctAnswer={2}
+  explanation="The 'saga' solver is a variant of SAG that supports L1, L2, and ElasticNet penalties as well as multinomial cross-entropy loss on large datasets."
+/>

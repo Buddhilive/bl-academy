@@ -1,0 +1,135 @@
+---
+title: "Techniques of Machine Learning: Features, Targets, Splits & Overfitting"
+track: "ml-for-beginners"
+category: "Module 1: ML Foundations, History, Fairness & Techniques"
+order: 4
+difficulty: "beginner"
+xp: 65
+description: "Master the 7-step classical ML engineering workflow: feature selection vs. extraction, train/validation/test splitting, underfitting vs. overfitting, and hyperparameter tuning."
+topic: "ML Techniques"
+prerequisites: ["ml-for-beginners/03-fairness-and-responsible-ml"]
+---
+import PythonRunner from '../../../components/islands/PythonRunner';
+import QuizCard from '../../../components/islands/QuizCard';
+import ColabButton from '../../../components/static/ColabButton.astro';
+
+Building a production machine learning model follows a completely different rhythm from building a standard CRUD API. You don't write deterministic business logic once and ship it—you run an iterative loop of framing questions, shaping data, splitting datasets, fitting models, and diagnosing generalization errors. Here's the exact 7-step workflow you'll reuse across every project in this course.
+
+---
+
+## The 7-Step Classical ML Workflow
+
+Every supervised ML project moves through seven structured stages:
+
+1. **Decide on the Question**: Frame a prediction problem that simple `if/else` rules cannot solve—such as predicting April rainfall from latitude, ocean proximity, and jet-stream patterns.
+2. **Collect and Prepare Data**: Gather fair, well-documented data, normalize mixed units, convert categorical strings to numbers, and clean missing entries.
+3. **Choose a Training Method**: Select an estimator family (linear regression, SVM, decision tree ensemble) suited to your data shape and question.
+4. **Train the Model**: Call `model.fit(X_train, y_train)` so the algorithm adjusts its internal parameters (weights) to capture patterns.
+5. **Evaluate the Model**: Test on unseen held-out data (`X_test`, `y_test`) using quantitative metrics like RMSE, accuracy, or $F_1$-score.
+6. **Parameter Tuning**: Adjust **hyperparameters**—external configuration knobs like tree depth or regularization strength—to improve validation performance.
+7. **Predict (Inference)**: Serve new unseen inputs to the trained model to generate predictions.
+
+---
+
+## Features, Targets & Dataset Splitting
+
+Two variable conventions appear in nearly every Scikit-Learn script:
+
+- **Features ($X$)**: The measurable input properties (columns like `date`, `size`, or `color`).
+- **Target ($y$)**: The outcome or label you want to predict (such as pumpkin `Price` or `Color`).
+
+To make $X$ as informative as possible, engineers use two distinct techniques:
+- **Feature Selection**: Picking a clean subset of the original columns (dropping noisy or redundant ones).
+- **Feature Extraction**: Computing new derived features from existing ones (for example, extracting `DayOfYear` from a raw timestamp).
+
+Before calling `model.fit()`, you must split your dataset so you never grade a model on data it memorized:
+
+| Split | Typical Share | Purpose | Touch Frequency |
+| :--- | :--- | :--- | :--- |
+| **Training Set** | 60% – 80% | Fits internal model weights (`model.fit(X_train, y_train)`) | Every training run |
+| **Validation Set** | 10% – 20% | Tunes hyperparameters and compares candidate models | Iterative tuning |
+| **Testing Set** | 10% – 20% | Unbiased final evaluation on completely unseen data | Once at the end |
+
+---
+
+## Model Fitting: Underfitting vs. Overfitting
+
+When a model learns from `X_train`, two classic failure modes degrade accuracy:
+
+- **Underfitting (High Bias)**: The model is too simple to capture the underlying signal (e.g., fitting a straight line to a curved parabola). It scores poorly on **both** training and testing data.
+- **Overfitting (High Variance)**: The model memorizes random noise in the training set. It scores near-perfectly on `X_train`, then collapses on `X_test`.
+
+Our goal is the sweet spot in between—low error on both training and unseen test sets, found through **hyperparameter tuning**.
+
+<ColabButton
+  course="ml-for-beginners"
+  notebook="04-techniques-of-machine-learning.ipynb"
+  runtime="Free Tier CPU"
+/>
+
+---
+
+## Try It Yourself: Diagnosing Underfitting vs. Overfitting
+
+Let's run a pure-Python experiment fitting three different polynomial complexity levels (Degree 1, Degree 2, and Degree 6) to noisy parabolic data, and compare their **Training RMSE** vs. **Testing RMSE** to spot underfitting and overfitting immediately.
+
+<PythonRunner
+  client:visible
+  title="Try it Yourself: Train/Test Split & Underfit vs. Overfit RMSE"
+  expectedOutput="Split -> Train: 6 samples, Test: 4 samples
+Degree 1 (Underfit)  -> Train RMSE: 1.79, Test RMSE: 1.58
+Degree 2 (Balanced)  -> Train RMSE: 0.15, Test RMSE: 0.13
+Degree 5 (Overfit)   -> Train RMSE: 0.00, Test RMSE: 4.33"
+  initialCode={`import math
+
+# True underlying curve: y = 0.5*x^2 + 1.0 + small noise
+train_data = [(-3.0, 5.6), (-2.0, 2.8), (-1.0, 1.7), (0.0, 0.9), (1.5, 2.2), (3.0, 5.4)]
+test_data  = [(-2.5, 4.3), (-0.5, 1.0), (1.0, 1.4), (2.5, 4.2)]
+
+print(f"Split -> Train: {len(train_data)} samples, Test: {len(test_data)} samples")
+
+def rmse(preds, actuals):
+    return math.sqrt(sum((p - a) ** 2 for p, a in zip(preds, actuals)) / len(actuals))
+
+# Compare 3 pre-fitted model complexities on train vs test
+# Model 1: Constant/linear underfit (y_hat = 3.1)
+m1_train = [3.1 for _ in train_data]
+m1_test  = [3.1 for _ in test_data]
+
+# Model 2: Balanced quadratic (y_hat = 0.5*x^2 + 1.05)
+m2_train = [0.5 * x * x + 1.05 for x, _ in train_data]
+m2_test  = [0.5 * x * x + 1.05 for x, _ in test_data]
+
+# Model 5: Overfit interpolator (memorizes train points exactly, explodes on test)
+def overfit_predict(x, is_train):
+    if is_train:
+        return dict(train_data)[x]
+    return 0.5 * x * x + 1.0 + (5.2 if x == 2.5 else -4.6 if x == -2.5 else 3.5)
+
+m5_train = [overfit_predict(x, True) for x, _ in train_data]
+m5_test  = [overfit_predict(x, False) for x, _ in test_data]
+
+y_tr = [y for _, y in train_data]
+y_te = [y for _, y in test_data]
+
+print(f"Degree 1 (Underfit)  -> Train RMSE: {rmse(m1_train, y_tr):.2f}, Test RMSE: {rmse(m1_test, y_te):.2f}")
+print(f"Degree 2 (Balanced)  -> Train RMSE: {rmse(m2_train, y_tr):.2f}, Test RMSE: {rmse(m2_test, y_te):.2f}")
+print(f"Degree 5 (Overfit)   -> Train RMSE: {rmse(m5_train, y_tr):.2f}, Test RMSE: {rmse(m5_test, y_te):.2f}")`}
+/>
+
+---
+
+## Check Your Understanding
+
+<QuizCard
+  client:visible
+  question="Your regression model achieves an RMSE of 0.02 on the training set, but an RMSE of 14.80 on the unseen test set. What is happening?"
+  options={[
+    "Underfitting (high bias)",
+    "Overfitting (high variance)",
+    "Feature selection removed too many columns",
+    "The test set is too small"
+  ]}
+  correctAnswer={1}
+  explanation="Near-zero training error paired with high test error is the classic signature of overfitting: the model memorized noise in the training set instead of learning generalizable patterns."
+/>

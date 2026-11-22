@@ -1,0 +1,119 @@
+---
+title: "Introduction to Natural Language Processing: Turing Test, ELIZA & Building Marvin the Bot"
+track: "ml-for-beginners"
+category: "Module 4: Classical NLP & Time Series Forecasting"
+order: 16
+difficulty: "beginner"
+xp: 70
+description: "Explore computational linguistics, Alan Turing's Imitation Game, Joseph Weizenbaum's 1966 ELIZA bot, and build Marvin the Simple Robot in Python."
+topic: "NLP Foundations"
+prerequisites: ["ml-for-beginners/15-k-means-clustering"]
+---
+import PythonRunner from '../../../components/islands/PythonRunner';
+import QuizCard from '../../../components/islands/QuizCard';
+import ColabButton from '../../../components/static/ColabButton.astro';
+
+Numeric tables are easy for computers to multiply and cluster, but human language is messy, ambiguous, and packed with sarcasm and context. **Natural Language Processing (NLP)**—a branch of computational linguistics—bridges that gap so software can parse grammar, extract entities, and hold conversations. In this opening NLP lesson, we trace how early conversational bots created the illusion of intelligence and build our first baseline bot, **Marvin**.
+
+---
+
+## Computational Linguistics, the Turing Test & ELIZA
+
+Every time you dictate a message to your phone or ask a voice assistant for directions, your speech is transcribed to text, parsed for grammatical keywords, and mapped to an executable intent. Back in the **1950s**, **Alan Turing** asked whether a machine could pass a typed conversational test—inspired by *The Imitation Game*—where a human interrogator could not tell whether they were chatting with a person or a computer.
+
+In **1966**, MIT scientist **Joseph Weizenbaum** built **ELIZA**, a simulated psychotherapist that amazed users even though it understood *nothing*. ELIZA simply matched surface patterns and reflected pronouns:
+
+| User Input | ELIZA Pattern Rule | ELIZA Response | Why It Breaks |
+| :--- | :--- | :--- | :--- |
+| `"I am sad"` | `"I am <X>"` $\rightarrow$ `"How long have you been <X>?"` | `"How long have you been sad?"` | Pure syntax swap; zero emotional comprehension |
+| `"You are a bicycle"` | `"You are <X>"` $\rightarrow$ `"How long have I been <X>?"` | `"How long have I been a bicycle?"` | Accepts absurd premises literally |
+| Unmatched statement | Fallback generic prompt | `"Please go on."` | Repeats canned responses with no memory |
+
+---
+
+## Building Marvin: A Baseline Conversational Loop
+
+Unlike ELIZA's hand-written grammar rules, our starter bot **Marvin** uses a minimal 3-step REPL loop: print greeting instructions, read user input until `'bye'`, and return a random conversational prompt. Comparing Marvin's generic replies against ELIZA's keyword reflections immediately reveals what an intelligent bot actually needs: **context tracking**, **sentiment awareness**, and **conversational memory**.
+
+<ColabButton
+  course="ml-for-beginners"
+  notebook="16-introduction-to-nlp-and-conversational-bots.ipynb"
+  runtime="Free Tier CPU"
+/>
+
+---
+
+## Try It Yourself: ELIZA Reflection & Marvin Dialogue Simulator
+
+Let's run both a deterministic **ELIZA** pronoun-reflection engine and **Marvin**'s random-response loop on a multi-turn conversation transcript right in your browser.
+
+<PythonRunner
+  client:visible
+  title="Try it Yourself: ELIZA Reflection vs. Marvin Bot"
+  expectedOutput="--- ELIZA Reflection Engine ---
+User: I am sad
+ELIZA: How long have you been sad?
+User: You are a bicycle
+ELIZA: How long have I been a bicycle?
+
+--- Marvin Baseline Bot ---
+Hello, I am Marvin, the simple robot.
+> I am good thanks
+Marvin: Did you catch the game last night?
+> today I went for a walk
+Marvin: That is quite interesting, please tell me more.
+> bye
+Marvin: It was nice talking to you, goodbye!"
+  initialCode={`import random
+import re
+
+def eliza_reply(text):
+    m1 = re.match(r"^I am (.+)$", text, re.IGNORECASE)
+    if m1:
+        return f"How long have you been {m1.group(1)}?"
+    m2 = re.match(r"^You are (.+)$", text, re.IGNORECASE)
+    if m2:
+        return f"How long have I been {m2.group(1)}?"
+    return "Tell me more about that."
+
+print("--- ELIZA Reflection Engine ---")
+for msg in ["I am sad", "You are a bicycle"]:
+    print(f"User: {msg}")
+    print(f"ELIZA: {eliza_reply(msg)}")
+
+random_responses = [
+    "That is quite interesting, please tell me more.",
+    "I see. Do go on.",
+    "Why do you say that?",
+    "Funny weather we've been having, isn't it?",
+    "Let's change the subject.",
+    "Did you catch the game last night?",
+]
+
+print("\n--- Marvin Baseline Bot ---")
+print("Hello, I am Marvin, the simple robot.")
+rng = random.Random(42)
+for user_msg in ["I am good thanks", "today I went for a walk", "bye"]:
+    print(f"> {user_msg}")
+    if user_msg.lower() == "bye":
+        print("Marvin: It was nice talking to you, goodbye!")
+        break
+    print(f"Marvin: {rng.choice(random_responses)}")`}
+/>
+
+---
+
+## Check Your Understanding
+
+<QuizCard
+  client:visible
+  question="Why could Joseph Weizenbaum's ELIZA program respond convincingly to 'I am sad' yet fail on 'You are a bicycle'?"
+  options={[
+    "ELIZA used a deep Transformer trained on bicycles.",
+    "ELIZA used surface-level keyword pattern matching and pronoun swapping without semantic understanding.",
+    "ELIZA only ran on GPUs.",
+    "ELIZA stored a full knowledge graph of every user's life."
+  ]}
+  correctAnswer={1}
+  explanation="ELIZA relied on syntactic pattern substitution (swapping 'I am' to 'you have been' and 'You are' to 'I been'), which creates an illusion of understanding without any real-world semantics."
+/>

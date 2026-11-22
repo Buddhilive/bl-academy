@@ -1,0 +1,120 @@
+---
+title: "K-Means Clustering: Centroids, Silhouette Score, WCSS Elbow Method & Variance"
+track: "ml-for-beginners"
+category: "Module 3: Classification & Unsupervised Clustering"
+order: 15
+difficulty: "intermediate"
+xp: 80
+description: "Implement K-Means clustering on Nigerian Spotify audio features, evaluate cluster separation with Silhouette scores, choose k via the WCSS Elbow Method, and diagnose feature variance."
+topic: "K-Means Clustering"
+prerequisites: ["ml-for-beginners/14-introduction-to-clustering"]
+---
+import PythonRunner from '../../../components/islands/PythonRunner';
+import QuizCard from '../../../components/islands/QuizCard';
+import ColabButton from '../../../components/static/ColabButton.astro';
+
+**K-Means Clustering** is the most widely used centroid clustering algorithm in classical machine learning. Originating in signal processing, it partitions unlabeled data into $k$ **Voronoi** regions (each defined by a seed point and its closest surrounding area) through a three-step loop:
+
+1. **Sample $k$ Initial Centroids**: Pick $k$ starting center points (`init='k-means++'` spaces them far apart for better convergence).
+2. **Assign Nearest Centroid**: Assign every data point to the cluster whose centroid is closest in Euclidean distance.
+3. **Update & Repeat**: Recompute each centroid as the mean of its assigned points until centroid positions stabilize.
+
+---
+
+## Silhouette Score, WCSS Inertia & The Elbow Method
+
+To pick and evaluate $k$ without ground-truth labels, we rely on two geometric metrics:
+
+| Metric | Formula / Definition | Ideal Value & Interpretation |
+| :--- | :--- | :--- |
+| **WCSS (Inertia)** | $\sum_{j=1}^{k} \sum_{x_i \in C_j} \|x_i - \mu_j\|^2$ | Lower is tighter; plot $k = 1..10$ (`init='k-means++'`) to find the "elbow" bend |
+| **Silhouette Score** | $s(i) = \frac{b(i) - a(i)}{\max(a(i), b(i))}$ | Ranges $[-1, 1]$; $1$ = dense, well-separated clusters, $0$ = overlapping boundaries |
+
+On our Nigerian Spotify audio features (`artist_top_genre`, `popularity`, `danceability`, `acousticness`, `loudness`, `energy`), `KMeans(n_clusters=3)` yields a **Silhouette score of `0.53`** and an Elbow bend around $k=3$. Checking predicted clusters against true genre labels still shows low raw accuracy, because genres overlap heavily in audio feature space and unscaled column variances pull centroids toward high-magnitude features.
+
+*Why does feature scaling matter?* When you inspect 12-feature boxplots across the Nigerian songs dataset, you immediately spot outliers and wildly different scales. Without `StandardScaler`, `popularity` ($0..73$) has far higher **variance** (the average squared difference from the mean) than `danceability` ($0.25..0.96$), so Euclidean distance gets dominated by popularity while quietly ignoring danceability. Standardizing every feature to zero mean and unit variance fixes that imbalance and smooths out the Elbow curve.
+
+<ColabButton
+  course="ml-for-beginners"
+  notebook="15-k-means-clustering.ipynb"
+  runtime="Free Tier CPU"
+/>
+
+---
+
+## Try It Yourself: K-Means Lloyd's Algorithm, WCSS & Silhouette
+
+Let's run K-Means from scratch in pure Python for $k=1..3$ on Nigerian song audio features, print the WCSS Elbow drop, and compute the exact Silhouette score at $k=3$.
+
+<PythonRunner
+  client:visible
+  title="Try it Yourself: K-Means WCSS Elbow & Silhouette Score"
+  expectedOutput="k=1 -> WCSS (Inertia): 3181.99
+k=2 -> WCSS (Inertia): 1047.75
+k=3 -> WCSS (Inertia): 31.34
+k=3 Silhouette Score: 0.867"
+  initialCode={`import math
+
+# (popularity, danceability * 10)
+points = [
+    (12, 7.2), (14, 7.6), (11, 6.9),
+    (32, 7.8), (34, 8.1), (30, 7.4),
+    (58, 6.5), (61, 6.8), (55, 6.2),
+]
+
+def dist2(a, b):
+    return sum((x - y) ** 2 for x, y in zip(a, b))
+
+def kmeans(pts, k):
+    # Deterministic spread initialization
+    step = max(1, len(pts) // k)
+    centroids = [pts[min(i * step, len(pts) - 1)] for i in range(k)]
+    for _ in range(15):
+        clusters = [[] for _ in range(k)]
+        labels = []
+        for p in pts:
+            best = min(range(k), key=lambda j: dist2(p, centroids[j]))
+            clusters[best].append(p)
+            labels.append(best)
+        centroids = [
+            tuple(sum(p[d] for p in c) / len(c) for d in range(2)) if c else centroids[j]
+            for j, c in enumerate(clusters)
+        ]
+    wcss = sum(dist2(p, centroids[lbl]) for p, lbl in zip(pts, labels))
+    return labels, wcss
+
+for k in [1, 2, 3]:
+    labels, wcss = kmeans(points, k)
+    print(f"k={k} -> WCSS (Inertia): {wcss:.2f}")
+
+# Silhouette score for k=3
+sil_vals = []
+for i, p in enumerate(points):
+    own = labels[i]
+    same = [math.sqrt(dist2(p, points[j])) for j in range(len(points)) if j != i and labels[j] == own]
+    a_i = sum(same) / len(same)
+    b_i = min(
+        sum(math.sqrt(dist2(p, points[j])) for j in range(len(points)) if labels[j] == c)
+        / sum(1 for l in labels if l == c)
+        for c in set(labels) if c != own
+    )
+    sil_vals.append((b_i - a_i) / max(a_i, b_i))
+print(f"k=3 Silhouette Score: {sum(sil_vals) / len(sil_vals):.3f}")`}
+/>
+
+---
+
+## Check Your Understanding
+
+<QuizCard
+  client:visible
+  question="What does a Silhouette Score near 0.0 indicate about your K-Means clusters?"
+  options={[
+    "Every cluster is 100% dense and completely isolated.",
+    "Clusters are overlapping with samples sitting close to decision boundaries between neighboring clusters.",
+    "The Elbow Method failed to run.",
+    "WCSS inertia is negative."
+  ]}
+  correctAnswer={1}
+  explanation="Silhouette scores range from -1 to +1. Values near +1 indicate well-separated, dense clusters; values near 0 indicate overlapping clusters."
+/>

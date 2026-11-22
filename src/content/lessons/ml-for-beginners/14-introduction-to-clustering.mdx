@@ -1,0 +1,105 @@
+---
+title: "Introduction to Clustering: Taxonomies, Geometry & Visualizing Nigerian Music Tastes"
+track: "ml-for-beginners"
+category: "Module 3: Classification & Unsupervised Clustering"
+order: 14
+difficulty: "intermediate"
+xp: 75
+description: "Explore unsupervised clustering concepts—transductive vs. inductive inference, flat vs. non-flat geometry, centroids vs. clustroids—on 530 Nigerian Spotify tracks."
+topic: "Clustering Foundations"
+prerequisites: ["ml-for-beginners/13-cuisine-recommender-with-onnx"]
+---
+import PythonRunner from '../../../components/islands/PythonRunner';
+import QuizCard from '../../../components/islands/QuizCard';
+import ColabButton from '../../../components/static/ColabButton.astro';
+
+Up to now, every model we trained had a labeled target column $y$. **Clustering** flips that script: it is **unsupervised learning**, meaning your dataset has no predefined output labels, and the algorithm discovers natural groupings on its own—like sorting a mixed laundry pile by color and owner. In this lesson, we explore clustering theory and visualize **530 Nigerian Spotify songs** (`nigerian-songs.csv`) to see how genres overlap.
+
+---
+
+## Clustering Vocabulary, Geometry & Scikit-Learn Methods
+
+Before picking a clustering algorithm, you need four foundational concepts:
+
+- **Transductive vs. Inductive**: *Inductive* clustering learns general rules from training data to classify future points; *transductive* clustering groups the observed points directly without assuming labels for unseen data.
+- **Flat vs. Non-Flat Geometry**: *Flat* geometry measures straight-line **Euclidean** distance between points; *non-flat* geometry measures distances along curved manifolds.
+- **Centroids vs. Clustroids**: A *centroid* is the arithmetic mean of a cluster (may not be an actual data point); a *clustroid* is the real data point closest to all other points in the cluster.
+- **Constrained & Density Clustering**: Semi-supervised rules (`must-link` / `cannot-link`) or density thresholds (`DBSCAN`, `OPTICS`) handle noisy, uneven shapes.
+
+| Scikit-Learn Method | Clustering Family | Geometry & Best Use Case |
+| :--- | :--- | :--- |
+| **K-Means** | Centroid | General-purpose, flat Euclidean, inductive |
+| **DBSCAN / OPTICS** | Density-based | Non-flat geometry, uneven/noisy clusters, transductive |
+| **Agglomerative / Ward** | Hierarchical | Many constrained clusters, supports non-Euclidean distances |
+| **Gaussian Mixtures** | Distribution-based | Flat geometry, probabilistic soft cluster membership |
+| **Affinity Propagation / Mean-Shift** | Exemplar / Mode-seeking | Many uneven clusters when $k$ is unknown |
+
+---
+
+## Exploring Nigerian Music Tastes (`nigerian-songs.csv`)
+
+The dataset tracks 16 attributes (`popularity`, `danceability`, `acousticness`, `energy`, `loudness`, `speechiness`, `tempo`, etc.). After filtering out `'Missing'` genres and `popularity == 0` noise, three genres dominate: **`afro dancehall`**, **`afropop`**, and **`nigerian pop`**. Checking correlations reveals a strong link between `energy` and `loudness` (loud tracks tend to be energetic—though correlation never proves causation!), while Seaborn KDE `jointplot` and `FacetGrid` scatterplots show concentric rings where genres overlap in `popularity` and `danceability`.
+
+<ColabButton
+  course="ml-for-beginners"
+  notebook="14-introduction-to-clustering.ipynb"
+  runtime="Free Tier CPU"
+/>
+
+---
+
+## Try It Yourself: Nigerian Songs Filter & Correlation Profiler
+
+Let's filter out `'Missing'` genres and zero-popularity tracks in pure Python, count the top three Nigerian genres, and compute the exact Pearson correlation between `energy` and `loudness`.
+
+<PythonRunner
+  client:visible
+  title="Try it Yourself: Nigerian Spotify Genre Filter & Correlation"
+  expectedOutput="Filtered tracks: 6 of 8
+Top genres -> afropop: 2, afro dancehall: 2, nigerian pop: 2
+Pearson corr(energy, loudness): 0.951"
+  initialCode={`import math
+
+songs = [
+    {"genre": "afropop",        "pop": 48, "energy": 0.42, "loudness": -6.70},
+    {"genre": "afropop",        "pop": 30, "energy": 0.68, "loudness": -5.64},
+    {"genre": "afro dancehall", "pop": 52, "energy": 0.85, "loudness": -3.20},
+    {"genre": "afro dancehall", "pop": 41, "energy": 0.79, "loudness": -4.10},
+    {"genre": "nigerian pop",   "pop": 14, "energy": 0.61, "loudness": -4.96},
+    {"genre": "nigerian pop",   "pop": 64, "energy": 0.91, "loudness": -2.50},
+    {"genre": "Missing",        "pop": 22, "energy": 0.50, "loudness": -6.00},
+    {"genre": "afropop",        "pop": 0,  "energy": 0.72, "loudness": -5.10},
+]
+
+top3 = {"afropop", "afro dancehall", "nigerian pop"}
+clean = [s for s in songs if s["genre"] in top3 and s["pop"] > 0]
+print(f"Filtered tracks: {len(clean)} of {len(songs)}")
+
+counts = {g: sum(1 for s in clean if s["genre"] == g) for g in ["afropop", "afro dancehall", "nigerian pop"]}
+print(f"Top genres -> afropop: {counts['afropop']}, afro dancehall: {counts['afro dancehall']}, nigerian pop: {counts['nigerian pop']}")
+
+es = [s["energy"] for s in clean]
+ls = [s["loudness"] for s in clean]
+me, ml = sum(es) / len(es), sum(ls) / len(ls)
+cov = sum((e - me) * (l - ml) for e, l in zip(es, ls))
+std_e = math.sqrt(sum((e - me) ** 2 for e in es))
+std_l = math.sqrt(sum((l - ml) ** 2 for l in ls))
+print(f"Pearson corr(energy, loudness): {cov / (std_e * std_l):.3f}")`}
+/>
+
+---
+
+## Check Your Understanding
+
+<QuizCard
+  client:visible
+  question="What is the difference between a centroid and a clustroid in clustering?"
+  options={[
+    "A centroid is always an integer, while a clustroid is a string.",
+    "A centroid is the computed average (mean) of points in a cluster, whereas a clustroid is an actual data point closest to the rest of its cluster (used in non-Euclidean spaces).",
+    "Centroids are used only in supervised classification.",
+    "There is no difference; they are synonyms."
+  ]}
+  correctAnswer={1}
+  explanation="In flat Euclidean space, you can average coordinates to form a centroid. In non-Euclidean spaces where averaging coordinates isn't meaningful, you pick a representative existing data point called a clustroid."
+/>

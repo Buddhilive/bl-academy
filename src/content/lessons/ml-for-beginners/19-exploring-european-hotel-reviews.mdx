@@ -1,0 +1,106 @@
+---
+title: "Hotel Reviews Sentiment Analysis Part 1: Exploratory Data Analysis on 515K European Reviews"
+track: "ml-for-beginners"
+category: "Module 4: Classical NLP & Time Series Forecasting"
+order: 19
+difficulty: "intermediate"
+xp: 80
+description: "Audit 515,738 European hotel reviews in Pandas, uncover meta-review discrepancies, guard against nationality bias, and achieve a 50x speedup via vectorized boolean sums."
+topic: "Hotel Reviews EDA"
+prerequisites: ["ml-for-beginners/18-translation-and-sentiment-analysis"]
+---
+import PythonRunner from '../../../components/islands/PythonRunner';
+import QuizCard from '../../../components/islands/QuizCard';
+import ColabButton from '../../../components/static/ColabButton.astro';
+
+Before running NLTK sentiment models on **515,738 European hotel reviews** (`1,493` hotels across 6 cities, `17` columns), we have to audit the data itself. Real-world scraped datasets hide surprising traps: mismatched review totals, mystery scoring formulas, sentinel strings like `"No Negative"`, and slow row-by-row lambdas. Let's run the full exploratory data analysis (EDA) checklist.
+
+---
+
+## Auditing the 17 Columns & Meta-Review Discrepancies
+
+Grouping the 17 columns reveals critical anomalies:
+
+| Column Group | Key Columns | Discrepancy / Ethical Caution |
+| :--- | :--- | :--- |
+| **Hotel Location** | `Hotel_Name`, `Hotel_Address`, `lat`, `lng` | Raw addresses mix street + city + country; normalize to city-country |
+| **Meta-Reviews** | `Average_Score`, `Total_Number_of_Reviews`, `Additional_Number_of_Scoring` | *Britannia Canary Wharf* has `4,789` rows + `2,682` additional $= 7,471 \neq 9,086$ reported |
+| **Review Text** | `Reviewer_Score` ($2.5$–$10.0$), `Negative_Review`, `Positive_Review`, `Tags` | Empty reviews contain `"No Negative"` (`127,890`) or `"No Positive"` (`35,946`); `127` have both |
+| **Reviewer** | `Reviewer_Nationality`, `Total_Number_of_Reviews_Reviewer_Has_Given` | **227 nationalities** (UK: `245,246`, USA: `35,437`) — never encode nationality stereotypes |
+
+Comparing reported `Average_Score` against our own `Calc_Average_Score = round(df.groupby('Hotel_Name').Reviewer_Score.transform('mean'), 1)` uncovers deviations up to `+1.3` (*Kube Hotel Ice Bar*: `7.2` vs `5.9`) and `-0.8` (*Best Western Hotel Astoria*: `7.7` vs `8.5`). Because the dataset's `Average_Score` was scraped using only the latest year of comments and `Total_Number_of_Reviews` includes unscraped ratings, calculating your own aggregates directly from the `Reviewer_Score` rows in Pandas is far safer for downstream modeling.
+
+Also note a subtle trap in the text columns: a guest occasionally writes *"nothing bad about this hotel"* inside `Negative_Review`, or *"Nothing Terrible place Stay away"* inside `Positive_Review`. Simple word-count columns (`Review_Total_Positive_Word_Counts`) miss that completely, which is why we apply real NLP sentiment scoring in the next lesson.
+
+---
+
+## Vectorized Speedup: `sum(col == val)` vs. `.apply(lambda ...)`
+
+Counting `"No Negative"` and `"No Positive"` rows across 515K rows using `.apply(lambda ..., axis=1)` takes **`9.64` seconds**. Switching to vectorized boolean summation (`sum(df.Negative_Review == "No Negative")`) drops runtime to **`0.19` seconds**—a **$50\times$ speedup**!
+
+<ColabButton
+  course="ml-for-beginners"
+  notebook="19-exploring-european-hotel-reviews.ipynb"
+  runtime="Free Tier CPU"
+/>
+
+---
+
+## Try It Yourself: Hotel Reviews Discrepancy & Sentinel Auditor
+
+Let's execute the exact meta-review discrepancy check (`Average_Score_Difference`), nationality frequency ranking, and sentinel counting (`No Negative`, `No Positive`, and dual-empty rows) in pure Python.
+
+<PythonRunner
+  client:visible
+  title="Try it Yourself: Hotel Reviews EDA & Discrepancy Audit"
+  expectedOutput="Top Nationality: United Kingdom (3 reviews)
+Britannia Canary Wharf -> Reported Avg: 7.1, Calc Avg: 6.8, Diff: +0.3
+Kube Hotel Ice Bar -> Reported Avg: 7.2, Calc Avg: 5.9, Diff: +1.3
+Sentinel Counts -> No Negative: 2, No Positive: 2, Both Empty: 1"
+  initialCode={`from collections import Counter, defaultdict
+
+reviews = [
+    {"hotel": "Britannia Canary Wharf", "rep_avg": 7.1, "score": 6.4, "nat": "United Kingdom", "neg": "Small room", "pos": "Great view"},
+    {"hotel": "Britannia Canary Wharf", "rep_avg": 7.1, "score": 7.2, "nat": "United Kingdom", "neg": "No Negative", "pos": "Nice staff"},
+    {"hotel": "Kube Hotel Ice Bar",     "rep_avg": 7.2, "score": 5.9, "nat": "France",         "neg": "Cold lobby", "pos": "No Positive"},
+    {"hotel": "Hotel Esther",           "rep_avg": 8.4, "score": 8.4, "nat": "United States",  "neg": "No Negative", "pos": "No Positive"},
+    {"hotel": "Hotel Da Vinci",         "rep_avg": 8.1, "score": 8.2, "nat": "United Kingdom", "neg": "Slow wifi",  "pos": "Quiet"},
+]
+
+nat_counts = Counter(r["nat"] for r in reviews)
+top_nat, top_n = nat_counts.most_common(1)[0]
+print(f"Top Nationality: {top_nat} ({top_n} reviews)")
+
+scores_by_hotel = defaultdict(list)
+rep_by_hotel = {}
+for r in reviews:
+    scores_by_hotel[r["hotel"]].append(r["score"])
+    rep_by_hotel[r["hotel"]] = r["rep_avg"]
+
+for h in ["Britannia Canary Wharf", "Kube Hotel Ice Bar"]:
+    calc = round(sum(scores_by_hotel[h]) / len(scores_by_hotel[h]), 1)
+    rep = rep_by_hotel[h]
+    print(f"{h} -> Reported Avg: {rep:.1f}, Calc Avg: {calc:.1f}, Diff: {rep - calc:+.1f}")
+
+no_neg = sum(1 for r in reviews if r["neg"] == "No Negative")
+no_pos = sum(1 for r in reviews if r["pos"] == "No Positive")
+both = sum(1 for r in reviews if r["neg"] == "No Negative" and r["pos"] == "No Positive")
+print(f"Sentinel Counts -> No Negative: {no_neg}, No Positive: {no_pos}, Both Empty: {both}")`}
+/>
+
+---
+
+## Check Your Understanding
+
+<QuizCard
+  client:visible
+  question="Why should you avoid using Reviewer_Nationality as a predictive feature in a hotel recommendation model?"
+  options={[
+    "Pandas cannot count string frequencies.",
+    "It risks encoding national or racial stereotypes instead of modeling actual hotel quality and individual guest preferences.",
+    "There are only 2 nationalities in the dataset.",
+    "Reviewer_Nationality is always NaN."
+  ]}
+  correctAnswer={1}
+  explanation="Treating a reviewer's nationality as the cause of a positive or negative score introduces unfair stereotyping and ignores individual experience."
+/>

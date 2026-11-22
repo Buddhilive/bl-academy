@@ -1,0 +1,113 @@
+---
+title: "Applied Classification: Exporting Scikit-Learn to ONNX & Building a Web Recommender"
+track: "ml-for-beginners"
+category: "Module 3: Classification & Unsupervised Clustering"
+order: 13
+difficulty: "intermediate"
+xp: 85
+description: "Convert a 380-feature Scikit-Learn SVC cuisine classifier into portable ONNX format with skl2onnx and run offline inference via ONNX Runtime in the browser and Colab."
+topic: "ONNX Model Export"
+prerequisites: ["ml-for-beginners/12-comparing-classifiers-svc-knn-ensembles"]
+---
+import PythonRunner from '../../../components/islands/PythonRunner';
+import QuizCard from '../../../components/islands/QuizCard';
+import ColabButton from '../../../components/static/ColabButton.astro';
+
+Earlier we pickled a Python model and served it from a Flask backend. What if your app needs to run **100% client-side in JavaScript**—even offline—without spinning up a Python server? That is exactly what **ONNX (Open Neural Network Exchange)** solves. By converting our Scikit-Learn `SVC` model to `model.onnx` with `skl2onnx`, we can inspect its graph in **Netron** and run it directly in any browser via `onnxruntime-web` or in Colab via `onnxruntime`.
+
+---
+
+## Converting Scikit-Learn to ONNX (`skl2onnx`)
+
+Our cleaned cuisines dataset has **380 binary ingredient columns**, so we declare a `FloatTensorType([None, 380])` input signature (`None` allows any batch size):
+
+```python
+from skl2onnx import convert_sklearn
+from skl2onnx.common.data_types import FloatTensorType
+
+initial_type = [('float_input', FloatTensorType([None, 380]))]
+options = {id(model): {'nocl': True, 'zipmap': False}}
+onx = convert_sklearn(model, initial_types=initial_type, options=options)
+with open("model.onnx", "wb") as f:
+    f.write(onx.SerializeToString())
+```
+
+| ONNX Conversion Parameter | Purpose | Why It Matters for Web Apps |
+| :--- | :--- | :--- |
+| `FloatTensorType([None, 380])` | Declares dynamic batch size $\times$ 380 float32 features | Matches `new ort.Tensor(new Float32Array(ingredients), [1, 380])` |
+| `'zipmap': False` | Outputs raw probability/label tensors instead of dictionary lists | Simplifies JavaScript `results.label.data[0]` parsing |
+| `'nocl': True` | Strips embedded class-name metadata from the graph | Reduces `model.onnx` binary size for faster page loads |
+
+In the browser, `onnxruntime-web` maps checked refrigerator ingredients (such as `apple=4`, `pear=247`, `cherry=77`, `fenugreek=126`, `sake=302`, `soy_sauce=327`, `cumin=112`) into a 380-element `Float32Array` and calls `session.run({ float_input: input })`. Let's look at how the browser client wires up that inference flow step by step:
+
+1. **Create the `[1, 380]` Input Array**: Initialize `Array(380).fill(0)` and toggle `ingredients[check.value] = 1` whenever a user checks an ingredient box.
+2. **Validate Input**: Ensure at least one checkbox is selected before loading the ONNX session.
+3. **Inspect with Netron**: Before shipping `model.onnx`, open it in **Netron** to verify the exact input node name (`float_input`) and tensor shape (`[None, 380]`) so your JavaScript `feeds` dictionary never mismatches the exported graph.
+4. **Run Offline or in Colab**: The same `model.onnx` artifact runs identically in `onnxruntime-web` (JavaScript) and `onnxruntime.InferenceSession` (Python/Gradio on Google Colab).
+
+<ColabButton
+  course="ml-for-beginners"
+  notebook="13-cuisine-recommender-with-onnx.ipynb"
+  runtime="Free Tier CPU"
+/>
+
+---
+
+## Try It Yourself: 380-Feature ONNX Tensor Recommender
+
+Let's simulate the exact 380-element `Float32Array` input tensor and linear SVC margin inference for two different refrigerator ingredient selections right in your browser.
+
+<PythonRunner
+  client:visible
+  title="Try it Yourself: 380-Tensor Cuisine Recommender"
+  expectedOutput="Tensor shape: (1, 380) | Active indices: [112, 126]
+Recommended Cuisine: indian (score=3.80)
+
+Tensor shape: (1, 380) | Active indices: [302, 327]
+Recommended Cuisine: japanese (score=3.50)"
+  initialCode={`INGREDIENT_INDEX = {
+    "apple": 4, "cherry": 77, "cumin": 112, "fenugreek": 126,
+    "pear": 247, "sake": 302, "soy_sauce": 327,
+}
+
+# Pre-trained linear SVC weights per cuisine on key ingredient indices
+WEIGHTS = {
+    "indian":   {112: 2.1, 126: 1.7, 302: -0.8, 327: -0.5},
+    "japanese": {302: 2.2, 327: 1.3, 112: -0.9, 126: -0.7},
+    "thai":     {112: 0.4, 327: 0.6, 4: 0.2},
+}
+
+def infer_onnx_sim(selected_names):
+    tensor = [0.0] * 380
+    for name in selected_names:
+        tensor[INGREDIENT_INDEX[name]] = 1.0
+    active = [i for i, v in enumerate(tensor) if v == 1.0]
+    scores = {
+        cuisine: sum(tensor[idx] * w for idx, w in w_map.items())
+        for cuisine, w_map in WEIGHTS.items()
+    }
+    best = max(scores, key=scores.get)
+    print(f"Tensor shape: (1, {len(tensor)}) | Active indices: {active}")
+    print(f"Recommended Cuisine: {best} (score={scores[best]:.2f})")
+
+infer_onnx_sim(["cumin", "fenugreek"])
+print()
+infer_onnx_sim(["sake", "soy_sauce"])`}
+/>
+
+---
+
+## Check Your Understanding
+
+<QuizCard
+  client:visible
+  question="Why do we pass options={id(model): {'nocl': True, 'zipmap': False}} when converting a Scikit-Learn classifier with skl2onnx for browser inference?"
+  options={[
+    "To convert the model into a Python pickle file.",
+    "To shrink model.onnx file size and return flat tensors instead of Python-style dictionary lists.",
+    "To automatically train the model for 100 more epochs.",
+    "To enable GPU CUDA acceleration in HTML."
+  ]}
+  correctAnswer={1}
+  explanation="Setting zipmap=False avoids wrapping probabilities in a ZipMap dictionary operator, and nocl=True omits extra class metadata, keeping model.onnx compact and easy to consume in onnxruntime-web."
+/>

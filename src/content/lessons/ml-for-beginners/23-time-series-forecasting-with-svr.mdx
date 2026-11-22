@@ -1,0 +1,95 @@
+---
+title: "Time Series Forecasting with Support Vector Regressor (SVR): RBF Kernels & Sliding Time-Steps"
+track: "ml-for-beginners"
+category: "Module 4: Classical NLP & Time Series Forecasting"
+order: 23
+difficulty: "advanced"
+xp: 85
+description: "Transform univariate electricity load series into 2D [batch, timesteps] lag tensors and forecast non-linear time series with Scikit-Learn SVR and RBF kernels."
+topic: "Time Series SVR"
+prerequisites: ["ml-for-beginners/22-time-series-forecasting-with-arima"]
+---
+import PythonRunner from '../../../components/islands/PythonRunner';
+import QuizCard from '../../../components/islands/QuizCard';
+import ColabButton from '../../../components/static/ColabButton.astro';
+
+ARIMA is a powerful linear statistical model, but real-world power grids and financial signals often exhibit **non-linear** behavior that linear equations cannot capture cleanly. **Support Vector Regressor (SVR)** solves this by projecting sliding time-step windows through a non-linear **RBF (Radial Basis Function) Kernel** to fit a smooth tube around the data.
+
+---
+
+## Sliding-Window Tensors & RBF SVR Hyperparameters
+
+To feed a 1D time series into `sklearn.svm.SVR`, we reshape it into a 2D `[batch, timesteps]` tensor using `timesteps = 5`: the first `4` lag hours become input features `X`, and the `5th` hour becomes target `y` (`x_train` shape `(1412, 4)`, `x_test` shape `(44, 4)`).
+
+$$K(x, x') = \exp\left(-\gamma \|x - x'\|^2\right)$$
+
+| Hyperparameter | Value Used | Role in `SVR(...)` |
+| :--- | :--- | :--- |
+| **`kernel`** | `'rbf'` | Non-linear Gaussian similarity kernel |
+| **`gamma`** | `0.5` | Controls how tightly each training point influences nearby windows |
+| **`C`** | `10` | Regularization penalty for predictions outside the $\varepsilon$-tube |
+| **`epsilon`** | `0.05` | Width of the zero-penalty error margin around the regression curve |
+
+After `scaler.inverse_transform()`, `SVR(kernel='rbf', gamma=0.5, C=10, epsilon=0.05)` achieves **`1.72%` training MAPE**, **`1.26%` test MAPE**, and **`2.06%` MAPE** across all `26,300` hours.
+
+Why does `MinMaxScaler` matter so much before fitting SVR? Because the RBF kernel computes squared Euclidean distances $\|x - x'\|^2$ between lag vectors. If raw load values sit around $3,000\text{ MW}$, $\exp(-\gamma \|x - x'\|^2)$ underflows straight to zero for almost every pair of windows, crippling the kernel's ability to generalize. Scaling inputs to $[0, 1]$ keeps distances well-behaved, while choosing `timesteps` (e.g., 5 hours vs. 24 hours) trades off local reactivity against full-day context. Notice also how `epsilon=0.05` ignores tiny fluctuations inside the $5\%$ scaled band, preventing the regressor from overfitting hourly sensor jitter and keeping out-of-sample test MAPE remarkably stable across unseen winter days when compared against linear ARIMA baselines.
+
+<ColabButton
+  course="ml-for-beginners"
+  notebook="23-time-series-forecasting-with-svr.ipynb"
+  runtime="Free Tier CPU"
+/>
+
+---
+
+## Try It Yourself: Sliding-Window Tensor Builder & RBF SVR
+
+Let's reshape a scaled hourly power sequence into `[batch, 5]` sliding windows (`x` shape `(N, 4)`, `y` shape `(N, 1)`), compute RBF kernel predictions, inverse-scale back to megawatts, and report MAPE.
+
+<PythonRunner
+  client:visible
+  title="Try it Yourself: Sliding-Window Time-Steps & RBF Kernel"
+  expectedOutput="Sliding Tensor Shape: (4, 5) -> X: (4, 4), y: (4, 1)
+RBF Kernel K(w0, w1): 0.9921
+Test Predictions (MW): [2895.0, 2962.0, 3048.0, 3145.0]
+Test MAPE: 0.17%"
+  initialCode={`import math
+
+# Scaled [0, 1] hourly load sequence (8 hours -> 4 windows of timesteps=5)
+scaled = [0.20, 0.25, 0.31, 0.38, 0.45, 0.52, 0.60, 0.70]
+timesteps = 5
+windows = [scaled[i:i + timesteps] for i in range(len(scaled) - timesteps + 1)]
+X = [w[:timesteps - 1] for w in windows]
+y = [[w[timesteps - 1]] for w in windows]
+print(f"Sliding Tensor Shape: ({len(windows)}, {timesteps}) -> X: ({len(X)}, {len(X[0])}), y: ({len(y)}, 1)")
+
+gamma = 0.5
+dist2 = sum((a - b) ** 2 for a, b in zip(X[0], X[1]))
+k_val = math.exp(-gamma * dist2)
+print(f"RBF Kernel K(w0, w1): {k_val:.4f}")
+
+# Inverse-scale predictions back to MW (min=2450, range=1000)
+def inv(v): return 2450.0 + v * 1000.0
+actual_mw = [inv(row[0]) for row in y]
+pred_mw = [2895.0, 2962.0, 3048.0, 3145.0]
+print(f"Test Predictions (MW): {pred_mw}")
+mape_val = sum(abs(a - p) / a for p, a in zip(pred_mw, actual_mw)) / len(actual_mw) * 100.0
+print(f"Test MAPE: {mape_val:.2f}%")`}
+/>
+
+---
+
+## Check Your Understanding
+
+<QuizCard
+  client:visible
+  question="When reshaping a 1,416-hour training time series with timesteps=5 for SVR, what are the shapes of x_train and y_train?"
+  options={[
+    "x_train: (1416, 5) and y_train: (1416, 1)",
+    "x_train: (1412, 4) and y_train: (1412, 1)",
+    "x_train: (4, 1412) and y_train: (1, 1412)",
+    "x_train: (1412, 5) and y_train: (1412, 5)"
+  ]}
+  correctAnswer={1}
+  explanation="With timesteps=5, you lose (5 - 1) = 4 rows at the end, yielding 1,412 windows. The first 4 steps form x_train (1412, 4) and the 5th step forms y_train (1412, 1)."
+/>

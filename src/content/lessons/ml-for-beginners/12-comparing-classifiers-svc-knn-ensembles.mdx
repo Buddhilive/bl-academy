@@ -1,0 +1,114 @@
+---
+title: "Cuisine Classifiers Part 2: Linear SVC, K-Nearest Neighbors, SVM, Random Forest & AdaBoost"
+track: "ml-for-beginners"
+category: "Module 3: Classification & Unsupervised Clustering"
+order: 12
+difficulty: "intermediate"
+xp: 85
+description: "Walk the Scikit-Learn estimator map to benchmark Linear SVC, KNeighborsClassifier, RBF SVC, Random Forest, and AdaBoost ensembles on balanced cuisine classification."
+topic: "Comparing Classifiers"
+prerequisites: ["ml-for-beginners/11-multiclass-classification-and-solvers"]
+---
+import PythonRunner from '../../../components/islands/PythonRunner';
+import QuizCard from '../../../components/islands/QuizCard';
+import ColabButton from '../../../components/static/ColabButton.astro';
+
+Logistic regression gave us a solid $80\%$ baseline, but can non-linear boundaries or tree ensembles push accuracy even higher? Walking the **Scikit-Learn Machine Learning Estimator Map** (`>50 samples` $\rightarrow$ `predicting a category` $\rightarrow$ `labeled data` $\rightarrow$ `<100K samples`) points us down a structured path: start with **Linear SVC**, test **K-Nearest Neighbors**, then try **RBF SVC** and **Ensemble Classifiers**.
+
+---
+
+## Benchmarking Five Classifier Families
+
+Running a single `classifiers` dictionary loop lets us compare all five algorithms on the exact same `train_test_split`:
+
+| Classifier | Mechanism & Key Hyperparameters | Cuisine Test Accuracy | Strengths & Trade-offs |
+| :--- | :--- | :--- | :--- |
+| **Linear SVC** | `SVC(kernel='linear', C=10, probability=True)` | **78.6%** | Fast maximum-margin hyperplane; $C$ controls regularization |
+| **K-Nearest Neighbors** | `KNeighborsClassifier(n_neighbors=10)` | **73.8%** | Non-parametric local voting; sensitive to high-dimensional sparsity |
+| **RBF SVC** | `SVC()` (Radial Basis Function kernel) | **83.2%** | Maps features into higher-dimensional space for curved boundaries |
+| **Random Forest** | `RandomForestClassifier(n_estimators=100)` | **84.5%** | Averages 100 randomized decision trees to reduce overfitting |
+| **AdaBoost** | `AdaBoostClassifier(n_estimators=100)` | **72.4%** | Sequentially re-weights misclassified examples across weak learners |
+
+Notice how **Random Forest** (`84.5%`) and **RBF SVC** (`83.2%`) outperform linear models because ingredient combinations interact non-linearly—for example, soy sauce + mirin signals Japanese, whereas soy sauce + gochujang signals Korean.
+
+---
+
+## Bagging vs. Boosting Ensembles
+
+Ensemble methods combine multiple base estimators to beat any single weak model:
+- **Bagging (Random Forest)**: Trains $N$ independent decision trees on bootstrap samples with random feature subsets, then averages predictions to slash variance. Setting `n_estimators=100` gives 100 diverse trees voting together.
+- **Boosting (AdaBoost)**: Trains weak classifiers sequentially, increasing the sample weight of misclassified dishes so later learners focus on the hardest edge cases.
+- **Regularization (`C`) in Linear SVC**: Controls the margin-vs-misclassification trade-off; higher `C` values (`C=10`) penalize training errors more strictly, while lower `C` values favor a wider, smoother margin.
+
+<ColabButton
+  course="ml-for-beginners"
+  notebook="12-comparing-classifiers-svc-knn-ensembles.ipynb"
+  runtime="Free Tier CPU"
+/>
+
+---
+
+## Try It Yourself: Multi-Classifier Accuracy & Macro-F1 Comparator
+
+Let's run a pure-Python classifier benchmark comparing a distance-based **KNN** voter against a **Random Forest-style** majority-vote tree ensemble on held-out cuisine recipes.
+
+<PythonRunner
+  client:visible
+  title="Try it Yourself: KNN vs. Ensemble Classifier Benchmark"
+  expectedOutput="KNN (k=3) Accuracy: 75.0%
+Decision Stump Ensemble Accuracy: 100.0%
+Macro-F1 Improvement: +0.25"
+  initialCode={`# Features: [soy_sauce, mirin, gochujang, garam_masala, lemongrass]
+train = [
+    ([1, 1, 0, 0, 0], "japanese"), ([1, 1, 0, 0, 0], "japanese"),
+    ([1, 0, 1, 0, 0], "korean"),
+    ([0, 0, 0, 1, 0], "indian"),   ([0, 0, 0, 1, 0], "indian"),
+    ([0, 0, 0, 0, 1], "thai"),     ([0, 0, 0, 0, 1], "thai"),
+]
+test = [
+    ([1, 1, 0, 0, 0], "japanese"),
+    ([1, 0, 1, 0, 1], "korean"),  # noisy extra lemongrass
+    ([0, 0, 0, 1, 0], "indian"),
+    ([0, 0, 1, 0, 1], "thai"),    # noisy extra gochujang
+]
+
+def knn_predict(x, k=3):
+    dists = sorted(((sum((a - b) ** 2 for a, b in zip(x, tx)), lbl) for tx, lbl in train))
+    votes = {}
+    for _, lbl in dists[:k]:
+        votes[lbl] = votes.get(lbl, 0) + 1
+    return max(votes, key=votes.get)
+
+def ensemble_predict(x):
+    # 3 specialized trees voting on signature feature combinations
+    if x[3] == 1:
+        return "indian"
+    if x[1] == 1 and x[2] == 0:
+        return "japanese"
+    if x[4] == 1 and x[0] == 0:
+        return "thai"
+    return "korean"
+
+knn_acc = sum(1 for x, y in test if knn_predict(x) == y) / len(test)
+ens_acc = sum(1 for x, y in test if ensemble_predict(x) == y) / len(test)
+print(f"KNN (k=3) Accuracy: {knn_acc * 100:.1f}%")
+print(f"Decision Stump Ensemble Accuracy: {ens_acc * 100:.1f}%")
+print(f"Macro-F1 Improvement: +{ens_acc - knn_acc:.2f}")`}
+/>
+
+---
+
+## Check Your Understanding
+
+<QuizCard
+  client:visible
+  question="Why does RandomForestClassifier(n_estimators=100) generally resist overfitting better than a single deep DecisionTreeClassifier?"
+  options={[
+    "It trains only on 10% of the labels.",
+    "It averages predictions across many randomized trees trained on bootstrap samples, canceling out individual tree variance.",
+    "It forces all decision boundaries to be linear.",
+    "It drops all categorical features automatically."
+  ]}
+  correctAnswer={1}
+  explanation="Random Forest uses bagging and random feature subsampling across n_estimators trees. Averaging diverse trees dramatically reduces variance and overfitting."
+/>

@@ -1,0 +1,112 @@
+---
+title: "Preparing & Visualizing Data: The North American Pumpkin Market"
+track: "ml-for-beginners"
+category: "Module 2: Regression Models & Web App Deployment"
+order: 6
+difficulty: "intermediate"
+xp: 75
+description: "Clean messy USDA pumpkin market CSV data in Pandas, normalize inconsistent 1 1/9 and 1/2 bushel package prices, and visualize seasonal trends with Matplotlib and Seaborn."
+topic: "Data Preparation & Visualization"
+prerequisites: ["ml-for-beginners/05-regression-tools-and-scikit-learn"]
+---
+import PythonRunner from '../../../components/islands/PythonRunner';
+import QuizCard from '../../../components/islands/QuizCard';
+import ColabButton from '../../../components/static/ColabButton.astro';
+
+Real-world datasets rarely arrive clean and ready for `model.fit()`. When we inspect the 1,757-row USDA **North American Pumpkin Market** spreadsheet (`US-pumpkins.csv`), we immediately hit blanks, mixed strings, and a tricky `Package` column mixing `'1 1/9 bushel'`, `'1/2 bushel'`, `'bins'`, and `'each'`. Before we can predict pumpkin prices, we have to normalize units and visualize the data properly.
+
+---
+
+## Cleaning & Normalizing Bushel Prices
+
+To answer *"What is the average price of a pumpkin per bushel in a given month?"*, we follow a four-step Pandas cleaning pipeline:
+
+1. **Check Missing Data & Select Columns**: Inspect `pumpkins.isnull().sum()` and slice `['Package', 'Low Price', 'High Price', 'Date']` with `.loc`.
+2. **Filter to Consistent Units**: Keep only rows sold by the bushel (`pumpkins['Package'].str.contains('bushel', case=True, regex=True)`), narrowing 1,757 rows down to ~415 comparable records.
+3. **Compute Average Price & Month**:
+   $$\text{Price} = \frac{\text{Low Price} + \text{High Price}}{2}, \qquad \text{Month} = \text{DatetimeIndex}(\text{Date}).\text{month}$$
+4. **Normalize Per-Bushel Pricing**: Divide `1 1/9 bushel` prices by $(1 + \frac{1}{9})$ and `1/2 bushel` prices by $\frac{1}{2}$ so every row sits on an apples-to-apples per-bushel scale.
+
+*Fun observation*: Half-bushel pumpkins still look noticeably pricier per bushel because miniature decorative pumpkins pack far more individual pumpkins—with less hollow air space—into a bushel than large pie pumpkins!
+
+---
+
+## Visualizing with Matplotlib vs. Seaborn
+
+| Library | Best Used For | Key Functions in This Lesson |
+| :--- | :--- | :--- |
+| **Matplotlib** | Fine-grained control over axes, labels, and grouped aggregations | `plt.scatter(price, month)`, `groupby('Month')['Price'].mean().plot(kind='bar')` |
+| **Seaborn** | Expressive statistical charts directly from Pandas DataFrames | `sns.relplot(..., kind="line")`, `sns.catplot(..., kind="bar")`, `sns.heatmap(corr, annot=True)` |
+
+A raw `plt.scatter(price, month)` looks noisy and unhelpful, whereas a grouped bar chart or `sns.catplot(x="Month", y="Price", kind="bar")` immediately reveals the **September–October harvest peak**. Meanwhile, a correlation `heatmap` teaches a crucial lesson: `Month` has weak linear correlation with `Price` even though the bar chart shows a clear autumn peak, because correlation coefficients only measure *straight-line* relationships.
+
+<ColabButton
+  course="ml-for-beginners"
+  notebook="06-preparing-and-visualizing-pumpkin-data.ipynb"
+  runtime="Free Tier CPU"
+/>
+
+---
+
+## Try It Yourself: Bushel Normalizer & Seasonal Mean Bar Table
+
+Let's run the exact USDA pumpkin bushel filter, `1 1/9` and `1/2` price normalization, and monthly average aggregation in pure Python.
+
+<PythonRunner
+  client:visible
+  title="Try it Yourself: USDA Pumpkin Bushel Price Normalizer"
+  expectedOutput="Filtered bushel rows: 6 of 7
+Mean Price by Month:
+  Month  8: $21.05
+  Month  9: $24.40
+  Month 10: $24.75
+  Month 11: $19.50"
+  initialCode={`from collections import defaultdict
+
+raw_rows = [
+    {"Date": "08/24/2016", "Package": "1 1/9 bushel cartons", "Low": 18.0, "High": 20.0},
+    {"Date": "08/31/2016", "Package": "1/2 bushel cartons",   "Low": 12.0, "High": 13.0},
+    {"Date": "09/17/2016", "Package": "1 1/9 bushel cartons", "Low": 21.0, "High": 23.0},
+    {"Date": "09/24/2016", "Package": "1/2 bushel cartons",   "Low": 14.0, "High": 15.0},
+    {"Date": "10/08/2016", "Package": "1 1/9 bushel cartons", "Low": 25.0, "High": 30.0},
+    {"Date": "10/15/2016", "Package": "24 inch bins",         "Low": 120.0, "High": 140.0},
+    {"Date": "11/05/2016", "Package": "1 1/9 bushel crates",  "Low": 21.0, "High": 22.333},
+]
+
+bushel_rows = [r for r in raw_rows if "bushel" in r["Package"]]
+print(f"Filtered bushel rows: {len(bushel_rows)} of {len(raw_rows)}")
+
+monthly_prices = defaultdict(list)
+for r in bushel_rows:
+    month = int(r["Date"].split("/")[0])
+    avg_price = (r["Low"] + r["High"]) / 2.0
+    if "1 1/9" in r["Package"]:
+        norm_price = avg_price / (1.0 + 1.0 / 9.0)
+    elif "1/2" in r["Package"]:
+        norm_price = avg_price / 0.5
+    else:
+        norm_price = avg_price
+    monthly_prices[month].append(norm_price)
+
+print("Mean Price by Month:")
+for m in sorted(monthly_prices):
+    vals = monthly_prices[m]
+    print(f"  Month {m:2d}: $" f"{sum(vals)/len(vals):.2f}")`}
+/>
+
+---
+
+## Check Your Understanding
+
+<QuizCard
+  client:visible
+  question="Why does a Seaborn correlation heatmap show weak correlation between Month and Pumpkin Price even though the bar chart clearly peaks in September and October?"
+  options={[
+    "Seaborn heatmaps ignore numeric columns.",
+    "Correlation coefficients only measure straight-line linear relationships, so they miss seasonal curves.",
+    "The 1/2 bushel normalization inverted the prices.",
+    "Pandas DatetimeIndex extracts days instead of months."
+  ]}
+  correctAnswer={1}
+  explanation="Pearson correlation measures linear association. Seasonal peaks that rise in autumn and drop afterward are non-linear, which is why visual exploration alongside correlation matrices is essential."
+/>

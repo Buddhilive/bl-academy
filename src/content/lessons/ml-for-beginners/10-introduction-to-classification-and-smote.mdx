@@ -1,0 +1,120 @@
+---
+title: "Introduction to Classification: Cleaning & Balancing Asian and Indian Cuisines with SMOTE"
+track: "ml-for-beginners"
+category: "Module 3: Classification & Unsupervised Clustering"
+order: 10
+difficulty: "intermediate"
+xp: 75
+description: "Explore multiclass classification on 2,448 Asian and Indian recipes, drop ubiquitous confounding ingredients, and balance skewed classes using SMOTE oversampling."
+topic: "Classification & SMOTE"
+prerequisites: ["ml-for-beginners/09-deploying-ml-models-in-web-apps"]
+---
+import PythonRunner from '../../../components/islands/PythonRunner';
+import QuizCard from '../../../components/islands/QuizCard';
+import ColabButton from '../../../components/static/ColabButton.astro';
+
+Linear regression predicts continuous numbers, and logistic regression predicts binary categories. **Multiclass Classification** takes the next step: mapping an input vector to one of three or more distinct classes. In this module, we work with a delicious dataset of **2,448 recipes across 383 binary ingredient columns** (`cuisines.csv`) to predict whether a dish is **Chinese, Indian, Japanese, Korean, or Thai**.
+
+---
+
+## Binary vs. Multiclass Classification & Class Imbalance
+
+When you inspect `df.cuisine.value_counts()` on the raw cuisines dataset, you immediately spot a major problem:
+
+| Cuisine Class | Raw Recipe Count | Balanced Count (After SMOTE) | Signature Confounders Removed |
+| :--- | :--- | :--- | :--- |
+| **Korean** | 799 | 799 | `rice`, `garlic`, `ginger` |
+| **Indian** | 598 | 799 | `rice`, `garlic`, `ginger` |
+| **Chinese** | 442 | 799 | `rice`, `garlic`, `ginger` |
+| **Japanese** | 320 | 799 | `rice`, `garlic`, `ginger` |
+| **Thai** | 289 | 799 | `rice`, `garlic`, `ginger` |
+
+If you train a classifier on raw imbalanced counts, it can score high accuracy simply by over-predicting the majority class (`korean`). Worse, ubiquitous ingredients like **rice**, **garlic**, and **ginger** appear at the top of *every* cuisine's ingredient bar chart, creating noise that blurs class boundaries. Using a helper function `create_ingredient_df(df)` that transposes each cuisine slice and sums ingredient occurrences makes those shared confounders jump right off the chart so we can drop them cleanly.
+
+---
+
+## Balancing Data with SMOTE
+
+After dropping `['cuisine', 'Unnamed: 0', 'rice', 'garlic', 'ginger']`, we use **SMOTE** (*Synthetic Minority Over-sampling Technique*) from `imblearn.over_sampling`:
+
+```python
+from imblearn.over_sampling import SMOTE
+oversample = SMOTE()
+transformed_feature_df, transformed_label_df = oversample.fit_resample(feature_df, labels_df)
+```
+
+Instead of blindly duplicating existing rows, SMOTE selects a minority-class sample $x_i$ and one of its $k$-nearest minority neighbors $x_{zi}$, then interpolates a brand-new synthetic point along the line segment between them:
+
+$$x_{\text{new}} = x_i + \lambda \cdot (x_{zi} - x_i), \qquad \lambda \in [0, 1]$$
+
+That lifts all five cuisines to **799 rows each** (`3,995` clean, balanced rows) ready for `cleaned_cuisines.csv`. When we concatenate `transformed_label_df` and `transformed_feature_df` into `transformed_df`, every cuisine has equal representation so downstream classifiers learn distinctive spice signatures instead of defaulting to the majority class.
+
+<ColabButton
+  course="ml-for-beginners"
+  notebook="10-introduction-to-classification-and-smote.ipynb"
+  runtime="Free Tier CPU"
+/>
+
+---
+
+## Try It Yourself: Ingredient Profiler & SMOTE Interpolator
+
+Let's run a pure-Python ingredient counter that spots confounding ingredients (`rice`, `garlic`, `ginger`), strips them, and balances minority cuisine recipes using SMOTE-style nearest-neighbor interpolation.
+
+<PythonRunner
+  client:visible
+  title="Try it Yourself: Confounder Removal & SMOTE Balancing"
+  expectedOutput="Raw counts -> korean: 4, indian: 3, thai: 2
+Top confounders dropped: ['rice', 'garlic', 'ginger']
+Balanced counts -> korean: 4, indian: 4, thai: 4
+Sample synthetic Thai vector: [1.0, 0.4, 1.0, 0.6]"
+  initialCode={`# Features: [rice, lemongrass, chili, fish_sauce, garam_masala, kimchi, garlic, ginger]
+# After dropping confounders (rice, garlic, ginger) -> [lemongrass, chili, fish_sauce, garam_masala]
+recipes = [
+    ("korean", [0, 1, 0, 0]), ("korean", [0, 1, 0, 0]), ("korean", [0, 0, 0, 0]), ("korean", [0, 1, 0, 0]),
+    ("indian", [0, 1, 0, 1]), ("indian", [0, 1, 0, 1]), ("indian", [0, 0, 0, 1]),
+    ("thai",   [1, 1, 1, 0]), ("thai",   [1, 0, 1, 1]),
+]
+
+counts = {}
+for label, _ in recipes:
+    counts[label] = counts.get(label, 0) + 1
+print(f"Raw counts -> korean: {counts['korean']}, indian: {counts['indian']}, thai: {counts['thai']}")
+print("Top confounders dropped: ['rice', 'garlic', 'ginger']")
+
+# SMOTE interpolation for minority classes up to max_count=4
+max_count = max(counts.values())
+balanced = list(recipes)
+lam = 0.4
+
+for cls in ["indian", "thai"]:
+    cls_vecs = [vec for lbl, vec in recipes if lbl == cls]
+    idx = 0
+    while sum(1 for lbl, _ in balanced if lbl == cls) < max_count:
+        a = cls_vecs[idx % len(cls_vecs)]
+        b = cls_vecs[(idx + 1) % len(cls_vecs)]
+        synth = [round(ai + lam * (bi - ai), 2) for ai, bi in zip(a, b)]
+        balanced.append((cls, synth))
+        idx += 1
+
+b_counts = {c: sum(1 for lbl, _ in balanced if lbl == c) for c in ["korean", "indian", "thai"]}
+print(f"Balanced counts -> korean: {b_counts['korean']}, indian: {b_counts['indian']}, thai: {b_counts['thai']}")
+print(f"Sample synthetic Thai vector: {balanced[-1][1]}")`}
+/>
+
+---
+
+## Check Your Understanding
+
+<QuizCard
+  client:visible
+  question="How does SMOTE balance an imbalanced multiclass dataset differently from simple random oversampling?"
+  options={[
+    "SMOTE deletes majority-class rows until all classes match the smallest class.",
+    "SMOTE generates new synthetic minority examples by interpolating between a minority sample and its nearest minority neighbors.",
+    "SMOTE replaces all text labels with random integers.",
+    "SMOTE removes all features with correlation below 0.5."
+  ]}
+  correctAnswer={1}
+  explanation="SMOTE (Synthetic Minority Over-sampling Technique) interpolates new synthetic feature vectors between neighboring minority-class samples rather than creating exact duplicate rows."
+/>
