@@ -1,0 +1,93 @@
+---
+title: "Frontier Harness Breakdowns: Claude Code, Codex, DeepSeek & Pi"
+track: "harness-engineering"
+category: "Module 5: Loop, Graph & Frontier Harness Engineering"
+order: 24
+difficulty: "advanced"
+xp: 70
+description: "Compare how Google Antigravity, Claude Code, OpenAI Codex, DeepSeek Harness (dsh), and Pi implement the 5 harness subsystems—and bridge to Course 08: Edge AI."
+topic: "Frontier Harnesses"
+prerequisites: ["harness-engineering/23-google-antigravity-harness-architecture-deep-dive"]
+---
+import PythonRunner from '../../../components/islands/PythonRunner';
+import QuizCard from '../../../components/islands/QuizCard';
+import ColabButton from '../../../components/static/ColabButton.astro';
+
+Now that you have built a complete harness from scratch and dissected Google Antigravity's architecture, let's examine how four other leading agent products implement the exact same **5-Subsystem Framework**: **Claude Code**, **OpenAI Codex**, **DeepSeek Harness (`dsh`)**, and **Pi (`@earendil-works/pi-coding-agent`)**.
+
+Notice that we are not comparing model weights or benchmark leaderboards here—we are comparing **everything outside the weights**.
+
+---
+
+## Four Distinct Philosophies
+
+1. **Claude Code ("Addition / Complete Runtime")**: Layers `CLAUDE.md` across four scopes (organization, user, project, local) plus subdirectory on-demand loading and 200-line/25KB auto-memory. Uses a **5-layer compaction pipeline** (lossless pruning → structured distillation → lossy LLM summary with circuit breakers), append-only `history.jsonl`, four extensions (Skills, MCP, Hooks, sidechain Subagents), and explicit permission modes (`Manual`, `Plan`, `acceptEdits`, `Auto`, `dontAsk`, `bypassPermissions`).
+2. **OpenAI Codex ("Subtraction / Conventions & Worktrees")**: Monolithic Rust CLI treating `AGENTS.md` as a ~100-line **directory page** (*"give the map, not the manual"*), paired with **Write–Select–Compress–Isolate** context engineering, incremental environment deltas (`build_environment_update_item`), per-task **git worktree** isolation + local observability stack, and `.codex/agents/*.toml` (`spawn_agent` / `wait_agent`).
+3. **DeepSeek Harness (`dsh`, "Harness as Model-Independent OS")**: Built on a Cordis plugin core where *everything is a plugin—including the agent loop itself*. Standardizes **Capability Seams** (`Service Definition → Service Provider → Consumer`) across Local/E2B/Remote FS, exposes a 12-stage Turn Flow **Event Pipeline**, and enforces the invariant **"Model-visible means logged"** in an append-only Session Event Log.
+4. **Pi ("Minimal Core + Programmable Extensions")**: Ships a minimal `SYSTEM.md` + 3-level `AGENTS.md` and four customizable layers (TypeScript Extensions, Agent Skills, `/name` Prompt Templates, TUI Themes). Stores sessions as **Session Trees** (`/tree` branching & HTML/gist export) and makes compaction itself a pluggable extension (~20,000-token retention split point).
+
+---
+
+## Master Cross-Harness Comparison Matrix
+
+| Subsystem | Google Antigravity | Claude Code | OpenAI Codex | DeepSeek (`dsh`) | Pi |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| **Instructions** | 5-level `GEMINI.md` / `AGENTS.md` (`24 KB` / `20k` budget) | 4-scope `CLAUDE.md` + auto-memory | ~100-line `AGENTS.md` directory page | Plugin-injected rules | Minimal `SYSTEM.md` + 3-level `AGENTS.md` |
+| **Tools** | Skills, Plugins, MCP, `run_workflow` | Skills, MCP, Hooks, Sidechain Subagents | `spawn_agent` + MCP | 3-layer Capability Seams | On-demand Skills + TS Extensions |
+| **Environment** | Standard Sandbox + `share`/`branch` | Project `settings.json` + permissions | Git worktrees + local observability | Swappable FS/Sandbox Providers | User-described in `SYSTEM.md` |
+| **State** | `/compact` + `transcript.jsonl` + OKF Memory | 5-layer compaction + `history.jsonl` | Write-to-repo conventions + `/compact` | Append-only Event Log ("logged invariant") | Session Tree (`/tree`) + pluggable compaction |
+| **Feedback** | 6 Lifecycle Hooks (`hooks.json`) + `/goal` | `PostToolUse`/`Stop` hooks + `/goal` | Spec verify commands + approval policies | Event listeners at `tools/pre-execute` | User verify commands + `extract-patterns` |
+
+---
+
+## Open the Companion Colab Notebook
+
+Launch the companion notebook to run an interactive **5-Subsystem Frontier Harness Comparator**, simulate DeepSeek's **"Model-visible means logged"** event pipeline, and traverse a Pi-style **Session Tree**.
+
+<ColabButton
+  course="harness-engineering"
+  notebook="24-frontier-harness-design-breakdowns-claude-code-codex-deepseek-and-pi.ipynb"
+  runtime="Free Tier CPU"
+/>
+
+---
+
+## Try It Yourself: DeepSeek Event Pipeline & Pi Session Tree
+
+Run this Python script to verify DeepSeek's *"Model-visible means logged"* invariant and branch a Pi-style Session Tree.
+
+<PythonRunner
+  client:visible
+  title="Try it Yourself: Frontier Harness Patterns"
+  expectedOutput="DeepSeek Invariant Check: 3/3 model-visible items logged -> PASS
+Pi Session Tree Branches: main=['turn1', 'turn2a'] | alt=['turn1', 'turn2b']
+Course 07 Complete! Next Stop: Course 08 (Edge AI for Beginners)"
+  initialCode={`session_event_log = []
+model_request_items = ["system_rules", "tool_result:pytest", "user_prompt"]
+for item in model_request_items:
+    session_event_log.append({"event": "model_visible", "payload": item})
+
+logged_ok = all(any(e["payload"] == x for e in session_event_log) for x in model_request_items)
+print(f"DeepSeek Invariant Check: {len(session_event_log)}/{len(model_request_items)} model-visible items logged -> {'PASS' if logged_ok else 'FAIL'}")
+
+tree = {"root": ["turn1"], "main": ["turn1", "turn2a"], "alt": ["turn1", "turn2b"]}
+print(f"Pi Session Tree Branches: main={tree['main']} | alt={tree['alt']}")
+print("Course 07 Complete! Next Stop: Course 08 (Edge AI for Beginners)")`}
+/>
+
+---
+
+## Check Your Understanding
+
+<QuizCard
+  client:visible
+  question="What core architectural invariant does DeepSeek Harness (`dsh`) enforce in its Session Event Log?"
+  options={[
+    "Only errors are written to disk.",
+    "'Model-visible means logged'—anything that enters a model request must be reconstructable from the append-only Session Event Log.",
+    "The agent loop is hardcoded and cannot be replaced.",
+    "Instructions must exceed 1,000 lines."
+  ]}
+  correctAnswer={1}
+  explanation="DeepSeek Harness makes observability a first-principles runtime invariant: every token visible to the model is recorded in the append-only session log so runs are fully replayable."
+/>
