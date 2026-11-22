@@ -1,13 +1,34 @@
 ---
 import Layout from '../layouts/Layout.astro';
+import CoursesDropdown from '../components/islands/CoursesDropdown';
 import { getCollection } from 'astro:content';
 import {
   CURRICULUM_COURSES,
+  buildTrackUrlMap,
   getSortedLessonsForTrack,
   resolveCourseEntryUrl,
 } from '../lib/curriculum';
 
 const allLessons = await getCollection('lessons');
+const trackUrls = buildTrackUrlMap(allLessons);
+
+const homeJsonLd = {
+  '@context': 'https://schema.org',
+  '@graph': [
+    {
+      '@type': 'EducationalOrganization',
+      name: 'BuddhiLive Academy',
+      url: 'https://academy.buddhilive.com',
+      description:
+        'Open-source, zero-backend 9-course AI Engineering curriculum with client-side Pyodide execution and Google Colab notebooks.',
+    },
+    {
+      '@type': 'WebSite',
+      name: 'BuddhiLive Academy',
+      url: 'https://academy.buddhilive.com',
+    },
+  ],
+};
 
 const courseCards = CURRICULUM_COURSES.map((course) => {
   const liveLessons = getSortedLessonsForTrack(course.track, allLessons);
@@ -82,36 +103,72 @@ const pedagogySteps = [
   title="BuddhiLive Academy — 9-Course AI Engineering Learning Path"
   description="Master AI Engineering sequentially from Python fundamentals to neural networks, data science, ML, Generative AI, MCP, AI Agents, Harness Engineering, and Edge AI."
 >
+  <script slot="head" type="application/ld+json" set:html={JSON.stringify(homeJsonLd)} />
+
   <div class="min-h-screen bg-neutral-950 text-neutral-100 flex flex-col">
     {/* Top Navigation */}
-    <header class="border-b border-neutral-800 bg-neutral-900/90 backdrop-blur-sm sticky top-0 z-30">
-      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3.5 flex items-center justify-between gap-4">
-        <a href="/" class="flex items-center gap-2.5 font-extrabold text-lg text-white">
-          <span class="w-7 h-7 rounded bg-[#A7452A] flex items-center justify-center text-xs text-white">
-            BL
-          </span>
-          <span>BuddhiLive Academy</span>
-        </a>
+    <header class="border-b border-neutral-800 bg-neutral-900/95 backdrop-blur-sm sticky top-0 z-30">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2.5 flex items-center justify-between gap-3">
+        <div class="flex items-center gap-2.5 sm:gap-3 min-w-0">
+          <a href="/" class="flex items-center gap-2.5 font-extrabold text-base sm:text-lg text-white min-h-[44px] shrink-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#E07A5F] rounded">
+            <span class="w-7 h-7 rounded bg-[#A7452A] flex items-center justify-center text-xs text-white shrink-0">
+              BL
+            </span>
+            <span class="truncate">BuddhiLive Academy</span>
+          </a>
 
-        <nav aria-label="Primary navigation" class="hidden md:flex items-center gap-6 text-xs font-mono uppercase tracking-wider text-neutral-300">
-          <a href="#learning-path" class="hover:text-[#E07A5F] transition-colors">Learning Path</a>
-          <a href="#how-it-works" class="hover:text-[#E07A5F] transition-colors">Pedagogy</a>
-          <a href="#free-stack" class="hover:text-[#E07A5F] transition-colors">Colab &amp; Gemini Setup</a>
-          <a href="#acknowledgements" class="hover:text-[#E07A5F] transition-colors">Acknowledgements</a>
+          <div class="h-5 w-px bg-neutral-800 shrink-0" aria-hidden="true" />
+
+          <CoursesDropdown client:load trackUrls={trackUrls} buttonLabel="Courses" />
+        </div>
+
+        <nav aria-label="Primary navigation" class="hidden lg:flex items-center gap-6 text-xs font-mono uppercase tracking-wider text-neutral-300">
+          <a href="#learning-path" class="hover:text-[#E07A5F] transition-colors py-2">Learning Path</a>
+          <a href="#how-it-works" class="hover:text-[#E07A5F] transition-colors py-2">Pedagogy</a>
+          <a href="#free-stack" class="hover:text-[#E07A5F] transition-colors py-2">Colab &amp; Gemini Setup</a>
+          <a href="#acknowledgements" class="hover:text-[#E07A5F] transition-colors py-2">Acknowledgements</a>
         </nav>
 
-        <div class="flex items-center gap-3">
+        <div class="flex items-center gap-2 shrink-0">
           <a
             href={resolveCourseEntryUrl('python', allLessons)}
-            class="px-4 py-2 text-xs sm:text-sm font-semibold rounded-md bg-[#A7452A] hover:bg-[#93371E] text-white shadow-sm transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#E07A5F]"
+            class="hidden sm:inline-flex items-center min-h-[44px] px-4 py-2 text-xs sm:text-sm font-semibold rounded-md bg-[#A7452A] hover:bg-[#93371E] text-white shadow-sm transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#E07A5F]"
           >
             Start Course 00 »
           </a>
+
+          {/* Mobile Section Navigation Menu */}
+          <details class="lg:hidden relative group">
+            <summary class="list-none inline-flex items-center justify-center min-w-[44px] min-h-[44px] rounded-md border border-neutral-700 bg-neutral-800/80 text-neutral-200 hover:bg-neutral-800 hover:text-white cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-[#E07A5F]" aria-label="Toggle section menu">
+              <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+              </svg>
+            </summary>
+            <nav aria-label="Mobile section navigation" class="absolute right-0 top-full mt-2 w-[min(calc(100vw-2rem),18rem)] rounded-xl border border-neutral-700 bg-neutral-900 shadow-xl p-2 z-50">
+              <ul class="space-y-1 text-sm font-medium">
+                <li>
+                  <a href="#learning-path" class="flex items-center min-h-[44px] px-3 py-2 rounded-lg text-neutral-200 hover:bg-neutral-800 hover:text-[#E07A5F]">Learning Path</a>
+                </li>
+                <li>
+                  <a href="#how-it-works" class="flex items-center min-h-[44px] px-3 py-2 rounded-lg text-neutral-200 hover:bg-neutral-800 hover:text-[#E07A5F]">Pedagogy</a>
+                </li>
+                <li>
+                  <a href="#free-stack" class="flex items-center min-h-[44px] px-3 py-2 rounded-lg text-neutral-200 hover:bg-neutral-800 hover:text-[#E07A5F]">Colab &amp; Gemini Setup</a>
+                </li>
+                <li>
+                  <a href="#acknowledgements" class="flex items-center min-h-[44px] px-3 py-2 rounded-lg text-neutral-200 hover:bg-neutral-800 hover:text-[#E07A5F]">Acknowledgements</a>
+                </li>
+                <li class="pt-1 border-t border-neutral-800 sm:hidden">
+                  <a href={resolveCourseEntryUrl('python', allLessons)} class="flex items-center justify-center min-h-[44px] px-3 py-2 rounded-lg bg-[#A7452A] text-white font-semibold">Start Course 00 »</a>
+                </li>
+              </ul>
+            </nav>
+          </details>
         </div>
       </div>
     </header>
 
-    <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-14 space-y-16">
+    <main id="main-content" class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-14 space-y-16">
       {/* Masthead + "Start Where You Are" Two-Column Grid */}
       <section class="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10 items-start border-b border-neutral-800 pb-12">
         <div class="lg:col-span-7 space-y-5">

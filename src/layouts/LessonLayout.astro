@@ -63,9 +63,61 @@ if (!nextUrl && nextCourse) {
   nextTitle = `Course ${nextCourse.stepCode}: ${nextCourse.title}`;
   nextFooterActionLabel = `Complete & Continue to Course ${nextCourse.stepCode}`;
 }
+
+const siteBase = Astro.site ?? new URL('https://academy.buddhilive.com');
+const lessonUrl = new URL(`/learn/${entry.data.track}/${entry.id}`, siteBase).toString();
+const courseUrl = new URL(`/learn/${entry.data.track}`, siteBase).toString();
+
+const lessonJsonLd = {
+  '@context': 'https://schema.org',
+  '@graph': [
+    {
+      '@type': 'LearningResource',
+      name: title,
+      description,
+      url: lessonUrl,
+      learningResourceType: 'Tutorial',
+      educationalLevel: entry.data.difficulty,
+      isPartOf: {
+        '@type': 'Course',
+        name: currentCourse ? `Course ${currentCourse.stepCode}: ${currentCourse.title}` : entry.data.track,
+        url: courseUrl,
+      },
+      provider: {
+        '@type': 'EducationalOrganization',
+        name: 'BuddhiLive Academy',
+        url: siteBase.toString().replace(/\/$/, ''),
+      },
+    },
+    {
+      '@type': 'BreadcrumbList',
+      itemListElement: [
+        {
+          '@type': 'ListItem',
+          position: 1,
+          name: 'Home',
+          item: siteBase.toString().replace(/\/$/, ''),
+        },
+        {
+          '@type': 'ListItem',
+          position: 2,
+          name: currentCourse ? `Course ${currentCourse.stepCode}: ${currentCourse.title}` : entry.data.track,
+          item: courseUrl,
+        },
+        {
+          '@type': 'ListItem',
+          position: 3,
+          name: title,
+          item: lessonUrl,
+        },
+      ],
+    },
+  ],
+};
 ---
 
-<Layout title={`${title} | BuddhiLive Academy`} description={description}>
+<Layout title={`${title} | BuddhiLive Academy`} description={description} ogType="article">
+  <script slot="head" type="application/ld+json" set:html={JSON.stringify(lessonJsonLd)} />
   <slot name="head" slot="head" />
   
   <div class="min-h-screen flex flex-col bg-neutral-950 text-neutral-100">
@@ -122,16 +174,16 @@ if (!nextUrl && nextCourse) {
             </p>
 
             {/* W3Schools-style Top Prev / Next Navigation */}
-            <div class="flex items-center justify-between gap-3 pt-2 border-t border-neutral-800/60 not-prose">
+            <div class="flex flex-wrap items-center justify-between gap-2.5 pt-2 border-t border-neutral-800/60 not-prose">
               {prevUrl ? (
                 <a
                   href={prevUrl}
-                  class="inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs sm:text-sm font-semibold rounded-md bg-neutral-800 hover:bg-neutral-700 text-neutral-200 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#E07A5F]"
+                  class="inline-flex items-center gap-1.5 min-h-[44px] px-3.5 py-2 text-xs sm:text-sm font-semibold rounded-md bg-neutral-800 hover:bg-neutral-700 text-neutral-200 transition-colors max-w-full truncate focus:outline-none focus-visible:ring-2 focus-visible:ring-[#E07A5F]"
                 >
-                  {prevLabel}
+                  <span class="truncate">{prevLabel}</span>
                 </a>
               ) : (
-                <span class="inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs sm:text-sm font-semibold rounded-md bg-neutral-900/40 text-neutral-600 cursor-not-allowed">
+                <span class="inline-flex items-center gap-1.5 min-h-[44px] px-3.5 py-2 text-xs sm:text-sm font-semibold rounded-md bg-neutral-900/40 text-neutral-600 cursor-not-allowed">
                   ❮ Previous
                 </span>
               )}
@@ -139,12 +191,12 @@ if (!nextUrl && nextCourse) {
               {nextUrl ? (
                 <a
                   href={nextUrl}
-                  class="inline-flex items-center gap-1.5 px-4 py-1.5 text-xs sm:text-sm font-semibold rounded-md bg-[#A7452A] hover:bg-[#93371E] dark:bg-[#E07A5F] dark:hover:bg-[#E58A73] text-white dark:text-neutral-950 shadow-sm transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#E07A5F]"
+                  class="inline-flex items-center gap-1.5 min-h-[44px] px-4 py-2 text-xs sm:text-sm font-semibold rounded-md bg-[#A7452A] hover:bg-[#93371E] dark:bg-[#E07A5F] dark:hover:bg-[#E58A73] text-white dark:text-neutral-950 shadow-sm transition-colors max-w-full truncate focus:outline-none focus-visible:ring-2 focus-visible:ring-[#E07A5F]"
                 >
-                  {nextLabel}
+                  <span class="truncate">{nextLabel}</span>
                 </a>
               ) : (
-                <span class="inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs sm:text-sm font-semibold rounded-md bg-neutral-900/40 text-neutral-600 cursor-not-allowed">
+                <span class="inline-flex items-center gap-1.5 min-h-[44px] px-3.5 py-2 text-xs sm:text-sm font-semibold rounded-md bg-neutral-900/40 text-neutral-600 cursor-not-allowed">
                   Next ❯
                 </span>
               )}
@@ -173,3 +225,22 @@ if (!nextUrl && nextCourse) {
     </div>
   </div>
 </Layout>
+
+<style is:global>
+  .prose table {
+    display: block;
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  .prose .katex-display {
+    overflow-x: auto;
+    overflow-y: hidden;
+    padding: 0.25rem 0;
+    -webkit-overflow-scrolling: touch;
+  }
+  .prose pre {
+    max-width: 100%;
+    overflow-x: auto;
+  }
+</style>

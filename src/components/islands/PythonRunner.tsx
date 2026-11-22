@@ -122,12 +122,12 @@ export const PythonRunner: React.FC<PythonRunnerProps> = ({
           </h3>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           {/* Copy Button */}
           <button
             type="button"
             onClick={handleCopy}
-            className="px-2.5 py-1.5 text-xs font-medium rounded text-neutral-400 hover:text-white hover:bg-neutral-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E07A5F] transition-colors"
+            className="px-3 py-2 min-h-[40px] text-xs font-medium rounded text-neutral-300 hover:text-white hover:bg-neutral-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E07A5F] transition-colors"
             title="Copy code"
           >
             {copied ? 'Copied!' : 'Copy'}
@@ -137,7 +137,7 @@ export const PythonRunner: React.FC<PythonRunnerProps> = ({
             type="button"
             onClick={handleReset}
             disabled={isRunning}
-            className="px-2.5 py-1.5 text-xs font-medium rounded text-neutral-400 hover:text-white hover:bg-neutral-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E07A5F] transition-colors disabled:opacity-50"
+            className="px-3 py-2 min-h-[40px] text-xs font-medium rounded text-neutral-300 hover:text-white hover:bg-neutral-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E07A5F] transition-colors disabled:opacity-50"
             title="Reset code"
           >
             Reset
@@ -151,7 +151,7 @@ export const PythonRunner: React.FC<PythonRunnerProps> = ({
             disabled={isRunning}
             aria-busy={isRunning}
             aria-label={isRunning ? 'Executing Python code' : 'Try it Yourself (Run)'}
-            className="inline-flex items-center gap-1.5 px-4 py-1.5 min-h-[38px] justify-center text-xs sm:text-sm font-semibold rounded bg-[#A7452A] hover:bg-[#93371E] dark:bg-[#E07A5F] dark:hover:bg-[#E58A73] text-white dark:text-neutral-950 shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E07A5F] transition-all disabled:opacity-60 disabled:cursor-not-allowed"
+            className="inline-flex items-center gap-1.5 px-4 py-2 min-h-[40px] justify-center text-xs sm:text-sm font-semibold rounded bg-[#A7452A] hover:bg-[#93371E] dark:bg-[#E07A5F] dark:hover:bg-[#E58A73] text-white dark:text-neutral-950 shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E07A5F] transition-all disabled:opacity-60 disabled:cursor-not-allowed"
           >
             {isRunning ? (
               <>

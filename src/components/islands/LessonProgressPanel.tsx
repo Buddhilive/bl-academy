@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { listLocalProgress, type LessonProgress } from '../../lib/storage';
-import { CURRICULUM_COURSES, getCourseByTrack } from '../../lib/curriculum';
+import { getCourseByTrack } from '../../lib/curriculum';
+import CoursesDropdown from './CoursesDropdown';
 
 interface LessonSummary {
   id: string;
@@ -92,55 +93,35 @@ export default function LessonProgressPanel({
   const percentage = totalLessons > 0 ? Math.round((completedCount / totalLessons) * 100) : 0;
 
   return (
-    <header className="w-full bg-neutral-900 border-b border-neutral-800 transition-colors">
-      {/* Top 9-Course Sequential Path Bar */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2.5 flex flex-wrap items-center justify-between gap-3">
-        {/* Brand & Sequential Track Links */}
-        <div className="flex items-center gap-3 min-w-0 flex-1 overflow-x-auto py-1 scrollbar-none">
+    <header className="w-full bg-neutral-900 border-b border-neutral-800 sticky top-0 z-30 transition-colors">
+      {/* Top 9-Course Dropdown & Pathfinder Bar */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2.5 flex items-center justify-between gap-3">
+        {/* Brand & Courses Dropdown */}
+        <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
           <a
             href="/"
-            className="flex items-center gap-2 font-bold text-white text-base tracking-tight shrink-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#E07A5F] rounded"
+            className="flex items-center gap-2 font-bold text-white text-base tracking-tight shrink-0 min-h-[44px] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#E07A5F] rounded"
           >
-            <span className="w-6 h-6 rounded bg-[#A7452A] flex items-center justify-center text-xs text-white font-extrabold">
+            <span className="w-7 h-7 rounded bg-[#A7452A] flex items-center justify-center text-xs text-white font-extrabold">
               BL
             </span>
             <span className="hidden sm:inline">BuddhiLive</span>
           </a>
 
-          <div className="h-4 w-px bg-neutral-800 shrink-0" />
+          <div className="h-5 w-px bg-neutral-800 shrink-0" aria-hidden="true" />
 
-          <nav aria-label="9-Course AI Engineering Path" className="flex items-center gap-1 shrink-0">
-            {CURRICULUM_COURSES.map((course) => {
-              const isCurrent = course.track === currentTrack;
-              const trackHref = trackUrls?.[course.track] ?? `/learn/${course.track}`;
-              return (
-                <a
-                  key={course.track}
-                  href={trackHref}
-                  title={`Course ${course.stepCode}: ${course.title}`}
-                  aria-current={isCurrent ? 'page' : undefined}
-                  className={`px-2.5 py-1 rounded-md text-xs font-semibold whitespace-nowrap transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#E07A5F] ${
-                    isCurrent
-                      ? 'bg-[#A7452A] text-white shadow-sm'
-                      : 'text-neutral-300 hover:text-white hover:bg-neutral-800'
-                  }`}
-                >
-                  {course.shortLabel}
-                </a>
-              );
-            })}
-          </nav>
+          <CoursesDropdown currentTrack={currentTrack} trackUrls={trackUrls} />
         </div>
 
         {/* Pathfinder / My Learning Progress Indicator */}
-        <div className="flex items-center gap-3 shrink-0">
+        <div className="flex items-center gap-2.5 sm:gap-3 shrink-0">
           {totalLessons > 0 && (
             <div className="flex items-center gap-2">
               <span className="text-xs text-neutral-300 hidden md:inline-block font-mono">
                 {activeCourse?.shortLabel ?? currentTrack}: {completedCount}/{totalLessons} ({percentage}%)
               </span>
               <div
-                className="w-20 sm:w-24 h-2 bg-neutral-800 rounded-full overflow-hidden relative"
+                className="hidden xs:block w-16 sm:w-24 h-2 bg-neutral-800 rounded-full overflow-hidden relative"
                 role="progressbar"
                 aria-valuenow={percentage}
                 aria-valuemin={0}
@@ -157,7 +138,7 @@ export default function LessonProgressPanel({
 
           {/* Pathfinder XP Pill */}
           <div
-            className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-950/40 border border-amber-800/40 text-amber-300 font-mono text-xs font-semibold"
+            className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-950/40 border border-amber-800/40 text-amber-300 font-mono text-xs font-semibold whitespace-nowrap"
             title="Pathfinder XP Earned"
           >
             <span className="text-amber-400" aria-hidden="true">★</span>
