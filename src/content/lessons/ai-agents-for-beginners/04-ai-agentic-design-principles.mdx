@@ -1,0 +1,110 @@
+---
+title: "AI Agentic Design Principles: Space, Time, Core Uncertainty & Human-Centric Guidelines"
+track: "ai-agents-for-beginners"
+category: "Module 1: Agent Foundations, Frameworks & Core Design Patterns"
+order: 4
+difficulty: "beginner"
+xp: 65
+description: "Apply Space, Time, and Core Agentic Design Principles alongside Transparency, Control, and Consistency to build human-centric AI agents."
+topic: "Agent Foundations"
+prerequisites: ["ai-agents-for-beginners/03-exploring-ai-agentic-frameworks"]
+---
+import PythonRunner from '../../../components/islands/PythonRunner';
+import QuizCard from '../../../components/islands/QuizCard';
+import ColabButton from '../../../components/static/ColabButton.astro';
+
+In generative AI, ambiguity is a feature, not a bug. That makes it surprisingly easy for engineering teams to ship technically impressive agents that users still distrust or abandon. Good agent design is not just about model accuracy—it is about how the agent behaves across **space**, **time**, and **human control**.
+
+Ideally, our agents should broaden human capacities, fill in knowledge gaps, support collaboration in the ways people prefer to work, and help us become better versions of ourselves. Let's break down the human-centric **Agentic Design Principles** and how to wire them directly into your code.
+
+---
+
+## The Three Dimensions of Agentic Design
+
+| Dimension | Core Principle | Concrete Agent Behavior |
+| :--- | :--- | :--- |
+| **Agent (Space)** | *Connecting, not collapsing* | Connects people to events, knowledge, and other people rather than replacing or belittling them |
+| **Agent (Space)** | *Easily accessible yet occasionally invisible* | Supports multimodal I/O, shifts smoothly between foreground and background, and keeps background actions transparent |
+| **Agent (Time)** | *Past, Now, Future* | Reflects on historical state (**Past**), nudges contextually rather than spamming static alerts (**Now**), and adapts across devices & accessibility needs (**Future**) |
+| **Agent (Core)** | *Embrace uncertainty, establish trust* | Surfaces confidence honestly, keeps agent status visible at all times, and gives humans clear on/off control |
+
+---
+
+## The 3 Implementation Guidelines (Travel Agent Blueprint)
+
+To turn those principles into production software, enforce three practical guidelines:
+
+1. **Transparency**: Always inform users that AI is involved, explain what the agent can and cannot do (usage/topic restrictions), display past prompt history, and provide clear feedback mechanisms (thumbs up/down).
+2. **Control**: Let users customize the agent *after* creation—including adjusting verbosity, tone, and topic guardrails, plus the ability to view, export, or **forget (delete)** stored files, prompts, and conversation memory.
+3. **Consistency**: Use familiar, low-cognitive-load UI elements across devices (paperclip for file uploads, microphone for voice, concise summaries paired with "Learn More" links).
+
+---
+
+## Open the Companion Colab Notebook
+
+Launch the companion notebook to build a principle-compliant Travel Agent with `google-genai` that supports runtime verbosity controls, transparent prompt logs, a `forget_user_data()` privacy reset, and an automated UX principle scorecard.
+
+<ColabButton
+  course="ai-agents-for-beginners"
+  notebook="04-ai-agentic-design-principles.ipynb"
+  runtime="Free Tier CPU + Gemini API"
+/>
+
+---
+
+## Try It Yourself: Principle-Compliant Travel Agent & Forget Control
+
+Run this pure-Python sandbox to test how Transparency (AI disclosure + prompt audit log), Control (verbosity toggle + `forget_history()`), and Time-aware contextual nudging work inside a Travel Agent.
+
+<PythonRunner
+  client:visible
+  title="Try it Yourself: Human-Centric Travel Agent Controls"
+  expectedOutput="[Disclosure] AI Travel Agent active | Restrictions: No medical/legal advice
+[Control] Verbosity set to 'concise'
+[Nudge:Now] Gate B12 boarding in 35m; terminal shuttle is 4m away.
+[Control:Forget] Cleared 1 prompt(s) and 1 preference(s) from memory."
+  initialCode={`class HumanCentricTravelAgent:
+    def __init__(self):
+        self.ai_disclosure = "AI Travel Agent active | Restrictions: No medical/legal advice"
+        self.verbosity = "detailed"
+        self.prompt_history = []
+        self.preferences = {"seat": "window"}
+
+    def set_verbosity(self, level: str):
+        self.verbosity = level
+        print(f"[Control] Verbosity set to '{self.verbosity}'")
+
+    def ask(self, prompt: str) -> str:
+        self.prompt_history.append(prompt)
+        return "Gate B12 boarding in 35m; terminal shuttle is 4m away."
+
+    def forget_all(self):
+        p_count = len(self.prompt_history)
+        pref_count = len(self.preferences)
+        self.prompt_history.clear()
+        self.preferences.clear()
+        print(f"[Control:Forget] Cleared {p_count} prompt(s) and {pref_count} preference(s) from memory.")
+
+agent = HumanCentricTravelAgent()
+print(f"[Disclosure] {agent.ai_disclosure}")
+agent.set_verbosity("concise")
+print(f"[Nudge:Now] {agent.ask('Flight status?')}")
+agent.forget_all()`}
+/>
+
+---
+
+## Check Your Understanding
+
+<QuizCard
+  client:visible
+  question="Under the 'Control' guideline of Agentic Design Principles, what capability must users have regarding their stored data and conversations?"
+  options={[
+    "Only administrators should be allowed to view past prompts.",
+    "Users must be able to customize agent behavior (like verbosity) and view or delete ('forget') their stored prompts, files, and memory.",
+    "Agents should permanently lock user preferences after the first session.",
+    "Agents should hide their AI identity to feel more natural."
+  ]}
+  correctAnswer={1}
+  explanation="The Control guideline requires letting users customize persona/verbosity settings and inspect or delete ('forget') their associated files, prompts, and conversation history."
+/>

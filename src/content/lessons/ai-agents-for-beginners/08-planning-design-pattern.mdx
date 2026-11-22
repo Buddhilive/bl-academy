@@ -1,0 +1,147 @@
+---
+title: "The Planning Design Pattern: Goal Decomposition, Pydantic Plans & Re-Planning"
+track: "ai-agents-for-beginners"
+category: "Module 3: Planning, Multi-Agent Systems, Metacognition & Production Observability"
+order: 8
+difficulty: "intermediate"
+xp: 80
+description: "Decompose complex goals into structured Pydantic TravelPlan subtasks, route them across specialist agents, and handle iterative re-planning."
+topic: "Planning & Multi-Agent"
+prerequisites: ["ai-agents-for-beginners/07-building-trustworthy-ai-agents"]
+---
+import PythonRunner from '../../../components/islands/PythonRunner';
+import QuizCard from '../../../components/islands/QuizCard';
+import ColabButton from '../../../components/static/ColabButton.astro';
+
+Most real-world requests are far too complex for a single prompt-and-response turn. If a family asks an agent to *"Create a travel plan for a family of 2 kids from Singapore to Melbourne,"* a single monolithic prompt will almost always miss edge cases like kid-friendly hotels or car rental sizing.
+
+The **Planning Design Pattern** solves this by teaching an agent to clarify the overall goal, decompose it into strongly typed **Pydantic** subtasks, route each subtask to a specialist agent, and dynamically **re-plan** whenever new constraints or user feedback appear.
+
+---
+
+## Task Decomposition & Structured Output
+
+Instead of letting the planner emit free-form prose that downstream code has to regex-parse, we bind the planner to a strict **Pydantic** schema:
+
+```python
+class AgentEnum(str, Enum):
+    FlightBooking = "flight_booking"
+    HotelBooking = "hotel_booking"
+    CarRental = "car_rental"
+    ActivitiesBooking = "activities_booking"
+    DestinationInfo = "destination_info"
+    DefaultAgent = "default_agent"
+    GroupChatManager = "group_chat_manager"
+
+class TravelSubTask(BaseModel):
+    task_details: str
+    assigned_agent: AgentEnum
+
+class TravelPlan(BaseModel):
+    main_task: str
+    subtasks: list[TravelSubTask]
+    is_greeting: bool
+```
+
+| Planning Stage | Role in the Workflow | Output / Artifact |
+| :--- | :--- | :--- |
+| **1. Goal Definition** | Clarify the objective and detect greetings (`is_greeting`) | `main_task` string |
+| **2. Task Decomposition** | Break goal into independent specialist subtasks | `list[TravelSubTask]` |
+| **3. Semantic Routing** | Dispatch single-task plans directly or multi-task plans via coordinator | Routed agent calls |
+| **4. Iterative Re-Planning** | Pass `Previous travel plan` + new feedback to adjust affected subtasks | Updated `TravelPlan` |
+
+---
+
+## Semantic Routing & Iterative Re-Planning
+
+Once the planner returns `TravelPlan`, a **Semantic Router** checks `len(plan.subtasks)`:
+- If `is_greeting` is `True` or there is only one subtask, it routes directly to `DefaultAgent` or the single specialist.
+- If there are multiple subtasks, it hands off to a group coordinator (`GroupChatManager`) to execute them in sequence or parallel.
+
+When an unexpected constraint surfaces mid-flight—say, morning flights are sold out or the user asks for a wheelchair-accessible minivan—the planner runs an **iterative re-plan** pass, keeping valid subtasks intact while updating only the affected steps (similar to **Magentic-One**'s *Task Ledger* and *Progress Ledger* stall-detection loop).
+
+---
+
+## Open the Companion Colab Notebook
+
+Launch the companion notebook to generate structured `TravelPlan` JSON outputs directly from `gemini-2.5-flash` (`response_schema=TravelPlan`), route subtasks across specialist agents, and trigger an iterative re-plan.
+
+<ColabButton
+  course="ai-agents-for-beginners"
+  notebook="08-planning-design-pattern.ipynb"
+  runtime="Free Tier CPU + Gemini API"
+/>
+
+---
+
+## Try It Yourself: Pydantic `TravelPlan` Decomposer & Iterative Re-Planner
+
+Run this pure-Python sandbox to decompose a Singapore-to-Melbourne family trip into typed `TravelSubTask` objects, route them across specialists, and execute a partial re-plan when a flight constraint changes.
+
+<PythonRunner
+  client:visible
+  title="Try it Yourself: Goal Decomposition & Iterative Re-Planning"
+  expectedOutput="[Plan] main_task='Plan a family trip from Singapore to Melbourne.' | subtasks=5 | is_greeting=False
+[Route] flight_booking -> Book round-trip flights from Singapore to Melbourne.
+[Route] hotel_booking -> Find family-friendly hotels in Melbourne.
+[Route] car_rental -> Arrange a car rental suitable for a family of four in Melbourne.
+[Route] activities_booking -> List family-friendly activities in Melbourne.
+[Route] destination_info -> Provide information about Melbourne as a travel destination.
+[RePlan] Updated 'flight_booking' -> Rebooked evening non-stop flight SIN->MEL."
+  initialCode={`from dataclasses import dataclass
+from enum import Enum
+
+class AgentEnum(str, Enum):
+    FlightBooking = "flight_booking"
+    HotelBooking = "hotel_booking"
+    CarRental = "car_rental"
+    ActivitiesBooking = "activities_booking"
+    DestinationInfo = "destination_info"
+
+@dataclass
+class TravelSubTask:
+    task_details: str
+    assigned_agent: AgentEnum
+
+@dataclass
+class TravelPlan:
+    main_task: str
+    subtasks: list[TravelSubTask]
+    is_greeting: bool = False
+
+plan = TravelPlan(
+    main_task="Plan a family trip from Singapore to Melbourne.",
+    subtasks=[
+        TravelSubTask("Book round-trip flights from Singapore to Melbourne.", AgentEnum.FlightBooking),
+        TravelSubTask("Find family-friendly hotels in Melbourne.", AgentEnum.HotelBooking),
+        TravelSubTask("Arrange a car rental suitable for a family of four in Melbourne.", AgentEnum.CarRental),
+        TravelSubTask("List family-friendly activities in Melbourne.", AgentEnum.ActivitiesBooking),
+        TravelSubTask("Provide information about Melbourne as a travel destination.", AgentEnum.DestinationInfo),
+    ],
+)
+
+print(f"[Plan] main_task='{plan.main_task}' | subtasks={len(plan.subtasks)} | is_greeting={plan.is_greeting}")
+for st in plan.subtasks:
+    print(f"[Route] {st.assigned_agent.value} -> {st.task_details}")
+
+# Iterative Re-Planning on constraint change
+plan.subtasks[0] = TravelSubTask("Rebooked evening non-stop flight SIN->MEL.", AgentEnum.FlightBooking)
+print(f"[RePlan] Updated '{plan.subtasks[0].assigned_agent.value}' -> {plan.subtasks[0].task_details}")`}
+/>
+
+---
+
+## Check Your Understanding
+
+<QuizCard
+  client:visible
+  question="Why should a Planning Agent output a strongly typed Pydantic schema (such as `TravelPlan`) instead of unstructured markdown text?"
+  options={[
+    "Because LLMs cannot generate markdown bullet points.",
+    "Structured JSON schemas guarantee type-safe, machine-readable subtask assignments (`assigned_agent`) that a Semantic Router can dispatch deterministically.",
+    "Because Pydantic automatically books flights without tools.",
+    "To prevent the agent from ever re-planning."
+  ]}
+  correctAnswer={1}
+  explanation="Structured Pydantic outputs ensure downstream routers and specialist agents receive validated fields (`assigned_agent`, `task_details`) without brittle string parsing."
+/>

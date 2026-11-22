@@ -1,0 +1,104 @@
+---
+title: "Open-Source Agent Workflows: Middleware, Graph Edges, Checkpointing & LangGraph"
+track: "ai-agents-for-beginners"
+category: "Module 4: Agentic Protocols, Context Engineering, Memory & Graph Workflows"
+order: 15
+difficulty: "advanced"
+xp: 90
+description: "Orchestrate production workflows with composable Function/Chat middleware, serializable threads, 5 graph edge types, and LangGraph /responses hosting."
+topic: "Protocols, Context & Memory"
+prerequisites: ["ai-agents-for-beginners/14-managing-agentic-memory"]
+---
+import PythonRunner from '../../../components/islands/PythonRunner';
+import QuizCard from '../../../components/islands/QuizCard';
+import ColabButton from '../../../components/static/ColabButton.astro';
+
+Once your agent system grows beyond a single loop, you need clean primitives for **durability**, **middleware interception**, and **explicit graph control flow**. Rather than locking into a proprietary runtime, we can implement every one of these production workflow patterns using open-source Python, **LangGraph**, and **FastAPI**.
+
+---
+
+## Core Workflow & Middleware Primitives
+
+1. **5 Orchestration Topologies**: *Sequential*, *Concurrent*, *Group Chat*, *Handoff*, and *Magentic* (manager-led dynamic task lists).
+2. **Serializable Agent Threads**: Calling `thread = agent.get_new_thread()`, `thread.serialize()`, and `agent.deserialize_thread(data)` lets long-running conversations pause and resume across restarts (mirroring `LangGraph`'s `MemorySaver` / `SqliteSaver` checkpointers).
+3. **Composable Middleware**:
+   - **Function Middleware (`FunctionInvocationContext`, `next`)**: Runs pre- and post-hooks around every tool call for logging, RBAC, or argument validation.
+   - **Chat Middleware (`ChatContext`, `next`)**: Intercepts outbound LLM `messages` arrays for PII redaction or token auditing.
+4. **Graph Workflows (`WorkflowBuilder`)**: Connect AI agents and Python **Executors** using five edge types—**Direct**, **Conditional**, **Switch-Case** (e.g., VIP priority routing), **Fan-Out**, and **Fan-In**—while emitting typed lifecycle events (`WorkflowStartedEvent`, `ExecutorInvokeEvent`, `ExecutorCompleteEvent`, `RequestInfoEvent`, `WorkflowOutputEvent`, `WorkflowErrorEvent`).
+
+| Hosting Protocol | Endpoint | Best Used For |
+| :--- | :--- | :--- |
+| **`Responses` Protocol** | `POST /responses` | OpenAI-compatible chat, streaming, `previous_response_id` threading, and `interrupt()` HITL |
+| **`Invocations` Protocol** | `POST /invocations` | Custom JSON payloads, webhook triggers, or non-conversational batch jobs |
+
+---
+
+## Open the Companion Colab Notebook
+
+Launch the companion notebook to build composable Function/Chat Middleware, a 5-edge `LangGraph` hotel-booking workflow with `MemorySaver` checkpointing, and a FastAPI `/responses` server using `google-genai`.
+
+<ColabButton
+  course="ai-agents-for-beginners"
+  notebook="15-open-source-agent-workflows-middleware-and-langgraph.ipynb"
+  runtime="Free Tier CPU + Gemini API"
+/>
+
+---
+
+## Try It Yourself: Middleware Pipeline & 5-Edge Workflow Engine
+
+Run this pure-Python sandbox to chain Function & Chat Middleware, serialize/deserialize a conversation thread, and execute a Switch-Case + Fan-Out/Fan-In workflow emitting lifecycle events.
+
+<PythonRunner
+  client:visible
+  title="Try it Yourself: Middleware & Graph Workflow Engine"
+  expectedOutput="[Event] WorkflowStartedEvent
+[ChatMiddleware] Outbound messages=1 -> forwarded to LLM
+[FunctionMiddleware] Calling get_attractions('Seattle') -> completed
+[SwitchCase] customer_tier='VIP' -> Routed to PriorityConciergeExecutor
+[FanOut/FanIn] Merged 2 parallel results (Flights + Hotel)
+[Thread] Serialized & resumed with 2 messages
+[Event] WorkflowOutputEvent"
+  initialCode={`print("[Event] WorkflowStartedEvent")
+
+def chat_middleware(messages, nxt):
+    print(f"[ChatMiddleware] Outbound messages={len(messages)} -> forwarded to LLM")
+    return nxt(messages)
+
+def function_middleware(fn_name, arg, nxt):
+    res = nxt(arg)
+    print(f"[FunctionMiddleware] Calling {fn_name}('{arg}') -> completed")
+    return res
+
+chat_middleware(["Best places in Seattle?"], lambda m: "OK")
+function_middleware("get_attractions", "Seattle", lambda loc: f"Space Needle in {loc}")
+
+# Switch-case & Fan-Out / Fan-In
+tier = "VIP"
+route = "PriorityConciergeExecutor" if tier == "VIP" else "StandardExecutor"
+print(f"[SwitchCase] customer_tier='{tier}' -> Routed to {route}")
+parallel_results = ["Flights: OK", "Hotel: OK"]
+print(f"[FanOut/FanIn] Merged {len(parallel_results)} parallel results (Flights + Hotel)")
+
+# Thread serialization
+serialized = {"messages": ["msg1", "msg2"]}
+print(f"[Thread] Serialized & resumed with {len(serialized['messages'])} messages")
+print("[Event] WorkflowOutputEvent")`}
+/>
+
+---
+
+## Check Your Understanding
+
+<QuizCard
+  client:visible
+  question="What is the difference between Function Middleware and Chat Middleware in an agent workflow?"
+  options={[
+    "Function Middleware intercepts tool invocations, whereas Chat Middleware intercepts the message array sent to and from the LLM.",
+    "Chat Middleware only works with SQLite databases.",
+    "Function Middleware replaces all graph edges.",
+    "They are identical aliases for the same hook."
+  ]}
+  correctAnswer={0}
+  explanation="Function Middleware wraps individual tool/function calls (`FunctionInvocationContext`), while Chat Middleware wraps the LLM request/response boundary (`ChatContext`)."
+/>

@@ -1,0 +1,113 @@
+---
+title: "Metacognition in AI Agents: Self-Reflection, Corrective RAG & Schema-Aware SQL"
+track: "ai-agents-for-beginners"
+category: "Module 3: Planning, Multi-Agent Systems, Metacognition & Production Observability"
+order: 10
+difficulty: "advanced"
+xp: 85
+description: "Build self-reflective metacognitive agents that switch decision strategies, run Corrective RAG, classify search intent, and generate schema-aware SQL."
+topic: "Planning & Multi-Agent"
+prerequisites: ["ai-agents-for-beginners/09-multi-agent-design-patterns"]
+---
+import PythonRunner from '../../../components/islands/PythonRunner';
+import QuizCard from '../../../components/islands/QuizCard';
+import ColabButton from '../../../components/static/ColabButton.astro';
+
+Most agents blindly follow whatever heuristic you gave them—even when that heuristic keeps producing bad recommendations. **Metacognition** ("thinking about thinking") gives an agent higher-order self-awareness to monitor its own reasoning, diagnose flawed strategies, and rewrite its decision policy on the fly.
+
+Every metacognitive agent combines three core building blocks—**Persona**, **Tools**, and **Skills**—into a self-regulating expertise unit that improves *Transparency*, *Reasoning*, *Adaptation*, and *Perception*.
+
+---
+
+## 4 Pillars of Metacognitive Agent Engineering
+
+1. **Strategy Reflection (`HotelRecommendationAgent`)**: True metacognition changes the *strategy*, not just one answer. If a hotel agent picks `'Budget Inn'` (`price: 80, quality: 6`) under its `'cheapest'` strategy and receives `"bad"` feedback (`price < 100 or quality < 7`), it reflects and switches strategies to `'highest_quality'` (`'Luxury Stay'`, `quality: 9`).
+2. **Pre-Emptive Context Load vs. Goal-Bootstrapped Planning**: Pre-load static high-frequency facts (currencies, languages) for $O(1)$ lookup, and bootstrap budget-constrained plans ($\sum_{d \in P} \text{cost}(d) \le B$) before iteratively swapping items to maximize satisfaction.
+3. **Corrective RAG, Relevancy Scoring & Search with Intent**:
+   - Distinguish **RAG as a Prompting Technique** (manual query crafting) from **RAG as an Integrated Tool** (automated pipeline).
+   - Score items across interests, budget, and destination: $R(item, q) = \mathbb{I}[\text{cat} \in \text{interests}] + \mathbb{I}[\text{price} \le B] + \mathbb{I}[\text{loc} == \text{dest}]$, re-rank candidates with an LLM, and classify queries into **Informational**, **Navigational**, or **Transactional** intent.
+4. **Schema-Aware Code & SQL Generation as RAG**: Dynamically generate SQLite queries (`SELECT * FROM hotels WHERE ...`) and use environmental schema rules (`positive_adjustment`, `negative_adjustment`) to translate `liked`/`disliked` feedback into updated query filters.
+
+| Technique | Primary Mechanism | When to Apply |
+| :--- | :--- | :--- |
+| **Pre-Emptive Context Load** | In-memory dictionary loaded at startup | Small, stable reference facts (city metadata) |
+| **Corrective RAG** | Re-query & re-rank using `liked`/`disliked` feedback | Dynamic search where initial hits miss user taste |
+| **Search with Intent** | Classify `informational` / `navigational` / `transactional` | Multi-purpose search assistants |
+| **SQL as RAG** | Generate & run parameterized SQLite queries | Structured inventory (flights, hotels, pricing) |
+
+---
+
+## Open the Companion Colab Notebook
+
+Launch the companion notebook to run all four metacognition subsystems with `sqlite3` and `google-genai` LLM re-ranking.
+
+<ColabButton
+  course="ai-agents-for-beginners"
+  notebook="10-metacognition-in-ai-agents.ipynb"
+  runtime="Free Tier CPU + Gemini API"
+/>
+
+---
+
+## Try It Yourself: Metacognitive Strategy Switcher & Schema-Aware SQL RAG
+
+Run this pure-Python sandbox to watch `HotelRecommendationAgent` reflect and switch from `'cheapest'` to `'highest_quality'`, classify query intent, and execute a schema-aware SQLite RAG query.
+
+<PythonRunner
+  client:visible
+  title="Try it Yourself: Metacognitive Reflection & SQL RAG"
+  expectedOutput="[Step 1] Strategy 'cheapest' -> Budget Inn (price=$80, quality=6)
+[Reflect] Feedback='bad' -> Adjusting strategy to 'highest_quality'
+[Step 2] Strategy 'highest_quality' -> Luxury Stay (price=$200, quality=9)
+[Intent] 'best museums in Paris' -> informational
+[SQL-RAG] Querying SQLite hotels -> [('Comfort Suites', 120), ('Luxury Stay', 200)]"
+  initialCode={`import sqlite3
+
+hotels = [
+    {"name": "Budget Inn", "price": 80, "quality": 6},
+    {"name": "Comfort Suites", "price": 120, "quality": 8},
+    {"name": "Luxury Stay", "price": 200, "quality": 9},
+]
+
+# 1. Metacognitive Strategy Reflection
+strategy = "cheapest"
+pick = min(hotels, key=lambda h: h["price"])
+print(f"[Step 1] Strategy '{strategy}' -> {pick['name']} (price=\${pick['price']}, quality={pick['quality']})")
+
+feedback = "bad" if (pick["price"] < 100 or pick["quality"] < 7) else "good"
+if feedback == "bad":
+    strategy = "highest_quality"
+    print(f"[Reflect] Feedback='{feedback}' -> Adjusting strategy to '{strategy}'")
+
+pick2 = max(hotels, key=lambda h: h["quality"])
+print(f"[Step 2] Strategy '{strategy}' -> {pick2['name']} (price=\${pick2['price']}, quality={pick2['quality']})")
+
+# 2. Search with Intent
+query = "best museums in Paris"
+intent = "transactional" if "book" in query else ("navigational" if "website" in query else "informational")
+print(f"[Intent] '{query}' -> {intent}")
+
+# 3. SQL as RAG
+conn = sqlite3.connect(":memory:")
+conn.execute("CREATE TABLE hotels (name TEXT, price INT, quality INT)")
+conn.executemany("INSERT INTO hotels VALUES (?, ?, ?)", [(h["name"], h["price"], h["quality"]) for h in hotels])
+rows = conn.execute("SELECT name, price FROM hotels WHERE quality >= 8 ORDER BY price ASC").fetchall()
+print(f"[SQL-RAG] Querying SQLite hotels -> {rows}")`}
+/>
+
+---
+
+## Check Your Understanding
+
+<QuizCard
+  client:visible
+  question="In `HotelRecommendationAgent`, what makes its feedback loop genuinely metacognitive rather than a simple retry?"
+  options={[
+    "It increases the HTTP timeout.",
+    "It diagnoses that its underlying decision strategy ('cheapest') produced low quality and switches to a different strategy ('highest_quality') for future decisions.",
+    "It hard-codes the most expensive hotel for every user.",
+    "It deletes all user preferences after each query."
+  ]}
+  correctAnswer={1}
+  explanation="Metacognition ('thinking about thinking') evaluates why a reasoning strategy failed and updates the strategy itself rather than merely tweaking one output."
+/>

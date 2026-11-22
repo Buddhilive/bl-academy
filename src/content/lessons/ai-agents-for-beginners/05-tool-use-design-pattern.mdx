@@ -1,0 +1,127 @@
+---
+title: "The Tool Use Design Pattern: Function Schemas, MCP Tools & Read-Only SQL Guards"
+track: "ai-agents-for-beginners"
+category: "Module 2: Tool Use, Agentic RAG & Trustworthy Agents"
+order: 5
+difficulty: "intermediate"
+xp: 75
+description: "Implement the Tool Use Design Pattern with JSON function schemas, @tool decorators, MCP Streamable HTTP tools, and read-only SQL injection guards."
+topic: "Tool Use & Agentic RAG"
+prerequisites: ["ai-agents-for-beginners/04-ai-agentic-design-principles"]
+---
+import PythonRunner from '../../../components/islands/PythonRunner';
+import QuizCard from '../../../components/islands/QuizCard';
+import ColabButton from '../../../components/static/ColabButton.astro';
+
+Without tools, an LLM is trapped inside its training cutoff—it can write poetry about San Francisco, but it cannot tell you what time it is there right now or how many units your store sold this morning. The **Tool Use Design Pattern** gives an agent executable functions so it can read live databases, call APIs, run code, and automate workflows.
+
+When you wire up function calling properly, the LLM never executes code directly. Instead, it inspects JSON schemas, chooses the right tool and arguments, and hands control back to your application to run the function safely.
+
+---
+
+## The 6 Building Blocks of Tool Use
+
+Every production tool-calling agent relies on six interlocking components:
+
+| Building Block | Responsibility |
+| :--- | :--- |
+| **Function / Tool Schemas** | JSON definitions specifying tool name, description, parameter types, and required fields |
+| **Function Execution Logic** | Routing and conditional logic governing when and how tools are invoked |
+| **Message Handling System** | Managing user messages, model `function_call` turns, and `function_call_output` replies |
+| **Tool Integration Framework** | Connectors linking local Python functions, MCP servers, or REST APIs to the agent |
+| **Error Handling & Validation** | Catching malformed arguments, API timeouts, and unexpected outputs gracefully |
+| **State Management** | Tracking multi-turn tool call IDs and conversation history |
+
+---
+
+## Raw Function Calling vs. `@tool` Decorators & MCP Tools
+
+Under the hood, raw function calling follows a strict **two-turn round-trip**:
+
+1. **Turn 1**: Send the user message (*"What's the current time in San Francisco?"*) plus the JSON tool schema (`get_current_time`). The model returns a `function_call` request (`name="get_current_time"`, `arguments='{"location": "San Francisco"}'`).
+2. **Execute & Turn 2**: Your Python code runs `get_current_time("San Francisco")` using `datetime.now(ZoneInfo(timezone))`, appends the `function_call_output` JSON back into the conversation, and calls the model again to synthesize the final human-readable answer.
+
+Modern agent SDKs simplify this with `@tool` decorators that inspect Python type hints and docstrings automatically—and with **Model Context Protocol (MCP)** clients (`MCPStreamableHTTPTool`), your agent can even discover remote tools (`search_web_pages`, `fetch_page_content`) over Streamable HTTP without writing local wrappers.
+
+---
+
+## Security: Read-Only SQL Guards for Dynamic Queries
+
+A major risk in Contoso-style sales analytics agents (`fetch_sales_data_using_sqlite_query`) is **LLM-generated SQL injection** or accidental `DROP TABLE` / `DELETE` mutations. Always enforce defense-in-depth:
+
+- Grant the agent's database connection a **strict read-only (`SELECT`-only) role** (or SQLite `mode=ro` URI / authorizer hook).
+- Validate generated SQL against an allowlist before execution so mutating keywords (`DROP`, `DELETE`, `UPDATE`, `INSERT`, `ALTER`) are rejected immediately.
+
+---
+
+## Open the Companion Colab Notebook
+
+Launch the companion notebook to run raw JSON-schema function calling, `@tool` auto-schemas, a remote MCP search tool demo, and the Contoso SQLite Sales Analytics Agent with `google-genai`.
+
+<ColabButton
+  course="ai-agents-for-beginners"
+  notebook="05-tool-use-design-pattern.ipynb"
+  runtime="Free Tier CPU + Gemini API"
+/>
+
+---
+
+## Try It Yourself: `get_current_time` & Read-Only SQLite Sales Guard
+
+Run this pure-Python sandbox to execute the two-turn `get_current_time` function-calling loop, query an in-memory Contoso SQLite sales table safely, and watch the read-only guard block a destructive SQL injection attempt.
+
+<PythonRunner
+  client:visible
+  title="Try it Yourself: Tool Calling & Read-Only SQL Guard"
+  expectedOutput="[Turn 1] Model requested tool: get_current_time({'location': 'San Francisco'})
+[Turn 2] Final answer: The current time in San Francisco is 09:24 AM.
+[SalesSQL] Executed SELECT -> [('Widget A', 4200), ('Widget B', 3150)]
+[SQLGuard] BLOCKED unsafe query: DROP TABLE sales;
+[SmokeTest] TravelToolAgent PASS"
+  initialCode={`import json, re, sqlite3
+
+# 1. Two-turn function calling simulation
+def get_current_time(location: str) -> str:
+    tz_map = {"san francisco": "09:24 AM", "tokyo": "02:24 AM"}
+    return json.dumps({"location": location, "current_time": tz_map.get(location.lower(), "unknown")})
+
+tool_call = {"name": "get_current_time", "arguments": {"location": "San Francisco"}}
+print(f"[Turn 1] Model requested tool: {tool_call['name']}({tool_call['arguments']})")
+tool_out = json.loads(get_current_time(**tool_call["arguments"]))
+print(f"[Turn 2] Final answer: The current time in {tool_out['location']} is {tool_out['current_time']}.")
+
+# 2. Contoso SQLite sales query with Read-Only Guard
+conn = sqlite3.connect(":memory:")
+conn.execute("CREATE TABLE sales (product TEXT, revenue INT)")
+conn.executemany("INSERT INTO sales VALUES (?, ?)", [("Widget A", 4200), ("Widget B", 3150)])
+
+def fetch_sales_data_using_sqlite_query(sql: str):
+    if not re.match(r"^\s*SELECT\b", sql, re.IGNORECASE) or re.search(r"\b(DROP|DELETE|UPDATE|INSERT|ALTER)\b", sql, re.IGNORECASE):
+        raise PermissionError(f"BLOCKED unsafe query: {sql}")
+    return conn.execute(sql).fetchall()
+
+print(f"[SalesSQL] Executed SELECT -> {fetch_sales_data_using_sqlite_query('SELECT product, revenue FROM sales ORDER BY revenue DESC')}")
+try:
+    fetch_sales_data_using_sqlite_query("DROP TABLE sales;")
+except PermissionError as err:
+    print(f"[SQLGuard] {err}")
+
+print("[SmokeTest] TravelToolAgent PASS")`}
+/>
+
+---
+
+## Check Your Understanding
+
+<QuizCard
+  client:visible
+  question="What is the single most effective safeguard when allowing an AI agent to generate and run SQL queries against a company database?"
+  options={[
+    "Asking the LLM politely in the system prompt not to delete tables.",
+    "Enforcing a read-only (SELECT-only) database role and validating queries before execution.",
+    "Passing the database admin password inside the user prompt.",
+    "Disabling JSON schemas for all database tools."
+  ]}
+  correctAnswer={1}
+  explanation="Prompt instructions alone can be bypassed by prompt injection. Enforcing read-only database permissions (SELECT-only) plus query validation guarantees the agent cannot mutate or drop data."
+/>

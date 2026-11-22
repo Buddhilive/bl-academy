@@ -1,0 +1,104 @@
+---
+title: "Context Engineering for AI Agents: Scratchpads, Inspection & 4 Failure Fixes"
+track: "ai-agents-for-beginners"
+category: "Module 4: Agentic Protocols, Context Engineering, Memory & Graph Workflows"
+order: 13
+difficulty: "advanced"
+xp: 85
+description: "Manage finite agent context windows with scratchpads, compression, privacy-safe inspection records, and fixes for Poisoning, Distraction, Confusion, and Clash."
+topic: "Protocols, Context & Memory"
+prerequisites: ["ai-agents-for-beginners/12-agentic-protocols-mcp-a2a-and-nlweb"]
+---
+import PythonRunner from '../../../components/islands/PythonRunner';
+import QuizCard from '../../../components/islands/QuizCard';
+import ColabButton from '../../../components/static/ColabButton.astro';
+
+Prompt engineering focuses on crafting a single static set of instructions. **Context Engineering** is the discipline of actively curating everything inside the model's finite context window—*Instructions*, *Knowledge*, *Tools*, *Conversation History*, and *User Preferences*—so the agent has the exact right signal at every step.
+
+Start with a three-step plan: **(1) Define Clear Results**, **(2) Map the Context**, and **(3) Create Context Pipelines**. Then apply six runtime strategies: **Agent Scratchpads**, **Cross-Session Memories**, **Context Compression**, **Multi-Agent Isolation**, **Sandbox Environments**, and **Runtime State Objects**.
+
+---
+
+## Privacy-Safe Context Inspection
+
+When an agent misbehaves, ask: *"Did it load too much context, the wrong context, or miss context it needed?"* Never log raw user prompts or PII to answer that. Instead, emit compact **Context Inspection Records** containing selection counts, pre/post-compression token counts, subagent isolation summaries, document/memory IDs, and SHA-256 hashes.
+
+---
+
+## The 4 Common Context Failures & How to Fix Them
+
+| Context Failure | What Goes Wrong | Travel Booking Example | Production Mitigation |
+| :--- | :--- | :--- | :--- |
+| **Context Poisoning** | Hallucinated or erroneous data enters context and keeps getting reused | Agent hallucinates a non-existent direct flight from a small local airport | **Validation & Quarantine**: Verify facts against a real-time API before persisting |
+| **Context Distraction** | Bloated history causes the model to fixate on old turns | 2-year-old backpacking chat derails a *"cheap flight next month"* request | **Context Summarization**: Periodically compress history into a focused summary |
+| **Context Confusion** | Too many overlapping tools (>30) degrade tool selection | Agent calls `book_flight` when asked how to get around inside Paris | **RAG Tool Loadout**: Vector-search tool descriptions and load only top-$k$ tools |
+| **Context Clash** | Contradictory instructions coexist across turns | User says *"economy class"* early, then switches to *"business class"* | **Pruning & Offloading**: Override/prune stale rules or reconcile in a scratchpad |
+
+---
+
+## Open the Companion Colab Notebook
+
+Launch the companion notebook to implement all four failure mitigations, vector-based dynamic tool loadout selection, and privacy-safe Context Inspection Records with `google-genai` and `ChromaDB`.
+
+<ColabButton
+  course="ai-agents-for-beginners"
+  notebook="13-context-engineering-for-ai-agents.ipynb"
+  runtime="Free Tier CPU + Gemini API"
+/>
+
+---
+
+## Try It Yourself: 4-Failure Context Repair & Inspection Engine
+
+Run this pure-Python sandbox to quarantine a poisoned flight route, compress a distracted history, filter 32 tools down to a focused top-3 loadout, prune a clashing cabin preference, and emit a redacted inspection record.
+
+<PythonRunner
+  client:visible
+  title="Try it Yourself: Context Failure Repair & Inspection"
+  expectedOutput="[Poisoning] Quarantined unverified route 'LOCAL->CDG' (API valid=False)
+[Distraction] Compressed 12 turns (1800 -> 240 tokens, 86.7% reduction)
+[Confusion] Filtered 32 tools -> top-3 loadout: ['public_transport_info', 'rent_car', 'city_map']
+[Clash] Pruned stale 'economy' -> Active cabin: 'business'
+[Inspect] {'selected_tools': 3, 'tokens_before': 1800, 'tokens_after': 240, 'pii_logged': False}"
+  initialCode={`# 1. Context Poisoning -> API Validation & Quarantine
+valid_routes = {"SFO->CDG", "JFK->CDG"}
+candidate_route = "LOCAL->CDG"
+if candidate_route not in valid_routes:
+    print(f"[Poisoning] Quarantined unverified route '{candidate_route}' (API valid=False)")
+
+# 2. Context Distraction -> Summarization
+tokens_before, tokens_after = 1800, 240
+red = (1 - tokens_after / tokens_before) * 100
+print(f"[Distraction] Compressed 12 turns ({tokens_before} -> {tokens_after} tokens, {red:.1f}% reduction)")
+
+# 3. Context Confusion -> RAG Tool Loadout (< 30 tools)
+all_tools = [f"tool_{i}" for i in range(29)] + ["public_transport_info", "rent_car", "city_map"]
+loadout = [t for t in all_tools if not t.startswith("tool_")]
+print(f"[Confusion] Filtered {len(all_tools)} tools -> top-{len(loadout)} loadout: {loadout}")
+
+# 4. Context Clash -> Preference Pruning
+prefs = {"cabin": "economy"}
+prefs["cabin"] = "business"
+print(f"[Clash] Pruned stale 'economy' -> Active cabin: '{prefs['cabin']}'")
+
+# 5. Privacy-Safe Inspection Record
+record = {"selected_tools": len(loadout), "tokens_before": tokens_before, "tokens_after": tokens_after, "pii_logged": False}
+print(f"[Inspect] {record}")`}
+/>
+
+---
+
+## Check Your Understanding
+
+<QuizCard
+  client:visible
+  question="Your agent has 45 registered tools and starts picking the wrong tool for simple queries. Which context failure is occurring, and what is the recommended fix?"
+  options={[
+    "Context Poisoning — delete the system prompt.",
+    "Context Confusion — use RAG over tool descriptions to dynamically load only the most relevant tools (fewer than 30) per query.",
+    "Context Clash — increase the temperature to 1.5.",
+    "Context Distraction — add all 45 tool schemas twice."
+  ]}
+  correctAnswer={1}
+  explanation="Context Confusion happens when too many tool definitions clutter the context window. Dynamically retrieving only the top-k relevant tools via RAG keeps the active tool loadout focused."
+/>

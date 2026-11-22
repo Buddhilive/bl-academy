@@ -1,0 +1,107 @@
+---
+title: "Managing Agentic Memory: Mem0 Two-Phase Pipelines & Cognee Knowledge Graphs"
+track: "ai-agents-for-beginners"
+category: "Module 4: Agentic Protocols, Context Engineering, Memory & Graph Workflows"
+order: 14
+difficulty: "advanced"
+xp: 85
+description: "Implement the 7 types of AI agent memory using Mem0's extraction/update pipeline, Cognee knowledge graphs, and self-improving observer agents."
+topic: "Protocols, Context & Memory"
+prerequisites: ["ai-agents-for-beginners/13-context-engineering-for-ai-agents"]
+---
+import PythonRunner from '../../../components/islands/PythonRunner';
+import QuizCard from '../../../components/islands/QuizCard';
+import ColabButton from '../../../components/static/ColabButton.astro';
+
+Without memory, every conversation with an AI agent starts from zero—forcing users to repeat their preferences, constraints, and history over and over again. **Memory** is what turns stateless bots into reflective, proactive, self-improving assistants.
+
+---
+
+## The 7 Types of AI Agent Memory
+
+| Memory Type | Scope & Lifetime | Travel Agent Example |
+| :--- | :--- | :--- |
+| **Working Memory** | Current reasoning step / scratchpad | Holds active request *"Book a trip to Paris"* |
+| **Short-Term Memory** | Single conversation session (`AgentSession`) | Resolves *"What about accommodation there?"* $\rightarrow$ *"Paris"* |
+| **Long-Term Memory** | Persists across sessions in a DB/vector store | Recalls *"Ben likes mountain-view coffee and avoids advanced ski slopes due to injury"* |
+| **Persona Memory** | Reinforces the agent's consistent role/tone | Maintains *"expert ski planner"* voice |
+| **Episodic / Workflow** | Records action sequences, successes & failures | Remembers a failed flight booking attempt to avoid repeating it |
+| **Entity Memory** | Tracks structured people, places, and things | Extracts `"Paris"`, `"Eiffel Tower"`, `"Le Chat Noir"` |
+| **Structured RAG** | Parses dense structured fields from raw sources | Extracts flight date, time, and airline from confirmation emails |
+
+---
+
+## Mem0 Two-Phase Pipeline & Cognee Knowledge Graphs
+
+Two open-source memory architectures solve persistent recall at scale:
+
+1. **Mem0 (Two-Phase Extraction & Update)**: In *Phase 1 (Extraction)*, an LLM summarizes new conversation turns into candidate facts. In *Phase 2 (Update)*, it compares those candidates against existing memories and executes `ADD`, `UPDATE`, `DELETE`, or `NOOP` operations across hybrid vector, key-value, and graph stores.
+2. **Cognee (Dual-Store Semantic Knowledge Graph)**: Transforms structured and unstructured data into an entity-relationship graph $G = (V, E)$ backed by vector embeddings, enabling **hybrid retrieval** that blends semantic similarity with graph traversal.
+
+### Self-Improving Knowledge Observer & Latency Optimization
+
+To make agents self-improving without slowing down user replies, run a background **Knowledge Agent** that observes the main dialogue. Use a fast, low-cost SLM (`gemini-2.5-flash-lite`) as a gate to check whether a turn contains store-worthy facts, and archive stale entries to cold storage.
+
+---
+
+## Open the Companion Colab Notebook
+
+Launch the companion notebook to run both a **Mem0-style 2-phase memory pipeline** and a **Cognee-style Knowledge Graph hybrid retriever** using `google-genai` and `ChromaDB`.
+
+<ColabButton
+  course="ai-agents-for-beginners"
+  notebook="14-managing-agentic-memory.ipynb"
+  runtime="Free Tier CPU + Gemini API"
+/>
+
+---
+
+## Try It Yourself: Mem0 Extract/Update & Cognee Knowledge Graph
+
+Run this pure-Python sandbox to execute Mem0's `ADD`/`UPDATE` reconciliation on Ben's ski preferences, query a Cognee-style entity-relationship graph, and run an SLM-gated Knowledge Observer.
+
+<PythonRunner
+  client:visible
+  title="Try it Yourself: Mem0 Two-Phase & Cognee Knowledge Graph"
+  expectedOutput="[Mem0:Extract] Candidate facts: ['likes mountain-view coffee', 'avoids advanced ski slopes']
+[Mem0:Update] ADD -> mem_1: 'likes mountain-view coffee' | ADD -> mem_2: 'avoids advanced ski slopes'
+[Cognee:Graph] (Ben) -[AVOIDS_DUE_TO_INJURY]-> (Advanced Ski Slopes)
+[KnowledgeObserver] SLM gate=STORE -> Saved episodic preference for next session."
+  initialCode={`# 1. Mem0 Two-Phase Extraction & Update
+memory_store = {}
+extracted = ["likes mountain-view coffee", "avoids advanced ski slopes"]
+print(f"[Mem0:Extract] Candidate facts: {extracted}")
+ops = []
+for idx, fact in enumerate(extracted, start=1):
+    key = f"mem_{idx}"
+    memory_store[key] = fact
+    ops.append(f"ADD -> {key}: '{fact}'")
+print(f"[Mem0:Update] {' | '.join(ops)}")
+
+# 2. Cognee Knowledge Graph Triple Traversal
+edges = [("Ben", "PREFERS", "Mountain-View Coffee"), ("Ben", "AVOIDS_DUE_TO_INJURY", "Advanced Ski Slopes")]
+avoid_edge = next(e for e in edges if e[0] == "Ben" and "AVOIDS" in e[1])
+print(f"[Cognee:Graph] ({avoid_edge[0]}) -[{avoid_edge[1]}]-> ({avoid_edge[2]})")
+
+# 3. SLM-Gated Knowledge Observer
+turn_has_preference = True
+gate = "STORE" if turn_has_preference else "SKIP"
+print(f"[KnowledgeObserver] SLM gate={gate} -> Saved episodic preference for next session.")`}
+/>
+
+---
+
+## Check Your Understanding
+
+<QuizCard
+  client:visible
+  question="How does Cognee's dual-store architecture differ from a standard flat vector database?"
+  options={[
+    "It only stores plain text files without embeddings.",
+    "It combines vector similarity search with an entity-relationship knowledge graph so agents can retrieve both semantically similar chunks and connected concepts.",
+    "It disables long-term memory across sessions.",
+    "It requires manual SQL joins for every user prompt."
+  ]}
+  correctAnswer={1}
+  explanation="Cognee pairs vector embeddings with a queryable knowledge graph, enabling hybrid retrieval that understands both semantic similarity and explicit relationships between entities."
+/>

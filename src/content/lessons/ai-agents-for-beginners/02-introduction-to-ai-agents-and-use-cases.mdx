@@ -1,0 +1,133 @@
+---
+title: "Introduction to AI Agents & Use Cases: Environment, Sensors, Actuators & The 7 Agent Taxonomies"
+track: "ai-agents-for-beginners"
+category: "Module 1: Agent Foundations, Frameworks & Core Design Patterns"
+order: 2
+difficulty: "beginner"
+xp: 60
+description: "Understand what defines an AI Agent, explore Environment/Sensors/Actuators, compare all 7 agent types, and build a TravelAgent with smoke tests."
+topic: "Agent Foundations"
+prerequisites: ["ai-agents-for-beginners/01-course-setup-colab-and-gemini-agent-stack"]
+---
+import PythonRunner from '../../../components/islands/PythonRunner';
+import QuizCard from '../../../components/islands/QuizCard';
+import ColabButton from '../../../components/static/ColabButton.astro';
+
+When you chat with a standard Large Language Model, it reads your prompt and predicts text. It cannot check live flight prices, query a database, or book a hotel room on its own. **AI Agents** bridge that gap: they are systems that let LLMs *do things* by giving them tools, memory, and a structured loop to act on an environment.
+
+What surprises most beginners is that AI agents existed in classical computer science long before LLMs. Modern LLMs simply supercharged the "brain" inside the loop, turning brittle rule-based scripts into systems that can understand messy human requests, reason over context, and adapt across multi-step workflows.
+
+---
+
+## Anatomy of an AI Agent
+
+Every AI agent—whether it is a simple thermostat or an autonomous travel planner—operates through three foundational system components combined with modern LLM capabilities:
+
+1. **Environment**: The digital or physical space the agent operates in (for example, a flight booking platform or a codebase).
+2. **Sensors**: How the agent observes the current state of its environment (reading hotel availability, checking flight prices, or inspecting API responses).
+3. **Actuators**: How the agent takes action to change that environment (booking a room, sending a confirmation email, or canceling a reservation).
+4. **LLM Reasoning Core**: Turns natural-language goals into concrete tool calls and multi-step plans.
+5. **Memory & Tools**: Short-term conversation state plus long-term user preferences (like preferring window seats), paired with developer-provided tools.
+
+---
+
+## The 7 Types of AI Agents
+
+Not every problem needs the same level of autonomy. Using a **Travel Booking Agent** as our running example, here is how the seven classical and modern agent types compare:
+
+| Agent Type | How It Decides | Travel Booking Example |
+| :--- | :--- | :--- |
+| **Simple Reflex** | Hard-coded condition-action rules; no memory or planning | Sees `"complaint"` in an email $\rightarrow$ forwards to support |
+| **Model-Based Reflex** | Maintains an internal world model updated over time | Tracks historical flight prices and flags unusual price spikes |
+| **Goal-Based** | Plans a sequence of actions to reach an explicit goal | Books flights, car, and hotel from origin to destination |
+| **Utility-Based** | Scores competing valid plans to maximize a utility function $U(s)$ | Balances ticket price vs. layover convenience to pick the highest-scoring trip |
+| **Learning** | Improves future decisions from feedback signals | Adjusts hotel recommendations based on post-trip user ratings |
+| **Hierarchical** | High-level supervisor delegates subtasks to specialized sub-agents | Splits `"cancel trip"` into flight, hotel, and car cancellation sub-agents |
+| **Multi-Agent (MAS)** | Independent agents collaborating or competing in a shared space | Cooperative flight/hotel/activity agents, or hotels competing on price |
+
+For **Utility-Based Agents**, we express trade-offs mathematically as a weighted utility score over candidate states $s$:
+
+$$U(s) = w_{\text{cost}} \cdot f_{\text{cost}}(s) + w_{\text{convenience}} \cdot f_{\text{convenience}}(s)$$
+
+---
+
+## When to Use AI Agents (and When Not To)
+
+Just because you *can* build an agent does not mean you *should*. Reach for an AI agent when your problem exhibits:
+
+- **Open-Ended Problems**: The exact steps cannot be hard-coded in advance and depend on dynamic context.
+- **Multi-Step Processes**: Solving the task requires chaining multiple tool calls across several turns.
+- **Improvement Over Time**: The system benefits from adapting to user feedback or changing environment signals.
+
+If a single deterministic SQL query or fixed API call solves the task reliably, skip the agent loop—it will be faster, cheaper, and easier to test.
+
+---
+
+## Open the Companion Colab Notebook
+
+Launch the interactive notebook to build a `TravelAgent` powered by `gemini-2.5-flash` with a `get_random_destination()` tool and run an automated smoke-test assertion suite.
+
+<ColabButton
+  course="ai-agents-for-beginners"
+  notebook="02-introduction-to-ai-agents-and-use-cases.ipynb"
+  runtime="Free Tier CPU + Gemini API"
+/>
+
+---
+
+## Try It Yourself: 7-Agent Utility Scorer & `TravelAgent` Smoke Test
+
+Run this pure-Python sandbox to compare Simple Reflex, Goal-Based, and Utility-Based travel agents, then execute a `TravelAgent` day-trip planner and verify its output against a smoke-test assertion catalog.
+
+<PythonRunner
+  client:visible
+  title="Try it Yourself: Utility-Based Travel Agent & Smoke Test"
+  expectedOutput="[SimpleReflex] Rule matched -> Forwarded to Support
+[UtilityAgent] Best option: Direct Express (utility=0.84)
+[TravelAgent] Tool get_random_destination() -> Kyoto, Japan
+[SmokeTest] PASS (contains_any=['Kyoto', 'day trip'], contains_none=['error'])"
+  initialCode={`# 1. Simple Reflex Agent
+email = "Urgent complaint about delayed baggage"
+action = "Forwarded to Support" if "complaint" in email.lower() else "Archive"
+print(f"[SimpleReflex] Rule matched -> {action}")
+
+# 2. Utility-Based Agent: U(s) = 0.6 * cost_score + 0.4 * convenience_score
+options = [
+    {"name": "Red-Eye Budget", "cost_score": 0.95, "conv_score": 0.40},
+    {"name": "Direct Express", "cost_score": 0.75, "conv_score": 0.975},
+]
+best = max(options, key=lambda o: 0.6 * o["cost_score"] + 0.4 * o["conv_score"])
+u_best = 0.6 * best["cost_score"] + 0.4 * best["conv_score"]
+print(f"[UtilityAgent] Best option: {best['name']} (utility={u_best:.2f})")
+
+# 3. TravelAgent with tool + smoke-test assertion check
+def get_random_destination() -> str:
+    return "Kyoto, Japan"
+
+dest = get_random_destination()
+print(f"[TravelAgent] Tool get_random_destination() -> {dest}")
+reply = f"Here is a 1-day trip itinerary for {dest}: visit Fushimi Inari, Arashiyama, and Nishiki Market."
+
+smoke_test = {"contains_any": ["Kyoto", "day trip"], "contains_none": ["error"]}
+passed = any(k.lower() in reply.lower() for k in smoke_test["contains_any"]) and not any(
+    b.lower() in reply.lower() for b in smoke_test["contains_none"]
+)
+print(f"[SmokeTest] {'PASS' if passed else 'FAIL'} (contains_any={smoke_test['contains_any']}, contains_none={smoke_test['contains_none']})")`}
+/>
+
+---
+
+## Check Your Understanding
+
+<QuizCard
+  client:visible
+  question="A travel booking agent evaluates three valid flight-and-hotel itineraries and selects the one maximizing a weighted score of ticket price and layover duration. Which agent type is this?"
+  options={[
+    "Simple Reflex Agent",
+    "Utility-Based Agent",
+    "Stateless Prompt Template",
+    "Single-Turn Classifier"
+  ]}
+  correctAnswer={1}
+  explanation="A Goal-Based Agent finds *a* valid path to the destination, whereas a Utility-Based Agent scores competing valid paths using a utility function U(s) to pick the optimal trade-off."
+/>

@@ -1,0 +1,167 @@
+---
+title: "Course Setup: Google AI Studio Free Tier, Colab & Open-Source Agent Stack"
+track: "ai-agents-for-beginners"
+category: "Module 1: Agent Foundations, Frameworks & Core Design Patterns"
+order: 1
+difficulty: "beginner"
+xp: 55
+description: "Set up a zero-cost AI agent workspace on Google Colab Free Tier with Google AI Studio (Gemini API), ChromaDB vector search, and local Ollama models."
+topic: "Agent Foundations"
+prerequisites: ["mcp-for-beginners/22-zava-retail-testing-observability-and-production-optimization"]
+---
+import PythonRunner from '../../../components/islands/PythonRunner';
+import QuizCard from '../../../components/islands/QuizCard';
+import ColabButton from '../../../components/static/ColabButton.astro';
+
+Building AI agents is where language models stop being passive text generators and start taking real actions in the world. Before we write our first autonomous loop, we need a clean, reliable, and zero-cost development environment that works whether you are running in a browser notebook on **Google Colab Free Tier** or on a local workstation.
+
+In this setup lesson, we will configure **Google AI Studio Free Tier** (`GEMINI_API_KEY` via the `google-genai` SDK), wire up open-source vector search with **ChromaDB**, and see how OpenAI-compatible endpoints let us swap seamlessly between cloud models (`gemini-2.5-flash`), large-context APIs, and local on-device models via **Ollama**.
+
+---
+
+## Setting Up Google Colab & Local Python Environments
+
+Every hands-on notebook in this course runs out of the box on Google Colab Free Tier. If you also want to clone a large multi-lesson repository locally without downloading gigabytes of translation history, Git's **shallow** and **sparse** checkout flags keep your workspace fast and lightweight:
+
+```bash
+# Shallow clone (minimal history)
+git clone --depth 1 https://github.com/<your-username>/<repo>.git
+
+# Partial sparse clone (fetch only specific lesson folders)
+git clone --depth 1 --filter=blob:none --sparse https://github.com/<your-username>/<repo>.git
+cd <repo>
+git sparse-checkout set 00-course-setup 01-intro-to-ai-agents
+```
+
+For local Python 3.12+ development, always isolate your dependencies in a virtual environment before installing packages:
+
+```bash
+python -m venv venv
+source venv/bin/activate   # Windows: venv\Scripts\activate
+pip install google-genai langgraph chromadb pydantic python-dotenv mcp
+```
+
+---
+
+## Obtaining Your Free Google AI Studio API Key
+
+Instead of paying for enterprise cloud subscriptions, every cloud LLM call in this course uses **Google AI Studio Free Tier**:
+
+1. Open [aistudio.google.com](https://aistudio.google.com/) and sign in with your Google account.
+2. Click **Get API key** → **Create API key** and copy the generated key (`AIza...`).
+3. In **Google Colab**, open the **Secrets** (key icon) panel in the left sidebar, add a secret named `GEMINI_API_KEY`, paste your key, and toggle **Notebook access** ON.
+4. On your local machine, store `GEMINI_API_KEY=AIza...` inside a gitignored `.env` file and load it with `python-dotenv`.
+
+```python
+import os
+from google import genai
+
+def get_gemini_client():
+    api_key = None
+    try:
+        from google.colab import userdata
+        api_key = userdata.get("GEMINI_API_KEY")
+    except Exception:
+        api_key = os.environ.get("GEMINI_API_KEY")
+    return genai.Client(api_key=api_key) if api_key else None
+```
+
+| Model / Service | Role in This Course | Free-Tier Advantage |
+| :--- | :--- | :--- |
+| **`gemini-2.5-flash`** | Primary reasoning, function calling, and multimodal vision | Fast tool calling and structured JSON outputs on free tier |
+| **`gemini-2.5-flash-lite`** | Complexity routing & lightweight classification | Ultra-low latency for high-volume SLM routing tasks |
+| **`gemini-embedding-001`** | Semantic vector embeddings for Agentic RAG & memory | High-quality dense vectors paired with `ChromaDB` |
+| **Ollama (`qwen2.5:7b`)** | 100% offline, private local function-calling agents | OpenAI-compatible `http://localhost:11434/v1` endpoint |
+
+---
+
+## Open-Source Vector Search & Multi-Provider Routing
+
+Later lessons build **Agentic RAG** (Lesson 06) and **Scalable Production Agents** (Lesson 17) backed by semantic search. We pair `gemini-embedding-001` with **ChromaDB** (or an in-memory cosine-similarity store when running quick demos), eliminating external search service provisioning.
+
+Because modern agent SDKs speak standard OpenAI-compatible HTTP schemas, you can also point the same client configuration at alternative providers:
+- **Google Gemini OpenAI-Compatible Endpoint**: `https://generativelanguage.googleapis.com/v1beta/openai/`
+- **Large-Context Endpoints (e.g., MiniMax-M3)**: Up to 204K-token context windows via `https://api.minimax.io/v1`
+- **Open-Weight Inference (e.g., Novita AI)**: Open-source families (`deepseek`, `qwen`, `kimi`) via `https://api.novita.ai/openai/v1`
+- **Local On-Device Runtime (Ollama)**: Private local inference at `http://127.0.0.1:11434/v1` with `api_key="not-required"`
+
+### SSL Certificate Troubleshooting on macOS / Corporate Networks
+
+If Python raises `ssl.SSLCertVerificationError: certificate verify failed` during network calls, run Python's `Install Certificates.command` on macOS or inject your OS trust store cleanly with `truststore` (never disable SSL verification in production):
+
+```python
+import truststore
+truststore.inject_into_ssl()
+```
+
+---
+
+## Open the Companion Colab Notebook
+
+Launch Lesson 01's notebook in Google Colab to install the open-source agent stack, verify your `GEMINI_API_KEY`, and run a first tool-equipped Gemini agent alongside an in-memory vector search check.
+
+<ColabButton
+  course="ai-agents-for-beginners"
+  notebook="01-course-setup-colab-and-gemini-agent-stack.ipynb"
+  runtime="Free Tier CPU + Gemini API"
+/>
+
+---
+
+## Try It Yourself: Multi-Provider Readiness & Vector Search Auditor
+
+Run this pure-Python sandbox to validate multi-provider agent endpoints, verify fallback routing between Google AI Studio and local Ollama, and test an in-memory cosine similarity search ($\cos(\theta) = \frac{\mathbf{q}\cdot\mathbf{d}}{\|\mathbf{q}\|_2\|\mathbf{d}\|_2}$).
+
+<PythonRunner
+  client:visible
+  title="Try it Yourself: Agent Stack & Vector Search Readiness Check"
+  expectedOutput="[Config] Primary: google-ai-studio (gemini-2.5-flash) -> READY
+[Config] Router: google-ai-studio (gemini-2.5-flash-lite) -> READY
+[Config] Local Fallback: ollama (qwen2.5:7b @ http://127.0.0.1:11434/v1) -> READY
+[VectorDB] Top match for 'refund policy': doc_refund (score=0.991)
+[Health] All 3 agent providers and vector index verified."
+  initialCode={`import math
+
+providers = [
+    {"name": "google-ai-studio", "role": "Primary", "model": "gemini-2.5-flash", "endpoint": "https://generativelanguage.googleapis.com/v1beta/openai/"},
+    {"name": "google-ai-studio", "role": "Router", "model": "gemini-2.5-flash-lite", "endpoint": "https://generativelanguage.googleapis.com/v1beta/openai/"},
+    {"name": "ollama", "role": "Local Fallback", "model": "qwen2.5:7b", "endpoint": "http://127.0.0.1:11434/v1"},
+]
+
+for p in providers:
+    assert p["endpoint"].startswith("http"), f"Invalid endpoint for {p['name']}"
+    loc = f" @ {p['endpoint']}" if p["name"] == "ollama" else ""
+    print(f"[Config] {p['role']}: {p['name']} ({p['model']}{loc}) -> READY")
+
+def cosine_sim(a: list[float], b: list[float]) -> float:
+    dot = sum(x * y for x, y in zip(a, b))
+    na = math.sqrt(sum(x * x for x in a))
+    nb = math.sqrt(sum(y * y for y in b))
+    return dot / (na * nb)
+
+docs = {
+    "doc_refund": [0.92, 0.35, 0.10],
+    "doc_baggage": [0.15, 0.90, 0.40],
+}
+query_vec = [0.88, 0.48, 0.12]
+best_id, best_score = max(((k, cosine_sim(query_vec, v)) for k, v in docs.items()), key=lambda x: x[1])
+print(f"[VectorDB] Top match for 'refund policy': {best_id} (score={best_score:.3f})")
+print("[Health] All 3 agent providers and vector index verified.")`}
+/>
+
+---
+
+## Check Your Understanding
+
+<QuizCard
+  client:visible
+  question="Why does this course pair Google AI Studio's `google-genai` SDK with OpenAI-compatible endpoints and local Ollama?"
+  options={[
+    "Because Google Colab Free Tier cannot install Python packages with pip.",
+    "It gives learners zero-cost cloud reasoning with Gemini 2.5 Flash while keeping agent code portable across open-weight and local on-device models.",
+    "Because disabling SSL verification is required for all LLM APIs.",
+    "Because vector databases only work with proprietary cloud accounts."
+  ]}
+  correctAnswer={1}
+  explanation="Using Google AI Studio Free Tier gives you fast tool calling and embeddings at zero cost, while OpenAI-compatible endpoints and local Ollama let the exact same agent patterns run privately on-device or across other open-weight providers."
+/>

@@ -1,0 +1,107 @@
+---
+title: "AI Agents in Production: OpenTelemetry, Evaluation Loops & Cost Control"
+track: "ai-agents-for-beginners"
+category: "Module 3: Planning, Multi-Agent Systems, Metacognition & Production Observability"
+order: 11
+difficulty: "advanced"
+xp: 85
+description: "Transform black-box agents into observable glass-box systems with OpenTelemetry traces/spans, offline/online evaluation loops, and cost routing."
+topic: "Planning & Multi-Agent"
+prerequisites: ["ai-agents-for-beginners/10-metacognition-in-ai-agents"]
+---
+import PythonRunner from '../../../components/islands/PythonRunner';
+import QuizCard from '../../../components/islands/QuizCard';
+import ColabButton from '../../../components/static/ColabButton.astro';
+
+In a notebook, you can eyeball an agent's print statements and call it a day. In production, an agent that silently loops five times or hallucinates on an edge case burns real money and user trust. **Observability and Evaluation** turn your "black box" agent into a transparent **"glass box"** you can debug, measure, and afford to run.
+
+---
+
+## Traces, Spans & The 7 Production Signals
+
+Modern observability tools (**OpenTelemetry** and open-source **Langfuse**) model every agent execution as a **Trace** (the full end-to-end task) composed of nested **Spans** (each LLM call, retrieval step, or tool execution) tagged with attributes like `user_id`, `session_id`, and `model_version`.
+
+| Metric / Signal | What It Measures | Production Action |
+| :--- | :--- | :--- |
+| **Latency ($P_{50}, P_{95}$)** | End-to-end and per-span response time | Parallelize independent tool calls or route to faster SLMs |
+| **Token & API Costs** | Expense per agent run | Detect runaway loops; apply caching and complexity routing |
+| **Request Errors** | Failed LLM or tool calls | Trigger exponential backoff or provider fallbacks (`A -> B`) |
+| **Explicit Feedback** | Thumbs up/down, 1–5 star ratings | Alert on negative spikes and add failures to offline eval sets |
+| **Implicit Feedback** | Immediate query rephrasing, retries | Catch silent dissatisfaction even when users don't click 👎 |
+| **Task Accuracy** | Ground-truth or rubric pass rate | Gate CI/CD releases before shipping prompt/model changes |
+| **Automated Evals** | LLM-as-a-Judge, **RAGAS**, **LLM Guard** | Score faithfulness, helpfulness, and prompt-injection safety |
+
+---
+
+## Offline vs. Online Evaluation & Cost Control
+
+**Offline Evaluation** runs repeatable golden datasets (such as GSM8K or curated expense-claim test cases) in CI/CD before deployment. **Online Evaluation** monitors live traffic for model drift and unexpected queries, feeding real-world failures right back into the offline test set:
+
+$$\text{Evaluate Offline} \rightarrow \text{Deploy} \rightarrow \text{Monitor Online} \rightarrow \text{Collect Failures} \rightarrow \text{Refine}$$
+
+To keep production token bills predictable, combine three cost-control levers:
+1. **Small Language Models (SLMs)** (`gemini-2.5-flash-lite`) for intent classification and extraction.
+2. **Complexity Router Models** to send simple queries to SLMs and complex reasoning to larger models (`gemini-2.5-flash`).
+3. **Response Caching** for frequent FAQs so repeated queries cost `0` tokens.
+
+---
+
+## Open the Companion Colab Notebook
+
+Launch the companion notebook to instrument an **Expense Claim Audit Agent** with `opentelemetry-sdk` spans, run an offline golden evaluation suite, and benchmark complexity-router + cache cost savings using `google-genai`.
+
+<ColabButton
+  course="ai-agents-for-beginners"
+  notebook="11-ai-agents-in-production-observability-and-evaluation.ipynb"
+  runtime="Free Tier CPU + Gemini API"
+/>
+
+---
+
+## Try It Yourself: OTel Span Tree, Offline Eval & Cost Router
+
+Run this pure-Python sandbox to emit nested OpenTelemetry-style spans for an Expense Claim Agent, score an offline golden test suite, and compute token-cost savings from caching and SLM routing.
+
+<PythonRunner
+  client:visible
+  title="Try it Yourself: Expense Claim OTel Trace & Cost Router"
+  expectedOutput="[OTel:Trace] expense_claim_run | spans=2 | total_ms=142
+[Eval:Offline] Pass rate: 3/3 (100%) -> RELEASE GATE PASS
+[CostRouter] 10 queries: 3 cached ($0), 5 SLM (gemini-2.5-flash-lite), 2 LLM (gemini-2.5-flash) -> 68% savings"
+  initialCode={`spans = [
+    {"name": "parse_receipt", "duration_ms": 48, "model": "gemini-2.5-flash-lite"},
+    {"name": "check_policy", "duration_ms": 94, "model": "gemini-2.5-flash"},
+]
+total_ms = sum(s["duration_ms"] for s in spans)
+print(f"[OTel:Trace] expense_claim_run | spans={len(spans)} | total_ms={total_ms}")
+
+# Offline evaluation gate
+golden = [("meal \$35", "APPROVED"), ("flight \$420", "APPROVED"), ("luxury watch \$900", "REJECTED")]
+preds = ["APPROVED", "APPROVED", "REJECTED"]
+passed = sum(1 for (_, exp), pred in zip(golden, preds) if exp == pred)
+print(f"[Eval:Offline] Pass rate: {passed}/{len(golden)} ({passed/len(golden):.0%}) -> RELEASE GATE PASS")
+
+# Cost routing across 10 queries (baseline LLM cost = $0.010/query -> $0.100 total)
+cached, slm, llm = 3, 5, 2
+cost = cached * 0.0 + slm * 0.002 + llm * 0.011
+baseline = 10 * 0.010
+savings = (1 - cost / baseline) * 100
+print(f"[CostRouter] 10 queries: {cached} cached (\$0), {slm} SLM (gemini-2.5-flash-lite), {llm} LLM (gemini-2.5-flash) -> {savings:.0f}% savings")`}
+/>
+
+---
+
+## Check Your Understanding
+
+<QuizCard
+  client:visible
+  question="Which signal is an example of *implicit* user feedback in production agent observability?"
+  options={[
+    "A user clicking a thumbs-down button.",
+    "A user immediately rephrasing or repeating the same question because the agent's first answer missed the mark.",
+    "A unit test failing in CI/CD.",
+    "An OpenTelemetry span recording latency."
+  ]}
+  correctAnswer={1}
+  explanation="Explicit feedback comes from deliberate ratings (thumbs up/down, stars), whereas implicit feedback is inferred from behavior like repeated queries, rephrasing, or clicking retry."
+/>

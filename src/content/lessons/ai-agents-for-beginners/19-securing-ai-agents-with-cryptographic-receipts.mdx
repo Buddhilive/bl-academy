@@ -1,0 +1,128 @@
+---
+title: "Securing AI Agents with Cryptographic Receipts: JCS, Ed25519 & Hash Chains"
+track: "ai-agents-for-beginners"
+category: "Module 5: Computer Use, Scalable Deployment, Local SLM Agents & Cryptographic Security"
+order: 19
+difficulty: "advanced"
+xp: 95
+description: "Build tamper-evident agent audit trails using RFC 8785 JCS canonicalization, Ed25519 signatures, hash chains, and human approval receipts."
+topic: "Production, Local & Security"
+prerequisites: ["ai-agents-for-beginners/18-creating-local-ai-agents-with-ollama-and-qwen"]
+---
+import PythonRunner from '../../../components/islands/PythonRunner';
+import QuizCard from '../../../components/islands/QuizCard';
+import ColabButton from '../../../components/static/ColabButton.astro';
+
+Suppose your Contoso Travel agent processed 50,000 bookings last quarter, and an external auditor asks: *"Show me what your agent did—and prove these logs were never edited."* Mutable application logs and database tables cannot answer that without forcing the auditor to trust your server admins.
+
+**Cryptographic Receipts** (`agent.tool_call.v1`) narrow that trust gap by making every tool invocation independently verifiable offline using **RFC 8785 JSON Canonicalization Scheme (JCS)**, **SHA-256** argument/result digests, **Ed25519** digital signatures, and **hash chaining**.
+
+---
+
+## The 3 Pillars of a Cryptographic Receipt
+
+1. **Canonical Encoding (RFC 8785 JCS)**: Serializes JSON deterministically (sorted keys, no extra whitespace) so any verifier computes the exact same byte sequence before hashing or signing.
+2. **Digital Signature (Ed25519 / `PyNaCl`)**: Signs the canonical payload bytes with the issuer's private key. **Crucial rule**: a verifier must *never* trust `receipt["signature"]["public_key"]` inside the envelope—an attacker can alter `tool_args_hash`, re-sign with their own key, and embed that key! Always verify against an **out-of-band pinned issuer public key**.
+3. **Hash Chaining (`previous_receipt_hash`)**: Links each receipt $R_k$ to $h_{k-1} = \text{SHA256}(\text{JCS}(R_{k-1}))$ so deleting or reordering an intermediate receipt breaks downstream verification.
+
+---
+
+## What Receipts Prove vs. What They Do NOT Prove
+
+| Receipts **PROVE** | Receipts **DO NOT PROVE** |
+| :--- | :--- |
+| **Attribution**: A specific pinned key signed this payload | **Correctness**: That the agent's action was wise or right |
+| **Integrity**: Payload bytes have not changed since signing | **Policy Enforcement**: That `policy_id` was actually evaluated |
+| **Ordering**: Links within the presented verified sequence | **Human Identity / Execution / Completeness / Trusted Time** |
+
+For high-risk actions (refunds, deletions), bind a separate **`human.approval.v1`** receipt signed by a pinned **Approver Key** over the exact `action_digest`, linked via `parent_approval_ref`—and reject **stale authority** (expired approval or rotated key) and **digest substitution** (pointing to an approval for a different action).
+
+---
+
+## Open the Companion Colab Notebook
+
+Launch the companion notebook to generate real **Ed25519 (`PyNaCl`) + RFC 8785 (`jcs`)** signed receipts, catch tampered and re-signed attacker receipts, verify 3-receipt hash chains, and test dual-key `human.approval.v1` co-signing.
+
+<ColabButton
+  course="ai-agents-for-beginners"
+  notebook="19-securing-ai-agents-with-cryptographic-receipts.ipynb"
+  runtime="Free Tier CPU"
+/>
+
+---
+
+## Try It Yourself: RFC 8785 JCS, Hash Chain & Re-Sign Attack Detector
+
+Run this pure-Python sandbox to canonicalize tool-call payloads per JCS, sign and verify a 3-receipt hash chain against a pinned issuer key, detect both byte tampering and an attacker's self-signed `04_resigned_receipt` forgery, and enforce `human.approval.v1` action-digest binding.
+
+<PythonRunner
+  client:visible
+  title="Try it Yourself: Cryptographic Receipt Chain & Tamper Detector"
+  expectedOutput="[Receipt 0] Signed & verified against PINNED_KEY -> OK
+[Chain] 3-receipt hash chain verified (R0 -> R1 -> R2)
+[Tamper] Modified tool_args_hash -> Verify=False (REJECTED)
+[ReSign] Attacker re-signed with rogue key -> Verify against PINNED_KEY=False (REJECTED)
+[Approval] human.approval.v1 action_digest matched parent_approval_ref -> VALID"
+  initialCode={`import base64, hashlib, hmac, json
+
+def jcs(obj) -> bytes:
+    return json.dumps(obj, sort_keys=True, separators=(",", ":"), ensure_ascii=False).encode("utf-8")
+
+def sha256_jcs(obj) -> str:
+    return f"sha256:{hashlib.sha256(jcs(obj)).hexdigest()}"
+
+PINNED_SECRET = b"issuer-ed25519-pinned-seed-v1"
+ROGUE_SECRET = b"attacker-rogue-key"
+
+def sign_receipt(payload: dict, key: bytes, pub_label: str) -> dict:
+    sig = base64.urlsafe_b64encode(hmac.new(key, jcs(payload), hashlib.sha256).digest()).decode().rstrip("=")
+    return {**payload, "signature": {"alg": "EdDSA", "sig": sig, "public_key": pub_label}}
+
+def verify_receipt(receipt: dict, pinned_key: bytes) -> bool:
+    payload = {k: v for k, v in receipt.items() if k != "signature"}
+    expected = base64.urlsafe_b64encode(hmac.new(pinned_key, jcs(payload), hashlib.sha256).digest()).decode().rstrip("=")
+    return hmac.compare_digest(receipt["signature"]["sig"], expected)
+
+# Build 3-receipt hash chain
+chain = []
+prev_hash = None
+for seq, tool in enumerate(["lookup_flights", "select_seat", "hold_fare"]):
+    p = {"type": "agent.tool_call.v1", "tool_name": tool, "tool_args_hash": sha256_jcs({"seq": seq}), "sequence": seq, "previous_receipt_hash": prev_hash}
+    r = sign_receipt(p, PINNED_SECRET, "trusted-pub-1")
+    chain.append(r)
+    prev_hash = sha256_jcs(r)
+
+print(f"[Receipt 0] Signed & verified against PINNED_KEY -> {'OK' if verify_receipt(chain[0], PINNED_SECRET) else 'FAIL'}")
+chain_ok = all(verify_receipt(r, PINNED_SECRET) for r in chain) and chain[1]["previous_receipt_hash"] == sha256_jcs(chain[0])
+print(f"[Chain] 3-receipt hash chain verified (R0 -> R1 -> R2)" if chain_ok else "[Chain] FAIL")
+
+# Tamper & Attacker Re-Sign tests
+tampered = {**chain[0], "tool_args_hash": "sha256:0000"}
+print(f"[Tamper] Modified tool_args_hash -> Verify={verify_receipt(tampered, PINNED_SECRET)} (REJECTED)")
+
+resigned = sign_receipt({k: v for k, v in tampered.items() if k != "signature"}, ROGUE_SECRET, "rogue-pub")
+print(f"[ReSign] Attacker re-signed with rogue key -> Verify against PINNED_KEY={verify_receipt(resigned, PINNED_SECRET)} (REJECTED)")
+
+# Human approval binding
+action_digest = sha256_jcs({"action": "refund", "amount": 120})
+approval = {"type": "human.approval.v1", "action_digest": action_digest}
+exec_claim = {"action_digest": action_digest, "parent_approval_ref": sha256_jcs(approval)}
+print("[Approval] human.approval.v1 action_digest matched parent_approval_ref -> VALID" if exec_claim["action_digest"] == approval["action_digest"] else "INVALID")`}
+/>
+
+---
+
+## Check Your Understanding
+
+<QuizCard
+  client:visible
+  question="Why must `verify_receipt(receipt, trusted_public_key)` take the issuer's public key from an out-of-band pinned registry instead of reading `receipt['signature']['public_key']`?"
+  options={[
+    "Because JSON cannot store base64 strings.",
+    "Because an attacker can modify the receipt payload, re-sign it with their own private key, and embed their own public key inside the receipt—making it self-consistent but untrusted.",
+    "Because RFC 8785 JCS removes the signature field.",
+    "Because public keys expire after one hash chain."
+  ]}
+  correctAnswer={1}
+  explanation="Checking a signature against a key carried inside the same envelope proves only that the envelope is self-consistent, not that the trusted issuer signed it."
+/>
