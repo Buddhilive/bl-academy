@@ -1,0 +1,136 @@
+---
+title: "Working with Python, Series & Pandas DataFrames"
+track: "data-science-for-beginners"
+category: "Module 2: Working with Data"
+order: 7
+difficulty: "intermediate"
+xp: 75
+description: "Master Pandas Series index alignment, DataFrame filtering, apply, groupby aggregations, epidemiological time series, and Gemini API medical text extraction."
+topic: "Python & Pandas DataFrames"
+prerequisites: ["data-science-for-beginners/06-working-with-nosql-data"]
+---
+import PythonRunner from '../../../components/islands/PythonRunner';
+import QuizCard from '../../../components/islands/QuizCard';
+import ColabButton from '../../../components/static/ColabButton.astro';
+
+While SQL is unbeatable for querying relational tables, complex transformations—resampling time series, computing custom row-wise features, or extracting entities from unstructured text—call for a full programming language. **Python**, backed by **Pandas**, **NumPy**, **Matplotlib**, and **SciPy**, is the universal workhorse for this job (alongside domain tools like R and Julia).
+
+In this lesson, we'll master `Series` index alignment, `DataFrame` slicing and `groupby` aggregations, epidemiological spread modeling, and extracting structured clinical entities from scientific abstracts using **Google AI Studio Free Tier**.
+
+---
+
+## Pandas `Series` & Index-Aligned Arithmetic
+
+A **Series** is a 1D sequence of values paired with an **Index** (integers, strings, or `pd.date_range` timestamps). Unlike plain Python lists, Pandas aligns operations by index:
+
+- If you add daily ice-cream sales (`items_sold`) to weekly party packs (`additional_items`, `freq="W"`) using `+`, non-Sunday dates turn into `NaN` (*Not a Number*) because adding anything to a missing index entry produces `NaN`.
+- Using `items_sold.add(additional_items, fill_value=0)` fills missing weekly entries with `0` before summing.
+- Calling `.resample("1ME").mean()` aggregates daily timestamps into monthly averages.
+
+---
+
+## Core `DataFrame` Operations
+
+A **DataFrame** is a 2D table of `Series` sharing the same index. Here is a quick reference of the operations you'll use daily:
+
+| Operation | Syntax | Key Gotcha |
+| :--- | :--- | :--- |
+| **Select Column / Subset** | `df['A']` or `df[['B', 'A']]` | Single bracket returns a `Series`; double bracket returns a `DataFrame` |
+| **Boolean Filtering** | `df[(df['A'] > 5) & (df['A'] < 7)]` | Must use `&` (not `and`) and wrap each condition in `()` |
+| **Vectorized Column** | `df['DivA'] = df['A'] - df['A'].mean()` | Fast element-wise math across the entire column |
+| **Row-wise Function** | `df['LenB'] = df['B'].apply(len)` | Calling `len(df['B'])` assigns total column length to every row! |
+| **Positional Slice** | `df.iloc[:5]` | Selects the first 5 rows by integer position |
+| **Group & Aggregate** | `df.groupby('LenB').aggregate({'A': 'mean'})` | Pivot-table summaries across groups |
+
+---
+
+## Unstructured Text & Cloud Extraction with Gemini API
+
+When data arrives as raw text—such as thousands of medical research abstracts in the CORD-19 dataset—we can extract structured keywords (diagnoses, treatments, medications) using Python NLP or **Google AI Studio Free Tier** (`google-genai` + `GEMINI_API_KEY`).
+
+```python
+from google.colab import userdata
+from google import genai
+
+client = genai.Client(api_key=userdata.get("GEMINI_API_KEY"))
+resp = client.models.generate_content(
+    model="gemini-2.5-flash",
+    contents="Extract medication names as JSON from: Patients treated with remdesivir and dexamethasone showed faster recovery."
+)
+print(resp.text)
+```
+
+<ColabButton
+  course="data-science-for-beginners"
+  notebook="07-working-with-python-and-pandas.ipynb"
+  runtime="Free Tier CPU + Gemini API"
+/>
+
+---
+
+## Try It Yourself: Time-Series Resampling & GroupBy Aggregation
+
+Run this pure-Python implementation of Pandas-style index alignment, row-wise `.apply(len)`, `groupby` aggregation, and medical abstract keyword counting right in your browser.
+
+<PythonRunner
+  client:visible
+  title="Try it Yourself: Index Alignment, GroupBy & Text Extraction"
+  expectedOutput="=== Index-Aligned Weekly + Daily Sales ===
+Day 1 (Sun): 35 + 10 = 45
+Day 2 (Mon): 42 + 0 = 42
+
+=== GroupBy LenB Summary ===
+Len 1: count=1, mean_A=1.00
+Len 4: count=3, mean_A=6.33
+Len 6: count=2, mean_A=6.00
+
+=== Extracted Medical Treatments ===
+dexamethasone: 2 | remdesivir: 2 | oxygen: 1"
+  initialCode={`# 1. Index-aligned Series addition with fill_value=0
+daily_sales = {"2020-01-05": 35, "2020-01-06": 42}
+weekly_party = {"2020-01-05": 10}
+total = {d: daily_sales[d] + weekly_party.get(d, 0) for d in daily_sales}
+print("=== Index-Aligned Weekly + Daily Sales ===")
+print(f"Day 1 (Sun): {daily_sales['2020-01-05']} + {weekly_party.get('2020-01-05', 0)} = {total['2020-01-05']}")
+print(f"Day 2 (Mon): {daily_sales['2020-01-06']} + {weekly_party.get('2020-01-06', 0)} = {total['2020-01-06']}")
+
+# 2. DataFrame GroupBy LenB Aggregation
+rows = list(zip(range(1, 10), ["I", "like", "to", "use", "Python", "and", "Pandas", "very", "much"]))
+groups = {}
+for a_val, b_val in rows:
+    groups.setdefault(len(b_val), []).append(a_val)
+
+print("\n=== GroupBy LenB Summary ===")
+for k in [1, 4, 6]:
+    vals = groups[k]
+    print(f"Len {k}: count={len(vals)}, mean_A={sum(vals)/len(vals):.2f}")
+
+# 3. Unstructured Medical Abstract Keyword Extraction
+abstracts = [
+    "Clinical trial of remdesivir and dexamethasone in hospitalized patients.",
+    "Early oxygen therapy paired with dexamethasone and remdesivir improved outcomes.",
+]
+targets = ["dexamethasone", "remdesivir", "oxygen"]
+counts = {t: sum(t in ab.lower() for ab in abstracts) for t in targets}
+print("\n=== Extracted Medical Treatments ===")
+print(" | ".join(f"{k}: {v}" for k, v in counts.items()))`}
+/>
+
+---
+
+## Check Your Understanding
+
+<QuizCard
+  client:visible
+  question="Why does `items_sold + additional_items` produce `NaN` values for most days when `items_sold` has a daily index and `additional_items` has a weekly index?"
+  options={[
+    "Pandas cannot add two Series of different lengths at all.",
+    "Pandas aligns on the index, and adding a number to a missing index entry produces NaN unless you use `.add(..., fill_value=0)`.",
+    "Weekly indices are stored as strings rather than dates.",
+    "Pandas automatically drops even-numbered dates."
+  ]}
+  correctAnswer={1}
+  explanation="Arithmetic operators align on matching index labels. Any index present in one Series but absent in the other evaluates as NaN unless fill_value=0 is specified."
+/>
+
+Next, let's learn how to inspect dirty datasets, handle `NaN` vs `None`, and strip out duplicates in **Data Preparation & Cleaning**.

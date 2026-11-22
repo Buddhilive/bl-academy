@@ -1,0 +1,117 @@
+---
+title: "Working with Non-Relational Data, Spreadsheets & JSON Document Stores"
+track: "data-science-for-beginners"
+category: "Module 2: Working with Data"
+order: 6
+difficulty: "beginner"
+xp: 65
+description: "Explore spreadsheet formulas and functions, the four NoSQL database families, and open-source Python JSON document querying with TinyDB and DuckDB."
+topic: "Non-Relational & NoSQL Data"
+prerequisites: ["data-science-for-beginners/05-working-with-relational-data"]
+---
+import PythonRunner from '../../../components/islands/PythonRunner';
+import QuizCard from '../../../components/islands/QuizCard';
+import ColabButton from '../../../components/static/ColabButton.astro';
+
+Not every dataset fits neatly into normalized SQL tables. Social media posts, IoT telemetry, and inventory workbooks often evolve rapidly or carry nested hierarchies that would require dozens of awkward joins in a relational schema. That's where **non-relational data**—from everyday spreadsheets to **NoSQL** databases—shines.
+
+In this lesson, we'll review spreadsheet mechanics (workbooks, formulas, and functions), compare the four NoSQL architectures, and query JSON document collections using open-source Python tools.
+
+---
+
+## Spreadsheets: Workbooks, Formulas & Functions
+
+A **workbook** contains one or more **worksheets** (tabs), each built from a grid of **cells** at the intersection of alphabetical columns and numerical rows (like `B3`).
+
+- **Formulas**: Expressions starting with `=` that compute a cell's value from other cells—for example, multiplying quantity (`QTY`) by unit cost (`COST`) to get `Inventory Value`.
+- **Functions**: Predefined operations like `=SUM(E5:E20)` that accept ordered arguments to aggregate ranges without manual addition.
+
+---
+
+## The Four NoSQL Database Families
+
+"NoSQL" stands for *Not Only SQL*—an umbrella covering four distinct non-relational storage models:
+
+| NoSQL Type | Data Model | Primary Strength | Open-Source Examples |
+| :--- | :--- | :--- | :--- |
+| **Key-Value** | Unique key paired with a value via hash table | Ultra-fast $O(1)$ lookups by ID | Redis, Valkey, Memcached |
+| **Graph** | Nodes (entities) connected by Edges (relationships) with properties | Traversing social networks, fraud rings, recommendations | Neo4j, NetworkX |
+| **Columnar** | Columns grouped into column families read as a unit | High-throughput analytical scans & compression | Apache Cassandra, Parquet/DuckDB |
+| **Document** | Self-describing JSON/BSON documents with flexible fields | Storing API payloads, nested objects, evolving schemas | MongoDB, TinyDB, DuckDB JSON |
+
+---
+
+## Querying JSON Document Stores in Python
+
+A document database stores collections of JSON objects—for instance, user profiles (`PersonsData.json` with `firstname`, `age`, `id`) or social media posts (`TwitterData.json` with `created_at`, `id`, `text`). Because documents map 1-to-1 to Python dictionaries, you can filter them cleanly with open-source libraries like **TinyDB** or run SQL-over-JSON queries directly with **DuckDB** and `sqlite3` in Google Colab.
+
+<ColabButton
+  course="data-science-for-beginners"
+  notebook="06-working-with-nosql-data.ipynb"
+  runtime="Free Tier CPU"
+/>
+
+---
+
+## Try It Yourself: Inventory Formulas & JSON Document Queries
+
+Run this pure-Python sandbox to compute spreadsheet inventory totals (`QTY * COST` and `SUM`) and execute document queries filtering `PersonsData` (`age < 40`) and `TwitterData` (`text` keyword search).
+
+<PythonRunner
+  client:visible
+  title="Try it Yourself: Spreadsheet Functions & JSON Document Queries"
+  expectedOutput="=== Inventory Workbook Summary ===
+Total Inventory Value: $1,285.00
+
+=== Document Query: age < 40 ===
+['Liam (age 28)', 'Maya (age 34)']
+
+=== Document Query: text contains 'data' ===
+['143278: Exploring open-source data tools in Python!']"
+  initialCode={`# 1. Spreadsheet Formula (QTY * COST) and SUM Function
+inventory = [
+    {"item": "Cola", "qty": 120, "cost": 1.25},
+    {"item": "Lemon-Lime", "qty": 200, "cost": 1.10},
+    {"item": "Sparkling Water", "qty": 610, "cost": 1.50},
+]
+total_value = sum(row["qty"] * row["cost"] for row in inventory)
+print("=== Inventory Workbook Summary ===")
+print(f"Total Inventory Value: \${total_value:,.2f}")
+
+# 2. Document Store Queries (PersonsData & TwitterData)
+persons = [
+    {"id": "p1", "firstname": "Eva", "age": 44},
+    {"id": "p2", "firstname": "Liam", "age": 28},
+    {"id": "p3", "firstname": "Maya", "age": 34},
+]
+under_40 = [f"{p['firstname']} (age {p['age']})" for p in persons if p["age"] < 40]
+print("\n=== Document Query: age < 40 ===")
+print(under_40)
+
+posts = [
+    {"id": "143278", "text": "Exploring open-source data tools in Python!"},
+    {"id": "143279", "text": "Morning coffee before coding."},
+]
+matches = [f"{d['id']}: {d['text']}" for d in posts if "data" in d["text"].lower()]
+print("\n=== Document Query: text contains 'data' ===")
+print(matches)`}
+/>
+
+---
+
+## Check Your Understanding
+
+<QuizCard
+  client:visible
+  question="Which NoSQL database family represents entities as nodes and their relationships as edges with properties?"
+  options={[
+    "Key-Value store",
+    "Columnar store",
+    "Graph database",
+    "Document store"
+  ]}
+  correctAnswer={2}
+  explanation="Graph databases model connected entities as nodes and relationships as edges, making them ideal for social networks and recommendation paths."
+/>
+
+Now let's bring tabular, time-series, and unstructured text data together using **Python and the Pandas Library**.

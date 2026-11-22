@@ -1,0 +1,105 @@
+---
+title: "The Data Science Lifecycle: Exploratory Data Analysis (EDA), Profiling & Sampling"
+track: "data-science-for-beginners"
+category: "Module 4: Data Science Lifecycle & Cloud Alternatives"
+order: 15
+difficulty: "intermediate"
+xp: 75
+description: "Perform Exploratory Data Analysis (EDA) in Pandas using describe(), sample(), query(), and isna() on the Email Spam Classification word-count dataset."
+topic: "Exploratory Data Analysis"
+prerequisites: ["data-science-for-beginners/14-data-science-lifecycle-introduction"]
+---
+import PythonRunner from '../../../components/islands/PythonRunner';
+import QuizCard from '../../../components/islands/QuizCard';
+import ColabButton from '../../../components/static/ColabButton.astro';
+
+Once you've captured a dataset, how do you verify it can actually answer your stakeholders' questions before spending days training models? You run **Exploratory Data Analysis (EDA)**. EDA is the detective work of the Data Science Lifecycle—profiling distributions, sampling subsets, querying hypotheses, and hunting down missing values.
+
+In this lesson, we'll apply Pandas EDA techniques to the **Email Spam Classification** word-count dataset.
+
+---
+
+## Four Core EDA Techniques in Pandas
+
+| Technique | Pandas Method | What It Uncovers |
+| :--- | :--- | :--- |
+| **Data Profiling** | `df.describe()` | Summarizes `count`, `mean`, `std`, `min`, quartiles (`25%`, `50%`, `75%`), and `max` across numeric columns to test sufficiency |
+| **Random Sampling** | `df.sample(n=100)` | Extracts a representative random subset for fast prototyping; larger samples yield tighter generalizations |
+| **Targeted Querying** | `df.query("free > 2 and prediction == 1")` | Slices rows matching a specific hypothesis (e.g., do spam emails contain `"free"` more than twice?) |
+| **Missingness Audit** | `df.isna().sum()` | Counts missing/inconsistent values and prompts you to investigate *why* they went missing before imputing |
+
+Remember: you don't have to wait until cleaning is 100% finished to plot exploratory charts. Quick histograms or bar charts during EDA often surface anomalies that raw summary tables hide.
+
+### Investigating Why Values Go Missing
+
+When `isna()` or `isnull()` flags gaps in your dataset, resist the urge to immediately drop or zero-fill them. Ask *why* the values vanished in the first place:
+- **Missing Completely at Random (MCAR)**: A sensor briefly lost Wi-Fi—safe to drop or impute without introducing bias.
+- **Missing at Random (MAR)**: Younger respondents skipped an income question—use group-aware imputation rather than a global mean.
+- **Missing Not at Random (MNAR)**: High-risk patients dropped out of a follow-up study—dropping those rows silently skews your model's conclusions.
+
+Checking missingness alongside `describe()` and `sample()` ensures your data actually supports the stakeholder goal before modeling begins.
+
+<ColabButton
+  course="data-science-for-beginners"
+  notebook="15-data-science-lifecycle-analyzing.ipynb"
+  runtime="Free Tier CPU"
+/>
+
+---
+
+## Try It Yourself: Email Spam EDA Profiler & Query Engine
+
+Run this pure-Python EDA profiler on sample email word-count records to compute `describe()` statistics, execute a targeted `query()`, and measure spam-to-ham word lift ratios.
+
+<PythonRunner
+  client:visible
+  title="Try it Yourself: Email Spam EDA Profiler & Query"
+  expectedOutput="=== Word Count Profile ('free') ===
+count=6 | mean=1.50 | min=0 | max=5
+
+=== Query: free >= 2 ===
+Matched 2 email(s), Spam rate: 100.0%
+
+=== Missingness Check (isna) ===
+Missing 'the' counts: 1 record(s) flagged"
+  initialCode={`emails = [
+    {"id": 1, "the": 4, "free": 3, "offer": 2, "spam": 1},
+    {"id": 2, "the": 7, "free": 0, "offer": 0, "spam": 0},
+    {"id": 3, "the": None, "free": 5, "offer": 4, "spam": 1},
+    {"id": 4, "the": 5, "free": 0, "offer": 0, "spam": 0},
+    {"id": 5, "the": 2, "free": 1, "offer": 0, "spam": 0},
+    {"id": 6, "the": 3, "free": 0, "offer": 1, "spam": 0},
+]
+
+free_vals = [e["free"] for e in emails]
+print("=== Word Count Profile ('free') ===")
+print(f"count={len(free_vals)} | mean={sum(free_vals)/len(free_vals):.2f} | min={min(free_vals)} | max={max(free_vals)}")
+
+matched = [e for e in emails if e["free"] >= 2]
+spam_rate = sum(e["spam"] for e in matched) / len(matched) * 100
+print("\n=== Query: free >= 2 ===")
+print(f"Matched {len(matched)} email(s), Spam rate: {spam_rate:.1f}%")
+
+missing_the = sum(1 for e in emails if e["the"] is None)
+print("\n=== Missingness Check (isna) ===")
+print(f"Missing 'the' counts: {missing_the} record(s) flagged")`}
+/>
+
+---
+
+## Check Your Understanding
+
+<QuizCard
+  client:visible
+  question="What is the difference between using `df.sample()` and `df.query()` during Exploratory Data Analysis?"
+  options={[
+    "`sample()` deletes missing values, while `query()` imputes them.",
+    "`sample()` draws random rows to understand overall distribution, while `query()` filters specific rows matching a targeted condition.",
+    "`query()` only works on SQL databases, while `sample()` only works on CSVs.",
+    "Both methods return identical outputs."
+  ]}
+  correctAnswer={1}
+  explanation="sample() gives an unbiased random subset of the dataset, whereas query() lets you isolate specific rows to test targeted hypotheses."
+/>
+
+Next, we'll learn how to turn analytical findings into persuasive stakeholder narratives in **The Data Science Lifecycle: Data Communication & Storytelling**.

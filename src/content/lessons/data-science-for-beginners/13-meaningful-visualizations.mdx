@@ -1,0 +1,114 @@
+---
+title: "Making Meaningful Visualizations: Chart Selection, Anti-Deception & Network Graphs"
+track: "data-science-for-beginners"
+category: "Module 3: Data Visualization"
+order: 13
+difficulty: "intermediate"
+xp: 80
+description: "Avoid deceptive charts, apply colorblind-safe palettes and readability styling, and build a social network graph of Les Liaisons Dangereuses."
+topic: "Meaningful Visualizations"
+prerequisites: ["data-science-for-beginners/12-visualizing-relationships"]
+---
+import PythonRunner from '../../../components/islands/PythonRunner';
+import QuizCard from '../../../components/islands/QuizCard';
+import ColabButton from '../../../components/static/ColabButton.astro';
+
+Economist Ronald Coase famously warned: *"If you torture the data long enough, it will confess to anything."* A chart can be technically generated from real numbers and still lie through inverted axes, cherry-picked scales, or misleading colors. In this lesson, we'll learn how to spot deceptive visualizations, design readable and accessible plots, and build a literary social network graph from the 1782 epistolary novel ***Les Liaisons Dangereuses***.
+
+---
+
+## Avoiding Deceptive Charts
+
+Even well-intentioned analysts can mislead readers if they pick the wrong visual encoding. Watch out for these classic red flags:
+
+| Deception Pattern | How It Fools the Eye | Honest Fix |
+| :--- | :--- | :--- |
+| **Reversed / Non-Chronological X-Axis** | Ordering dates out of sequence (e.g., sorting bars from tallest to shortest) creates a fake "downward trend" | Always sort time series strictly chronologically left-to-right |
+| **Inverted Y-Axis** | Putting `0` at the top and high values at the bottom makes a spike look like a drop | Keep baseline `0` at the bottom and increase upward |
+| **Distorted Proportions** | Scaling 2D/3D icons by height instead of area exaggerates tiny differences | Use standard 1D bar lengths starting from zero |
+| **Spurious Correlations** | Plotting two unrelated trends on dual axes to imply causation | Test domain plausibility and report statistical context |
+
+---
+
+## Color, Accessibility & Readability
+
+Color carries cultural and emotional weight (blue evokes trust, red signals urgency or danger, green suggests ecology). Always ensure your custom palettes remain legible for **colorblind users** (preferring palettes like `viridis`, `cividis`, or Okabe-Ito alongside redundant labels or markers). For readability:
+- Place long lists of categories (like 50 states) on the **Y-axis** so labels read horizontally.
+- Label both axes clearly, include units, and angle dense x-axis ticks only when necessary.
+- Use `mpl_toolkits.mplot3d` or interactive libraries like **NetworkX** and **Plotly** when 3D or relational topology adds genuine clarity.
+
+---
+
+## Project: *Les Liaisons Dangereuses* Epistolary Network
+
+Choderlos de Laclos's 1782 novel *Les Liaisons Dangereuses* unfolds entirely through letters exchanged among French aristocrats—chiefly the scheming **Vicomte de Valmont** and **Marquise de Merteuil**. By parsing each letter's `from` and `to` fields into node indices (`sid`, `tid`), we can map the novel's social graph and uncover its central kingpins.
+
+<ColabButton
+  course="data-science-for-beginners"
+  notebook="13-meaningful-visualizations.ipynb"
+  runtime="Free Tier CPU"
+/>
+
+---
+
+## Try It Yourself: Epistolary Network Builder & Deception Auditor
+
+Run this pure-Python implementation of the `create_links()` algorithm to build the `sid`/`tid` edge list for *Les Liaisons Dangereuses*, rank the most connected correspondents, and audit a chart's x-axis for chronological deception.
+
+<PythonRunner
+  client:visible
+  title="Try it Yourself: Network Link Builder & Axis Deception Auditor"
+  expectedOutput="=== Les Liaisons Dangereuses Link Graph ===
+Built 6 directed edges across 4 characters
+Most active correspondent: Valmont (4 letters sent/received)
+
+=== Chart Chronology Audit ===
+DECEPTION ALERT: X-axis dates are not strictly increasing!"
+  initialCode={`characters = ["Valmont", "Merteuil", "Tourvel", "Cécile"]
+letters = [
+    {"from": "Valmont", "to": "Merteuil"},
+    {"from": "Merteuil", "to": "Valmont"},
+    {"from": "Valmont", "to": "Tourvel"},
+    {"from": "Tourvel", "to": "Valmont"},
+    {"from": "Merteuil", "to": "Cécile"},
+    {"from": "Cécile", "to": "Merteuil"},
+]
+
+char_idx = {name: i for i, name in enumerate(characters)}
+links = [{"sid": char_idx[l["from"]], "tid": char_idx[l["to"]]} for l in letters]
+
+degree = {name: 0 for name in characters}
+for edge in links:
+    degree[characters[edge["sid"]]] += 1
+    degree[characters[edge["tid"]]] += 1
+
+top_char, top_deg = max(degree.items(), key=lambda x: x[1])
+print("=== Les Liaisons Dangereuses Link Graph ===")
+print(f"Built {len(links)} directed edges across {len(characters)} characters")
+print(f"Most active correspondent: {top_char} ({top_deg} letters sent/received)")
+
+# Chronological x-axis integrity check
+chart_dates = ["2020-04-28", "2020-04-27", "2020-04-29", "2020-04-26"]
+is_sorted = chart_dates == sorted(chart_dates)
+print("\n=== Chart Chronology Audit ===")
+print("OK" if is_sorted else "DECEPTION ALERT: X-axis dates are not strictly increasing!")`}
+/>
+
+---
+
+## Check Your Understanding
+
+<QuizCard
+  client:visible
+  question="Which chart flaw made the 2020 Georgia COVID-19 bar chart appear to show a steady downward trend when cases were actually fluctuating?"
+  options={[
+    "Using a pastel color palette instead of grayscale",
+    "Arranging the x-axis dates out of chronological order (sorting by bar height rather than date)",
+    "Using a horizontal bar chart instead of a pie chart",
+    "Adding axis labels and a legend"
+  ]}
+  correctAnswer={1}
+  explanation="Sorting dates non-chronologically from highest count to lowest creates an artificial downward slope left-to-right, deceiving readers about the true time trend."
+/>
+
+You've completed Module 3! Next, we enter **Module 4: Data Science Lifecycle & Cloud Alternatives**, starting with **The Data Science Lifecycle: Capturing, Processing & Maintaining Data**.

@@ -1,0 +1,105 @@
+---
+title: "The Data Science Lifecycle: Data Communication & The 5 C's of Storytelling"
+track: "data-science-for-beginners"
+category: "Module 4: Data Science Lifecycle & Cloud Alternatives"
+order: 16
+difficulty: "beginner"
+xp: 65
+description: "Learn one-way vs. two-way data communication, Jim Stikeleather's 5 audience types, avoiding cherry-picking, the 5 C's narrative arc, and the Emerson case study."
+topic: "Data Communication & Storytelling"
+prerequisites: ["data-science-for-beginners/15-data-science-lifecycle-analyzing"]
+---
+import PythonRunner from '../../../components/islands/PythonRunner';
+import QuizCard from '../../../components/islands/QuizCard';
+import ColabButton from '../../../components/static/ColabButton.astro';
+
+A brilliant analysis sitting inside a notebook changes nothing until decision-makers understand it and act. When communicating data, your goal is never just to dump numbers—your audience remembers a **story** informed by data far longer than a raw spreadsheet.
+
+In this lesson, we'll compare one-way and two-way communication, adapt to five distinct audience types, and apply the **5 C's storytelling framework** to a real product-management case study.
+
+---
+
+## One-Way vs. Two-Way Communication & Five Audience Types
+
+- **One-Way Communication** (conferences, mass reports): No real-time Q&A, so you must front-load context and drive absolute clarity.
+- **Two-Way Communication** (stakeholder buy-in meetings): Interactive back-and-forth where you must manage time and keep Q&A anchored to your core takeaway.
+
+Tailor your depth to **Jim Stikeleather's 5 Audience Categories**:
+
+| Audience Category | What They Need |
+| :--- | :--- |
+| **Novice** | Clear context and education without oversimplification |
+| **Generalist** | High-level overview and major themes |
+| **Managerial** | Actionable understanding of intricacies and interrelationships |
+| **Expert** | Deep exploration, methodology, and granular detail |
+| **Executive** | Bottom-line significance, weighted probabilities, and ROI |
+
+---
+
+## Five Strategies for Effective Data Storytelling
+
+1. **Understand Audience, Channel & Method**: Match your slide or memo to the room.
+2. **Begin with the End in Mind**: Write down your key takeaways first—while strictly avoiding **Cherry-Picking** (if counter-evidence exists, present it transparently).
+3. **Follow the 5 C's Narrative Arc**: **Context** → **Conflict** → **Climax** → **Closure** → **Conclusion**.
+4. **Use Meaningful Words**: Replace vague phrases like *"users take a long time"* or *"impressive growth"* with *"users average 3 minutes to onboard."*
+5. **Use Emotion**: Pair quantitative metrics with user testimonials, relatable imagery, and culturally aware color choices.
+
+### Case Study: Emerson's Mobile App Weekend Complaints
+
+Emerson, a mobile app Product Manager, discovered that customers submit **42% more complaints on weekends**, and tickets unanswered past **48 hours** are **32% more likely** to earn a 1–2 star rating—dragging the app down to **2.5 stars**. In his first 30-minute leadership pitch, Emerson spent 25 minutes on research mechanics and raw complaints and only 5 minutes on solutions—leaving leads confused. Using the **5 C's** (framing 2.5-star revenue risk in **Context**, presenting the 42%/32% data in **Conflict**, proposing weekend support reps + SLA ticketing in **Climax**, restating ROI in **Closure**, and leaving 10 minutes for Q&A in **Conclusion**), leadership clearly grasps how reaching **4.0 stars** boosts visibility by 20–30% and revenue by 10%.
+
+<ColabButton
+  course="data-science-for-beginners"
+  notebook="16-data-science-lifecycle-communication.ipynb"
+  runtime="Free Tier CPU"
+/>
+
+---
+
+## Try It Yourself: Emerson's 48-Hour SLA & ROI Simulator
+
+Run this pure-Python product-analytics simulator to compare current weekend SLA breaches against Emerson's proposed weekend support + prioritized ticketing solution.
+
+<PythonRunner
+  client:visible
+  title="Try it Yourself: Weekend Complaint SLA & Revenue Simulator"
+  expectedOutput="=== Current Weekend Support Baseline ===
+48h+ SLA Breaches: 68 of 142 tickets (47.9%)
+Projected App Rating: 2.5 stars
+
+=== Proposed 5 C's Solution (Weekend Reps + SLA Queue) ===
+48h+ SLA Breaches: 8 of 142 tickets (5.6%)
+Projected App Rating: 4.0 stars (+25% ASO visibility, +10% revenue)"
+  initialCode={`weekday_tickets = 100
+weekend_tickets = int(weekday_tickets * 1.42) # 42% more complaints on weekends
+
+baseline_breaches = int(weekend_tickets * 0.48)
+improved_breaches = int(weekend_tickets * 0.06)
+
+print("=== Current Weekend Support Baseline ===")
+print(f"48h+ SLA Breaches: {baseline_breaches} of {weekend_tickets} tickets ({baseline_breaches/weekend_tickets*100:.1f}%)")
+print("Projected App Rating: 2.5 stars")
+
+print("\n=== Proposed 5 C's Solution (Weekend Reps + SLA Queue) ===")
+print(f"48h+ SLA Breaches: {improved_breaches} of {weekend_tickets} tickets ({improved_breaches/weekend_tickets*100:.1f}%)")
+print("Projected App Rating: 4.0 stars (+25% ASO visibility, +10% revenue)")`}
+/>
+
+---
+
+## Check Your Understanding
+
+<QuizCard
+  client:visible
+  question="What is 'Cherry-Picking' in data communication, and how should a data scientist handle data that contradicts their main takeaway?"
+  options={[
+    "Selecting only the largest numbers for bar charts; delete contradicting rows.",
+    "Presenting only data that supports your preferred conclusion while hiding contradicting data; instead, communicate counter-evidence transparently and explain your reasoning.",
+    "Sorting pie chart slices alphabetically.",
+    "Using two-way communication instead of one-way communication."
+  ]}
+  correctAnswer={1}
+  explanation="Cherry-picking undermines trust. Effective data storytellers acknowledge data that cuts against their thesis and explain why the overall evidence still supports the recommendation."
+/>
+
+Next, we take our workflows to the cloud using **Google Colab Free Tier** and **Google AI Studio** in **Data Science in the Cloud**.

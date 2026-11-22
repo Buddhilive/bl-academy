@@ -1,0 +1,114 @@
+---
+title: "Visualizing Distributions: Histograms, 2D Bins & Seaborn KDE Plots"
+track: "data-science-for-beginners"
+category: "Module 3: Data Visualization"
+order: 10
+difficulty: "intermediate"
+xp: 75
+description: "Explore data distributions using Matplotlib 1D/2D histograms, IUCN conservation status overlays, and Seaborn Kernel Density Estimation (KDE) plots."
+topic: "Visualizing Distributions"
+prerequisites: ["data-science-for-beginners/09-visualizing-quantities"]
+---
+import PythonRunner from '../../../components/islands/PythonRunner';
+import QuizCard from '../../../components/islands/QuizCard';
+import ColabButton from '../../../components/static/ColabButton.astro';
+
+Knowing the average wingspan or body mass of a bird only tells part of the story. Two datasets can share the exact same mean while looking completely different—one tightly clustered, another split into two peaks. To see how values actually spread across an axis, we visualize their **distribution** using **Histograms** and **Kernel Density Estimation (KDE)** plots.
+
+---
+
+## Histograms & Bin Granularity
+
+A **histogram** groups continuous numeric values into adjacent intervals called **bins** and counts how many observations fall into each bin:
+
+- **Too few bins (`bins=10`)**: Hides detail—most of the 400+ Minnesota birds lump into a single tall bar under `2000 g`.
+- **More bins (`bins=30` or `40`) + range filtering**: Filtering to `filteredBirds = birds[(birds['MaxBodyMass'] > 1) & (birds['MaxBodyMass'] < 60)]` reveals granular structure in small songbirds instead of squashing them next to heavy swans and geese.
+- **2D Histograms (`ax.hist2d(x, y)`)**: Maps two numeric variables (`MaxBodyMass` vs `MaxLength`) onto a 2D grid where brighter cells highlight strong convergence.
+
+---
+
+## Overlaying Text Categories: IUCN Red List Status
+
+Even though histograms require numbers, we can compare distributions across categorical labels by plotting multiple semi-transparent (`alpha=0.5`) histograms on the same axes. In the birds dataset, conservation status uses standard **IUCN Red List** codes:
+
+| IUCN Code | Conservation Status | Histogram Role |
+| :--- | :--- | :--- |
+| `EX` | Extinct | Historical baseline species |
+| `CR` | Critically Endangered | Highest extinction risk |
+| `EN` | Endangered | Very high extinction risk |
+| `VU` | Vulnerable | High extinction risk |
+| `NT` | Near Threatened | Close to qualifying for threatened |
+| `LC` | Least Concern | Widespread and abundant |
+
+---
+
+## Smooth Density Plots with Seaborn (`sns.kdeplot`)
+
+Histograms look "stepped" because of discrete bin edges. **Seaborn**'s `sns.kdeplot()` fits a smooth **Kernel Density Estimate (KDE)** curve over the data:
+
+$$\hat{f}_h(x) = \frac{1}{nh}\sum_{i=1}^{n} K\!\left(\frac{x - x_i}{h}\right)$$
+
+- **`bw_adjust`**: Controls the smoothing bandwidth $h$—smaller values (`bw_adjust=0.2`) hug local peaks closely, while larger values smooth them out.
+- **`hue="Order", fill=True`**: Layers translucent density ridges across bird orders.
+- **2D KDE (`x="MinLength", y="MaxLength", hue="ConservationStatus")`**: Draws contour rings showing where `Vulnerable` or `Least Concern` species cluster in 2D space.
+
+<ColabButton
+  course="data-science-for-beginners"
+  notebook="10-visualizing-distributions.ipynb"
+  runtime="Free Tier CPU"
+/>
+
+---
+
+## Try It Yourself: Histogram Binning & Gaussian KDE
+
+Run this pure-Python distribution analyzer to bin small-bird body masses (`< 60 g`) and evaluate a Gaussian Kernel Density Estimate at target points.
+
+<PythonRunner
+  client:visible
+  title="Try it Yourself: Histogram Bins & Gaussian KDE Evaluator"
+  expectedOutput="=== Body Mass Histogram (< 60g, 3 bins of width 20g) ===
+[00-20g): 4 birds | ####
+[20-40g): 3 birds | ###
+[40-60g): 1 birds | #
+
+=== Gaussian KDE Density at x=25g (h=8.0) ===
+f_hat(25.0) = 0.0236"
+  initialCode={`import math
+
+masses = [3.5, 11.2, 14.0, 18.5, 22.0, 27.5, 34.0, 48.0]
+
+print("=== Body Mass Histogram (< 60g, 3 bins of width 20g) ===")
+bins = [(0, 20), (20, 40), (40, 60)]
+for lo, hi in bins:
+    count = sum(lo <= m < hi for m in masses)
+    print(f"[{lo:02d}-{hi:02d}g): {count} birds | {'#' * count}")
+
+def gaussian_kde(x, data, h):
+    n = len(data)
+    total = sum(math.exp(-0.5 * ((x - xi) / h) ** 2) / math.sqrt(2 * math.pi) for xi in data)
+    return total / (n * h)
+
+density = gaussian_kde(25.0, masses, h=8.0)
+print(f"\n=== Gaussian KDE Density at x=25g (h=8.0) ===")
+print(f"f_hat(25.0) = {density:.4f}")`}
+/>
+
+---
+
+## Check Your Understanding
+
+<QuizCard
+  client:visible
+  question="In Seaborn's `sns.kdeplot()`, what does reducing `bw_adjust` (for example, from `1.0` to `0.2`) do to the density curve?"
+  options={[
+    "It deletes all outliers from the DataFrame.",
+    "It narrows the smoothing bandwidth so the curve hugs local peaks and variations more closely.",
+    "It converts the plot into a 2D scatter matrix.",
+    "It forces all categories to have equal area."
+  ]}
+  correctAnswer={1}
+  explanation="Smaller bw_adjust values shrink the kernel bandwidth, reducing smoothing so fine-grained local modes become visible."
+/>
+
+Next, let's explore how parts relate to a whole using pie, donut, and waffle charts in **Visualizing Proportions**.

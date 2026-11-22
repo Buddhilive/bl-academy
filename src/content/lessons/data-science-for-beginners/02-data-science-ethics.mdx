@@ -1,0 +1,147 @@
+---
+title: "Data Science Ethics, Privacy, Fairness & Governance"
+track: "data-science-for-beginners"
+category: "Module 1: Data Foundations & Statistics"
+order: 2
+difficulty: "beginner"
+xp: 60
+description: "Master core data ethics principles, 10 real-world ethical challenges, landmark case studies, Deon checklists, and privacy regulations like GDPR and HIPAA."
+topic: "Data Ethics & Governance"
+prerequisites: ["data-science-for-beginners/01-defining-data-science"]
+---
+import PythonRunner from '../../../components/islands/PythonRunner';
+import QuizCard from '../../../components/islands/QuizCard';
+import ColabButton from '../../../components/static/ColabButton.astro';
+
+We are all data citizens living in a datafied world. With global data creation surpassing 180 zettabytes, data scientists hold unprecedented power to profile behavior and nudge human decisions—sometimes creating an illusion of free choice. **Data Ethics** provides the essential guardrails that keep our models from causing real-world harm.
+
+In this lesson, we'll break down the difference between ethics and legal compliance, walk through 10 concrete ethical challenges and landmark case studies, and see how engineering teams operationalize ethics using checklists like **Deon** and open-source fairness audits.
+
+---
+
+## Ethics, Data Ethics & Ethics Culture
+
+The word *ethics* comes from the Greek *ethos*, meaning character or moral nature. While **compliance** is about following established laws, **ethics** is about shared moral principles of right and wrong—even when no law explicitly forbids an action.
+
+- **Data Ethics**: Evaluates moral problems across three pillars: *data* (collection, curation, sharing), *algorithms* (AI, ML models, autonomous agents), and *practices* (programming norms, responsible innovation).
+- **Applied Ethics**: Actively investigating ethical risks in real-world products and taking corrective action before release.
+- **Ethics Culture**: Operationalizing values across an entire organization so any engineer can "pull the Andon cord" to halt a harmful release early.
+
+### Six Foundational Ethical Principles
+
+| Principle | Core Responsibility |
+| :--- | :--- |
+| **Accountability** | Practitioners remain responsible for data lineage, model outcomes, and compliance. |
+| **Transparency** | Decisions and model behavior are interpretable and explainable to affected users. |
+| **Fairness** | Systems treat all demographic groups equitably and mitigate systemic bias. |
+| **Reliability & Safety** | Models behave consistently under edge cases without causing unintended harm. |
+| **Privacy & Security** | Personal data is protected against leaks, unauthorized access, and re-identification. |
+| **Inclusiveness** | Solutions are designed intentionally for diverse human abilities and contexts. |
+
+---
+
+## Ten Ethical Challenges & Landmark Case Studies
+
+Ethical failures rarely happen because a developer woke up wanting to cause harm; they happen when teams skip hard questions during **data collection** and **algorithm design**.
+
+| Challenge | Key Moral Question | Landmark Case Study |
+| :--- | :--- | :--- |
+| **Data Ownership** | Who controls access, portability, and deletion? | User content monetization disputes |
+| **Informed Consent** | Did subjects understand purpose and risks? | **1972 Tuskegee Study**: Participants deceived about diagnosis and treatment |
+| **Intellectual Property** | Does the creator hold economic rights over data? | Proprietary training corpus disputes |
+| **Data Privacy** | Can anonymized records be re-identified? | **2007 Netflix Prize**: 10M anonymized ratings linked with IMDb comments |
+| **Right to Be Forgotten** | Can users demand erasure of personal records? | **2018 GDPR Article 17** erasure requests |
+| **Dataset Bias** | Is the sample representative of the population? | **2013 Boston Street Bump**: App missed potholes in lower-income areas |
+| **Data Quality** | Are features accurate, complete, and consistent? | Incomplete sensor logs skewing clinical alerts |
+| **Algorithmic Fairness** | Does accuracy drop for specific subgroups? | **2018 MIT Gender Shades**: Higher error rates on darker-skinned women |
+| **Misrepresentation** | Are charts or stats arranged to deceive? | **2020 Georgia COVID-19**: Non-chronological x-axis dates faked a decline |
+| **Illusion of Free Choice** | Do dark patterns trap users into bad choices? | **2020 ABCmouse**: \$10M FTC settlement over cancellation dark patterns |
+
+---
+
+## Operationalizing Ethics: Checklists & Regulations
+
+Professional codes from the **ACM** or **Data Science Association** set moral standards, but checklists turn abstract values into deterministic pre-release gates. Tools like **Deon** embed yes/no ethics checks directly into data pipelines, while open-source libraries like **Fairlearn** measure allocation and quality-of-service disparities mathematically.
+
+On the legal side, governance teams must comply with regional data protection laws:
+
+- **US Privacy Act (1974)** & **HIPAA (1996)**: Regulates federal records and protects personal health information.
+- **COPPA (1998)**: Protects online privacy for children under 13.
+- **GDPR (2018)**: Establishes 8 strict user rights across the European Union, including data portability and erasure.
+- **CCPA (2018)** & **PIPL (2021)**: Grant consumers transparency, opt-out, and deletion rights in California and China.
+
+<ColabButton
+  course="data-science-for-beginners"
+  notebook="02-data-science-ethics.ipynb"
+  runtime="Free Tier CPU"
+/>
+
+---
+
+## Try It Yourself: Privacy ($k$-Anonymity) & Fairness Audit
+
+Before shipping a dataset or model, you should check both re-identification risk and subgroup error parity. Run the pure-Python auditor below to detect a $k=1$ unique quasi-identifier (the exact flaw behind the Netflix/IMDb linkage) and compute subgroup error disparity.
+
+<PythonRunner
+  client:visible
+  title="Try it Yourself: k-Anonymity & Subgroup Fairness Auditor"
+  expectedOutput="=== k-Anonymity Privacy Check ===
+Equivalence class counts: {('94107', 29): 2, ('10001', 42): 1}
+Privacy Alert: 1 record(s) fail k>=2 anonymity!
+
+=== Subgroup Error Rate Audit ===
+Group A False Negative Rate: 10.0%
+Group B False Negative Rate: 35.0%
+Disparity Gap: 25.0% (Action Required: > 10% threshold)"
+  initialCode={`from collections import Counter
+
+records = [
+    {"zip": "94107", "age": 29, "diagnosis": "Flu"},
+    {"zip": "94107", "age": 29, "diagnosis": "Cold"},
+    {"zip": "10001", "age": 42, "diagnosis": "Diabetes"},
+]
+
+eq_classes = Counter((r["zip"], r["age"]) for r in records)
+at_risk = sum(1 for count in eq_classes.values() if count < 2)
+
+print("=== k-Anonymity Privacy Check ===")
+print(f"Equivalence class counts: {dict(eq_classes)}")
+print(f"Privacy Alert: {at_risk} record(s) fail k>=2 anonymity!")
+
+# Subgroup predictions: (actual_positive, predicted_positive)
+group_a = [(1, 1)] * 9 + [(1, 0)] * 1
+group_b = [(1, 1)] * 13 + [(1, 0)] * 7
+
+def fnr(samples):
+    positives = [s for s in samples if s[0] == 1]
+    false_neg = sum(1 for actual, pred in positives if pred == 0)
+    return (false_neg / len(positives)) * 100
+
+fnr_a = fnr(group_a)
+fnr_b = fnr(group_b)
+gap = abs(fnr_b - fnr_a)
+
+print("\n=== Subgroup Error Rate Audit ===")
+print(f"Group A False Negative Rate: {fnr_a:.1f}%")
+print(f"Group B False Negative Rate: {fnr_b:.1f}%")
+print(f"Disparity Gap: {gap:.1f}% (Action Required: > 10% threshold)")`}
+/>
+
+---
+
+## Check Your Understanding
+
+<QuizCard
+  client:visible
+  question="What ethical failure did the 2007 Netflix Prize dataset demonstrate when researchers cross-referenced anonymized movie ratings with public IMDb reviews?"
+  options={[
+    "Illusion of free choice via dark patterns",
+    "De-anonymization and data privacy re-identification risk",
+    "Non-chronological x-axis data misrepresentation",
+    "Lack of informed consent in clinical trials"
+  ]}
+  correctAnswer={1}
+  explanation="Removing names alone does not guarantee privacy. Cross-referencing sparse behavioral patterns (such as movie rating timestamps) with external public datasets can re-identify individuals."
+/>
+
+Next up, we'll learn how to classify raw data by its mathematical properties and structural format in **Defining Data**.

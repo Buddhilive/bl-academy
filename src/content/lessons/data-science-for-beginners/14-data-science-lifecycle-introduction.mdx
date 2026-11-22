@@ -1,0 +1,109 @@
+---
+title: "The Data Science Lifecycle: Capturing, Processing & Maintaining Data"
+track: "data-science-for-beginners"
+category: "Module 4: Data Science Lifecycle & Cloud Alternatives"
+order: 14
+difficulty: "beginner"
+xp: 65
+description: "Master the 5-stage Data Science Lifecycle (Capturing, Processing, Analyzing, Communicating, Maintaining), hot vs. cold storage, data security, and TDSP vs. CRISP-DM."
+topic: "Data Science Lifecycle"
+prerequisites: ["data-science-for-beginners/13-meaningful-visualizations"]
+---
+import PythonRunner from '../../../components/islands/PythonRunner';
+import QuizCard from '../../../components/islands/QuizCard';
+import ColabButton from '../../../components/static/ColabButton.astro';
+
+By now you've seen that data science is never just calling a single library function—it is an iterative engineering process. Across industry, that process is organized into five connected stages: **Capturing**, **Processing**, **Analyzing**, **Communicating**, and **Maintaining**. In this lesson, we'll unpack Capturing, Processing, and Maintaining, and compare standard lifecycle frameworks like **CRISP-DM** and **TDSP**.
+
+---
+
+## Stage 1: Capturing (Goals & Data Acquisition)
+
+The capturing stage combines two crucial activities: defining measurable stakeholder goals and acquiring data of sufficient quantity and quality. Before collecting a single row, ask:
+
+- **Problem Alignment**: Has this problem been solved before? What are the time, budget, and compute constraints? What does an acceptable result look like?
+- **Data Audit**: Who owns the data? What privacy constraints apply? Is the dataset complete and accurate enough, or should we refine the goal based on what we find?
+
+---
+
+## Stage 2: Processing & Stage 3: Maintaining
+
+During **Processing**, statistical methods and machine learning models (Classification, Clustering, Regression) uncover patterns and predict outcomes. Sitting right between Capturing and Processing is **Maintaining**—the ongoing discipline of storing, cleaning, and securing data throughout the project's lifetime:
+
+| Maintenance Pillar | Key Engineering Decisions |
+| :--- | :--- |
+| **Storage Topology** | **On-Premise** (owned hardware) vs **Public Cloud** (shared elastic infrastructure) vs **Private Cloud** (strict compliance isolation) |
+| **Hot vs. Cold Data** | Keep frequently queried **hot data** on fast SSDs/memory; archive rarely accessed **cold data** to low-cost object storage |
+| **Automated Pipelines** | Run consistent cleansing, aggregation, and compression whenever fresh data arrives |
+| **Data Security** | Encrypt data at rest/in transit, disclose usage transparently, revoke access when members leave, and restrict write permissions |
+
+---
+
+## Lifecycle Frameworks: TDSP vs. CRISP-DM
+
+Different teams name these stages differently, though the underlying work is identical. **CRISP-DM** (*Cross-Industry Standard Process for Data Mining*) cycles through Business Understanding, Data Understanding, Data Preparation, Modeling, Evaluation, and Deployment. **TDSP** (*Team Data Science Process*) maps those phases into Business Understanding, Data Acquisition & Understanding, Modeling, Deployment, and Customer Acceptance—adding explicit team role definitions for collaborative cloud workflows.
+
+<ColabButton
+  course="data-science-for-beginners"
+  notebook="14-data-science-lifecycle-introduction.ipynb"
+  runtime="Free Tier CPU"
+/>
+
+---
+
+## Try It Yourself: Hot/Cold Storage & Lifecycle Readiness Scorer
+
+Run this pure-Python lifecycle evaluator to compare monthly storage costs between Hot-only vs Hot/Cold tiered data and score a dataset against Capturing and Security readiness checks.
+
+<PythonRunner
+  client:visible
+  title="Try it Yourself: Storage Tier Optimizer & Lifecycle Readiness"
+  expectedOutput="=== Storage Tier Cost Comparison (10 TB Dataset) ===
+All-Hot Storage: $230.00/mo
+Tiered (20% Hot / 80% Cold): $78.00/mo (66.1% savings)
+
+=== Lifecycle Readiness Audit ===
+Score: 4/5 checks passed -> Ready with minor remediation (add encryption)"
+  initialCode={`total_gb = 10_000
+hot_price_per_gb = 0.023
+cold_price_per_gb = 0.004
+
+all_hot = total_gb * hot_price_per_gb
+tiered = (total_gb * 0.20 * hot_price_per_gb) + (total_gb * 0.80 * cold_price_per_gb)
+savings_pct = (all_hot - tiered) / all_hot * 100
+
+print("=== Storage Tier Cost Comparison (10 TB Dataset) ===")
+print(f"All-Hot Storage: \${all_hot:.2f}/mo")
+print(f"Tiered (20% Hot / 80% Cold): \${tiered:.2f}/mo ({savings_pct:.1f}% savings)")
+
+checks = {
+    "measurable_goal": True,
+    "privacy_consent": True,
+    "sufficient_rows": True,
+    "rbac_access_control": True,
+    "encrypted_at_rest": False,
+}
+passed = sum(checks.values())
+missing = [k for k, ok in checks.items() if not ok]
+print(f"\n=== Lifecycle Readiness Audit ===")
+print(f"Score: {passed}/{len(checks)} checks passed -> Ready with minor remediation (add encryption)")`}
+/>
+
+---
+
+## Check Your Understanding
+
+<QuizCard
+  client:visible
+  question="Why do data engineering teams separate 'hot data' from 'cold data' during the Maintaining stage of the Data Science Lifecycle?"
+  options={[
+    "Cold data cannot be read by Python or Pandas.",
+    "Frequently accessed hot data stays on fast storage for low latency, while rarely accessed cold data moves to cheaper archival storage to cut costs.",
+    "Hot data is always unstructured while cold data is always relational.",
+    "Cold data is automatically deleted every 24 hours."
+  ]}
+  correctAnswer={1}
+  explanation="Tiering data into hot (frequent access) and cold (infrequent archival) storage optimizes both query latency and cloud storage bills."
+/>
+
+Next, we'll dive into the **Analyzing** stage with Exploratory Data Analysis (EDA) on an email spam dataset.

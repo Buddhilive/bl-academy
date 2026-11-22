@@ -1,0 +1,101 @@
+---
+title: "Data Science in the Wild: Industry, Research, Digital Humanities & Sustainability"
+track: "data-science-for-beginners"
+category: "Module 4: Data Science Lifecycle & Cloud Alternatives"
+order: 20
+difficulty: "intermediate"
+xp: 85
+description: "Explore real-world data science across industry, MIT Gender Shades fairness research, Emily Dickinson digital humanities with Gemini API, and STAC Earth data."
+topic: "Real-World Data Science"
+prerequisites: ["data-science-for-beginners/19-cloud-ml-sdk-and-pipelines"]
+---
+import PythonRunner from '../../../components/islands/PythonRunner';
+import QuizCard from '../../../components/islands/QuizCard';
+import ColabButton from '../../../components/static/ColabButton.astro';
+
+We have reached the final lesson of **Data Science for Beginners**! Along the way, you've mastered ethics, probability, SQLite and JSON wrangling, Pandas cleaning, exploratory visualization, the 5-stage lifecycle, and open-source cloud AutoML pipelines. Now let's answer the big question: *How do these skills map to real-world impact across industry, research, the humanities, and climate sustainability?*
+
+---
+
+## Data Science Across Four Real-World Domains
+
+| Domain | Landmark Real-World Applications | Key Data Science Takeaway |
+| :--- | :--- | :--- |
+| **Industry** | **Google Flu Trends** (warning against overfitting search terms), **UPS ORION** weather/traffic routing, **NYC FOIL Taxicab** 24h visualization, **Uber DSW**, **Moneyball** sports analytics, Banking fraud & Healthcare genomics | Scale and real-time feedback loops turn raw telemetry into operational decisions |
+| **Research** | **MIT *Gender Shades* Study** (Joy Buolamwini & Timnit Gebru) auditing commercial facial analysis across gender and skin type | Balanced, representative benchmarks expose hidden subgroup error disparities |
+| **Digital Humanities** | ***"Emily Dickinson and the Meter of Mood"*** (PoetryDB / Project Gutenberg acquisition, Pandas cleaning, seasonal sentiment analysis with **Gemini API**) | Computational NLP lets us test literary hypotheses across centuries of text |
+| **Sustainability** | **UN 2030 SDGs** & open **STAC (SpatioTemporal Asset Catalog)** geospatial queries (`pystac-client` over Sentinel-2 & Landsat imagery) | Open cloud geospatial catalogs enable deforestation and climate tracking |
+
+---
+
+## Digital Humanities & Open Earth Data in Google Colab
+
+In the companion notebook, you'll run two real-world pipelines without any proprietary cloud lock-in:
+1. **Emily Dickinson Seasonal Sentiment**: Fetch classic poems, clean stanza text, and classify emotional tone using **Google AI Studio Free Tier** (`google-genai`).
+2. **Open STAC Geospatial Query**: Search satellite imagery metadata over a bounding box and date range using `pystac-client` against public Earth observation catalogs.
+
+<ColabButton
+  course="data-science-for-beginners"
+  notebook="20-data-science-in-the-wild.ipynb"
+  runtime="Free Tier CPU + Gemini API"
+/>
+
+---
+
+## Try It Yourself: Gender Shades Audit & Literary Mood Analyzer
+
+Run this pure-Python capstone suite to audit intersectional error rates (inspired by *Gender Shades*), classify seasonal tone in Emily Dickinson verses, and filter a STAC satellite catalog by cloud cover.
+
+<PythonRunner
+  client:visible
+  title="Try it Yourself: Real-World Fairness, Humanities & STAC Suite"
+  expectedOutput="=== Intersectional Error Rate Audit (Gender Shades) ===
+Lighter Male Error: 0.8% | Darker Female Error: 34.7% | Gap: 33.9%
+
+=== Emily Dickinson Tone Classifier ===
+Poem 1 ('Hope is the thing with feathers'): Optimistic (score +2)
+
+=== Open STAC Satellite Catalog Filter ===
+Found 1 low-cloud Sentinel-2 scene(s): ['S2A_20261110_T10SEG']"
+  initialCode={`# 1. Intersectional Subgroup Error Audit
+subgroups = {"Lighter Male": 0.8, "Darker Female": 34.7}
+gap = subgroups["Darker Female"] - subgroups["Lighter Male"]
+print("=== Intersectional Error Rate Audit (Gender Shades) ===")
+print(f"Lighter Male Error: {subgroups['Lighter Male']}% | Darker Female Error: {subgroups['Darker Female']}% | Gap: {gap:.1f}%")
+
+# 2. Digital Humanities: Poem Sentiment
+poem = "Hope is the thing with feathers that perches in the soul and sings the tune without the words."
+positive_words = {"hope", "sings", "warm", "light", "joy"}
+score = sum(w.strip(".,") in positive_words for w in poem.lower().split())
+tone = "Optimistic" if score > 0 else "Melancholic"
+print("\n=== Emily Dickinson Tone Classifier ===")
+print(f"Poem 1 ('Hope is the thing with feathers'): {tone} (score +{score})")
+
+# 3. Sustainability: STAC Geospatial Metadata Filter
+scenes = [
+    {"id": "S2A_20261108_T10SEG", "cloud_cover": 64.2},
+    {"id": "S2A_20261110_T10SEG", "cloud_cover": 4.5},
+]
+clear = [s["id"] for s in scenes if s["cloud_cover"] < 15.0]
+print("\n=== Open STAC Satellite Catalog Filter ===")
+print(f"Found {len(clear)} low-cloud Sentinel-2 scene(s): {clear}")`}
+/>
+
+---
+
+## Check Your Understanding
+
+<QuizCard
+  client:visible
+  question="What core lesson did the MIT Gender Shades study teach the data science and AI engineering community?"
+  options={[
+    "High overall accuracy can mask severe error-rate disparities across underrepresented gender and skin-type subgroups unless benchmarks are balanced and intersectionally evaluated.",
+    "Facial recognition models never make errors on darker-skinned subjects.",
+    "Data visualization is unnecessary for research.",
+    "Only proprietary datasets should be used in academic research."
+  ]}
+  correctAnswer={0}
+  explanation="Aggregate accuracy hides subgroup failures. Balanced, representative evaluation datasets and intersectional auditing are essential to detect and mitigate algorithmic bias."
+/>
+
+Congratulations on completing **Course 02: Data Science for Beginners**! Click **Next** below to carry your clean-data and statistical skills straight into **Course 03: Machine Learning for Beginners**.

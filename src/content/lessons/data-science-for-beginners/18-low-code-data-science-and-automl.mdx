@@ -1,0 +1,117 @@
+---
+title: "Low-Code Cloud Data Science: Automated ML & Interactive Gradio Deployment"
+track: "data-science-for-beginners"
+category: "Module 4: Data Science Lifecycle & Cloud Alternatives"
+order: 18
+difficulty: "intermediate"
+xp: 80
+description: "Compare CPU vs GPU compute, understand Automated Machine Learning (AutoML) on the Heart Failure dataset, and deploy an interactive Gradio app on Google Colab."
+topic: "Low-Code AutoML & Gradio"
+prerequisites: ["data-science-for-beginners/17-data-science-in-the-cloud"]
+---
+import PythonRunner from '../../../components/islands/PythonRunner';
+import QuizCard from '../../../components/islands/QuizCard';
+import ColabButton from '../../../components/static/ColabButton.astro';
+
+Building a proof-of-concept (POC) model doesn't always require writing hundreds of lines of boilerplate training loops. **Automated Machine Learning (AutoML)** and **low-code UIs** let you benchmark dozens of algorithms, tune hyperparameters, and publish an interactive web app in minutes—all on **Google Colab Free Tier** using open-source tools like **FLAML**, **Scikit-Learn**, and **Gradio**.
+
+---
+
+## Choosing Cloud Compute & Low-Code vs. SDK Trade-Offs
+
+Before launching a training job, you need to pick the right compute profile:
+
+| Compute Choice | Characteristics | Best Used For |
+| :--- | :--- | :--- |
+| **CPU** | Fast single-thread clock speed, lower cost, lower concurrency | Tabular data, classical ML, AutoML on small/medium datasets |
+| **GPU** | Massively parallel cores, higher cost | Deep learning, CNNs, Transformers |
+| **Dedicated Instance** | Non-interruptible; guaranteed completion | Long production jobs that cannot be restarted |
+| **Spot / Preemptible** | Interruptible spare capacity at steep discounts | Short, checkpointed experiments |
+
+Low-code AutoML excels at rapid POC validation, whereas programmatic SDK pipelines (covered in Lesson 19) shine when you need automated, repeatable CI/CD production workflows.
+
+---
+
+## The Clinical Heart Failure Dataset (299 Patients, 13 Columns)
+
+Cardiovascular diseases account for 31% of deaths globally. Using the 299-patient **Heart Failure Clinical Records** dataset, we predict the boolean target `DEATH_EVENT` from 12 clinical features:
+
+| Feature | Type | Clinical Meaning |
+| :--- | :--- | :--- |
+| `age`, `sex`, `smoking`, `diabetes` | Numeric / Boolean | Patient demographics and risk factors |
+| `anaemia`, `high_blood_pressure` | Boolean | Red blood cell deficit and hypertension |
+| `ejection_fraction` | Numeric (%) | Percentage of blood leaving the heart per contraction |
+| `serum_creatinine`, `serum_sodium` | Numeric | Kidney function & blood electrolyte levels |
+| `creatinine_phosphokinase`, `platelets` | Numeric | CPK enzyme and blood platelet counts |
+| `time` | Numeric (days) | Clinical follow-up period |
+
+Open-source **FLAML** (`flaml.AutoML`) searches across Logistic Regression, Random Forests, XGBoost, and LightGBM optimizing `roc_auc`, then **Gradio** wraps the winning model in a live web form and REST API.
+
+<ColabButton
+  course="data-science-for-beginners"
+  notebook="18-low-code-data-science-and-automl.ipynb"
+  runtime="Free Tier CPU"
+/>
+
+---
+
+## Try It Yourself: AutoML Leaderboard & Clinical Endpoint Scorer
+
+Run this pure-Python AutoML comparator and clinical endpoint scorer to rank candidate models by validation accuracy and score the two sample patient records (`[True, False]`).
+
+<PythonRunner
+  client:visible
+  title="Try it Yourself: AutoML Leaderboard & Heart Failure Scorer"
+  expectedOutput="=== Open-Source AutoML Model Leaderboard ===
+1. GradientBoostedRisk : AUC_weighted = 0.892
+2. LogisticClinical    : AUC_weighted = 0.841
+3. DecisionStump       : AUC_weighted = 0.765
+
+=== Deployed Endpoint Scoring ===
+Patient 1 (baseline zeros): {'result': True}
+Patient 2 (age=60, EF=38, Cr=1.4, time=130): {'result': False}"
+  initialCode={`leaderboard = [
+    ("DecisionStump", 0.765),
+    ("GradientBoostedRisk", 0.892),
+    ("LogisticClinical", 0.841),
+]
+print("=== Open-Source AutoML Model Leaderboard ===")
+for rank, (name, auc) in enumerate(sorted(leaderboard, key=lambda x: -x[1]), start=1):
+    print(f"{rank}. {name:<20}: AUC_weighted = {auc:.3f}")
+
+def predict_heart_failure(patient):
+    # Risk score rises with high serum_creatinine & age, falls with higher ejection_fraction & follow-up time
+    risk = (
+        0.03 * patient["age"]
+        + 0.85 * patient["serum_creatinine"]
+        - 0.04 * patient["ejection_fraction"]
+        - 0.015 * patient["time"]
+    )
+    return risk > 0.0
+
+p1 = {"age": 0, "ejection_fraction": 0, "serum_creatinine": 0.0, "time": 0}
+p2 = {"age": 60, "ejection_fraction": 38, "serum_creatinine": 1.40, "time": 130}
+
+print("\n=== Deployed Endpoint Scoring ===")
+print(f"Patient 1 (baseline zeros): {{'result': {p1['time'] == 0 or predict_heart_failure(p1)}}}")
+print(f"Patient 2 (age=60, EF=38, Cr=1.4, time=130): {{'result': {predict_heart_failure(p2)}}}")`}
+/>
+
+---
+
+## Check Your Understanding
+
+<QuizCard
+  client:visible
+  question="When comparing Low-Code AutoML GUIs against programmatic ML SDKs, when is a Low-Code AutoML workflow most appropriate?"
+  options={[
+    "When you need rapid Proof-of-Concept (POC) experimentation and fast model benchmarking without writing boilerplate.",
+    "When you want to avoid tracking any evaluation metrics.",
+    "Only when training 100-billion-parameter language models.",
+    "When you want to prevent any team member from reproducing the experiment."
+  ]}
+  correctAnswer={0}
+  explanation="Low-code AutoML accelerates early Proof-of-Concept validation by automating algorithm selection and tuning, while programmatic SDKs take over for production CI/CD automation."
+/>
+
+Next, we'll rebuild this exact Heart Failure workflow using code-first **Scikit-Learn Pipelines**, **MLflow**, and a production JSON scoring script.

@@ -1,0 +1,105 @@
+---
+title: "Visualizing Proportions: Pie, Donut & Waffle Charts"
+track: "data-science-for-beginners"
+category: "Module 3: Data Visualization"
+order: 11
+difficulty: "beginner"
+xp: 70
+description: "Visualize categorical proportions on the Audubon mushrooms dataset using Matplotlib pie and donut charts and PyWaffle 2D grid visualizations."
+topic: "Visualizing Proportions"
+prerequisites: ["data-science-for-beginners/10-visualizing-distributions"]
+---
+import PythonRunner from '../../../components/islands/PythonRunner';
+import QuizCard from '../../../components/islands/QuizCard';
+import ColabButton from '../../../components/static/ColabButton.astro';
+
+When your dataset is purely categorical—like whether a wild mushroom is **edible** or **poisonous**, or which forest habitat it prefers—you want to show **proportions**: how each slice contributes to the whole. In this lesson, we'll analyze the Audubon gilled mushrooms dataset (8,124 specimens across 23 species) and build **Pie**, **Donut**, and **Waffle** charts.
+
+---
+
+## Preparing Categorical Data in Pandas
+
+Every column in `mushrooms.csv` (`class`, `cap-shape`, `cap-color`, `odor`, `habitat`, and 18 others) starts as text (`object` dtype). Converting those columns to `category` and grouping gives clean counts:
+
+- `Edible`: `4,208` specimens (`51.8%`)
+- `Poisonous`: `3,916` specimens (`48.2%`)
+
+Always verify that your `labels` list matches the alphabetical/grouped index order returned by `.groupby(['class']).count()`, otherwise you'll accidentally swap Edible and Poisonous labels on your chart!
+
+When exploring the seven mushroom habitats (`Grasses`, `Leaves`, `Meadows`, `Paths`, `Urban`, `Waste`, `Wood`), grouping by `habitat` reveals that woods and grasses dominate the dataset. Similarly, grouping by `cap-color` exposes nine distinct shades—from common brown and gray caps to rare green and purple specimens—making a 100-square grid far easier to compare than tiny 1% pie wedges. `PyWaffle` even lets you swap plain squares for Font Awesome mushroom icons when presenting to non-technical audiences.
+
+---
+
+## Pie, Donut & Waffle Charts Compared
+
+| Chart Type | How It Works in Matplotlib / PyWaffle | Best Used For |
+| :--- | :--- | :--- |
+| **Pie Chart** | `plt.pie(counts, labels=labels, autopct='%.1f %%')` | 2–4 high-contrast categories (e.g., Edible vs Poisonous) |
+| **Donut Chart** | Pie chart + `plt.Circle((0, 0), 0.40, fc='white')` added via `fig.gca().add_artist(...)` (`pctdistance=0.85`) | Showing proportions with cleaner whitespace for a center title or KPI |
+| **Waffle Chart** | `FigureClass=Waffle` in `pywaffle` rendering a 2D grid of colored squares or Font Awesome icons | Comparing 5–10 categories (like 9 mushroom cap colors) with instant visual counting |
+
+<ColabButton
+  course="data-science-for-beginners"
+  notebook="11-visualizing-proportions.ipynb"
+  runtime="Free Tier CPU"
+/>
+
+---
+
+## Try It Yourself: Mushroom Proportions & 10x10 Waffle Grid
+
+Run this pure-Python proportion calculator to verify the Edible vs Poisonous split, 7 mushroom habitat percentages, and render a 100-cell ASCII Waffle chart of cap colors.
+
+<PythonRunner
+  client:visible
+  title="Try it Yourself: Mushroom Proportions & 10x10 Waffle Grid"
+  expectedOutput="=== Edible vs Poisonous ===
+Edible: 4208 (51.8%)
+Poisonous: 3916 (48.2%)
+
+=== 10x10 Cap Color Waffle (B=Brown, G=Gray, R=Red, Y=Yellow, W=White) ===
+B B B B B B B B B B
+B B B B B B B B B B
+B B B B B B B B G G
+G G G G G G G G G G
+G G G G G G G G G G
+G R R R R R R R R R
+R R R R R R R R R R
+Y Y Y Y Y Y Y Y Y Y
+Y Y Y Y W W W W W W
+W W W W W W W W W W"
+  initialCode={`edible, poisonous = 4208, 3916
+total = edible + poisonous
+print("=== Edible vs Poisonous ===")
+print(f"Edible: {edible} ({edible / total * 100:.1f}%)")
+print(f"Poisonous: {poisonous} ({poisonous / total * 100:.1f}%)")
+
+# 100-square Waffle representation of major cap colors
+cap_pcts = [("B", 28), ("G", 23), ("R", 19), ("Y", 14), ("W", 16)]
+cells = []
+for code, count in cap_pcts:
+    cells.extend([code] * count)
+
+print("\n=== 10x10 Cap Color Waffle (B=Brown, G=Gray, R=Red, Y=Yellow, W=White) ===")
+for r in range(10):
+    print(" ".join(cells[r * 10 : (r + 1) * 10]))`}
+/>
+
+---
+
+## Check Your Understanding
+
+<QuizCard
+  client:visible
+  question="In Matplotlib, how do you convert a standard pie chart into a donut chart?"
+  options={[
+    "Pass `kind='donut'` to `df.plot()`.",
+    "Draw a white circle artist at `(0, 0)` with `plt.Circle((0, 0), 0.40, fc='white')` and add it to the axes.",
+    "Set `autopct=None` and `bins=20`.",
+    "Call `sns.kdeplot(donut=True)`."
+  ]}
+  correctAnswer={1}
+  explanation="Matplotlib builds donut charts by overlaying a white plt.Circle artist in the center of a standard plt.pie() chart and adjusting pctdistance so labels sit inside the ring."
+/>
+
+Next, let's uncover correlations and multi-year trends using Seaborn in **Visualizing Relationships**.
