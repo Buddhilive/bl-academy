@@ -1,5 +1,11 @@
-import React, { useEffect, useState } from 'react';
-import { listLocalProgress, type LessonProgress } from '../../lib/storage';
+import React, { useEffect, useRef, useState, useCallback } from 'react';
+import {
+  listProgress,
+  exportProgressJson,
+  importProgressJson,
+  subscribeProgressUpdates,
+  type LessonProgress,
+} from '../../lib/storage';
 import { getCourseByTrack } from '../../lib/curriculum';
 import CoursesDropdown from './CoursesDropdown';
 
@@ -23,13 +29,18 @@ export default function LessonProgressPanel({
 }: Props) {
   const [completedCount, setCompletedCount] = useState<number>(0);
   const [totalXp, setTotalXp] = useState<number>(0);
+  const [backupOpen, setBackupOpen] = useState<boolean>(false);
+  const [backupStatus, setBackupStatus] = useState<string>('');
+  const [backupError, setBackupError] = useState<string>('');
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const backupMenuRef = useRef<HTMLDivElement>(null);
 
   const totalLessons = trackLessons.length;
   const activeCourse = getCourseByTrack(currentTrack);
 
-  const refreshProgress = () => {
+  const refreshProgress = useCallback(async () => {
     try {
-      const records = listLocalProgress();
+      const records = await listProgress();
       const recordMap = new Map<string, LessonProgress>();
       for (const rec of records) {
         recordMap.set(rec.lesson_slug, rec);
@@ -70,25 +81,75 @@ export default function LessonProgressPanel({
         }
       });
     } catch (e) {
-      console.warn('[LessonProgressPanel] Unable to read local storage progress:', e);
+      console.warn('[LessonProgressPanel] Unable to read IndexedDB progress:', e);
     }
-  };
+  }, [trackLessons]);
 
   useEffect(() => {
     refreshProgress();
-
-    const handleStorageChange = () => {
+    return subscribeProgressUpdates(() => {
       refreshProgress();
+    });
+  }, [refreshProgress]);
+
+  useEffect(() => {
+    if (!backupOpen) return;
+    const handleOutsideClick = (e: MouseEvent) => {
+      if (backupMenuRef.current && !backupMenuRef.current.contains(e.target as Node)) {
+        setBackupOpen(false);
+      }
     };
-
-    window.addEventListener('storage', handleStorageChange);
-    window.addEventListener('bl:progress-updated', handleStorageChange);
-
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setBackupOpen(false);
+    };
+    document.addEventListener('mousedown', handleOutsideClick);
+    document.addEventListener('keydown', handleEscape);
     return () => {
-      window.removeEventListener('storage', handleStorageChange);
-      window.removeEventListener('bl:progress-updated', handleStorageChange);
+      document.removeEventListener('mousedown', handleOutsideClick);
+      document.removeEventListener('keydown', handleEscape);
     };
-  }, [trackLessons]);
+  }, [backupOpen]);
+
+  const handleExport = async () => {
+    setBackupError('');
+    setBackupStatus('');
+    try {
+      const json = await exportProgressJson();
+      const blob = new Blob([json], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `bl-academy-progress-${new Date().toISOString().slice(0, 10)}.json`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+      setBackupStatus('Progress exported.');
+    } catch (err) {
+      setBackupError(err instanceof Error ? err.message : 'Export failed.');
+    }
+  };
+
+  const handleImportFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setBackupError('');
+    setBackupStatus('');
+
+    try {
+      const text = await file.text();
+      const result = await importProgressJson(text, 'merge');
+      setBackupStatus(
+        `Imported ${result.imported} lesson${result.imported === 1 ? '' : 's'}` +
+          (result.skipped > 0 ? ` (${result.skipped} skipped)` : '.')
+      );
+      await refreshProgress();
+    } catch (err) {
+      setBackupError(err instanceof Error ? err.message : 'Import failed.');
+    } finally {
+      e.target.value = '';
+    }
+  };
 
   const percentage = totalLessons > 0 ? Math.round((completedCount / totalLessons) * 100) : 0;
 
@@ -113,7 +174,7 @@ export default function LessonProgressPanel({
           <CoursesDropdown currentTrack={currentTrack} trackUrls={trackUrls} />
         </div>
 
-        {/* Pathfinder / My Learning Progress Indicator */}
+        {/* Pathfinder / My Learning Progress Indicator & Local Backup */}
         <div className="flex items-center gap-2.5 sm:gap-3 shrink-0">
           {totalLessons > 0 && (
             <div className="flex items-center gap-2">
@@ -143,6 +204,75 @@ export default function LessonProgressPanel({
           >
             <span className="text-amber-400" aria-hidden="true">★</span>
             <span>{totalXp} XP</span>
+          </div>
+
+          {/* Local IndexedDB Backup Menu */}
+          <div className="relative" ref={backupMenuRef}>
+            <button
+              type="button"
+              onClick={() => setBackupOpen((prev) => !prev)}
+              aria-expanded={backupOpen}
+              aria-controls="progress-backup-menu"
+              aria-label="Backup or restore local progress"
+              className="inline-flex items-center gap-1.5 px-2.5 min-h-[44px] rounded-lg border border-neutral-700 bg-neutral-800/80 hover:bg-neutral-800 text-neutral-200 text-xs font-medium focus:outline-none focus-visible:ring-2 focus-visible:ring-[#E07A5F] transition-colors cursor-pointer"
+            >
+              <svg
+                className="w-4 h-4 text-[#E07A5F]"
+                viewBox="0 0 20 20"
+                fill="currentColor"
+                aria-hidden="true"
+              >
+                <path d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" />
+              </svg>
+              <span className="hidden sm:inline">Backup</span>
+            </button>
+
+            {backupOpen && (
+              <div
+                id="progress-backup-menu"
+                role="region"
+                aria-label="Local progress backup and restore"
+                className="absolute right-0 mt-2 w-64 rounded-xl border border-neutral-700 bg-neutral-900 shadow-xl p-3 space-y-2.5 z-50"
+              >
+                <p className="text-[11px] text-neutral-400 leading-relaxed">
+                  Progress is saved locally in your browser&apos;s IndexedDB. Export a JSON backup or import one to restore.
+                </p>
+                <div className="flex flex-col gap-2">
+                  <button
+                    type="button"
+                    onClick={handleExport}
+                    className="w-full min-h-[44px] px-3 py-2 rounded-lg bg-[#A7452A] hover:bg-[#93371E] dark:bg-[#E07A5F] dark:hover:bg-[#E58A73] text-white dark:text-neutral-950 text-xs font-semibold focus:outline-none focus-visible:ring-2 focus-visible:ring-[#E07A5F] cursor-pointer transition-colors"
+                  >
+                    Export Progress (.json)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => fileInputRef.current?.click()}
+                    className="w-full min-h-[44px] px-3 py-2 rounded-lg border border-neutral-700 bg-neutral-800 hover:bg-neutral-700 text-neutral-200 text-xs font-semibold focus:outline-none focus-visible:ring-2 focus-visible:ring-[#E07A5F] cursor-pointer transition-colors"
+                  >
+                    Import &amp; Merge (.json)
+                  </button>
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept=".json,application/json"
+                    onChange={handleImportFile}
+                    className="sr-only"
+                    aria-label="Choose progress backup JSON file"
+                  />
+                </div>
+                {backupStatus && (
+                  <p role="status" className="text-xs text-emerald-400 font-medium">
+                    {backupStatus}
+                  </p>
+                )}
+                {backupError && (
+                  <p role="alert" className="text-xs text-red-400 font-medium">
+                    {backupError}
+                  </p>
+                )}
+              </div>
+            )}
           </div>
         </div>
       </div>

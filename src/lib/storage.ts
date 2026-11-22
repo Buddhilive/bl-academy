@@ -1,5 +1,3 @@
-import { supabase, isSupabaseConfigured } from './supabase';
-
 export interface LessonProgress {
   lesson_slug: string;
   completed: boolean;
@@ -8,9 +6,26 @@ export interface LessonProgress {
   updated_at: string;
 }
 
+export interface ProgressExportEnvelope {
+  schema: 'bl-academy-progress';
+  version: 1;
+  exported_at: string;
+  records: LessonProgress[];
+}
+
+export const DB_NAME = 'bl_academy_db';
+export const DB_VERSION = 1;
+export const PROGRESS_STORE = 'lesson_progress';
+export const META_STORE = 'meta';
+
 export const STORAGE_PREFIX = 'lesson_progress_';
-export const MIGRATION_PREFIX = 'lesson_migrated_';
+export const MIGRATION_META_KEY = 'localStorage_migrated_v1';
+export const PROGRESS_CHANNEL_NAME = 'bl-academy-progress';
+export const PROGRESS_EVENT_NAME = 'bl:progress-updated';
+
 export const MAX_SAVED_CODE_LENGTH = 65536; // 64 KB cap
+export const MAX_IMPORT_BYTES = 5 * 1024 * 1024; // 5 MB cap
+export const MAX_IMPORT_RECORDS = 5000;
 
 const SLUG_REGEX = /^[a-z0-9][a-z0-9-_/]*$/i;
 
@@ -18,91 +33,387 @@ const SLUG_REGEX = /^[a-z0-9][a-z0-9-_/]*$/i;
  * Validates whether a lesson slug is well-formed.
  */
 export function isValidSlug(slug: unknown): slug is string {
-  return typeof slug === 'string' && slug.length > 0 && slug.length <= 128 && SLUG_REGEX.test(slug);
+  return (
+    typeof slug === 'string' &&
+    slug.length > 0 &&
+    slug.length <= 128 &&
+    SLUG_REGEX.test(slug)
+  );
 }
 
 /**
- * Clamps code string to the maximum allowed byte/character length.
+ * Clamps code string to the maximum allowed character length.
  */
 export function clampCode(code: unknown): string {
   if (typeof code !== 'string') return '';
-  return code.length > MAX_SAVED_CODE_LENGTH ? code.slice(0, MAX_SAVED_CODE_LENGTH) : code;
+  return code.length > MAX_SAVED_CODE_LENGTH
+    ? code.slice(0, MAX_SAVED_CODE_LENGTH)
+    : code;
+}
+
+function normalizeIsoTimestamp(value: unknown): string {
+  if (typeof value === 'string' && !Number.isNaN(Date.parse(value))) {
+    return new Date(value).toISOString();
+  }
+  return new Date().toISOString();
+}
+
+function normalizeXp(value: unknown): number {
+  if (typeof value === 'number' && Number.isFinite(value) && value >= 0) {
+    return Math.floor(value);
+  }
+  return 0;
 }
 
 /**
- * In-memory fallback for environments where window.localStorage is unavailable (SSR, private browsing, quota).
+ * Strictly constructs a sanitized LessonProgress object using allowlisted fields
+ * to prevent prototype pollution or malformed data from external JSON imports.
  */
-class MemoryStorage {
-  private store = new Map<string, string>();
+function sanitizeProgressRecord(
+  raw: unknown,
+  fallbackSlug?: string
+): LessonProgress | null {
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return null;
+  const obj = raw as Record<string, unknown>;
+  const slug = fallbackSlug ?? obj.lesson_slug;
+  if (!isValidSlug(slug)) return null;
 
-  getItem(key: string): string | null {
-    return this.store.get(key) ?? null;
+  return {
+    lesson_slug: slug,
+    completed: Boolean(obj.completed),
+    saved_code: clampCode(obj.saved_code ?? ''),
+    xp_earned: normalizeXp(obj.xp_earned),
+    updated_at: normalizeIsoTimestamp(obj.updated_at),
+  };
+}
+
+/**
+ * In-memory fallback for environments where IndexedDB/localStorage are unavailable
+ * (SSR, private browsing, restricted iframes, or quota errors).
+ */
+class MemoryProgressStore {
+  private progress = new Map<string, LessonProgress>();
+  private meta = new Map<string, unknown>();
+
+  get(slug: string): LessonProgress | null {
+    return this.progress.get(slug) ?? null;
   }
 
-  setItem(key: string, value: string): void {
-    this.store.set(key, value);
+  put(record: LessonProgress): void {
+    this.progress.set(record.lesson_slug, record);
   }
 
-  removeItem(key: string): void {
-    this.store.delete(key);
-  }
-
-  get length(): number {
-    return this.store.size;
-  }
-
-  key(index: number): string | null {
-    return Array.from(this.store.keys())[index] ?? null;
+  delete(slug: string): void {
+    this.progress.delete(slug);
   }
 
   clear(): void {
-    this.store.clear();
+    this.progress.clear();
+  }
+
+  getAll(): LessonProgress[] {
+    return Array.from(this.progress.values());
+  }
+
+  getMeta(key: string): unknown {
+    return this.meta.get(key);
+  }
+
+  setMeta(key: string, value: unknown): void {
+    this.meta.set(key, value);
   }
 }
 
-const memoryStorageFallback = new MemoryStorage();
+const memoryFallback = new MemoryProgressStore();
 
 /**
- * SSR-safe storage accessor.
+ * SSR-safe localStorage accessor used only for one-time legacy migration and tests.
  */
-export function getSafeStorage(): Storage | MemoryStorage {
-  if (typeof window === 'undefined') {
-    return memoryStorageFallback;
-  }
+export function getSafeLocalStorage(): Storage | null {
+  if (typeof window === 'undefined') return null;
   try {
     const testKey = '__bl_storage_test__';
     window.localStorage.setItem(testKey, testKey);
     window.localStorage.removeItem(testKey);
     return window.localStorage;
   } catch {
-    return memoryStorageFallback;
-  }
-}
-
-/**
- * Safely parses and validates a stored JSON record.
- */
-function parseStoredProgress(raw: string | null, slug: string): LessonProgress | null {
-  if (!raw) return null;
-  try {
-    const parsed = JSON.parse(raw);
-    if (!parsed || typeof parsed !== 'object') return null;
-
-    return {
-      lesson_slug: slug,
-      completed: Boolean(parsed.completed),
-      saved_code: clampCode(parsed.saved_code ?? ''),
-      xp_earned: typeof parsed.xp_earned === 'number' && parsed.xp_earned >= 0 ? Math.floor(parsed.xp_earned) : 0,
-      updated_at: typeof parsed.updated_at === 'string' ? parsed.updated_at : new Date().toISOString(),
-    };
-  } catch {
     return null;
   }
 }
 
+let dbPromise: Promise<IDBDatabase | null> | null = null;
+let migrationPromise: Promise<number> | null = null;
+let broadcastChannel: BroadcastChannel | null = null;
+
+function getBroadcastChannel(): BroadcastChannel | null {
+  if (typeof window === 'undefined' || typeof BroadcastChannel === 'undefined') {
+    return null;
+  }
+  if (!broadcastChannel) {
+    try {
+      broadcastChannel = new BroadcastChannel(PROGRESS_CHANNEL_NAME);
+    } catch {
+      return null;
+    }
+  }
+  return broadcastChannel;
+}
+
 /**
- * Retrieves the progress of a specific lesson.
- * Local storage is the immediate source of truth for UI responsiveness.
+ * Emits a progress update notification to both the current tab and other tabs.
+ */
+export function notifyProgressUpdate(slug?: string): void {
+  if (typeof window === 'undefined') return;
+
+  window.dispatchEvent(
+    new CustomEvent(PROGRESS_EVENT_NAME, { detail: { slug } })
+  );
+
+  const channel = getBroadcastChannel();
+  if (channel) {
+    try {
+      channel.postMessage({ type: 'progress-updated', slug: slug ?? null });
+    } catch {
+      // Ignore closed/unavailable channel errors
+    }
+  }
+}
+
+/**
+ * Subscribes to same-tab and cross-tab (BroadcastChannel) progress updates.
+ * Returns an unsubscribe cleanup callback.
+ */
+export function subscribeProgressUpdates(listener: () => void): () => void {
+  if (typeof window === 'undefined') {
+    return () => {};
+  }
+
+  const handleCustomEvent = () => {
+    listener();
+  };
+
+  window.addEventListener(PROGRESS_EVENT_NAME, handleCustomEvent);
+
+  let channel: BroadcastChannel | null = null;
+  let handleChannelMessage: ((event: MessageEvent) => void) | null = null;
+
+  if (typeof BroadcastChannel !== 'undefined') {
+    try {
+      channel = new BroadcastChannel(PROGRESS_CHANNEL_NAME);
+      handleChannelMessage = (event: MessageEvent) => {
+        const data = event.data as { type?: unknown } | null;
+        if (data && typeof data === 'object' && data.type === 'progress-updated') {
+          listener();
+        }
+      };
+      channel.addEventListener('message', handleChannelMessage);
+    } catch {
+      channel = null;
+    }
+  }
+
+  return () => {
+    window.removeEventListener(PROGRESS_EVENT_NAME, handleCustomEvent);
+    if (channel && handleChannelMessage) {
+      channel.removeEventListener('message', handleChannelMessage);
+      channel.close();
+    }
+  };
+}
+
+function openDatabase(): Promise<IDBDatabase | null> {
+  if (typeof window === 'undefined' || typeof window.indexedDB === 'undefined') {
+    return Promise.resolve(null);
+  }
+  if (dbPromise) return dbPromise;
+
+  dbPromise = new Promise<IDBDatabase | null>((resolve) => {
+    try {
+      const request = window.indexedDB.open(DB_NAME, DB_VERSION);
+
+      request.onupgradeneeded = () => {
+        const db = request.result;
+        if (!db.objectStoreNames.contains(PROGRESS_STORE)) {
+          const store = db.createObjectStore(PROGRESS_STORE, {
+            keyPath: 'lesson_slug',
+          });
+          store.createIndex('updated_at', 'updated_at', { unique: false });
+          store.createIndex('completed', 'completed', { unique: false });
+        }
+        if (!db.objectStoreNames.contains(META_STORE)) {
+          db.createObjectStore(META_STORE, { keyPath: 'key' });
+        }
+      };
+
+      request.onsuccess = () => {
+        const db = request.result;
+        db.onversionchange = () => {
+          db.close();
+          dbPromise = null;
+        };
+        resolve(db);
+      };
+
+      request.onerror = () => {
+        console.warn('[storage] IndexedDB open failed, falling back to memory:', request.error);
+        dbPromise = null;
+        resolve(null);
+      };
+
+      request.onblocked = () => {
+        console.warn('[storage] IndexedDB open blocked');
+      };
+    } catch (err) {
+      console.warn('[storage] IndexedDB unavailable, falling back to memory:', err);
+      dbPromise = null;
+      resolve(null);
+    }
+  });
+
+  return dbPromise;
+}
+
+function idbRequest<T>(req: IDBRequest<T>): Promise<T> {
+  return new Promise<T>((resolve, reject) => {
+    req.onsuccess = () => resolve(req.result);
+    req.onerror = () => reject(req.error);
+  });
+}
+
+function idbTransactionDone(tx: IDBTransaction): Promise<void> {
+  return new Promise<void>((resolve, reject) => {
+    tx.oncomplete = () => resolve();
+    tx.onerror = () => reject(tx.error);
+    tx.onabort = () => reject(tx.error ?? new Error('Transaction aborted'));
+  });
+}
+
+function mergeRecords(
+  existing: LessonProgress | null,
+  incoming: LessonProgress
+): LessonProgress {
+  if (!existing) return incoming;
+  const existingTime = Date.parse(existing.updated_at);
+  const incomingTime = Date.parse(incoming.updated_at);
+  const useIncomingCode =
+    Number.isNaN(existingTime) ||
+    (!Number.isNaN(incomingTime) && incomingTime >= existingTime);
+
+  return {
+    lesson_slug: existing.lesson_slug,
+    completed: existing.completed || incoming.completed,
+    xp_earned: Math.max(existing.xp_earned, incoming.xp_earned),
+    saved_code: useIncomingCode ? incoming.saved_code : existing.saved_code,
+    updated_at: useIncomingCode ? incoming.updated_at : existing.updated_at,
+  };
+}
+
+/**
+ * One-time idempotent migration of legacy `lesson_progress_*` keys from
+ * `window.localStorage` into IndexedDB.
+ */
+export async function migrateFromLocalStorage(force = false): Promise<number> {
+  if (migrationPromise && !force) {
+    return migrationPromise;
+  }
+
+  const run = (async (): Promise<number> => {
+    const ls = getSafeLocalStorage();
+    if (!ls) return 0;
+
+    const db = await openDatabase();
+
+    if (db && !force) {
+      try {
+        const tx = db.transaction(META_STORE, 'readonly');
+        const meta = (await idbRequest(
+          tx.objectStore(META_STORE).get(MIGRATION_META_KEY)
+        )) as { key: string; value: boolean } | undefined;
+        if (meta?.value === true) return 0;
+      } catch {
+        // Proceed to migration check
+      }
+    } else if (!db && !force && memoryFallback.getMeta(MIGRATION_META_KEY) === true) {
+      return 0;
+    }
+
+    const legacyRecords: LessonProgress[] = [];
+    for (let i = 0; i < ls.length; i++) {
+      const key = ls.key(i);
+      if (!key || !key.startsWith(STORAGE_PREFIX)) continue;
+      const slug = key.slice(STORAGE_PREFIX.length);
+      if (!isValidSlug(slug)) continue;
+      try {
+        const raw = ls.getItem(key);
+        if (!raw) continue;
+        const parsed = JSON.parse(raw);
+        const sanitized = sanitizeProgressRecord(parsed, slug);
+        if (sanitized) legacyRecords.push(sanitized);
+      } catch {
+        // Skip malformed legacy entries
+      }
+    }
+
+    let migratedCount = 0;
+
+    if (db) {
+      try {
+        const tx = db.transaction([PROGRESS_STORE, META_STORE], 'readwrite');
+        const progressStore = tx.objectStore(PROGRESS_STORE);
+        const metaStore = tx.objectStore(META_STORE);
+
+        for (const record of legacyRecords) {
+          const existingRaw = await idbRequest(
+            progressStore.get(record.lesson_slug)
+          );
+          const existing = sanitizeProgressRecord(existingRaw, record.lesson_slug);
+          const merged = mergeRecords(existing, record);
+          progressStore.put(merged);
+          migratedCount++;
+        }
+
+        metaStore.put({
+          key: MIGRATION_META_KEY,
+          value: true,
+          migrated_at: new Date().toISOString(),
+        });
+        await idbTransactionDone(tx);
+      } catch (err) {
+        console.warn('[storage] Legacy localStorage migration failed:', err);
+        return 0;
+      }
+    } else {
+      for (const record of legacyRecords) {
+        const existing = memoryFallback.get(record.lesson_slug);
+        memoryFallback.put(mergeRecords(existing, record));
+        migratedCount++;
+      }
+      memoryFallback.setMeta(MIGRATION_META_KEY, true);
+    }
+
+    if (migratedCount > 0) {
+      notifyProgressUpdate();
+    }
+
+    return migratedCount;
+  })();
+
+  migrationPromise = run;
+  try {
+    return await run;
+  } finally {
+    migrationPromise = null;
+  }
+}
+
+async function ensureReady(): Promise<IDBDatabase | null> {
+  const db = await openDatabase();
+  await migrateFromLocalStorage();
+  return db;
+}
+
+/**
+ * Retrieves the progress record for a specific lesson from IndexedDB.
  */
 export async function getProgress(slug: string): Promise<LessonProgress | null> {
   if (!isValidSlug(slug)) {
@@ -110,15 +421,23 @@ export async function getProgress(slug: string): Promise<LessonProgress | null> 
     return null;
   }
 
-  const storage = getSafeStorage();
-  const raw = storage.getItem(STORAGE_PREFIX + slug);
-  return parseStoredProgress(raw, slug);
+  const db = await ensureReady();
+  if (!db) {
+    return memoryFallback.get(slug);
+  }
+
+  try {
+    const tx = db.transaction(PROGRESS_STORE, 'readonly');
+    const raw = await idbRequest(tx.objectStore(PROGRESS_STORE).get(slug));
+    return sanitizeProgressRecord(raw, slug);
+  } catch (err) {
+    console.warn('[storage] getProgress failed, reading memory fallback:', err);
+    return memoryFallback.get(slug);
+  }
 }
 
 /**
- * Persists progress for a lesson.
- * Writes locally first (instant UI update), then performs background write-through
- * to Supabase if the user is authenticated.
+ * Persists progress for a lesson into IndexedDB and notifies active tabs/islands.
  */
 export async function saveProgress(
   slug: string,
@@ -129,265 +448,233 @@ export async function saveProgress(
     return null;
   }
 
-  const storage = getSafeStorage();
-  const existing = parseStoredProgress(storage.getItem(STORAGE_PREFIX + slug), slug);
+  const db = await ensureReady();
+  const existing = db
+    ? await (async () => {
+        try {
+          const tx = db.transaction(PROGRESS_STORE, 'readonly');
+          const raw = await idbRequest(tx.objectStore(PROGRESS_STORE).get(slug));
+          return sanitizeProgressRecord(raw, slug);
+        } catch {
+          return memoryFallback.get(slug);
+        }
+      })()
+    : memoryFallback.get(slug);
 
   const updatedRecord: LessonProgress = {
     lesson_slug: slug,
-    completed: patch.completed !== undefined ? Boolean(patch.completed) : (existing?.completed ?? false),
-    saved_code: patch.saved_code !== undefined ? clampCode(patch.saved_code) : (existing?.saved_code ?? ''),
-    xp_earned: patch.xp_earned !== undefined ? Math.max(0, Math.floor(patch.xp_earned)) : (existing?.xp_earned ?? 0),
+    completed:
+      patch.completed !== undefined
+        ? Boolean(patch.completed)
+        : (existing?.completed ?? false),
+    saved_code:
+      patch.saved_code !== undefined
+        ? clampCode(patch.saved_code)
+        : (existing?.saved_code ?? ''),
+    xp_earned:
+      patch.xp_earned !== undefined
+        ? normalizeXp(patch.xp_earned)
+        : (existing?.xp_earned ?? 0),
     updated_at: new Date().toISOString(),
   };
 
-  // 1. Write locally
-  try {
-    storage.setItem(STORAGE_PREFIX + slug, JSON.stringify(updatedRecord));
-  } catch (err) {
-    console.warn('[storage] Failed to save progress locally:', err);
+  memoryFallback.put(updatedRecord);
+
+  if (db) {
+    try {
+      const tx = db.transaction(PROGRESS_STORE, 'readwrite');
+      tx.objectStore(PROGRESS_STORE).put(updatedRecord);
+      await idbTransactionDone(tx);
+    } catch (err) {
+      console.warn('[storage] IndexedDB write failed:', err);
+    }
   }
 
-  // 2. Non-blocking cloud mirror if authenticated
-  if (isSupabaseConfigured) {
-    supabase.auth
-      .getSession()
-      .then(({ data: { session } }) => {
-        if (!session?.user) return;
-
-        return supabase
-          .from('user_progress')
-          .upsert(
-            {
-              user_id: session.user.id,
-              lesson_slug: updatedRecord.lesson_slug,
-              completed: updatedRecord.completed,
-              saved_code: updatedRecord.saved_code,
-              xp_earned: updatedRecord.xp_earned,
-              updated_at: updatedRecord.updated_at,
-            },
-            { onConflict: 'user_id,lesson_slug' }
-          )
-          .then(({ error }) => {
-            if (error) {
-              console.warn('[storage] Cloud mirror upsert error for', slug, error.message);
-            }
-          });
-      })
-      .catch((err) => {
-        console.warn('[storage] Cloud mirror network error for', slug, err);
-      });
-  }
-
+  notifyProgressUpdate(slug);
   return updatedRecord;
 }
 
 /**
- * Clears stored progress for a lesson locally and remotely if authenticated.
+ * Clears stored progress for a single lesson.
  */
 export async function clearProgress(slug: string): Promise<void> {
   if (!isValidSlug(slug)) return;
 
-  const storage = getSafeStorage();
-  storage.removeItem(STORAGE_PREFIX + slug);
+  memoryFallback.delete(slug);
+  const db = await ensureReady();
 
-  if (isSupabaseConfigured) {
-    supabase.auth
-      .getSession()
-      .then(({ data: { session } }) => {
-        if (!session?.user) return;
-        return supabase
-          .from('user_progress')
-          .delete()
-          .match({ user_id: session.user.id, lesson_slug: slug });
-      })
-      .catch((err) => {
-        console.warn('[storage] Cloud delete error for', slug, err);
-      });
-  }
-}
-
-/**
- * Returns all local lesson progress records stored in this browser.
- */
-export function listLocalProgress(): LessonProgress[] {
-  const storage = getSafeStorage();
-  const records: LessonProgress[] = [];
-
-  for (let i = 0; i < storage.length; i++) {
-    const key = storage.key(i);
-    if (key && key.startsWith(STORAGE_PREFIX)) {
-      const slug = key.slice(STORAGE_PREFIX.length);
-      if (isValidSlug(slug)) {
-        const item = parseStoredProgress(storage.getItem(key), slug);
-        if (item) records.push(item);
-      }
-    }
-  }
-
-  return records;
-}
-
-/**
- * In-flight lock to prevent concurrent redundant migrations across auth events.
- */
-let inFlightMigration: Promise<{ migratedCount: number; errors: number }> | null = null;
-
-/**
- * Migrates anonymous local progress to Supabase for the authenticated user.
- * Idempotent: runs once per user ID using a localStorage migration flag.
- */
-export async function syncLocalToSupabase(
-  explicitUserId?: string
-): Promise<{ migratedCount: number; errors: number }> {
-  if (inFlightMigration) {
-    return inFlightMigration;
-  }
-
-  inFlightMigration = (async () => {
-    if (!isSupabaseConfigured) {
-      return { migratedCount: 0, errors: 0 };
-    }
-
-    let userId = explicitUserId;
-    if (!userId) {
-      const { data: { session } } = await supabase.auth.getSession();
-      userId = session?.user?.id;
-    }
-
-    if (!userId) {
-      return { migratedCount: 0, errors: 0 };
-    }
-
-    const storage = getSafeStorage();
-    const migrationFlagKey = MIGRATION_PREFIX + userId;
-
-    if (storage.getItem(migrationFlagKey) === 'true') {
-      return { migratedCount: 0, errors: 0 };
-    }
-
-    const localItems = listLocalProgress();
-
+  if (db) {
     try {
-      // 1. Fetch existing remote progress for this user
-      const { data: remoteRows, error: fetchError } = await supabase
-        .from('user_progress')
-        .select('lesson_slug, completed, saved_code, xp_earned, updated_at')
-        .eq('user_id', userId);
-
-      if (fetchError) {
-        console.warn('[storage] Failed to fetch remote progress for sync:', fetchError.message);
-        return { migratedCount: 0, errors: 1 };
-      }
-
-      const remoteMap = new Map<string, LessonProgress>();
-      if (remoteRows) {
-        for (const row of remoteRows) {
-          remoteMap.set(row.lesson_slug, {
-            lesson_slug: row.lesson_slug,
-            completed: Boolean(row.completed),
-            saved_code: clampCode(row.saved_code ?? ''),
-            xp_earned: Math.max(0, row.xp_earned ?? 0),
-            updated_at: row.updated_at || new Date().toISOString(),
-          });
-        }
-      }
-
-      // 2. Deterministic merge:
-      // - completed: local || remote
-      // - xp_earned: max(local, remote)
-      // - saved_code: newer timestamp wins
-      const mergedToUpsert: LessonProgress[] = [];
-
-      for (const local of localItems) {
-        const remote = remoteMap.get(local.lesson_slug);
-        if (!remote) {
-          mergedToUpsert.push(local);
-        } else {
-          const localTime = new Date(local.updated_at).getTime();
-          const remoteTime = new Date(remote.updated_at).getTime();
-          const useLocalCode = isNaN(remoteTime) || localTime >= remoteTime;
-
-          const merged: LessonProgress = {
-            lesson_slug: local.lesson_slug,
-            completed: local.completed || remote.completed,
-            xp_earned: Math.max(local.xp_earned, remote.xp_earned),
-            saved_code: useLocalCode ? local.saved_code : remote.saved_code,
-            updated_at: useLocalCode ? local.updated_at : remote.updated_at,
-          };
-          mergedToUpsert.push(merged);
-        }
-      }
-
-      // 3. Batch upsert merged items into Supabase
-      if (mergedToUpsert.length > 0) {
-        const payload = mergedToUpsert.map((item) => ({
-          user_id: userId,
-          lesson_slug: item.lesson_slug,
-          completed: item.completed,
-          saved_code: item.saved_code,
-          xp_earned: item.xp_earned,
-          updated_at: item.updated_at,
-        }));
-
-        const { error: upsertError } = await supabase
-          .from('user_progress')
-          .upsert(payload, { onConflict: 'user_id,lesson_slug' });
-
-        if (upsertError) {
-          console.warn('[storage] Batch upsert during migration failed:', upsertError.message);
-          return { migratedCount: 0, errors: 1 };
-        }
-      }
-
-      // 4. Hydrate local storage with all remote progress (including rows from other devices)
-      for (const item of mergedToUpsert) {
-        storage.setItem(STORAGE_PREFIX + item.lesson_slug, JSON.stringify(item));
-      }
-      for (const [slug, remote] of remoteMap.entries()) {
-        if (!localItems.some((l) => l.lesson_slug === slug)) {
-          storage.setItem(STORAGE_PREFIX + slug, JSON.stringify(remote));
-        }
-      }
-
-      // 5. Mark migration as completed for this user
-      storage.setItem(migrationFlagKey, 'true');
-
-      return { migratedCount: mergedToUpsert.length, errors: 0 };
+      const tx = db.transaction(PROGRESS_STORE, 'readwrite');
+      tx.objectStore(PROGRESS_STORE).delete(slug);
+      await idbTransactionDone(tx);
     } catch (err) {
-      console.warn('[storage] Unexpected error during syncLocalToSupabase:', err);
-      return { migratedCount: 0, errors: 1 };
+      console.warn('[storage] IndexedDB delete failed:', err);
     }
-  })();
+  }
+
+  notifyProgressUpdate(slug);
+}
+
+/**
+ * Clears all stored lesson progress from IndexedDB.
+ */
+export async function clearAllProgress(): Promise<void> {
+  memoryFallback.clear();
+  const db = await ensureReady();
+
+  if (db) {
+    try {
+      const tx = db.transaction(PROGRESS_STORE, 'readwrite');
+      tx.objectStore(PROGRESS_STORE).clear();
+      await idbTransactionDone(tx);
+    } catch (err) {
+      console.warn('[storage] IndexedDB clearAll failed:', err);
+    }
+  }
+
+  notifyProgressUpdate();
+}
+
+/**
+ * Returns all lesson progress records stored in IndexedDB.
+ */
+export async function listProgress(): Promise<LessonProgress[]> {
+  const db = await ensureReady();
+  if (!db) {
+    return memoryFallback.getAll();
+  }
 
   try {
-    return await inFlightMigration;
-  } finally {
-    inFlightMigration = null;
+    const tx = db.transaction(PROGRESS_STORE, 'readonly');
+    const rawRows = await idbRequest(tx.objectStore(PROGRESS_STORE).getAll());
+    const records: LessonProgress[] = [];
+    for (const row of rawRows) {
+      const sanitized = sanitizeProgressRecord(row);
+      if (sanitized) records.push(sanitized);
+    }
+    return records;
+  } catch (err) {
+    console.warn('[storage] listProgress failed, reading memory fallback:', err);
+    return memoryFallback.getAll();
   }
 }
 
 /**
- * Initializes listeners for Supabase auth state changes to automatically trigger
- * local-to-cloud progress migration when a user signs in.
- * Returns an unsubscribe cleanup callback.
+ * Exports all stored lesson progress as a versioned JSON string.
  */
-export function initProgressSync(): () => void {
-  if (!isSupabaseConfigured) {
-    return () => {};
-  }
-
-  const {
-    data: { subscription },
-  } = supabase.auth.onAuthStateChange((event, session) => {
-    if ((event === 'SIGNED_IN' || event === 'INITIAL_SESSION') && session?.user) {
-      syncLocalToSupabase(session.user.id).catch((err) => {
-        console.warn('[storage] Auto-migration on auth state change failed:', err);
-      });
-    }
-  });
-
-  return () => {
-    subscription.unsubscribe();
+export async function exportProgressJson(): Promise<string> {
+  const records = await listProgress();
+  const envelope: ProgressExportEnvelope = {
+    schema: 'bl-academy-progress',
+    version: 1,
+    exported_at: new Date().toISOString(),
+    records,
   };
+  return JSON.stringify(envelope, null, 2);
 }
 
+/**
+ * Validates and imports a versioned JSON backup into IndexedDB.
+ * Supports 'merge' (deterministic merge with existing) or 'replace' (clears first).
+ */
+export async function importProgressJson(
+  rawJson: string,
+  mode: 'merge' | 'replace' = 'merge'
+): Promise<{ imported: number; skipped: number }> {
+  if (typeof rawJson !== 'string' || rawJson.trim().length === 0) {
+    throw new Error('Backup file is empty.');
+  }
+  if (rawJson.length > MAX_IMPORT_BYTES) {
+    throw new Error('Backup file exceeds the 5 MB size limit.');
+  }
+
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(rawJson);
+  } catch {
+    throw new Error('Invalid JSON format in backup file.');
+  }
+
+  if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
+    throw new Error('Backup root must be a JSON object.');
+  }
+
+  const envelope = parsed as Record<string, unknown>;
+  if (envelope.schema !== 'bl-academy-progress' || envelope.version !== 1) {
+    throw new Error('Unsupported backup schema or version.');
+  }
+  if (!Array.isArray(envelope.records)) {
+    throw new Error('Backup file is missing a valid records array.');
+  }
+  if (envelope.records.length > MAX_IMPORT_RECORDS) {
+    throw new Error(`Backup exceeds maximum of ${MAX_IMPORT_RECORDS} records.`);
+  }
+
+  const validRecords: LessonProgress[] = [];
+  let skipped = 0;
+
+  for (const item of envelope.records) {
+    const sanitized = sanitizeProgressRecord(item);
+    if (sanitized) {
+      validRecords.push(sanitized);
+    } else {
+      skipped++;
+    }
+  }
+
+  const db = await ensureReady();
+
+  if (mode === 'replace') {
+    memoryFallback.clear();
+  }
+
+  if (db) {
+    const tx = db.transaction(PROGRESS_STORE, 'readwrite');
+    const store = tx.objectStore(PROGRESS_STORE);
+
+    if (mode === 'replace') {
+      store.clear();
+    }
+
+    for (const record of validRecords) {
+      if (mode === 'merge') {
+        const existingRaw = await idbRequest(store.get(record.lesson_slug));
+        const existing = sanitizeProgressRecord(existingRaw, record.lesson_slug);
+        const merged = mergeRecords(existing, record);
+        store.put(merged);
+        memoryFallback.put(merged);
+      } else {
+        store.put(record);
+        memoryFallback.put(record);
+      }
+    }
+
+    await idbTransactionDone(tx);
+  } else {
+    for (const record of validRecords) {
+      if (mode === 'merge') {
+        const existing = memoryFallback.get(record.lesson_slug);
+        memoryFallback.put(mergeRecords(existing, record));
+      } else {
+        memoryFallback.put(record);
+      }
+    }
+  }
+
+  notifyProgressUpdate();
+  return { imported: validRecords.length, skipped };
+}
+
+/**
+ * Resets the localStorage migration flag (primarily for test harness verification).
+ */
+export async function resetMigrationFlag(): Promise<void> {
+  memoryFallback.setMeta(MIGRATION_META_KEY, false);
+  const db = await openDatabase();
+  if (db) {
+    const tx = db.transaction(META_STORE, 'readwrite');
+    tx.objectStore(META_STORE).delete(MIGRATION_META_KEY);
+    await idbTransactionDone(tx);
+  }
+}

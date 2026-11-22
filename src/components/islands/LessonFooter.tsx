@@ -1,7 +1,13 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import type { LessonFooterProps } from '../../types/islands';
+import {
+  getProgress,
+  saveProgress,
+  subscribeProgressUpdates,
+} from '../../lib/storage';
 
 export const LessonFooter: React.FC<LessonFooterProps> = ({
+  lessonSlug,
   xp = 10,
   nextLessonUrl,
   nextLessonTitle,
@@ -14,8 +20,41 @@ export const LessonFooter: React.FC<LessonFooterProps> = ({
   const [completedState, setCompletedState] = useState<boolean>(isCompleted);
   const [isNavigating, setIsNavigating] = useState<boolean>(false);
 
-  const handleAction = useCallback(() => {
+  useEffect(() => {
+    setCompletedState(isCompleted);
+  }, [isCompleted]);
+
+  useEffect(() => {
+    if (!lessonSlug) return;
+    let active = true;
+
+    const loadStatus = async () => {
+      const progress = await getProgress(lessonSlug);
+      if (active && progress?.completed) {
+        setCompletedState(true);
+      }
+    };
+
+    loadStatus();
+    const unsubscribe = subscribeProgressUpdates(() => {
+      loadStatus();
+    });
+
+    return () => {
+      active = false;
+      unsubscribe();
+    };
+  }, [lessonSlug]);
+
+  const handleAction = useCallback(async () => {
     setCompletedState(true);
+
+    if (lessonSlug) {
+      await saveProgress(lessonSlug, {
+        completed: true,
+        xp_earned: xp,
+      });
+    }
 
     if (onComplete) {
       onComplete();
@@ -27,7 +66,7 @@ export const LessonFooter: React.FC<LessonFooterProps> = ({
         window.location.href = nextLessonUrl;
       }
     }
-  }, [nextLessonUrl, onComplete]);
+  }, [lessonSlug, xp, nextLessonUrl, onComplete]);
 
   return (
     <footer
@@ -139,4 +178,3 @@ export const LessonFooter: React.FC<LessonFooterProps> = ({
 };
 
 export default LessonFooter;
-

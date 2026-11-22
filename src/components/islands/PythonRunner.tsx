@@ -4,9 +4,11 @@ import { python } from '@codemirror/lang-python';
 import { keymap, EditorView } from '@codemirror/view';
 import { usePyodide } from '../../hooks/usePyodide';
 import { triggerCompletionConfetti } from '../../lib/confetti';
+import { getProgress, saveProgress } from '../../lib/storage';
 import type { PythonRunnerProps } from '../../types/islands';
 
 export const PythonRunner: React.FC<PythonRunnerProps> = ({
+  lessonSlug,
   initialCode = '# Write your Python code below\nprint("Hello, Buddhilive Academy!")',
   expectedOutput,
   packages,
@@ -22,13 +24,40 @@ export const PythonRunner: React.FC<PythonRunnerProps> = ({
   const [copied, setCopied] = useState<boolean>(false);
   const editorContainerRef = useRef<HTMLDivElement>(null);
   const runButtonRef = useRef<HTMLButtonElement>(null);
+  const hydratedRef = useRef<boolean>(false);
 
   const { runCode, isRunning, isReady } = usePyodide();
 
-  // Avoid SSR hydration issues by deferring rich editor mount
+  // Avoid SSR hydration issues by deferring rich editor mount and hydrating saved code
   useEffect(() => {
     setIsMounted(true);
-  }, []);
+    if (!lessonSlug) {
+      hydratedRef.current = true;
+      return;
+    }
+
+    let active = true;
+    getProgress(lessonSlug).then((prog) => {
+      if (!active) return;
+      if (prog?.saved_code) {
+        setCode(prog.saved_code);
+      }
+      hydratedRef.current = true;
+    });
+
+    return () => {
+      active = false;
+    };
+  }, [lessonSlug]);
+
+  // Debounced auto-save to IndexedDB when lessonSlug is provided
+  useEffect(() => {
+    if (!lessonSlug || !hydratedRef.current) return;
+    const timer = setTimeout(() => {
+      saveProgress(lessonSlug, { saved_code: code });
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [code, lessonSlug]);
 
   const handleCopy = useCallback(() => {
     if (typeof navigator !== 'undefined' && navigator.clipboard) {
@@ -83,7 +112,10 @@ export const PythonRunner: React.FC<PythonRunnerProps> = ({
     setExecutionOutput('');
     setExecutionError(null);
     setTestStatus('idle');
-  }, [initialCode]);
+    if (lessonSlug) {
+      saveProgress(lessonSlug, { saved_code: initialCode });
+    }
+  }, [initialCode, lessonSlug]);
 
   // CodeMirror keyboard escape keymap to prevent tab trapping
   const editorExtensions = React.useMemo(() => {

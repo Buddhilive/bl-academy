@@ -1,6 +1,6 @@
 ---
 import Layout from '../layouts/Layout.astro';
-import StorageAuthTester from '../components/islands/StorageAuthTester';
+import StorageTester from '../components/islands/StorageTester';
 ---
 
 <Layout>
@@ -8,19 +8,18 @@ import StorageAuthTester from '../components/islands/StorageAuthTester';
     <header class="border-b border-stone-800 pb-6">
       <div class="flex items-center gap-2 text-sm text-[#E07A5F] font-semibold mb-2">
         <span class="w-2 h-2 rounded-full bg-[#E07A5F]"></span>
-        <span>Spec 004 Verification Harness</span>
+        <span>Local Storage Verification Harness</span>
       </div>
       <h1 class="text-3xl font-bold tracking-tight text-white mb-2">
-        Local-First State & Supabase Integration
+        IndexedDB Persistence, Sync &amp; Backup
       </h1>
       <p class="text-stone-400 text-sm max-w-2xl">
-        Verifying anonymous local-first progress caching in localStorage, Supabase write-through synchronization, AuthModal (Google OAuth + Email Magic Link), and one-time login migration.
+        Verifying local-first IndexedDB progress storage, one-time localStorage migration, cross-tab BroadcastChannel synchronization, and versioned JSON export/import.
       </p>
     </header>
 
     <section>
-      <StorageAuthTester client:load />
+      <StorageTester client:load />
     </section>
   </main>
 </Layout>
-

@@ -4,6 +4,11 @@
 
 export interface PythonRunnerProps {
   /**
+   * Optional lesson slug for persisting saved code in IndexedDB.
+   */
+  lessonSlug?: string;
+
+  /**
    * Initial Python code preloaded into the editor.
    */
   initialCode?: string;
@@ -38,6 +43,11 @@ export interface PythonRunnerProps {
 
 export interface QuizCardProps {
   /**
+   * Optional lesson slug for associating quiz state.
+   */
+  lessonSlug?: string;
+
+  /**
    * The question prompt text (can include inline mathematical notation).
    */
   question: string;
@@ -69,6 +79,11 @@ export interface QuizCardProps {
 }
 
 export interface LessonFooterProps {
+  /**
+   * Lesson slug used to persist completion state and XP in IndexedDB.
+   */
+  lessonSlug?: string;
+
   /**
    * Experience points reward for completing this lesson (default: 10).
    */

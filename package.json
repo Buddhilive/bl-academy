@@ -19,7 +19,6 @@
     "@astrojs/tailwind": "^6.0.2",
     "@codemirror/lang-python": "^6.2.1",
     "@codemirror/view": "^6.43.15",
-    "@supabase/supabase-js": "^2.118.0",
     "@tailwindcss/typography": "^0.5.20",
     "@uiw/react-codemirror": "^4.25.12",
     "astro": "^7.4.4",
