@@ -1,0 +1,98 @@
+---
+title: "Designing UX for AI Applications: Trust Calibration, Persona-Aware Socratic Scaffolding, User Controls & Feedback Loops"
+track: "generative-ai-for-beginners"
+category: "Module 4: Multimodal Apps, Low-Code UI, AI UX, Security & LLMOps"
+order: 14
+difficulty: "intermediate"
+xp: 75
+description: "Design human-centered AI user experiences using the 4 AI UX pillars, Trust Calibration Matrix, persona-aware Socratic scaffolding, user controls, and feedback loops."
+topic: "AI UX Design"
+prerequisites: ["generative-ai-for-beginners/13-building-low-code-ai-applications"]
+---
+import PythonRunner from '../../../components/islands/PythonRunner';
+import QuizCard from '../../../components/islands/QuizCard';
+import ColabButton from '../../../components/static/ColabButton.astro';
+
+Traditional software is deterministic: clicking "Save" saves a file 100% of the time. Generative AI is probabilistic—it can amaze a user with a brilliant explanation on one turn and confidently invent a citation on the next. Because of that unpredictability, **AI User Experience (UX)** is just as critical as model accuracy. In this lesson, we'll apply the **4 Pillars of AI UX**, calibrate user trust without causing blind over-reliance, and build persona-aware Socratic interfaces.
+
+---
+
+## The 4 Pillars of AI UX & Trust Calibration
+
+Every well-designed AI product balances four core UX pillars: **Usability**, **Reliability**, **Accessibility**, and **Pleasantness**. Beneath those pillars sits a delicate psychological balance—**Calibrating User Trust**:
+
+| Trust State | User Behavior | Product Risk | UX Fix |
+| :--- | :--- | :--- | :--- |
+| **Mistrust** | Rejects AI suggestions immediately | Zero productivity gain; abandonment | Plain-language capability onboarding + fast human fallback |
+| **Calibrated Trust** | Verifies citations and uses AI as a copilot | **Optimal** human-AI collaboration | Intentional friction, source links, confidence indicators |
+| **Overtrust** | Blindly accepts automated grading or diagnoses | Severe real-world errors go unnoticed | Mandatory review checkpoints and clear AI limitations |
+
+---
+
+## Explainability, Persona Scaffolding & User Control
+
+1. **Transparent AI Disclosure**: Always introduce the assistant clearly (*"Hello! I'm your AI learning assistant"*) and explain what it can and cannot do in plain language.
+2. **Persona-Aware Scaffolding**: Adapt responses to who is using the app. A **Student** asking about a homework problem should receive guided **Socratic hints** rather than a copy-paste exam answer, whereas a **Teacher** receives a complete grading rubric.
+3. **Explicit User Controls**: Let users adjust tone (concise vs. detailed), format (bullets vs. prose), and **Data Collection Opt-In / Opt-Out** privacy toggles.
+4. **Graceful Out-of-Scope Handling**: If an EdTech tutor is trained only on **History and Math** and a user asks a **Geography** question, never blame the user or hallucinate—state clearly: *"I'm currently trained to help with History and Math, so I can't reliably answer Geography questions."*
+5. **Collaboration & Feedback Loops**: Provide one-click thumbs-up/down controls that log whether the response helped, feeding directly into prompt and RAG improvements.
+
+---
+
+## Open the Companion Colab Notebook
+
+Launch the notebook below to build a persona-aware EdTech Tutor in Python with `google-genai` featuring Student Socratic mode, Teacher rubric mode, privacy opt-in toggles, and out-of-scope boundary checks.
+
+<ColabButton
+  course="generative-ai-for-beginners"
+  notebook="14-designing-ux-for-ai-applications.ipynb"
+  runtime="Free Tier CPU + Gemini API"
+/>
+
+---
+
+## Try It Yourself: Persona-Aware UX & Trust Calibration Controller
+
+Run this pure-Python sandbox to test how persona routing, `data_opt_in` privacy redaction, and graceful out-of-scope boundary checks shape an AI assistant's behavior.
+
+<PythonRunner
+  client:visible
+  title="Try it Yourself: Persona-Aware AI UX & Out-of-Scope Controller"
+  expectedOutput="[Student | Math] Socratic Hint: Try isolating x on one side first—what happens if you subtract 3 from both sides? (Log saved: False)
+[Teacher | Math] Grading Rubric: 1 pt for isolating 2x, 1 pt for x=4. (Log saved: True)
+[Student | Geography] Out-of-Scope: I'm trained to help with History and Math, not Geography."
+  initialCode={`SUPPORTED_SUBJECTS = {"history", "math"}
+
+def handle_ux_request(persona, subject, query, data_opt_in):
+    subj = subject.lower()
+    if subj not in SUPPORTED_SUBJECTS:
+        return f"[{persona.title()} | {subject}] Out-of-Scope: I'm trained to help with History and Math, not {subject}."
+
+    if persona == "student":
+        reply = "Socratic Hint: Try isolating x on one side first—what happens if you subtract 3 from both sides?"
+    else:
+        reply = "Grading Rubric: 1 pt for isolating 2x, 1 pt for x=4."
+
+    return f"[{persona.title()} | {subject}] {reply} (Log saved: {data_opt_in})"
+
+print(handle_ux_request("student", "Math", "Solve 2x + 3 = 11", data_opt_in=False))
+print(handle_ux_request("teacher", "Math", "Rubric for 2x + 3 = 11", data_opt_in=True))
+print(handle_ux_request("student", "Geography", "Capital of Peru?", data_opt_in=True))`}
+/>
+
+---
+
+## Check Your Understanding
+
+<QuizCard
+  client:visible
+  question="What is the primary goal of 'Calibrated Trust' in AI UX design?"
+  options={[
+    "Convincing users that the AI is 100% infallible so they never double-check its work.",
+    "Hiding the fact that the user is interacting with an AI model.",
+    "Helping users understand both the AI's strengths and limitations—using intentional friction and citations—so they neither abandon it nor blindly overtrust it.",
+    "Removing all feedback buttons from the interface."
+  ]}
+  correctAnswer={2}
+  explanation="Calibrated trust avoids both mistrust (abandonment) and overtrust (blind acceptance of hallucinations) by surfacing citations, clear boundaries, and human review controls."
+/>

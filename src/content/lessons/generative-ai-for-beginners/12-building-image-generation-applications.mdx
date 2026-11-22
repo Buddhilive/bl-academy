@@ -1,0 +1,113 @@
+---
+title: "Building Image Generation Applications: Diffusion Pipelines, Mask-Based Inpainting & Child-Safe Visual Metaprompts"
+track: "generative-ai-for-beginners"
+category: "Module 4: Multimodal Apps, Low-Code UI, AI UX, Security & LLMOps"
+order: 12
+difficulty: "intermediate"
+xp: 85
+description: "Generate and edit images with open-source Hugging Face diffusers and Google AI Studio Imagen, including mask-based inpainting and child-safe visual metaprompts."
+topic: "Image Generation"
+prerequisites: ["generative-ai-for-beginners/11-rag-and-vector-databases"]
+---
+import PythonRunner from '../../../components/islands/PythonRunner';
+import QuizCard from '../../../components/islands/QuizCard';
+import ColabButton from '../../../components/static/ColabButton.astro';
+
+Text-to-image models turn natural language descriptions into photorealistic artwork, illustrations, and product mockups in seconds. Under the hood, modern **latent diffusion models** start with pure Gaussian noise $x_T \sim \mathcal{N}(0, I)$ and iteratively denoise it—conditioned on a text embedding $c_{\text{text}}$—until a coherent image emerges. In this lesson, we'll generate images from text prompts, decode base64 image payloads with `Pillow`, perform **mask-based inpainting**, and wrap user prompts in **child-safe visual metaprompts** using open-source **Hugging Face `diffusers`** on Colab T4 GPU alongside **Google AI Studio Imagen**.
+
+---
+
+## How Text-to-Image & Mask Inpainting Work
+
+| Operation | Inputs Required | What Happens Under the Hood |
+| :--- | :--- | :--- |
+| **Text-to-Image** | Prompt string (`"Bunny on a horse, holding a lollipop..."`) | Text encoder embeds prompt; UNet/DiT denoises latent tensor over $T$ steps |
+| **Base64 Decoding** | `b64_json` API payload | `Image.open(BytesIO(base64.b64decode(payload)))` saves PNG to disk |
+| **Mask Inpainting** | Original image (`sunlit_lounge.png`) + alpha `mask.png` + prompt | Regenerates *only* transparent/masked pixels (e.g., adding a flamingo to the pool) while preserving surroundings |
+
+---
+
+## Child-Safe Educational Visual Guardrails (Metaprompts)
+
+When building image generators for students or public apps, never forward raw user text straight to a diffusion pipeline. Wrap every request in a structured **Metaprompt** that locks aspect ratio, visual style, and an explicit `disallow_list`:
+
+```python
+disallow_list = (
+    "swords, violence, blood, gore, nudity, sexual content, "
+    "adult content, adult themes, adult language, adult situations"
+)
+meta_prompt = (
+    "You are an assistant designer creating images for children. "
+    "Output must be 16:9, landscape, full color, and strictly exclude: "
+    f"{disallow_list}. Request: {user_prompt}"
+)
+```
+
+When you run open-source **Hugging Face `diffusers`** (`AutoPipelineForText2Image` and `AutoPipelineForInpainting`) on a **Google Colab Free Tier T4 GPU**, loading weights in `torch.float16` keeps memory usage well under 15 GB VRAM. You can also control prompt adherence with `guidance_scale` and trade off speed versus detail via `num_inference_steps`.
+
+For example, wrapping `"Generate monument of the Arc of Triumph in Paris, France, in the evening light with a small child holding a Teddy looks on"` ensures warm, age-appropriate storybook framing without exposing younger learners to violent or off-brand imagery.
+
+---
+
+## Open the Companion Colab Notebook
+
+Launch the notebook below on a **Google Colab Free Tier T4 GPU** to run open-source **Hugging Face `diffusers` (`AutoPipelineForText2Image` & `AutoPipelineForInpainting`)** and **Google AI Studio Imagen**, complete with synthetic `sunlit_lounge` + `mask` inpainting.
+
+<ColabButton
+  course="generative-ai-for-beginners"
+  notebook="12-building-image-generation-applications.ipynb"
+  runtime="Free Tier T4 GPU + Gemini API"
+/>
+
+---
+
+## Try It Yourself: Child-Safe Metaprompt & Mask Compositor
+
+Run this pure-Python sandbox to enforce `disallow_list` policy filtering, compile the child-safe Arc de Triomphe metaprompt, and simulate pixel-level alpha-mask inpainting compositing.
+
+<PythonRunner
+  client:visible
+  title="Try it Yourself: Visual Metaprompt Guard & Mask Inpainting"
+  expectedOutput="[Policy Check 1] BLOCKED: matched disallowed term 'swords'
+[Policy Check 2] APPROVED -> 16:9 landscape | Arc of Triumph in Paris, France, in ev...
+Inpainting Canvas (4x4): 4 masked pool pixels regenerated, 12 background pixels preserved."
+  initialCode={`DISALLOW_LIST = {"swords", "violence", "blood", "gore", "nudity"}
+
+def build_safe_image_prompt(user_prompt):
+    tokens = set(user_prompt.lower().replace(",", "").split())
+    blocked = sorted(tokens & DISALLOW_LIST)
+    if blocked:
+        return f"BLOCKED: matched disallowed term '{blocked[0]}'"
+    return f"APPROVED -> 16:9 landscape | {user_prompt[:38]}..."
+
+print(f"[Policy Check 1] {build_safe_image_prompt('A knight with swords in battle')}")
+print(f"[Policy Check 2] {build_safe_image_prompt('Arc of Triumph in Paris, France, in evening light')}")
+
+# Alpha-mask inpainting region check (1 = masked/inpaint, 0 = keep original)
+mask_grid = [
+    [0, 0, 0, 0],
+    [0, 1, 1, 0],
+    [0, 1, 1, 0],
+    [0, 0, 0, 0],
+]
+masked_pixels = sum(sum(row) for row in mask_grid)
+total_pixels = len(mask_grid) * len(mask_grid[0])
+print(f"Inpainting Canvas (4x4): {masked_pixels} masked pool pixels regenerated, {total_pixels - masked_pixels} background pixels preserved.")`}
+/>
+
+---
+
+## Check Your Understanding
+
+<QuizCard
+  client:visible
+  question="In mask-based image inpainting, what is the purpose of providing a mask image alongside the original image and text prompt?"
+  options={[
+    "It compresses the PNG file size by 90%.",
+    "It tells the diffusion model which pixel region to regenerate according to the prompt while keeping unmasked pixels intact.",
+    "It converts the image from RGB to grayscale.",
+    "It disables the text encoder completely."
+  ]}
+  correctAnswer={1}
+  explanation="The alpha/binary mask isolates the exact region to edit (such as placing a flamingo inside a pool) so the surrounding scene remains untouched."
+/>

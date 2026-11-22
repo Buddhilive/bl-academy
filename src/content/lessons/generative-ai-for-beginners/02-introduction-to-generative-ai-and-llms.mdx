@@ -1,0 +1,147 @@
+---
+title: "Introduction to Generative AI & LLMs: Transformers, Tokenization, Autoregressive Prediction & Temperature"
+track: "generative-ai-for-beginners"
+category: "Module 1: GenAI Setup & Foundations"
+order: 2
+difficulty: "beginner"
+xp: 60
+description: "Understand how Large Language Models work under the hood: subword tokenization, Transformer self-attention, autoregressive next-token prediction, and temperature sampling."
+topic: "LLM Foundations"
+prerequisites: ["generative-ai-for-beginners/01-course-setup-and-google-ai-studio"]
+---
+import PythonRunner from '../../../components/islands/PythonRunner';
+import QuizCard from '../../../components/islands/QuizCard';
+import ColabButton from '../../../components/static/ColabButton.astro';
+
+When you type a question into a modern AI assistant and watch a coherent paragraph stream onto your screen word by word, it can feel like the model is "thinking" like a human writer. Under the hood, a Large Language Model (LLM) is doing something far more mathematical: it is predicting one subword **token** at a time based on conditional probability distributions learned from massive text corpora. In this lesson, we'll trace how Generative AI evolved, unpack tokenization and Transformer self-attention, and see how **temperature** shifts an LLM from deterministic precision to creative exploration.
+
+---
+
+## Where Generative AI Fits in the AI Landscape
+
+Generative AI is not a separate universe from Machine Learning—it is a specialized branch nested inside **Artificial Intelligence $\supset$ Machine Learning $\supset$ Deep Learning $\supset$ Generative AI**.
+
+Over the past six decades, language AI evolved through four distinct eras:
+1. **1960s Rule-Based Chatbots**: Hardcoded keyword and pattern-matching scripts (like ELIZA) that broke the moment phrasing changed.
+2. **1990s Statistical ML**: Classifiers predicting spam or sentiment using bag-of-words frequencies.
+3. **2000s–2010s Recurrent Neural Networks (RNNs)**: Sequential models processing text one word at a time, which struggled to remember context across long paragraphs.
+4. **2017+ Transformer Architecture**: Replaced sequential recurrence with **self-attention**, enabling models to weigh relationships between *all* tokens in a prompt simultaneously.
+
+---
+
+## How Large Language Models Generate Text
+
+Every LLM text generation request follows a clean, repeatable pipeline:
+
+| Stage | What Happens | Key Concept |
+| :--- | :--- | :--- |
+| **1. Tokenization** | Input text is split into subword units and mapped to integer IDs | Common words stay whole (`"cat"`); rare words split (`"token" + "ization"`) |
+| **2. Self-Attention** | Transformer layers compute contextual weights across all input tokens | Resolves pronouns and long-range dependencies across the context window |
+| **3. Next-Token Prediction** | Model outputs logits $z_i$ over vocabulary $V$ for the next token | Predicts 1 token $t_{n+1} \sim P(w \mid t_1, \dots, t_n)$ |
+| **4. Expanding Window** | Predicted token $t_{n+1}$ is appended to the prompt and fed back in | Autoregressive loop repeats until `<EOS>` or token limit |
+
+### Autoregressive Probability & Softmax Temperature
+
+Formally, an autoregressive LLM factors the joint probability of a sequence $w_{1:T}$ as a chain of conditional next-token probabilities:
+
+$$P(w_{1:T}) = \prod_{t=1}^{T} P(w_t \mid w_1, w_2, \dots, w_{t-1})$$
+
+Before sampling the next token, raw model scores (**logits** $z_i$) are converted into probabilities using **temperature-scaled softmax**:
+
+$$P(w_i \mid w_{<t}) = \frac{\exp(z_i / T)}{\sum_{j=1}^{|V|} \exp(z_j / T)}$$
+
+- **Low Temperature ($T \to 0$)**: Sharpens the distribution toward the highest-scoring token, making responses focused, repeatable, and nearly deterministic.
+- **High Temperature ($T \ge 1.0$)**: Flattens the distribution, boosting lower-probability tokens for creative brainstorming—at the cost of higher **fabrication (hallucination)** risk.
+
+---
+
+## Applying LLMs to Real-World EdTech Scenarios
+
+Consider an education startup building tools for students and teachers. Five core LLM capabilities unlock immediate value:
+
+- **Summarization**: Condensing dense research papers or lecture transcripts into scannable bullet points.
+- **Creative Ideation**: Drafting essay outlines, study analogies, or project prompts.
+- **Conversational Q&A**: Answering follow-up questions in context like a 24/7 tutor.
+- **Text Completion**: Autocompleting study notes or structured templates.
+- **Code Generation & Explanation**: Explaining Python tracebacks and generating starter exercises.
+
+---
+
+## Open the Companion Colab Notebook
+
+Run the notebook below on Google Colab to inspect real token counts and compare `gemini-2.5-flash` responses at $T=0.0$ versus $T=1.2$.
+
+<ColabButton
+  course="generative-ai-for-beginners"
+  notebook="02-introduction-to-generative-ai-and-llms.ipynb"
+  runtime="Free Tier CPU + Gemini API"
+/>
+
+---
+
+## Try It Yourself: Subword Tokenizer & Temperature Sampler
+
+Execute this Python sandbox to see how a subword tokenizer maps text to token IDs and how changing temperature $T$ reshapes next-token probabilities in an autoregressive loop.
+
+<PythonRunner
+  client:visible
+  title="Try it Yourself: Tokenization & Softmax Temperature Scaling"
+  expectedOutput="Tokens: ['gen', 'er', 'ative', 'ai', 'rocks'] -> IDs: [10, 11, 12, 13, 14]
+T=0.2 (Focused): [('rocks', 0.982), ('helps', 0.018), ('sleeps', 0.0)]
+T=1.5 (Creative): [('rocks', 0.54), ('helps', 0.317), ('sleeps', 0.142)]
+Autoregressive Step 1: 'Generative AI' + ' rocks'"
+  initialCode={`import math
+
+# 1. Simple subword vocabulary & greedy longest-match tokenizer
+vocab = {"gen": 10, "er": 11, "ative": 12, "ai": 13, "rocks": 14, "helps": 15}
+def tokenize(text):
+    tokens = []
+    for word in text.lower().split():
+        i = 0
+        while i < len(word):
+            matched = None
+            for end in range(len(word), i, -1):
+                if word[i:end] in vocab:
+                    matched = word[i:end]
+                    break
+            tokens.append(matched if matched else word[i])
+            i += len(matched) if matched else 1
+    return tokens
+
+sample = "Generative AI rocks"
+toks = tokenize(sample)
+ids = [vocab[t] for t in toks]
+print(f"Tokens: {toks} -> IDs: {ids}")
+
+# 2. Temperature-scaled softmax over candidate next-token logits
+candidates = [("rocks", 4.0), ("helps", 3.2), ("sleeps", 2.0)]
+def softmax_temp(items, temp):
+    scaled = [math.exp(logit / temp) for _, logit in items]
+    total = sum(scaled)
+    return [(word, round(p / total, 3)) for (word, _), p in zip(items, scaled)]
+
+print(f"T=0.2 (Focused): {softmax_temp(candidates, 0.2)}")
+print(f"T=1.5 (Creative): {softmax_temp(candidates, 1.5)}")
+
+# 3. Autoregressive expanding window step
+prompt = "Generative AI"
+next_tok = softmax_temp(candidates, 0.2)[0][0]
+print(f"Autoregressive Step 1: '{prompt}' + ' {next_tok}'")`}
+/>
+
+---
+
+## Check Your Understanding
+
+<QuizCard
+  client:visible
+  question="What happens when you increase the temperature parameter (e.g., from 0.1 to 1.2) during LLM text generation?"
+  options={[
+    "The model's vocabulary size doubles automatically.",
+    "The output probability distribution flattens, making lower-probability tokens more likely and outputs more varied.",
+    "The model skips tokenization and reads raw UTF-8 bytes.",
+    "Latency drops to zero because self-attention is disabled."
+  ]}
+  correctAnswer={1}
+  explanation="Higher temperature divides logits by a larger T before softmax, flattening the probability curve so less probable tokens get sampled more often—increasing creativity as well as hallucination risk."
+/>

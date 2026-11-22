@@ -1,0 +1,122 @@
+---
+title: "Building Semantic Search Applications: Transcript Chunking, Gemini Embeddings, Cosine Similarity & Video Deep Links"
+track: "generative-ai-for-beginners"
+category: "Module 3: Semantic Search, RAG & Function Calling"
+order: 9
+difficulty: "intermediate"
+xp: 85
+description: "Build an end-to-end semantic video search engine using 3-minute overlapping transcript chunking, dense embeddings, cosine similarity, and timestamped YouTube deep links."
+topic: "Semantic Search"
+prerequisites: ["generative-ai-for-beginners/08-building-chat-applications"]
+---
+import PythonRunner from '../../../components/islands/PythonRunner';
+import QuizCard from '../../../components/islands/QuizCard';
+import ColabButton from '../../../components/static/ColabButton.astro';
+
+Traditional keyword search fails the moment a user phrases a question differently than the author of a document. If a learner searches `"how do I deploy models in Python?"`, a lexical index will miss an engineering video titled `"Serving Neural Networks in Production"` simply because the exact words don't match. **Semantic search** solves this by mapping both documents and queries into dense vector embeddings where similar meanings sit close together. In this lesson, we'll build a complete semantic video search engine that jumps learners directly to the exact timestamp inside an hour-long lecture.
+
+---
+
+## Semantic Search vs. Keyword Search
+
+| Dimension | Keyword (Lexical) Search | Semantic (Vector) Search |
+| :--- | :--- | :--- |
+| **Matching Signal** | Exact token overlap, BM25 term frequency | Geometric closeness in dense embedding space |
+| **Synonyms & Paraphrasing** | Misses unless manual synonym lists exist | Captures intent automatically across phrasings |
+| **Multilingual Queries** | Requires matching the same language | Cross-lingual embeddings align meaning across languages |
+| **Ranking Formula** | Term Frequency–Inverse Document Frequency (TF-IDF) | Cosine similarity $\cos(\theta)$ or $L_2$ distance |
+
+---
+
+## The 5-Stage Video Transcript Enrichment Pipeline
+
+Before you can search across dozens of educational videos, raw captions must be transformed into clean, timestamp-aligned chunks:
+
+1. **Transcript Download**: Fetch raw caption lines with `start` timestamps (in seconds) and `text`.
+2. **Speaker Extraction**: Pass the first 3 minutes of transcript to an LLM with function calling to extract the presenter's name.
+3. **3-Minute Bucketing with 20-Word Overlap**: Group caption lines into **180-second segments** and append a **20-word overlap** from the next bucket so concepts spoken across a 3-minute boundary are never severed.
+4. **60-Word Segment Summarization**: Summarize each 3-minute bucket into a dense, noise-free summary.
+5. **Dense Vector Embedding**: Embed each segment using `gemini-embedding-001` (or `sentence-transformers` `all-MiniLM-L6-v2`) and store the vectors alongside `videoId`, `title`, `speaker`, and `seconds`.
+
+---
+
+## Cosine Similarity & Timestamped Deep Links
+
+At query time, we embed the user's question $\mathbf{q}$ and score every video segment $\mathbf{d}_i$ using **Cosine Similarity**:
+
+$$\text{similarity}(\mathbf{q}, \mathbf{d}_i) = \cos(\theta) = \frac{\mathbf{q} \cdot \mathbf{d}_i}{\|\mathbf{q}\|_2 \|\mathbf{d}_i\|_2} = \frac{\sum_{j=1}^{D} q_j d_{i,j}}{\sqrt{\sum_{j=1}^{D} q_j^2}\sqrt{\sum_{j=1}^{D} d_{i,j}^2}}$$
+
+We filter out low-relevance matches below a threshold (such as $\text{similarity} \ge 0.35$), sort descending, return the top $k=5$ results, and format clickable timestamped URLs: `https://youtu.be/{videoId}?t={seconds}`.
+
+---
+
+## Open the Companion Colab Notebook
+
+Launch the notebook below to embed video transcript segments with **Google AI Studio (`gemini-embedding-001`)** and open-source **`sentence-transformers`**, rank matches with NumPy/Pandas, and output clickable YouTube timestamp links.
+
+<ColabButton
+  course="generative-ai-for-beginners"
+  notebook="09-building-semantic-search-applications.ipynb"
+  runtime="Free Tier CPU + Gemini API"
+/>
+
+---
+
+## Try It Yourself: 3-Minute Overlap Chunker & Video Search Engine
+
+Run this pure-Python sandbox to chunk caption lines with a 20-word lookahead overlap, compute cosine similarity against an embedded video index, filter by $\ge 0.35$, and print ranked `youtu.be` deep links.
+
+<PythonRunner
+  client:visible
+  title="Try it Yourself: Overlapping Transcript Chunker & Semantic Video Search"
+  expectedOutput="Bucket 0s (with 20-word overlap): Embeddings map text into dense vectors for fast semantic retrieval. Cosine similarity measures the angle between query and document vectors.
+Top Match #1: Deep Dive into Embeddings (Speaker: Seth) | sim=0.995 | https://youtu.be/vid101?t=180
+Top Match #2: Prompting Fundamentals (Speaker: Bethany) | sim=0.604 | https://youtu.be/vid204?t=360"
+  initialCode={`import math
+
+# 1. 3-minute bucket chunker with 20-word overlap
+bucket_0_words = "Embeddings map text into dense vectors for fast semantic retrieval.".split()
+bucket_1_words = "Cosine similarity measures the angle between query and document vectors.".split()
+overlap_chunk = " ".join(bucket_0_words + bucket_1_words[:20])
+print(f"Bucket 0s (with 20-word overlap): {overlap_chunk}")
+
+# 2. Cosine similarity & get_videos(query_vec, dataset)
+def cosine_similarity(a, b):
+    dot = sum(x * y for x, y in zip(a, b))
+    return dot / (math.sqrt(sum(x*x for x in a)) * math.sqrt(sum(y*y for y in b)))
+
+dataset = [
+    {"videoId": "vid101", "seconds": 180, "title": "Deep Dive into Embeddings", "speaker": "Seth", "vec": [0.95, 0.88, 0.12]},
+    {"videoId": "vid204", "seconds": 360, "title": "Prompting Fundamentals", "speaker": "Bethany", "vec": [0.40, 0.20, 0.85]},
+    {"videoId": "vid309", "seconds": 540, "title": "CSS Grid Layouts", "speaker": "Chris", "vec": [0.05, 0.02, 0.99]},
+]
+
+query_vec = [0.92, 0.90, 0.25]  # Query: "how do vector embeddings measure semantic similarity?"
+scored = []
+for row in dataset:
+    sim = cosine_similarity(query_vec, row["vec"])
+    if sim >= 0.35:
+        scored.append((sim, row))
+
+scored.sort(key=lambda x: x[0], reverse=True)
+for rank, (sim, row) in enumerate(scored[:5], 1):
+    url = f"https://youtu.be/{row['videoId']}?t={row['seconds']}"
+    print(f"Top Match #{rank}: {row['title']} (Speaker: {row['speaker']}) | sim={sim:.3f} | {url}")`}
+/>
+
+---
+
+## Check Your Understanding
+
+<QuizCard
+  client:visible
+  question="When chunking video transcripts into 3-minute segments for semantic search, why do we include a 20-word overlap from the next segment?"
+  options={[
+    "To double the database storage bill intentionally.",
+    "To ensure sentences or concepts that span across a 3-minute timestamp boundary stay intact in at least one chunk.",
+    "Because cosine similarity only works on multiples of 20 words.",
+    "To remove all speaker names from the transcript."
+  ]}
+  correctAnswer={1}
+  explanation="Fixed time or token boundaries often slice right through the middle of an explanation. Adding a 20-word overlap preserves boundary context so retrieval doesn't miss split concepts."
+/>

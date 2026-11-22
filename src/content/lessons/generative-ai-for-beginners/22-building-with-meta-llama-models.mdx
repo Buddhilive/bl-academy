@@ -1,0 +1,115 @@
+---
+title: "Building with Meta Llama Models: The Llama Herd (1B to 405B & MoE), Native <|python_tag|> Tool Calling & Multimodal Vision"
+track: "generative-ai-for-beginners"
+category: "Module 5: Open-Source Models, AI Agents, LoRA Fine-Tuning & SLMs"
+order: 22
+difficulty: "advanced"
+xp: 90
+description: "Master Meta's Llama family (1B to 405B & MoE), construct native <|python_tag|> tool-calling prompts (brave_search, wolfram_alpha), and run multimodal image analysis."
+topic: "Meta Llama Models"
+prerequisites: ["generative-ai-for-beginners/21-building-with-mistral-models"]
+---
+import PythonRunner from '../../../components/islands/PythonRunner';
+import QuizCard from '../../../components/islands/QuizCard';
+import ColabButton from '../../../components/static/ColabButton.astro';
+
+To wrap up **Generative AI for Beginners**, we'll examine one of the most influential open-weight ecosystems in modern AI: **Meta's "Llama Herd"**. Across **Llama 3.1 / 3.3**, **Llama 3.2**, and **Llama 4 Scout**, Meta scaled open-weight models from 1B edge-ready SLMs up to 405B frontier reasoning giants and natively multimodal Mixture-of-Experts models. In this final lesson, you'll learn how Llama formats **native `<|python_tag|>` tool calls** (`brave_search`, `wolfram_alpha`) and multimodal vision inputs—preparing you directly for **Course 05: MCP for Beginners**.
+
+---
+
+## Evolution of the Meta "Llama Herd"
+
+| Generation | Key Variants | Core Capabilities & Breakthroughs |
+| :--- | :--- | :--- |
+| **Llama 3.1 & 3.3** | 8B, 70B, 405B Instruct | **128k context window** (up from 8k), 4096 max output tokens, **Synthetic Data Generation**, and **Native Function Calling** |
+| **Llama 3.2** | 1B & 3B (Text Edge), 11B & 90B (Vision) | Ultra-fast mobile/edge SLMs + cross-attention **multimodal image-and-text** reasoning |
+| **Llama 4 Scout** | `17B-16E` Instruct | Natively **multimodal Mixture-of-Experts** (17B active parameters across 16 experts) |
+
+---
+
+## Native `<|python_tag|>` Function Calling & Multimodal Vision
+
+Llama 3.1+ models are fine-tuned on special header tokens (`<|begin_of_text|>`, `<|start_header_id|>`, `<|eot_id|>`) to invoke built-in tools (**Brave Search** for live web queries and **Wolfram Alpha** for symbolic math) as well as custom Python tools:
+
+```text
+<|begin_of_text|><|start_header_id|>system<|end_header_id|>
+Environment: ipython
+Tools: brave_search, wolfram_alpha
+Cutting Knowledge Date: December 2023
+Today Date: 23 July 2024
+You are a helpful assistant<|eot_id|>
+```
+
+When asked `"What is the weather in Stockholm?"`, the model emits:
+`<|python_tag|>brave_search.call(query="Stockholm weather")`
+
+For **Multimodal Vision**, images (`sample.jpg`) are encoded as base64 data URLs or PIL Images alongside text prompts (`"What's in this image?"`) so a single model can inspect diagrams, receipts, or photographs.
+
+---
+
+## Open the Companion Colab Notebook
+
+Launch the notebook below to compile Llama's native tool-calling prompt template, parse `<|python_tag|>` calls, and run multimodal image analysis on Google Colab Free Tier.
+
+<ColabButton
+  course="generative-ai-for-beginners"
+  notebook="22-building-with-meta-llama-models.ipynb"
+  runtime="Free Tier T4 GPU + Gemini API"
+/>
+
+---
+
+## Try It Yourself: Llama Header Compiler & `<|python_tag|>` Parser
+
+Run this pure-Python sandbox to compile a Llama `ipython` system header, parse an emitted `<|python_tag|>` tool invocation, dispatch it to a Python handler, and format the `ipython` observation turn.
+
+<PythonRunner
+  client:visible
+  title="Try it Yourself: Llama Tool-Call Compiler & Dispatcher"
+  expectedOutput="Compiled Header Tools: brave_search, wolfram_alpha
+Model Emitted: <|python_tag|>brave_search.call(query='Stockholm weather')
+Parsed Tool: brave_search | Args: {'query': 'Stockholm weather'}
+Tool Observation (<|start_header_id|>ipython<|end_header_id|>): Stockholm: 14C, Partly Cloudy"
+  initialCode={`import re
+
+# 1. Compile Llama native tool-calling system prompt
+tools = ["brave_search", "wolfram_alpha"]
+header = (
+    "<|begin_of_text|><|start_header_id|>system<|end_header_id|>\\n"
+    f"Environment: ipython\\nTools: {', '.join(tools)}\\n"
+    "You are a helpful assistant<|eot_id|>"
+)
+print(f"Compiled Header Tools: {', '.join(tools)}")
+
+# 2. Parse <|python_tag|> tool call emitted by Llama
+emitted = "<|python_tag|>brave_search.call(query='Stockholm weather')"
+print(f"Model Emitted: {emitted}")
+
+match = re.search(r"<[|]python_tag[|]>([a-z_]+)[.]call[(]query='([^']+)'[)]", emitted)
+tool_name, query_val = match.group(1), match.group(2)
+print(f"Parsed Tool: {tool_name} | Args: {{'query': '{query_val}'}}")
+
+# 3. Execute tool & format ipython observation turn
+mock_weather = {"Stockholm weather": "Stockholm: 14C, Partly Cloudy"}
+obs = mock_weather.get(query_val, "Unavailable")
+print(f"Tool Observation (<|start_header_id|>ipython<|end_header_id|>): {obs}")`}
+/>
+
+---
+
+## Check Your Understanding & Next Course
+
+<QuizCard
+  client:visible
+  question="What major architectural capabilities did Llama 3.1 / 3.3 and Llama 3.2 / 4 add to the Meta open-weight family?"
+  options={[
+    "Removing all tokenizers in favor of raw ASCII bytes.",
+    "128k context windows, native <|python_tag|> function calling, synthetic data generation, and multimodal vision + MoE support.",
+    "Restricting all models to 512-token context windows.",
+    "Disabling Python tool execution completely."
+  ]}
+  correctAnswer={1}
+  explanation="Llama 3.1+ expanded context to 128k tokens with native function calling and synthetic data generation, while Llama 3.2 and Llama 4 added edge SLMs and native multimodal vision/MoE."
+/>
+
+Congratulations on completing **Course 04: Generative AI for Beginners**! In **Course 05: MCP for Beginners**, you will replace ad-hoc tool-calling wrappers with the open **Model Context Protocol (MCP)** standard.

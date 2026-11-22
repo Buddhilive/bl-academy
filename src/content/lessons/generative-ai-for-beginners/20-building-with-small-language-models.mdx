@@ -1,0 +1,111 @@
+---
+title: "Building with Small Language Models (SLMs): Instruct, Vision Keyframe Extraction, Sparse MoE Routing & ONNX Runtime GenAI"
+track: "generative-ai-for-beginners"
+category: "Module 5: Open-Source Models, AI Agents, LoRA Fine-Tuning & SLMs"
+order: 20
+difficulty: "advanced"
+xp: 85
+description: "Build with Small Language Models (SLMs): compare SLMs vs. LLMs, extract video keyframes with OpenCV histograms, inspect Sparse MoE routing, and run ONNX Runtime GenAI."
+topic: "Small Language Models"
+prerequisites: ["generative-ai-for-beginners/19-fine-tuning-llms-with-lora"]
+---
+import PythonRunner from '../../../components/islands/PythonRunner';
+import QuizCard from '../../../components/islands/QuizCard';
+import ColabButton from '../../../components/static/ColabButton.astro';
+
+Not every task needs a 400-billion-parameter model running in a remote data center. **Small Language Models (SLMs)**—typically 1B to 14B parameters trained via knowledge distillation, pruning, quantization, and "textbook-quality" curated data—deliver fast, private, low-cost inference on a single Colab T4 GPU or even a laptop. In this lesson, we'll compare SLMs against LLMs across five dimensions and walk through four production SLM patterns: **Instruct SLMs**, **Vision SLM Video Keyframe Summarization**, **Sparse MoE SLMs**, and **ONNX Runtime for GenAI**.
+
+---
+
+## SLMs vs. LLMs: The 5-Dimension Comparison
+
+| Dimension | Small Language Models (SLMs) | Large Language Models (LLMs) |
+| :--- | :--- | :--- |
+| **Size** | Typically 1B–14B parameters (e.g., 3.8B `Phi-3.5-mini`, 2B `Gemma-2`) | 70B to >1T parameters |
+| **Comprehension** | High accuracy on focused domain, code, and extraction tasks | Broad generalist reasoning across obscure trivia |
+| **Computing** | Single T4 GPU, laptop CPU/NPU, or offline edge device | Multi-GPU data center clusters |
+| **Bias & Safety** | Trained on heavily filtered, textbook-grade synthetic/curated mixes | Broad internet corpora requiring heavier post-training |
+| **Latency** | Sub-second Time-to-First-Token; zero network round-trip locally | Higher latency and per-token API cost |
+
+---
+
+## 3 Specialized SLM Variants & Edge Runtimes
+
+1. **Instruct SLMs (`AutoModelForCausalLM`)**: Use structured chat tokens (`<|system|>...<|end|><|user|>...<|end|><|assistant|>`) with `transformers.pipeline("text-generation")`.
+2. **Vision SLMs & OpenCV Video Keyframe Extraction**: Instead of feeding 1,800 redundant frames from a 60-second video, compute normalized HSV color histograms (`cv2.calcHist` + `cv2.compareHist`) and extract only frames where correlation drops below `0.9` (`<|image_1|>...<|image_N|>`).
+3. **Sparse Mixture-of-Experts SLMs (`PhiMoESparseMoeBlock`)**: Pack 16 specialized `3.8B` experts (~42B total parameters) while a learned gate (`Linear(4096, 16)`) routes each token to only the **top-2 experts** ($6.6\text{B}$ active parameters per token).
+4. **ONNX Runtime for GenAI (`onnxruntime-genai`)**: Executes an explicit token-by-token autoregressive loop (`generator.compute_logits()` $\rightarrow$ `generator.generate_next_token()`) across CPU, CUDA, and DirectML.
+
+---
+
+## Open the Companion Colab Notebook
+
+Launch the notebook below on a **Colab Free Tier T4 GPU** to run an open-weight Instruct SLM with Hugging Face `transformers`, extract distinct video keyframes via OpenCV histogram correlation, and inspect Sparse MoE top-2 expert routing.
+
+<ColabButton
+  course="generative-ai-for-beginners"
+  notebook="20-building-with-small-language-models.ipynb"
+  runtime="Free Tier T4 GPU"
+/>
+
+---
+
+## Try It Yourself: OpenCV Keyframe Detector & Top-2 Sparse MoE Router
+
+Execute this Python sandbox to compute frame-to-frame histogram correlation (extracting keyframes when correlation $< 0.9$) and route a token through a 16-expert Top-2 Sparse MoE gate.
+
+<PythonRunner
+  client:visible
+  title="Try it Yourself: Keyframe Histogram Filter & Top-2 MoE Router"
+  expectedOutput="Frame 1 -> Frame 2 corr=1.000 (Keep=False: static scene)
+Frame 2 -> Frame 3 corr=-0.795 (Keep=True: NEW KEYFRAME)
+Sparse MoE (16 experts, top-2 active):
+  Active Experts: [(4, 0.318), (11, 0.236)]
+  Active Compute Ratio: 2/16 experts (12.5%)"
+  initialCode={`import math
+
+# 1. OpenCV-style histogram correlation for video keyframe extraction
+def hist_corr(h1, h2):
+    m1, m2 = sum(h1) / len(h1), sum(h2) / len(h2)
+    num = sum((a - m1) * (b - m2) for a, b in zip(h1, h2))
+    den = math.sqrt(sum((a - m1)**2 for a in h1) * sum((b - m2)**2 for b in h2))
+    return num / den if den else 0.0
+
+f1 = [0.80, 0.15, 0.05]
+f2 = [0.78, 0.16, 0.06]
+f3 = [0.10, 0.25, 0.65]
+
+for idx, (a, b) in enumerate([(f1, f2), (f2, f3)], 1):
+    c = hist_corr(a, b)
+    keep = c < 0.9
+    tag = "NEW KEYFRAME" if keep else "static scene"
+    print(f"Frame {idx} -> Frame {idx+1} corr={c:.3f} (Keep={keep}: {tag})")
+
+# 2. Top-2 Sparse MoE gating across 16 experts
+logits = [0.1] * 16
+logits[4] = 2.4
+logits[11] = 2.1
+exps = [math.exp(x) for x in logits]
+probs = [e / sum(exps) for e in exps]
+top2 = sorted(enumerate(probs), key=lambda x: x[1], reverse=True)[:2]
+print("Sparse MoE (16 experts, top-2 active):")
+print(f"  Active Experts: {[(idx, round(p, 3)) for idx, p in top2]}")
+print(f"  Active Compute Ratio: 2/{len(logits)} experts ({2/len(logits)*100:.1f}%)")`}
+/>
+
+---
+
+## Check Your Understanding
+
+<QuizCard
+  client:visible
+  question="How does a Sparse Mixture-of-Experts (MoE) SLM achieve lower inference latency than a dense model with the same total parameter count?"
+  options={[
+    "It skips self-attention layers completely.",
+    "A gating network routes each token to only the top-k (e.g., 2 of 16) specialized feed-forward experts, keeping active FLOPs per token small.",
+    "It compresses all floating-point weights into 1-bit strings.",
+    "It forces every query to be 5 tokens or shorter."
+  ]}
+  correctAnswer={1}
+  explanation="In a Sparse MoE architecture, only a small subset of expert FFNs (such as top-2 out of 16) is activated per token, delivering high capacity with small-model compute latency."
+/>

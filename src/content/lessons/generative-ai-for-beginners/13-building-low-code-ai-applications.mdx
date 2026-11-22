@@ -1,0 +1,113 @@
+---
+title: "Building Low-Code AI Applications: Gradio Student Assignment Tracker & Multimodal Invoice Extraction Pipeline"
+track: "generative-ai-for-beginners"
+category: "Module 4: Multimodal Apps, Low-Code UI, AI UX, Security & LLMOps"
+order: 13
+difficulty: "intermediate"
+xp: 80
+description: "Build low-code AI apps in Python using Gradio, SQLite, and Gemini 2.5 Flash structured outputs for a Student Assignment Tracker and Automated Invoice Pipeline."
+topic: "Low-Code AI Apps"
+prerequisites: ["generative-ai-for-beginners/12-building-image-generation-applications"]
+---
+import PythonRunner from '../../../components/islands/PythonRunner';
+import QuizCard from '../../../components/islands/QuizCard';
+import ColabButton from '../../../components/static/ColabButton.astro';
+
+Not every AI application needs a custom React frontend and microservice backend. Often, the fastest way to ship internal tools—like a **Student Assignment Tracker** or an **Automated Invoice Processing Pipeline**—is a **low-code Python stack** combining declarative UIs (**Gradio**), lightweight relational tables (**SQLite**), and **Gemini 2.5 Flash** multimodal structured extraction. In this lesson, we'll build both workflows from scratch on Google Colab Free Tier.
+
+---
+
+## Core Building Blocks of Low-Code AI Apps
+
+Low-code AI development replaces boilerplate HTML/REST plumbing with four composable primitives:
+
+| Primitive | Open-Source Python Equivalent | Role in Our Workflows |
+| :--- | :--- | :--- |
+| **Relational Data Table** | `sqlite3` / `Pandas` DataFrame | Stores `StudentAssignments` and `InvoiceInfo` rows persistently |
+| **Declarative Web UI** | `Gradio` (`gr.Blocks`, `gr.Dataframe`, `gr.Button`) | Auto-generates interactive forms, file uploaders, and shareable links |
+| **Prebuilt AI Capabilities** | `google-genai` (`gemini-2.5-flash` + Pydantic) | Handles OCR, Invoice Extraction, Sentiment Analysis, Key Phrases, and Language Detection |
+| **Event-Driven Automation** | Python callback triggers | Upload invoice $\rightarrow$ extract JSON $\rightarrow$ insert SQLite row $\rightarrow$ draft supplier email |
+
+---
+
+## Workflow 1: Student Assignment Tracker & AI Assistant
+
+Teachers and bootcamps need a single dashboard to track assignment submissions (`Assignment_ID`, `Title`, `Student_Name`, `Student_Email`, `Due_Date`, `Status`, `Score`). With **Gradio**, a 30-line Python script renders an interactive submission table, lets an instructor filter pending assignments, and triggers `gemini-2.5-flash` to draft constructive rubric feedback and a personalized student notification email.
+
+---
+
+## Workflow 2: Automated Invoice Extraction Pipeline
+
+Manual invoice entry is slow and error-prone. By pairing **Gemini 2.5 Flash** multimodal structured outputs (`response_schema=InvoiceRecord`) with `sqlite3`, an automated workflow runs in three steps:
+
+1. **Extract**: Parse `ID`, `Amount`, `Date`, `Vendor_Name`, `Status`, and `Supplier_Email` from an uploaded invoice PDF or image.
+2. **Enrich**: Run prebuilt NLP checks (Language Detection, Key Phrase Extraction, Sentiment Analysis on vendor notes).
+3. **Store & Notify**: Insert the validated record into the `InvoiceInfo` table and draft an automated confirmation email to `Supplier_Email`.
+
+---
+
+## Open the Companion Colab Notebook
+
+Launch the notebook below to run the interactive **Gradio Student Assignment Tracker** and **Multimodal Gemini Invoice Extractor** backed by `sqlite3`.
+
+<ColabButton
+  course="generative-ai-for-beginners"
+  notebook="13-building-low-code-ai-applications.ipynb"
+  runtime="Free Tier CPU + Gemini API"
+/>
+
+---
+
+## Try It Yourself: SQLite Assignment & Invoice Automation Engine
+
+Execute this pure-Python sandbox using built-in `sqlite3` to initialize both tables, extract structured invoice fields, and generate the automated supplier notification payload.
+
+<PythonRunner
+  client:visible
+  title="Try it Yourself: SQLite Low-Code Assignment & Invoice Pipeline"
+  expectedOutput="Student Assignments Pending: 1 | Graded: 1
+Extracted Invoice: {'id': 'INV-204', 'amount': 420.5, 'date': '2026-11-18', 'vendor': 'CloudCompute Co', 'status': 'Approved'}
+SQLite InvoiceInfo rows: 1
+Automated Notification -> To: billing@cloudcompute.co | Subject: Invoice INV-204 Approved ($420.50)"
+  initialCode={`import sqlite3, json
+
+conn = sqlite3.connect(":memory:")
+cur = conn.cursor()
+
+# 1. Student Assignment Tracker table
+cur.execute("CREATE TABLE Assignments (id TEXT, student TEXT, status TEXT)")
+cur.executemany("INSERT INTO Assignments VALUES (?, ?, ?)", [
+    ("ASG-01", "Maya Lin", "Graded"),
+    ("ASG-02", "Liam Patel", "Pending"),
+])
+pending = cur.execute("SELECT COUNT(*) FROM Assignments WHERE status='Pending'").fetchone()[0]
+graded = cur.execute("SELECT COUNT(*) FROM Assignments WHERE status='Graded'").fetchone()[0]
+print(f"Student Assignments Pending: {pending} | Graded: {graded}")
+
+# 2. Automated Invoice Extraction -> SQLite -> Email Trigger
+invoice = {"id": "INV-204", "amount": 420.50, "date": "2026-11-18", "vendor": "CloudCompute Co", "status": "Approved", "email": "billing@cloudcompute.co"}
+print(f"Extracted Invoice: {{'id': '{invoice['id']}', 'amount': {invoice['amount']}, 'date': '{invoice['date']}', 'vendor': '{invoice['vendor']}', 'status': '{invoice['status']}'}}")
+
+cur.execute("CREATE TABLE InvoiceInfo (id TEXT, amount REAL, date TEXT, vendor TEXT, status TEXT, email TEXT)")
+cur.execute("INSERT INTO InvoiceInfo VALUES (:id, :amount, :date, :vendor, :status, :email)", invoice)
+row_count = cur.execute("SELECT COUNT(*) FROM InvoiceInfo").fetchone()[0]
+print(f"SQLite InvoiceInfo rows: {row_count}")
+print(f"Automated Notification -> To: {invoice['email']} | Subject: Invoice {invoice['id']} {invoice['status']} (\${invoice['amount']:.2f})")`}
+/>
+
+---
+
+## Check Your Understanding
+
+<QuizCard
+  client:visible
+  question="In an automated invoice processing workflow, why do we enforce a structured JSON schema (ID, Amount, Date, Vendor, Status, Email) before inserting into SQLite?"
+  options={[
+    "Because SQLite cannot store strings longer than 5 characters.",
+    "Structured schemas guarantee consistent field names and numeric types so downstream database inserts and email triggers never crash on malformed prose.",
+    "To disable Gradio's web interface.",
+    "Because Gemini 2.5 Flash only outputs binary numbers."
+  ]}
+  correctAnswer={1}
+  explanation="Enforcing a strict output schema ensures every extracted invoice maps cleanly to typed SQLite columns and automated notification templates."
+/>

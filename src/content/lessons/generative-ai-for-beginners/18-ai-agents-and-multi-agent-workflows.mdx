@@ -1,0 +1,119 @@
+---
+title: "AI Agents: Tools + State + LLM Orchestration, Sequential/Concurrent Workflows, TaskWeaver & JARVIS Task Planning"
+track: "generative-ai-for-beginners"
+category: "Module 5: Open-Source Models, AI Agents, LoRA Fine-Tuning & SLMs"
+order: 18
+difficulty: "advanced"
+xp: 90
+description: "Design AI Agent architectures combining LLMs, State, and Tools across Sequential, Concurrent, Code-First (TaskWeaver), and Multimodal DAG (JARVIS) workflows."
+topic: "AI Agents"
+prerequisites: ["generative-ai-for-beginners/17-open-source-models-and-hugging-face"]
+---
+import PythonRunner from '../../../components/islands/PythonRunner';
+import QuizCard from '../../../components/islands/QuizCard';
+import ColabButton from '../../../components/static/ColabButton.astro';
+
+A single LLM call answers a question; an **AI Agent** reasons, remembers state, calls external tools, observes the result, and iterates until a goal is achieved. You can capture the entire architecture in one compact equation:
+
+$$\text{AI Agent} = \text{LLM (Reasoning)} + \text{State (Memory & Threads)} + \text{Tools (Functions, APIs & Models)}$$
+
+In this lesson, we'll compare five influential agent architectures—**LangChain Agents**, **AutoGen**, **Typed Function-Tool Orchestrations**, **TaskWeaver**, and **JARVIS / HuggingGPT**—and build a multi-agent **EdTech Startup Pitch Boardroom**.
+
+---
+
+## Comparing the 5 AI Agent Paradigms
+
+| Framework / Pattern | Core Architectural Idea | Best Suited For |
+| :--- | :--- | :--- |
+| **LangChain Agents** | `AgentExecutor` loop binding community tools + observability | Rapid tool-calling prototypes and integrations |
+| **AutoGen** | Conversable `AssistantAgent` + code-executing `UserProxyAgent` | Multi-turn coding, debugging, and human-in-the-loop review |
+| **Typed Sequential & Concurrent Workflows** | Typed Pydantic tools + `SequentialBuilder` / `ConcurrentBuilder` | Deterministic pipelines (`[Researcher -> Writer -> Editor]`) and parallel critiques |
+| **TaskWeaver** | Code-first planner generating Pandas Python code + `Plugins` + YAML `experience` | In-memory DataFrame analytics & anomaly detection |
+| **JARVIS / HuggingGPT** | LLM controller decomposing requests into a dependency DAG of Hugging Face models | Multimodal tasks (`image-to-text` $\rightarrow$ `object-detection`) |
+
+---
+
+## Sequential vs. Concurrent Multi-Agent Workflows
+
+- **Sequential Pipeline**: Agents pass a shared context thread down a chain (`Researcher -> Writer -> Editor`), where each specialist refines the previous output.
+- **Concurrent Fan-Out / Fan-In**: Independent specialists (e.g., *Curriculum Pedagogy Lead*, *AI Systems Architect*, and *Trust & Finance Officer*) critique an EdTech startup pitch in parallel, and a moderator synthesizes their feedback and follow-up questions.
+- **JARVIS 4-Stage Multimodal Controller**: (1) *Task Planning* (build a dependency DAG `[{"task": "object-detection", "id": 0, "dep": [-1]}]`), (2) *Model Selection*, (3) *Task Execution*, and (4) *Response Generation*.
+
+---
+
+## Open the Companion Colab Notebook
+
+Launch the notebook below to run a typed tool-calling agent, a Sequential `[Researcher -> Writer -> Editor]` pipeline, and the Concurrent **EdTech Startup Pitch Boardroom** using `google-genai`.
+
+<ColabButton
+  course="generative-ai-for-beginners"
+  notebook="18-ai-agents-and-multi-agent-workflows.ipynb"
+  runtime="Free Tier CPU + Gemini API"
+/>
+
+---
+
+## Try It Yourself: JARVIS Task-DAG Planner & Pitch Boardroom
+
+Execute this pure-Python sandbox to topologically resolve a JARVIS multimodal task DAG and run the multi-department EdTech Startup Pitch Boardroom simulation.
+
+<PythonRunner
+  client:visible
+  title="Try it Yourself: JARVIS DAG Planner & Multi-Agent Pitch Boardroom"
+  expectedOutput="JARVIS DAG Execution Order:
+  Step 1: id=0 task=image-to-text (deps=[])
+  Step 2: id=1 task=object-detection (deps=[0])
+  Step 3: id=2 task=text-to-speech (deps=[1])
+Concurrent Pitch Boardroom Critiques:
+  [Pedagogy Lead]: Align quiz difficulty with Bloom's taxonomy.
+  [Systems Architect]: Cache embeddings to cut latency under 200ms.
+  [Finance Officer]: Cap free-tier calls at 15 RPM per user."
+  initialCode={`# 1. JARVIS / HuggingGPT 4-stage dependency DAG topological resolver
+dag = [
+    {"id": 2, "task": "text-to-speech", "dep": [1]},
+    {"id": 0, "task": "image-to-text", "dep": [-1]},
+    {"id": 1, "task": "object-detection", "dep": [0]},
+]
+
+completed = set()
+order = []
+while len(order) < len(dag):
+    for node in sorted(dag, key=lambda x: x["id"]):
+        if node["id"] in completed:
+            continue
+        deps = [d for d in node["dep"] if d != -1]
+        if all(d in completed for d in deps):
+            completed.add(node["id"])
+            order.append((node["id"], node["task"], deps))
+
+print("JARVIS DAG Execution Order:")
+for step, (nid, task, deps) in enumerate(order, 1):
+    print(f"  Step {step}: id={nid} task={task} (deps={deps})")
+
+# 2. Concurrent EdTech Startup Pitch Boardroom
+agents = {
+    "Pedagogy Lead": "Align quiz difficulty with Bloom's taxonomy.",
+    "Systems Architect": "Cache embeddings to cut latency under 200ms.",
+    "Finance Officer": "Cap free-tier calls at 15 RPM per user.",
+}
+print("Concurrent Pitch Boardroom Critiques:")
+for role, critique in agents.items():
+    print(f"  [{role}]: {critique}")`}
+/>
+
+---
+
+## Check Your Understanding
+
+<QuizCard
+  client:visible
+  question="What makes TaskWeaver distinct as a 'code-first' AI agent framework?"
+  options={[
+    "It only supports CSS animations.",
+    "It translates user analytics requests directly into executable Python code operating on in-memory Pandas DataFrames, using embedding-indexed plugins and YAML experience memory.",
+    "It disables all function calling and runs without state.",
+    "It requires training a new LLM from scratch for every CSV file."
+  ]}
+  correctAnswer={1}
+  explanation="TaskWeaver's Planner and CodeGenerator emit Python code that manipulates Pandas DataFrames directly, making it ideal for complex data analysis and anomaly detection."
+/>

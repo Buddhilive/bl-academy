@@ -1,0 +1,138 @@
+---
+title: "Retrieval-Augmented Generation (RAG) & Vector Databases: Word Chunking, ChromaDB/BallTree Indexing & MAP Evaluation"
+track: "generative-ai-for-beginners"
+category: "Module 3: Semantic Search, RAG & Function Calling"
+order: 11
+difficulty: "intermediate"
+xp: 90
+description: "Build a complete RAG pipeline over Neural Network docs using word-bounded chunking, ChromaDB and BallTree nearest-neighbor search, and Mean Average Precision (MAP)."
+topic: "RAG & Vector Databases"
+prerequisites: ["generative-ai-for-beginners/10-integrating-with-function-calling"]
+---
+import PythonRunner from '../../../components/islands/PythonRunner';
+import QuizCard from '../../../components/islands/QuizCard';
+import ColabButton from '../../../components/static/ColabButton.astro';
+
+Semantic search finds relevant passages; **Retrieval-Augmented Generation (RAG)** takes the next step by injecting those retrieved passages directly into an LLM's prompt so it can synthesize grounded, verifiable answers over your private knowledge base. Whether you are indexing internal engineering wikis or Neural Network lecture notes (`perceptron.md`, `own_framework.md`, `frameworks.md`), RAG eliminates stale training cutoffs and slashes hallucination rates. In this lesson, we'll build a complete RAG pipeline with **word-bounded chunking**, **`BallTree` / `ChromaDB` vector indexing**, and quantitative **Mean Average Precision (MAP)** evaluation.
+
+---
+
+## RAG Architecture & Vector Similarity Metrics
+
+Every RAG system pairs a **Retriever** (embedding + vector index) with a **Generator** (LLM):
+- **RAG-Sequence**: Uses the same top-$k$ retrieved passages to condition the entire generated answer.
+- **RAG-Token**: Allows each generated token to attend to a different set of retrieved passages.
+
+| Metric | Formula | Geometric Meaning |
+| :--- | :--- | :--- |
+| **Cosine Similarity** | $\frac{\mathbf{a}\cdot\mathbf{b}}{\|\mathbf{a}\|_2 \|\mathbf{b}\|_2}$ | Angle between vectors (scale-invariant) |
+| **Euclidean Distance ($L_2$)** | $\sqrt{\sum_{i=1}^d (a_i - b_i)^2}$ | Straight-line distance between endpoints |
+| **Dot Product** | $\sum_{i=1}^d a_i b_i$ | Magnitude-weighted directional alignment |
+
+---
+
+## Word-Bounded Chunking & Vector Indexing
+
+Chopping markdown files at an arbitrary character index cuts words in half and ruins embeddings. Instead, `split_text(text, max_length=400, min_length=300)` walks backward to the nearest whitespace boundary so every chunk lands cleanly between 300 and 400 characters without splitting words:
+
+1. **Ingest & Explode**: Load `perceptron.md`, `own_framework.md`, and `frameworks.md` into a Pandas DataFrame and call `df.explode('chunks')`.
+2. **Embed & Index**: Generate vector embeddings and index them with `NearestNeighbors(n_neighbors=5, algorithm='ball_tree')` or open-source **`ChromaDB`**.
+3. **Retrieve & Generate**: Run `nbrs.kneighbors([query_vec])` for `"what is a perceptron?"`, pass the top-5 chunks into `gemini-2.5-flash`, and instruct the model to answer strictly from the retrieved context.
+
+### Evaluating RAG Quality with Mean Average Precision (MAP)
+
+Never ship a RAG pipeline on vibes alone. Measure retrieval and answer relevance across a golden query set $Q$ (*"What is a perceptron?"*, *"What is machine learning?"*, *"What is deep learning?"*, *"What is a neural network?"*) using **Mean Average Precision (MAP)**:
+
+$$\text{MAP} = \frac{1}{|Q|} \sum_{q=1}^{|Q|} \text{AP}(q), \qquad \text{AP}(q) = \sum_{k=1}^{n} (R_k - R_{k-1}) P_k$$
+
+---
+
+## Open the Companion Colab Notebook
+
+Launch the notebook below—it embeds `perceptron.md`, `own_framework.md`, and `frameworks.md` inline, builds both `BallTree` and `ChromaDB` vector indexes, answers `"what is a perceptron?"`, and computes the 4-query MAP evaluation score.
+
+<ColabButton
+  course="generative-ai-for-beginners"
+  notebook="11-rag-and-vector-databases.ipynb"
+  runtime="Free Tier CPU + Gemini API"
+/>
+
+---
+
+## Try It Yourself: Word-Bounded RAG Chunker & MAP Evaluator
+
+Execute this Python sandbox to split a Neural Network document cleanly along word boundaries (`300–400` chars), retrieve the top chunk via nearest-neighbor cosine similarity, and compute Average Precision across ranked answers.
+
+<PythonRunner
+  client:visible
+  title="Try it Yourself: Word-Bounded RAG Chunker & MAP Evaluator"
+  expectedOutput="Chunk 1 (len=397): A perceptron is the simplest neural network unit, inspired by a biological neuro...
+Retrieved Top-1 for 'what is a perceptron?': Chunk 1 (sim=0.990)
+Average Precision (AP) for query: 1.000
+Mean Average Precision (MAP) across 2 queries: 0.917"
+  initialCode={`import math
+
+doc = (
+    "A perceptron is the simplest neural network unit, inspired by a biological neuron. "
+    "It computes a weighted sum of input features plus a bias term and passes the result "
+    "through a step or sigmoid activation function to classify linearly separable data. "
+    "Multi-layer perceptrons stack hidden layers with backpropagation so networks learn "
+    "non-linear decision boundaries across images, audio, and natural language."
+)
+
+def split_text(text, max_length=400, min_length=300):
+    chunks, start = [], 0
+    while start < len(text):
+        end = min(start + max_length, len(text))
+        if end < len(text) and end - start > min_length:
+            space_idx = text.rfind(" ", start + min_length, end)
+            if space_idx != -1:
+                end = space_idx
+        chunks.append(text[start:end].strip())
+        start = end + 1
+    return chunks
+
+chunks = split_text(doc)
+print(f"Chunk 1 (len={len(chunks[0])}): {chunks[0][:80]}...")
+
+# Nearest-neighbor cosine retrieval
+def cos(a, b):
+    return sum(x*y for x, y in zip(a, b)) / (math.sqrt(sum(x*x for x in a)) * math.sqrt(sum(y*y for y in b)))
+
+q_vec = [0.95, 0.25]
+c_vecs = [[0.92, 0.39], [0.10, 0.99]]
+sims = [(cos(q_vec, v), i + 1) for i, v in enumerate(c_vecs)]
+best_sim, best_id = max(sims)
+print(f"Retrieved Top-1 for 'what is a perceptron?': Chunk {best_id} (sim={best_sim:.3f})")
+
+# Mean Average Precision (MAP) calculation
+def average_precision(relevance_flags):
+    hits, total_prec = 0, 0.0
+    for rank, rel in enumerate(relevance_flags, 1):
+        if rel == 1:
+            hits += 1
+            total_prec += hits / rank
+    return total_prec / max(hits, 1)
+
+ap1 = average_precision([1, 1, 0])
+ap2 = average_precision([1, 0, 1])
+print(f"Average Precision (AP) for query: {ap1:.3f}")
+print(f"Mean Average Precision (MAP) across 2 queries: {(ap1 + ap2) / 2:.3f}")`}
+/>
+
+---
+
+## Check Your Understanding
+
+<QuizCard
+  client:visible
+  question="Why do we use a word-bounded chunking function like split_text(text, max_length=400, min_length=300) before embedding documents into a vector database?"
+  options={[
+    "So chunks never slice words in half and each chunk stays focused enough for high-signal vector retrieval.",
+    "Because ChromaDB crashes if a string contains spaces.",
+    "To delete all punctuation from markdown files.",
+    "Because Cosine Similarity only accepts 300-dimensional vectors."
+  ]}
+  correctAnswer={0}
+  explanation="Splitting along word boundaries within a target character window preserves semantic coherence inside every chunk, leading to sharper embeddings and higher retrieval precision."
+/>

@@ -1,0 +1,105 @@
+---
+title: "Building with Mistral Models: Mistral Large vs. Small Latency, Tekken Tokenizer & Cross-Language Korean-English FAISS RAG"
+track: "generative-ai-for-beginners"
+category: "Module 5: Open-Source Models, AI Agents, LoRA Fine-Tuning & SLMs"
+order: 21
+difficulty: "advanced"
+xp: 85
+description: "Explore the Mistral model family (Mistral Large 3, Small 3.1, NeMo), build a cross-language Korean-to-English FAISS IndexFlatL2 RAG pipeline, and run the local Tekken tokenizer."
+topic: "Mistral Models"
+prerequisites: ["generative-ai-for-beginners/20-building-with-small-language-models"]
+---
+import PythonRunner from '../../../components/islands/PythonRunner';
+import QuizCard from '../../../components/islands/QuizCard';
+import ColabButton from '../../../components/static/ColabButton.astro';
+
+The **Mistral model family** proves that architectural efficiency and open Apache 2.0 weights can rival massive closed models—especially on multilingual reasoning, code generation, and low-latency workloads. In this lesson, we'll compare **Mistral Large 3**, **Mistral Small 3.1**, and **Mistral NeMo**, build a **Cross-Language Korean-to-English FAISS RAG pipeline** over Paul Graham's essay, and inspect how the **Tekken tokenizer** compresses multilingual text and JSON tool schemas.
+
+---
+
+## Comparing the Mistral Model Family
+
+| Model | Architecture & Context | Key Strengths | Best Use Cases |
+| :--- | :--- | :--- | :--- |
+| **Mistral Large 3** | Sparse MoE (Apache 2.0), **256k context** | Multilingual (13+ languages including Korean, Japanese, Arabic, Hindi), parallel/sequential tool calling | Enterprise RAG, complex Python/TS/C++ code synthesis |
+| **Mistral Small 3.1** | Low-latency SLM | ~80% lower cost, 3–5s faster response than frontier models | High-volume summarization, translation, fast code review |
+| **Mistral NeMo (12B)** | Apache 2.0 open weights | Introduces **Tekken tokenizer** + native open-weight function calling | Local deployment, custom LoRA fine-tuning |
+
+---
+
+## Cross-Language FAISS RAG & The Tekken Tokenizer
+
+### 1. Korean Query $\rightarrow$ English Essay via `faiss.IndexFlatL2`
+In a cross-language RAG pipeline, your knowledge base might be in English (such as Paul Graham's essay, split into `2048`-character chunks and indexed in **`faiss.IndexFlatL2(d)`**) while your user asks a question in **Korean**:
+`"저자가 대학에 오기 전에 주로 했던 두 가지 일은 무엇이었나요?"` (*"What were the two main things the author worked on before college?"*).
+
+Because multilingual embeddings align semantics across languages, `index.search(question_embedding, k=2)` retrieves the exact English passage describing *writing short stories* and *programming on an IBM 1401 in 9th grade*, and the LLM synthesizes a grounded answer!
+
+### 2. Local Tekken Tokenization with `mistral-common`
+Replacing older SentencePiece tokenizers, **Tekken** compresses source code and non-English languages significantly better. Using `mistral-common[hf-hub]`, you can tokenize `ChatCompletionRequest` payloads—complete with `get_current_weather` JSON tool definitions—100% locally without any API key.
+
+---
+
+## Open the Companion Colab Notebook
+
+Launch the notebook below to run the complete **FAISS (`IndexFlatL2`) Cross-Language Korean-to-English RAG pipeline**, benchmark Small vs. Large latency on `FizzBuzz`, and run the local **`mistral-common` Tekken tokenizer**.
+
+<ColabButton
+  course="generative-ai-for-beginners"
+  notebook="21-building-with-mistral-models.ipynb"
+  runtime="Free Tier T4 GPU + Gemini API"
+/>
+
+---
+
+## Try It Yourself: Cross-Language $L_2$ Vector Search & Tekken Token Counter
+
+Execute this pure-Python sandbox to simulate `faiss.IndexFlatL2` Euclidean nearest-neighbor search for the Korean query over Paul Graham's essay chunks and compare multilingual token compression.
+
+<PythonRunner
+  client:visible
+  title="Try it Yourself: Cross-Language L2 RAG & Tekken Compression"
+  expectedOutput="Korean Query: '저자가 대학에 오기 전에 주로 했던 두 가지 일은 무엇이었나요?'
+FAISS IndexFlatL2 Top-1 Chunk (L2_dist=0.010): Before college, the two main things I worked on outside of school were writing and programming on an IBM 1401.
+Token Count Comparison (get_current_weather + Paris prompt):
+  SentencePiece: 94 tokens | Tekken: 68 tokens (27.7% fewer tokens)"
+  initialCode={`import math
+
+# 1. Simulated FAISS IndexFlatL2 over Paul Graham essay chunks
+chunks = [
+    ("Before college, the two main things I worked on outside of school were writing and programming on an IBM 1401.", [0.91, 0.85, 0.12]),
+    ("Later in graduate school I focused on painting and Lisp compilers.", [0.15, 0.20, 0.95]),
+]
+korean_query = "저자가 대학에 오기 전에 주로 했던 두 가지 일은 무엇이었나요?"
+q_vec = [0.90, 0.86, 0.22]  # Multilingual embedding aligned with pre-college writing & programming
+
+def l2_sq(a, b):
+    return sum((x - y) ** 2 for x, y in zip(a, b))
+
+best_dist, best_text = min((l2_sq(q_vec, vec), text) for text, vec in chunks)
+print(f"Korean Query: '{korean_query}'")
+print(f"FAISS IndexFlatL2 Top-1 Chunk (L2_dist={best_dist:.3f}): {best_text}")
+
+# 2. Tekken vs SentencePiece token efficiency on tool-call payloads
+sentencepiece_tokens, tekken_tokens = 94, 68
+saved = (1 - tekken_tokens / sentencepiece_tokens) * 100
+print("Token Count Comparison (get_current_weather + Paris prompt):")
+print(f"  SentencePiece: {sentencepiece_tokens} tokens | Tekken: {tekken_tokens} tokens ({saved:.1f}% fewer tokens)")`}
+/>
+
+---
+
+## Check Your Understanding
+
+<QuizCard
+  client:visible
+  question="In a cross-language RAG pipeline using FAISS IndexFlatL2, how does a Korean query retrieve the right paragraph from an English essay?"
+  options={[
+    "FAISS translates the entire English essay into Korean before indexing.",
+    "Multilingual embedding models map semantically equivalent Korean and English text to nearby vectors, so L2 distance finds the matching English chunk.",
+    "IndexFlatL2 only matches ASCII characters.",
+    "Tekken deletes all Korean characters before embedding."
+  ]}
+  correctAnswer={1}
+  explanation="Multilingual embedding models align meanings across languages into a shared vector space, allowing faiss.IndexFlatL2 to match a Korean query directly to the relevant English chunk."
+/>

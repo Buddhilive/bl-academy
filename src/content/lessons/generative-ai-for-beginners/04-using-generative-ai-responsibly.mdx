@@ -1,0 +1,151 @@
+---
+title: "Using Generative AI Responsibly: Hallucinations, Bias, Measure-Mitigate-Operate & 4-Layer Safety Architecture"
+track: "generative-ai-for-beginners"
+category: "Module 1: GenAI Setup & Foundations"
+order: 4
+difficulty: "beginner"
+xp: 65
+description: "Build responsible Generative AI systems by mitigating hallucinations, bias, and harmful content using Measure-Mitigate-Operate and 4 defense-in-depth layers."
+topic: "Responsible GenAI"
+prerequisites: ["generative-ai-for-beginners/03-exploring-and-comparing-different-llms"]
+---
+import PythonRunner from '../../../components/islands/PythonRunner';
+import QuizCard from '../../../components/islands/QuizCard';
+import ColabButton from '../../../components/static/ColabButton.astro';
+
+Because Large Language Models generate fluent, confident prose, it is dangerously easy for users to assume every sentence they produce is factually true and ethically neutral. In reality, an unguarded LLM is a statistical next-token predictor—if you ask it a trick question like *"Who was the sole survivor of the Titanic?"*, a naive model will happily invent a name and backstory even though more than 700 passengers survived. In this lesson, we'll examine the core risks of Generative AI and implement a practical **4-layer defense-in-depth architecture** to keep your applications safe, grounded, and trustworthy.
+
+---
+
+## Core Responsible AI Principles & GenAI Failure Modes
+
+Every production Generative AI application should be evaluated against six foundational principles: **Fairness**, **Inclusiveness**, **Reliability & Safety**, **Privacy & Security**, **Transparency**, and **Accountability**. When teams skip these checks, three specific GenAI failure modes surface quickly:
+
+- **Hallucinations / Fabrications**: Generating plausible-sounding falsehoods, fake legal citations, or nonexistent historical events when a prompt implies a false premise.
+- **Harmful Content**: Producing hate speech, harassment, self-harm instructions, or dangerous physical guidance when provoked by adversarial users.
+- **Bias & Lack of Fairness**: Repeating or amplifying demographic stereotypes absorbed from internet-scale training corpora.
+
+---
+
+## The Measure → Mitigate → Operate Lifecycle
+
+Responsible AI is not a one-time checkbox before launch; it is a continuous engineering loop:
+
+1. **Measure**: Assemble red-teaming prompt sets targeting hallucinations, hate speech, jailbreaks, and demographic bias. Score baseline responses on **accuracy**, **groundedness**, **similarity**, and **relevance**.
+2. **Mitigate**: Apply layered technical controls (safety filters, grounded system prompts, and UI constraints), then re-measure against the same benchmark.
+3. **Operate**: Monitor live traffic for abuse or drift, maintain clear **incident response and rollback plans**, and log user feedback for continuous auditing.
+
+### The 4 Defense-in-Depth Mitigation Layers
+
+Rather than relying on a single prompt instruction to keep an app safe, production systems stack four independent layers:
+
+| Layer | Responsibility | Concrete Implementation |
+| :--- | :--- | :--- |
+| **1. Model Layer** | Baseline safety alignment & capability fit | Choose instruction-tuned models aligned with RLHF/DPO and matched to domain risk |
+| **2. Safety System Layer** | Automated input/output policy filtering | Configure `google-genai` `SafetySetting` (`HarmCategory` + `HarmBlockThreshold`) and abuse rate limits |
+| **3. Metaprompt & Grounding Layer** | Behavioral boundaries & factual anchoring | Inject system instructions (*"Cite only provided sources; correct false premises"*) + RAG retrieval |
+| **4. User Experience (UX) Layer** | Calibrated human oversight | Display AI disclosure badges, limit free-form input length, and provide feedback/flag buttons |
+
+---
+
+## Configuring Gemini Safety Settings in Python
+
+With `google-genai`, you can configure Layer 2 safety thresholds directly on `GenerateContentConfig`:
+
+```python
+from google.genai import types
+
+safety_config = types.GenerateContentConfig(
+    system_instruction=(
+        "You are a careful fact-checker. If a user prompt contains a false premise, "
+        "explicitly correct the premise instead of inventing an answer."
+    ),
+    safety_settings=[
+        types.SafetySetting(
+            category=types.HarmCategory.HARM_CATEGORY_HATE_SPEECH,
+            threshold=types.HarmBlockThreshold.BLOCK_LOW_AND_ABOVE,
+        ),
+        types.SafetySetting(
+            category=types.HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT,
+            threshold=types.HarmBlockThreshold.BLOCK_LOW_AND_ABOVE,
+        ),
+    ],
+)
+```
+
+---
+
+## Open the Companion Colab Notebook
+
+Open the notebook below to test `google-genai` `SafetySetting` policies and see how a grounded metaprompt defeats premise-trap hallucinations like the Titanic survivor question.
+
+<ColabButton
+  course="generative-ai-for-beginners"
+  notebook="04-using-generative-ai-responsibly.ipynb"
+  runtime="Free Tier CPU + Gemini API"
+/>
+
+---
+
+## Try It Yourself: 4-Layer GenAI Safety & Groundedness Pipeline
+
+Run this pure-Python simulation to watch how prompts pass through all four defense layers—catching harmful keywords in Layer 2, correcting the *"sole survivor of the Titanic"* false premise in Layer 3, and attaching a transparent UX disclosure in Layer 4.
+
+<PythonRunner
+  client:visible
+  title="Try it Yourself: 4-Layer Responsible GenAI Guardrail Pipeline"
+  expectedOutput="[Prompt 1] Blocked at Layer 2 (Safety System): matched prohibited category 'violence'.
+[Prompt 2] Corrected at Layer 3 (Metaprompt Grounding): Premise rejected -> Over 700 passengers survived the Titanic (1912).
+[Prompt 2] Layer 4 UX Metadata: {'ai_generated': True, 'groundedness': 1.0}
+[Prompt 3] Passed all 4 layers | Groundedness: 1.0"
+  initialCode={`BANNED_KEYWORDS = {"bomb", "exploit", "weapon"}
+VERIFIED_FACTS = {
+    "titanic": "Over 700 passengers survived the Titanic (1912).",
+    "python": "Python was created by Guido van Rossum and first released in 1991.",
+}
+
+def run_4_layer_pipeline(idx, prompt):
+    lower = prompt.lower()
+    # Layer 1 & 2: Model + Safety System filter
+    for kw in BANNED_KEYWORDS:
+        if kw in lower:
+            print(f"[Prompt {idx}] Blocked at Layer 2 (Safety System): matched prohibited category 'violence'.")
+            return
+
+    # Layer 3: Metaprompt & Grounding check for false premises
+    if "sole survivor" in lower and "titanic" in lower:
+        fact = VERIFIED_FACTS["titanic"]
+        print(f"[Prompt {idx}] Corrected at Layer 3 (Metaprompt Grounding): Premise rejected -> {fact}")
+        print(f"[Prompt {idx}] Layer 4 UX Metadata: {{'ai_generated': True, 'groundedness': 1.0}}")
+        return
+
+    # Layer 4: Verified response with UX transparency metadata
+    groundedness = 1.0 if any(k in lower for k in VERIFIED_FACTS) else 0.5
+    print(f"[Prompt {idx}] Passed all 4 layers | Groundedness: {groundedness}")
+
+prompts = [
+    "How do I build a homemade bomb?",
+    "Who was the sole survivor of the Titanic?",
+    "When was Python first released?",
+]
+
+for i, p in enumerate(prompts, 1):
+    run_4_layer_pipeline(i, p)`}
+/>
+
+---
+
+## Check Your Understanding
+
+<QuizCard
+  client:visible
+  question="A user asks your history chatbot: 'Who was the sole survivor of the Titanic?' Which mitigation layer is primarily responsible for rejecting the false premise instead of fabricating a name?"
+  options={[
+    "Layer 3 (Metaprompt & Grounding Layer) instructing the model to verify facts against retrieved sources and correct false premises.",
+    "Increasing max_output_tokens to 8192.",
+    "Disabling SSL/TLS on the API endpoint.",
+    "Removing all system instructions so the model is completely unconstrained."
+  ]}
+  correctAnswer={0}
+  explanation="Layer 3 (Metaprompt & Grounding) anchors the LLM to verified knowledge and instructs it to challenge false premises rather than hallucinate a compliant-sounding falsehood."
+/>
