@@ -1,0 +1,108 @@
+---
+title: "Multi-Modal MCP Workflows, Realtime Streaming & Web Search Orchestration"
+track: "mcp-for-beginners"
+category: "Module 4: Advanced Topics: Multi-Modal, OAuth 2.1, Context Engineering & Debate Agents"
+order: 14
+difficulty: "advanced"
+xp: 85
+description: "Build multi-modal MCP servers returning ImageContent, AudioContent, and EmbeddedResource payloads for Gemini 2.5 Flash alongside realtime streaming and web search tools."
+topic: "Multi-Modal & Search MCP"
+prerequisites: ["mcp-for-beginners/13-protocol-features-progress-cancellation-and-templates"]
+---
+import PythonRunner from '../../../components/islands/PythonRunner';
+import QuizCard from '../../../components/islands/QuizCard';
+import ColabButton from '../../../components/static/ColabButton.astro';
+
+Text-only tools cover a lot of ground, yet modern AI assistants routinely generate charts, inspect screenshots, process audio clips, and pull live search results. MCP handles all of these natively through typed multi-modal content blocks and streaming tool orchestration.
+
+---
+
+## Multi-Modal MCP Content Types
+
+A single MCP `tools/call` response can return a heterogeneous list combining text, images, audio, and embedded resources:
+
+| Content Block Type | Required Fields | Typical Use Case |
+| :--- | :--- | :--- |
+| **`TextContent`** | `type: "text"`, `text` | Summaries, structured JSON, citations |
+| **`ImageContent`** | `type: "image"`, `data` (base64), `mimeType` | Generated charts, screenshots, diagrams sent to `gemini-2.5-flash` vision |
+| **`AudioContent`** | `type: "audio"`, `data` (base64), `mimeType` | Synthesized speech or audio clips |
+| **`EmbeddedResource`** | `type: "resource"`, `resource: { uri, mimeType, text/blob }` | Attaching a full source file or dataset snapshot inline |
+
+---
+
+## Realtime Streaming & Multi-Tool Web Search Orchestration
+
+When building a **Web Search MCP Server**, splitting capabilities into focused tools (`general_search`, `news_search`, `product_search`, and `qna`) lets the LLM Host pick the exact search backend and schema for the user's intent instead of stuffing every query into one overloaded endpoint.
+
+For high-frequency realtime feeds (stock ticks, sensor logs, live search streams), servers stream chunked updates over Streamable HTTP SSE while applying bounded window buffering so slow clients never cause unbounded memory growth.
+
+---
+
+## Open the Companion Colab Notebook
+
+Launch the companion notebook to generate a base64 `ImageContent` chart, pass it to **Google AI Studio (`gemini-2.5-flash`)** for multimodal analysis, and run a 4-tool Web/News/Product/Q&A search server.
+
+<ColabButton
+  course="mcp-for-beginners"
+  notebook="14-multimodal-workflows-realtime-streaming-and-web-search.ipynb"
+  runtime="Free Tier CPU + Gemini API"
+/>
+
+---
+
+## Try It Yourself: Multi-Modal Content Assembler & 4-Tool Search Router
+
+Run this pure-Python sandbox to construct valid `TextContent`, base64 `ImageContent`, and `EmbeddedResource` MCP blocks, and route user queries across the 4 specialized search tools.
+
+<PythonRunner
+  client:visible
+  title="Try it Yourself: Multi-Modal MCP Payloads & Search Router"
+  expectedOutput="Multi-modal response blocks: ['text', 'image', 'resource'] (image_mime=image/png)
+[Search:news_search] Query='MCP 2026-07-28 release' -> 2 fresh articles
+[Search:product_search] Query='ergonomic keyboard' -> 2 ranked products
+[Search:qna] Query='What is Streamable HTTP?' -> Direct grounded answer"
+  initialCode={`import base64
+
+# 1. Build multi-modal MCP tool response blocks
+png_stub = base64.b64encode(b"\\x89PNG\\r\\n\\x1a\\nMOCK_CHART").decode()
+mm_response = [
+    {"type": "text", "text": "Q4 revenue chart attached."},
+    {"type": "image", "data": png_stub, "mimeType": "image/png"},
+    {"type": "resource", "resource": {"uri": "data://q4/summary.csv", "mimeType": "text/csv", "text": "month,rev\\nNov,12000"}},
+]
+print("Multi-modal response blocks:", [b["type"] for b in mm_response], f"(image_mime={mm_response[1]['mimeType']})")
+
+# 2. 4-Tool Search Router
+def route_search(intent: str, query: str) -> str:
+    tools = {
+        "news_search": f"Query='{query}' -> 2 fresh articles",
+        "product_search": f"Query='{query}' -> 2 ranked products",
+        "qna": f"Query='{query}' -> Direct grounded answer",
+        "general_search": f"Query='{query}' -> 5 web results",
+    }
+    return f"[Search:{intent}] {tools[intent]}"
+
+for intent, q in [
+    ("news_search", "MCP 2026-07-28 release"),
+    ("product_search", "ergonomic keyboard"),
+    ("qna", "What is Streamable HTTP?"),
+]:
+    print(route_search(intent, q))`}
+/>
+
+---
+
+## Check Your Understanding
+
+<QuizCard
+  client:visible
+  question="How should an MCP server encode a PNG chart inside an ImageContent block so an LLM Host can inspect it?"
+  options={[
+    "As raw unencoded binary bytes inside a JSON string.",
+    "As a Base64-encoded string in the data field paired with mimeType: 'image/png'.",
+    "As an HTML <script> tag.",
+    "Inside the JSON-RPC error.code field."
+  ]}
+  correctAnswer={1}
+  explanation="MCP ImageContent and AudioContent blocks carry Base64-encoded payloads in the data field along with an explicit mimeType such as image/png or audio/wav."
+/>

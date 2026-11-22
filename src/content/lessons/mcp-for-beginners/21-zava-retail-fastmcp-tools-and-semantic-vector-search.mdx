@@ -1,0 +1,131 @@
+---
+title: "Zava Retail Database Capstone (Part 2): FastMCP Tools & Hybrid Vector Semantic Search"
+track: "mcp-for-beginners"
+category: "Module 5: Best Practices, Case Studies & Zava Retail Database Capstone Labs"
+order: 21
+difficulty: "advanced"
+xp: 95
+description: "Build Zava Retail FastMCP introspection and read-only SQL tools paired with hybrid semantic product search using Google AI Studio gemini-embedding-001 and cosine similarity."
+topic: "FastMCP Tools & Semantic Search"
+prerequisites: ["mcp-for-beginners/20-zava-retail-database-mcp-architecture-and-rls"]
+---
+import PythonRunner from '../../../components/islands/PythonRunner';
+import QuizCard from '../../../components/islands/QuizCard';
+import ColabButton from '../../../components/static/ColabButton.astro';
+
+In Part 1, we locked down Zava Retail's multi-tenant database with Row-Level Security. Now we expose that data safely to an AI assistant through **FastMCP tools**, and add **hybrid semantic product search** so shoppers and store analysts can ask natural-language questions like *"comfortable waterproof running shoes for rainy Seattle weather"* even when those exact words do not appear in a product's SKU title.
+
+---
+
+## Core Zava Retail FastMCP Tools
+
+Three focused tools cover both structured analytics and schema discovery:
+
+| FastMCP Tool | Purpose | Security & Safety Guard |
+| :--- | :--- | :--- |
+| **`get_database_schema`** | Returns table names, column types, and RLS status | Prevents the LLM from hallucinating table/column names |
+| **`execute_sales_query`** | Executes read-only `SELECT` analytics queries | Blocks `DROP`/`DELETE`/`UPDATE`/`INSERT`/stacked `;` and injects RLS `store_id` |
+| **`get_store_performance`** | Computes revenue, order count, and $\text{AOV} = \frac{\text{Total Revenue}}{\text{Total Orders}}$ | Scoped strictly to the authenticated store's `rls_store_id` |
+
+---
+
+## Hybrid Vector Semantic Search (`gemini-embedding-001` & Cosine Similarity)
+
+In PostgreSQL `pgvector`, cosine distance is written with the `<=>` operator (`1 - (embedding <=> query_vector)`). In Python with **Google AI Studio `gemini-embedding-001`** (and `ChromaDB` or NumPy), we compute exact **Cosine Similarity** between the query embedding $\mathbf{u}$ and each product embedding $\mathbf{v}$:
+
+$$\text{Cosine Similarity} = \cos(\theta) = \frac{\mathbf{u} \cdot \mathbf{v}}{\|\mathbf{u}\|_2 \|\mathbf{v}\|_2}, \qquad d_{\text{cosine}}(\mathbf{u}, \mathbf{v}) = 1 - \cos(\theta)$$
+
+**Hybrid Search** combines that semantic similarity score with strict SQL attribute filters (`store_id = 'seattle'`, `price <= max_price`, `in_stock = True`), giving you both natural-language understanding and exact relational filtering.
+
+---
+
+## Open the Companion Colab Notebook
+
+Launch the companion notebook to run the Zava Retail `FastMCP` Server with `sqlite3` RLS, SQLi guards, and live `gemini-embedding-001` / `ChromaDB` hybrid semantic product search.
+
+<ColabButton
+  course="mcp-for-beginners"
+  notebook="21-zava-retail-fastmcp-tools-and-semantic-vector-search.ipynb"
+  runtime="Free Tier CPU + Gemini API"
+/>
+
+---
+
+## Try It Yourself: Zava Retail FastMCP Tools & Hybrid Vector Search
+
+Run this pure-Python sandbox to introspect the Zava schema, block a `DROP TABLE` SQL injection attempt, compute Seattle store KPIs, and run hybrid cosine-similarity product search.
+
+<PythonRunner
+  client:visible
+  title="Try it Yourself: Zava Retail Schema, SQLi Guard & Hybrid Search"
+  expectedOutput="Schema tables: ['products', 'sales_transactions']
+SQLi Guard 'DROP TABLE products;' -> BLOCKED (DDL/DML forbidden)
+Seattle KPIs -> orders=2, revenue=$314.00, AOV=$157.00
+Hybrid Search ('rainy running shoes', store='seattle', max_price=150):
+  1. Aero Trail Runner ($129.00, sim=0.985)"
+  initialCode={`import math
+import re
+import sqlite3
+
+db = sqlite3.connect(":memory:")
+db.executescript("""
+CREATE TABLE products (sku TEXT, store_id TEXT, name TEXT, price REAL);
+CREATE TABLE sales_transactions (tx_id INT, store_id TEXT, total REAL);
+INSERT INTO products VALUES ('S1', 'seattle', 'Aero Trail Runner', 129.0), ('S2', 'seattle', 'StormShell Jacket', 185.0), ('S3', 'redmond', 'Aero Trail Runner', 129.0);
+INSERT INTO sales_transactions VALUES (1, 'seattle', 129.0), (2, 'seattle', 185.0), (3, 'redmond', 99.0);
+""")
+
+# 1. Schema introspection
+tables = [r[0] for r in db.execute("SELECT name FROM sqlite_master WHERE type='table' ORDER BY name").fetchall()]
+print("Schema tables:", tables)
+
+# 2. Read-only SQLi guard
+def safe_select(sql: str):
+    if re.search(r"\\b(DROP|DELETE|UPDATE|INSERT|ALTER|PRAGMA)\\b", sql, re.I) or ";" in sql.strip().rstrip(";"):
+        return "BLOCKED (DDL/DML forbidden)"
+    return "ALLOWED"
+
+print("SQLi Guard 'DROP TABLE products;' ->", safe_select("DROP TABLE products;"))
+
+# 3. Store KPIs (RLS='seattle')
+cnt, rev = db.execute("SELECT COUNT(*), SUM(total) FROM sales_transactions WHERE store_id = ?", ("seattle",)).fetchone()
+print(f"Seattle KPIs -> orders={cnt}, revenue=\${rev:.2f}, AOV=\${rev/cnt:.2f}")
+
+# 4. Hybrid Semantic + SQL Search
+def cosine(u: list[float], v: list[float]) -> float:
+    dot = sum(a * b for a, b in zip(u, v))
+    return dot / (math.sqrt(sum(a*a for a in u)) * math.sqrt(sum(b*b for b in v)))
+
+query_vec = [0.9, 0.4, 0.1]  # [footwear, waterproof, jacket]
+catalog_vecs = {
+    "S1": ("seattle", "Aero Trail Runner", 129.0, [0.95, 0.30, 0.05]),
+    "S2": ("seattle", "StormShell Jacket", 185.0, [0.10, 0.90, 0.95]),
+    "S3": ("redmond", "Aero Trail Runner", 129.0, [0.95, 0.30, 0.05]),
+}
+hits = [
+    (cosine(query_vec, vec), name, price)
+    for sku, (sid, name, price, vec) in catalog_vecs.items()
+    if sid == "seattle" and price <= 150.0
+]
+hits.sort(reverse=True)
+print("Hybrid Search ('rainy running shoes', store='seattle', max_price=150):")
+for idx, (sim, name, price) in enumerate(hits, start=1):
+    print(f"  {idx}. {name} (\${price:.2f}, sim={sim:.3f})")`}
+/>
+
+---
+
+## Check Your Understanding
+
+<QuizCard
+  client:visible
+  question="Why should a database MCP server expose a get_database_schema tool alongside execute_sales_query?"
+  options={[
+    "So the LLM can inspect exact table names, column types, and RLS constraints instead of guessing SQL identifiers.",
+    "Because SQLite cannot execute SELECT queries without it.",
+    "To let users drop tables from chat.",
+    "To bypass Row-Level Security."
+  ]}
+  correctAnswer={0}
+  explanation="Schema introspection grounds the LLM in real table and column names, dramatically reducing syntax errors and hallucinated columns."
+/>

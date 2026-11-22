@@ -1,0 +1,117 @@
+---
+title: "Real-World Case Studies, Workshops & Safe Write-Capable MCP Servers"
+track: "mcp-for-beginners"
+category: "Module 5: Best Practices, Case Studies & Zava Retail Database Capstone Labs"
+order: 19
+difficulty: "advanced"
+xp: 85
+description: "Explore 8 real-world MCP case studies (travel agents, study planners, MCP Registry) and build a write-capable social publishing server with playground dry-run targets."
+topic: "MCP Case Studies"
+prerequisites: ["mcp-for-beginners/18-community-early-adopters-best-practices-and-reliability-sidecars"]
+---
+import PythonRunner from '../../../components/islands/PythonRunner';
+import QuizCard from '../../../components/islands/QuizCard';
+import ColabButton from '../../../components/static/ColabButton.astro';
+
+Reading data from an MCP server is forgiving. Taking an irreversible write action, like publishing a post to a company social account or closing a production issue, is not. Across the eight real-world case studies in this unit, the sharpest engineering lessons come from **write-capable remote MCP servers** that must stay safe even when an AI agent hallucinates an ID or retries on a timeout.
+
+---
+
+## 8 Real-World MCP Case Studies
+
+| Case Study | Primary Pattern Demonstrated |
+| :--- | :--- |
+| **1. Multi-Agent Travel Planner** | Coordinating Flight, Hotel, and Activity agents via shared MCP servers |
+| **2. YouTube-to-Issue Automation** | Extracting video metadata into project work items via repeatable MCP tools |
+| **3. Console Docs Retriever** | Streamable HTTP client streaming live technical documentation into terminals |
+| **4. Study Plan Generator App** | Conversational web app building week-by-week study roadmaps from MCP docs |
+| **5. In-Editor Docs & GitHub Clone** | Combining `.vscode/mcp.json` with custom repo-cloning and weather tools |
+| **6. API Gateway MCP Proxy** | Exposing existing REST operations as rate-limited, OAuth-protected MCP tools |
+| **7. GitHub MCP Registry** | Centralized discovery, curation, and one-click host setup |
+| **8. Write-Capable Social Publishing** | Draft-first approval, opaque IDs, idempotency keys, and `playground` dry-runs |
+
+---
+
+## 6 Design Rules for Write-Capable MCP Servers
+
+1. **Open Discovery, Authenticated Execution**: Serve `tools/list` without credentials so registries can inspect schemas, while every `tools/call` requires a valid Bearer token (`401 WWW-Authenticate` otherwise).
+2. **Draft-First Workflows**: `create_post` without `scheduledTime` saves a draft; only human-approved `update_post(status="scheduled")` publishes.
+3. **Behavioral Annotations**: Set `readOnlyHint=False`, `destructiveHint=True`, and `idempotentHint=True` so Hosts prompt for confirmation.
+4. **Un-Inventable Identifiers**: Reject hallucinated connection IDs that were not returned verbatim by `list_connections`.
+5. **Actionable Pre-Publish Errors**: Return specific errors (`"Instagram requires media"`) rather than generic `400 Bad Request` codes so the agent can self-correct.
+6. **Documented No-Op Test Target**: Accept `platforms: ["playground"]` so CI and reviewers can exercise the full write path without publishing to real accounts.
+
+---
+
+## Open the Companion Colab Notebook
+
+Launch the companion notebook to run both a **Write-Capable Social Publishing MCP Server** (with `playground` no-op testing) and a **Week-by-Week Study Plan Generator** powered by `gemini-2.5-flash`.
+
+<ColabButton
+  course="mcp-for-beginners"
+  notebook="19-real-world-case-studies-workshops-and-safe-write-servers.ipynb"
+  runtime="Free Tier CPU + Gemini API"
+/>
+
+---
+
+## Try It Yourself: Write-Capable Social Publishing MCP Server
+
+Run this pure-Python sandbox to test unauthenticated `tools/list` vs. `401` on `tools/call`, reject a hallucinated account ID, enforce idempotency keys, and run a safe `playground` dry-run.
+
+<PythonRunner
+  client:visible
+  title="Try it Yourself: Safe Write-Capable Social Publishing Server"
+  expectedOutput="Unauthenticated tools/list -> ['list_connections', 'create_post']
+Unauthenticated tools/call -> 401 Unauthorized (WWW-Authenticate: Bearer)
+Hallucinated ID 'fake-id' -> Error: Unknown connection_id (must come from list_connections)
+Instagram text-only -> Error: Instagram requires media - attach an image or video
+Dry-run create_post(platforms=['playground'], key='idem-1') -> {'id': 'dry_1', 'status': 'discarded_noop'}
+Idempotent retry(key='idem-1') -> {'id': 'dry_1', 'status': 'discarded_noop'}"
+  initialCode={`CONNECTIONS = {"conn_li_9f2a": "LinkedIn", "conn_bs_4c1d": "Bluesky"}
+IDEMPOTENCY_CACHE = {}
+
+def tools_list() -> list[str]:
+    return ["list_connections", "create_post"]
+
+def create_post(token: str | None, conn_id: str, platforms: list[str], media: str | None, idem_key: str):
+    if not token:
+        return "401 Unauthorized (WWW-Authenticate: Bearer)"
+    if idem_key in IDEMPOTENCY_CACHE:
+        return IDEMPOTENCY_CACHE[idem_key]
+    if platforms == ["playground"]:
+        res = {"id": "dry_1", "status": "discarded_noop"}
+        IDEMPOTENCY_CACHE[idem_key] = res
+        return res
+    if conn_id not in CONNECTIONS:
+        return "Error: Unknown connection_id (must come from list_connections)"
+    if "Instagram" in platforms and not media:
+        return "Error: Instagram requires media - attach an image or video"
+    res = {"id": "post_1", "status": "draft"}
+    IDEMPOTENCY_CACHE[idem_key] = res
+    return res
+
+print("Unauthenticated tools/list ->", tools_list())
+print("Unauthenticated tools/call ->", create_post(None, "conn_li_9f2a", ["LinkedIn"], None, "k0"))
+print("Hallucinated ID 'fake-id' ->", create_post("tok", "fake-id", ["LinkedIn"], None, "k1"))
+print("Instagram text-only ->", create_post("tok", "conn_li_9f2a", ["Instagram"], None, "k2"))
+print("Dry-run create_post(platforms=['playground'], key='idem-1') ->", create_post("tok", "conn_li_9f2a", ["playground"], None, "idem-1"))
+print("Idempotent retry(key='idem-1') ->", create_post("tok", "conn_li_9f2a", ["playground"], None, "idem-1"))`}
+/>
+
+---
+
+## Check Your Understanding
+
+<QuizCard
+  client:visible
+  question="Why should a write-capable MCP server expose a documented no-op target (such as platforms: ['playground']) in its tool schema?"
+  options={[
+    "To let attackers bypass authentication.",
+    "So automated CI suites and connector reviewers can test the full write validation path end-to-end without triggering irreversible real-world publications.",
+    "To disable JSON Schema validation.",
+    "Because MCP tools cannot return JSON objects."
+  ]}
+  correctAnswer={1}
+  explanation="A documented no-op target exercises schema checks, auth, and validation end-to-end while safely discarding the side effect, making CI and directory reviews safe."
+/>

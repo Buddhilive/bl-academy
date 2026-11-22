@@ -1,0 +1,129 @@
+---
+title: "Cursor-Based Pagination & Large Result Sets: Opaque Cursors & List Caching"
+track: "mcp-for-beginners"
+category: "Module 3: Practical Implementation, Pagination & Protocol Features"
+order: 12
+difficulty: "intermediate"
+xp: 80
+description: "Implement cursor-based pagination in MCP using opaque base64 JSON cursors, resilient client paginate_all loops, -32602 validation, and ttlMs caching."
+topic: "MCP Pagination"
+prerequisites: ["mcp-for-beginners/11-practical-implementation-sdks-and-api-gateways"]
+---
+import PythonRunner from '../../../components/islands/PythonRunner';
+import QuizCard from '../../../components/islands/QuizCard';
+import ColabButton from '../../../components/static/ColabButton.astro';
+
+When your MCP server exposes 10 tools, returning the entire catalog in one `tools/list` payload is effortless. When your server fronts 5,000 enterprise APIs, database tables, or document chunks, dumping everything at once causes memory spikes, HTTP timeouts, and LLM context window overflow. MCP solves this with **cursor-based pagination**.
+
+---
+
+## How MCP Cursor-Based Pagination Works
+
+Four standard MCP discovery methods support pagination natively: `tools/list`, `resources/list`, `prompts/list`, and `resources/templates/list`.
+
+Instead of exposing fragile integer page numbers, the server returns an opaque string **`nextCursor`** alongside the current page of items. The client passes that exact `cursor` back on the next call until the server returns `nextCursor: null` (or omits it).
+
+| Pagination Component | Responsibility | Best Practice |
+| :--- | :--- | :--- |
+| **Opaque Cursor** | Marks exact position in a sorted result set | Encode `{"offset": 20, "sort": "id"}` as URL-safe Base64 |
+| **Page Size** | Balances round trips vs. payload size | Keep pages between `10` and `100` items |
+| **Corrupt Cursor Handling** | Protects against tampered or expired tokens | Reject invalid cursors with JSON-RPC `-32602` |
+| **List Caching (`2026-07-28`)** | Reduces repeated discovery round trips | Attach `ttlMs` and `cacheScope` metadata (`SEP-2549`) |
+
+---
+
+## Writing Resilient `paginate_all()` Clients
+
+On the client side, always iterate until `nextCursor` is `None`, and include a max-page safety guard so a buggy server returning identical cursors can never trap your agent in an infinite loop.
+
+---
+
+## Open the Companion Colab Notebook
+
+Launch the companion notebook to implement Base64 opaque cursor pagination in Python `FastMCP`, write an async `paginate_all()` client iterator, and test cursor tampering validation.
+
+<ColabButton
+  course="mcp-for-beginners"
+  notebook="12-cursor-based-pagination-and-large-result-sets.ipynb"
+  runtime="Free Tier CPU"
+/>
+
+---
+
+## Try It Yourself: Base64 Opaque Cursor Server & `paginate_all` Client
+
+Run this pure-Python sandbox to page through a 35-tool catalog in chunks of 10 using URL-safe Base64 cursors, attach `ttlMs` caching metadata, and reject a tampered cursor with `-32602`.
+
+<PythonRunner
+  client:visible
+  title="Try it Yourself: Opaque Base64 Cursor Pagination"
+  expectedOutput="Page 1: 10 items (nextCursor=eyJvZmZzZXQiOiAxMH0=)
+Page 2: 10 items (nextCursor=eyJvZmZzZXQiOiAyMH0=)
+Page 3: 10 items (nextCursor=eyJvZmZzZXQiOiAzMH0=)
+Page 4: 5 items (nextCursor=None)
+Collected 35 unique tools across 4 pages (ttlMs=30000)
+Tampered cursor -> Error -32602: Invalid pagination cursor"
+  initialCode={`import base64
+import json
+
+ALL_TOOLS = [f"tool_{i:02d}" for i in range(35)]
+PAGE_SIZE = 10
+
+def encode_cursor(offset: int) -> str:
+    return base64.urlsafe_b64encode(json.dumps({"offset": offset}).encode()).decode()
+
+def decode_cursor(cursor: str | None) -> int:
+    if not cursor:
+        return 0
+    try:
+        data = json.loads(base64.urlsafe_b64decode(cursor.encode()).decode())
+        offset = int(data["offset"])
+        if offset < 0:
+            raise ValueError("negative")
+        return offset
+    except Exception:
+        raise ValueError("-32602: Invalid pagination cursor")
+
+def list_tools_page(cursor: str | None = None) -> dict:
+    start = decode_cursor(cursor)
+    end = min(start + PAGE_SIZE, len(ALL_TOOLS))
+    next_cursor = encode_cursor(end) if end < len(ALL_TOOLS) else None
+    return {"tools": ALL_TOOLS[start:end], "nextCursor": next_cursor, "ttlMs": 30000}
+
+# Client paginate_all loop
+collected = []
+cur = None
+page_num = 0
+while True:
+    page_num += 1
+    resp = list_tools_page(cur)
+    collected.extend(resp["tools"])
+    print(f"Page {page_num}: {len(resp['tools'])} items (nextCursor={resp['nextCursor']})")
+    cur = resp["nextCursor"]
+    if cur is None:
+        break
+
+print(f"Collected {len(set(collected))} unique tools across {page_num} pages (ttlMs={resp['ttlMs']})")
+
+try:
+    list_tools_page("!!!not-valid-base64!!!")
+except ValueError as exc:
+    print("Tampered cursor -> Error", exc)`}
+/>
+
+---
+
+## Check Your Understanding
+
+<QuizCard
+  client:visible
+  question="Why should MCP servers encode pagination cursors as opaque Base64 strings instead of exposing raw SQL OFFSET numbers?"
+  options={[
+    "Base64 encrypts the data with AES-256.",
+    "Opaque cursors hide internal storage details so the server can change sorting or keyset indexing without breaking clients.",
+    "JSON-RPC does not support integer fields.",
+    "Opaque cursors automatically double the network bandwidth."
+  ]}
+  correctAnswer={1}
+  explanation="Treating cursors as opaque strings decouples the client from server internals, letting you switch from offset paging to keyset/timestamp paging later without breaking client code."
+/>

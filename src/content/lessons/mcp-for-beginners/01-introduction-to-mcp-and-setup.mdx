@@ -1,0 +1,146 @@
+---
+title: "Introduction to Model Context Protocol (MCP): Architecture, Federation & Google AI Studio Setup"
+track: "mcp-for-beginners"
+category: "Module 1: MCP Foundations, Specification 2026-07-28 & Security"
+order: 1
+difficulty: "beginner"
+xp: 55
+description: "Understand how the Model Context Protocol solves the M x N integration problem, explore Host-Client-Server architecture, and configure Google AI Studio with FastMCP."
+topic: "MCP Foundations"
+prerequisites: ["generative-ai-for-beginners/22-building-with-meta-llama-models"]
+---
+import PythonRunner from '../../../components/islands/PythonRunner';
+import QuizCard from '../../../components/islands/QuizCard';
+import ColabButton from '../../../components/static/ColabButton.astro';
+
+When you move from calling a single LLM prompt to building real AI applications, you immediately hit an integration wall. Every time you want your model to read a database, search internal docs, or call a calculator, you end up writing custom glue code for that exact model and that exact tool. The **Model Context Protocol (MCP)** fixes that fragmentation by acting as a universal connector for AI applications, much like USB-C standardized how laptops talk to external devices.
+
+I still remember how brittle early LLM tool integrations felt: change one model provider or upgrade one API wrapper, and half your function-calling schemas broke overnight. MCP replaces those fragile one-off adapters with an open, standardized client-server protocol so you can build a tool server once and connect it to any compatible AI host.
+
+---
+
+## Why Standardization Matters: Solving the $M \times N$ Problem
+
+Without a shared protocol, connecting $M$ different AI applications (IDEs, chat interfaces, autonomous agents) to $N$ external tools or data sources requires building and maintaining $M \times N$ custom integrations:
+
+$$C_{\text{custom}} = M \times N$$
+
+With MCP, each AI application implements a single MCP client interface, and each tool or knowledge provider implements a single MCP server interface. That collapses integration complexity from quadratic to linear:
+
+$$C_{\text{MCP}} = M + N$$
+
+For an engineering team running 5 AI apps across 12 internal services, that drops 60 custom connectors down to 17 standardized implementations.
+
+---
+
+## High-Level MCP Architecture & Host Components
+
+MCP uses a **Host-Client-Server** model built on a two-layer architecture:
+
+1. **Data Layer**: JSON-RPC 2.0 messages, per-request metadata, capability discovery (`server/discover`), and core primitives (**Resources**, **Prompts**, **Tools**, and **Elicitation**).
+2. **Transport Layer**: Local subprocess **`stdio`** for isolated tools on the same machine, and **`Streamable HTTP`** (with optional Server-Sent Events framing) for remote services.
+
+| Component | Role in the Ecosystem | Core Responsibilities |
+| :--- | :--- | :--- |
+| **MCP Host** | The user-facing AI application (VS Code, Claude Desktop, custom agent) | Runs or calls the LLM, manages **Tool Registry**, **Authentication**, **Request Handler**, and **Response Formatter** |
+| **MCP Client** | Protocol connector created by the Host (logical 1:1 with a server) | Sends JSON-RPC 2.0 requests, runs `server/discover`, handles notifications and responses |
+| **MCP Server** | Lightweight capability provider (local or remote) | Exposes **Resources** (knowledge), **Prompts** (workflows), and **Tools** (executable actions) |
+
+### Knowledge & Tool Federation
+
+MCP servers do not just run isolated functions. They also federate knowledge and actions across servers. One server (`Server A`) can expose your company's indexed technical documentation, while another (`Server B`) executes calculations, database queries, or ticket updates. The MCP Host maintains a unified Tool Registry across all connected servers, so the AI model discovers and invokes capabilities dynamically without hardcoded glue code.
+
+---
+
+## Setting Up Google AI Studio Free Tier & Python `mcp`
+
+Every hands-on notebook in this course runs on **Google Colab Free Tier** using the official **`mcp` Python SDK (`FastMCP`)** and **Google AI Studio Free Tier** (`google-genai`). You do not need a credit card or paid cloud subscription.
+
+1. Visit [aistudio.google.com](https://aistudio.google.com/) and sign in with your Google account.
+2. Click **Get API key** -> **Create API key** and copy your key (`AIza...`).
+3. In Google Colab, click the **Secrets** (key icon) tab on the left sidebar, add a secret named `GEMINI_API_KEY`, paste your key, and toggle **Notebook access** ON.
+4. Locally, keep your key in a gitignored `.env` file loaded via `python-dotenv`:
+
+```bash
+pip install mcp google-genai python-dotenv
+```
+
+```python
+from google.colab import userdata
+from google import genai
+
+client = genai.Client(api_key=userdata.get("GEMINI_API_KEY"))
+```
+
+---
+
+## Open the Companion Colab Notebook
+
+Launch the interactive setup notebook to install `mcp` and `google-genai`, verify your `GEMINI_API_KEY`, and connect a Gemini model to a live MCP tool registry.
+
+<ColabButton
+  course="mcp-for-beginners"
+  notebook="01-introduction-to-mcp-and-setup.ipynb"
+  runtime="Free Tier CPU + Gemini API"
+/>
+
+---
+
+## Try It Yourself: $M \times N$ Complexity & MCP Host Federation Simulator
+
+Run this pure-Python sandbox to calculate $M \times N$ vs. $M + N$ integration savings and trace how an MCP Host (`Tool Registry` -> `Authentication` -> `Request Handler` -> `Response Formatter`) dispatches a request across two federated MCP servers.
+
+<PythonRunner
+  client:visible
+  title="Try it Yourself: M x N Complexity & MCP Host Dispatch"
+  expectedOutput="Topology: 5 AI Apps x 12 Tools
+Custom connectors (M*N): 60 -> MCP connectors (M+N): 17 (71.7% reduction)
+[Host:Auth] Verified caller='buddhi'
+[Host:Registry] Routed 'search_docs' -> KnowledgeServer
+[Host:Registry] Routed 'calc_sum' -> MathServer
+[Host:Formatter] Combined 2 federated results for LLM"
+  initialCode={`M, N = 5, 12
+custom_count = M * N
+mcp_count = M + N
+reduction = (1 - mcp_count / custom_count) * 100
+
+print(f"Topology: {M} AI Apps x {N} Tools")
+print(f"Custom connectors (M*N): {custom_count} -> MCP connectors (M+N): {mcp_count} ({reduction:.1f}% reduction)")
+
+# Simulated MCP Host Federation Dispatch
+tool_registry = {
+    "search_docs": ("KnowledgeServer", lambda q: f"3 docs matched '{q}'"),
+    "calc_sum": ("MathServer", lambda a, b: a + b),
+}
+
+def host_dispatch(caller: str, calls: list[tuple[str, dict]]):
+    if not caller:
+        raise PermissionError("Unauthenticated caller")
+    print(f"[Host:Auth] Verified caller='{caller}'")
+    results = []
+    for tool_name, kwargs in calls:
+        server_name, fn = tool_registry[tool_name]
+        print(f"[Host:Registry] Routed '{tool_name}' -> {server_name}")
+        results.append((tool_name, fn(**kwargs)))
+    print(f"[Host:Formatter] Combined {len(results)} federated results for LLM")
+    return results
+
+host_dispatch("buddhi", [("search_docs", {"q": "MCP"}), ("calc_sum", {"a": 10, "b": 32})])`}
+/>
+
+---
+
+## Check Your Understanding
+
+<QuizCard
+  client:visible
+  question="In the MCP architecture, which component maintains the Tool Registry, enforces user consent, and communicates directly with MCP Servers?"
+  options={[
+    "The LLM weights themselves act as the MCP Client and open sockets directly.",
+    "The MCP Host application coordinates the LLM, manages one MCP Client per server, and routes tool calls.",
+    "The JSON-RPC Transport Layer automatically executes database queries without a server.",
+    "Each external API must implement its own custom LLM prompt parser."
+  ]}
+  correctAnswer={1}
+  explanation="The AI model is not an MCP client itself. The MCP Host application orchestrates the LLM, creates logical MCP Clients for each MCP Server, enforces authentication and consent, and formats tool results back to the model."
+/>

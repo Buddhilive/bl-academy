@@ -1,0 +1,106 @@
+---
+title: "Client Sampling Migration & Interactive Sandboxed MCP Apps (SEP-1865)"
+track: "mcp-for-beginners"
+category: "Module 2: Building MCP Servers, Clients, Gemini Hosts & Transports"
+order: 10
+difficulty: "intermediate"
+xp: 80
+description: "Migrate legacy 2025-11-25 server sampling to direct Gemini API calls and build interactive sandboxed ui:// HTML MCP Apps under the SEP-1865 Extension."
+topic: "Sampling & MCP Apps"
+prerequisites: ["mcp-for-beginners/09-authentication-rbac-mcp-hosts-and-deployment"]
+---
+import PythonRunner from '../../../components/islands/PythonRunner';
+import QuizCard from '../../../components/islands/QuizCard';
+import ColabButton from '../../../components/static/ColabButton.astro';
+
+Up to now, every MCP tool we built returned plain text or JSON. Two advanced interaction patterns go further: **Sampling** (where a server asks an LLM to summarize or reason) and **MCP Apps (`SEP-1865`)**, where a tool returns an interactive HTML dashboard rendered right inside the user's chat host.
+
+---
+
+## Migrating Legacy Sampling (`2025-11-25`) to Direct LLM Calls (`2026-07-28`)
+
+In MCP `2025-11-25`, a server could send a `sampling/createMessage` request back to the Host, attaching `modelPreferences` weighted across three priorities ($w_c + w_s + w_i$):
+
+$$S_{\text{model}} = w_{\text{cost}} \cdot C + w_{\text{speed}} \cdot V + w_{\text{intelligence}} \cdot I$$
+
+While useful for keeping API keys off the server, protocol-level Sampling complicated stateless horizontal scaling and is **deprecated in `2026-07-28`**. For new servers, integrate directly with an LLM provider API like **Google AI Studio (`google-genai`)** inside your server when you need server-side summarization, or return structured data so the Host's own Gemini model can reason over it.
+
+---
+
+## Interactive MCP Apps (`SEP-1865`)
+
+**MCP Apps** is an official `2026-07-28` extension that lets an MCP server ship self-contained interactive UI widgets (charts, forms, dashboards) rendered inside a sandboxed `<iframe>` by the Host.
+
+| Registration Step | MCP Primitive | Purpose |
+| :--- | :--- | :--- |
+| **1. Tool Metadata** | `@mcp.tool()` with `_meta.ui.resourceUri` | Tells the Host which `ui://` template visualizes this tool's output |
+| **2. UI Resource** | `@mcp.resource("ui://app/view.html")` | Serves the bundled HTML/JS (`mimeType: "text/html;profile=mcp-app"`) so Hosts can prefetch and security-review it |
+| **3. Bridge Protocol** | `postMessage` JSON-RPC (`ui/initialize`, `tools/call`) | Lets buttons inside the sandboxed iframe trigger live server tool calls |
+
+---
+
+## Open the Companion Colab Notebook
+
+Launch the companion notebook to compare legacy `sampling/createMessage` against direct `google-genai` calls and render a live `ui://` MCP App HTML dashboard inside Google Colab.
+
+<ColabButton
+  course="mcp-for-beginners"
+  notebook="10-client-sampling-and-interactive-mcp-apps.ipynb"
+  runtime="Free Tier CPU + Gemini API"
+/>
+
+---
+
+## Try It Yourself: Sampling Scorer & `SEP-1865` MCP App Manifest Compiler
+
+Run this pure-Python sandbox to score model candidates using legacy `modelPreferences`, verify the `2026-07-28` direct-API migration path, and compile a linked `ui://` MCP App tool + resource manifest.
+
+<PythonRunner
+  client:visible
+  title="Try it Yourself: Model Preference Scorer & MCP App Manifest"
+  expectedOutput="Legacy Sampling best match: gemini-2.5-flash (score=0.90)
+2026-07-28 Migration: Use direct google-genai client instead of sampling/createMessage
+MCP App Tool 'weather_dashboard' -> ui://weather/dashboard.html
+UI Resource mimeType: text/html;profile=mcp-app (sandboxed=True)"
+  initialCode={`# 1. Legacy 2025-11-25 modelPreferences weighted scorer
+prefs = {"cost": 0.4, "speed": 0.4, "intelligence": 0.2}
+models = {
+    "gemini-2.5-flash": {"cost": 0.95, "speed": 0.95, "intelligence": 0.70},
+    "gemini-2.5-pro": {"cost": 0.50, "speed": 0.60, "intelligence": 0.98},
+}
+best = max(models.items(), key=lambda kv: sum(prefs[k] * kv[1][k] for k in prefs))
+score = sum(prefs[k] * best[1][k] for k in prefs)
+print(f"Legacy Sampling best match: {best[0]} (score={score:.2f})")
+print("2026-07-28 Migration: Use direct google-genai client instead of sampling/createMessage")
+
+# 2. SEP-1865 MCP App Tool + ui:// Resource binding
+resource_uri = "ui://weather/dashboard.html"
+app_tool = {
+    "name": "weather_dashboard",
+    "_meta": {"ui": {"resourceUri": resource_uri}},
+}
+app_resource = {
+    "uri": resource_uri,
+    "mimeType": "text/html;profile=mcp-app",
+    "text": "<html><body><h1>Weather</h1><button onclick='callTool()'>Refresh</button></body></html>",
+}
+print(f"MCP App Tool '{app_tool['name']}' -> {app_tool['_meta']['ui']['resourceUri']}")
+print(f"UI Resource mimeType: {app_resource['mimeType']} (sandboxed={'<button' in app_resource['text']})")`}
+/>
+
+---
+
+## Check Your Understanding
+
+<QuizCard
+  client:visible
+  question="In the SEP-1865 MCP Apps extension, how does an MCP server declare an interactive UI for a tool so the Host can prefetch and security-review it?"
+  options={[
+    "By returning raw Python Tkinter window code inside stderr.",
+    "By linking _meta.ui.resourceUri on the tool to a registered ui:// HTML resource.",
+    "By disabling iframe sandboxing in the browser.",
+    "By embedding executable bash scripts inside JSON-RPC error codes."
+  ]}
+  correctAnswer={1}
+  explanation="MCP Apps pair a tool's _meta.ui.resourceUri metadata with a ui:// resource (text/html;profile=mcp-app) so Hosts can prefetch, cache, security-review, and render the UI inside a sandboxed iframe."
+/>

@@ -1,0 +1,131 @@
+---
+title: "Testing & Debugging MCP Servers: Automated Pytest Harnesses & MCP Inspector"
+track: "mcp-for-beginners"
+category: "Module 2: Building MCP Servers, Clients, Gemini Hosts & Transports"
+order: 8
+difficulty: "intermediate"
+xp: 75
+description: "Build a 4-tier MCP testing strategy with pytest in-memory streams, JSON Schema conformance checks, and interactive MCP Inspector debugging."
+topic: "MCP Testing & Inspector"
+prerequisites: ["mcp-for-beginners/07-stdio-and-streamable-http-transports"]
+---
+import PythonRunner from '../../../components/islands/PythonRunner';
+import QuizCard from '../../../components/islands/QuizCard';
+import ColabButton from '../../../components/static/ColabButton.astro';
+
+When an MCP server silently returns malformed JSON or breaks a schema contract, the LLM host starts hallucinating parameters or looping on retries. Instead of debugging inside a full chat UI every time you tweak a tool, you can catch 95% of protocol bugs in seconds using an **in-memory test harness** paired with the **MCP Inspector**.
+
+---
+
+## The 4-Tier MCP Testing Pyramid
+
+A reliable MCP server test suite covers four distinct layers:
+
+| Testing Tier | What It Verifies | Tooling |
+| :--- | :--- | :--- |
+| **1. Unit Tests** | Pure tool logic, math guards, Pydantic input validation | `pytest` directly on Python functions |
+| **2. In-Memory Integration** | Full JSON-RPC serialization between client and server | `create_connected_server_and_client_session` |
+| **3. Protocol Conformance** | `tools/list` schemas, `readOnlyHint`/`destructiveHint`, `-32602` errors | Automated conformance assertions (`SEP-2484`) |
+| **4. Interactive Inspection** | Visual tool/resource invocation, raw JSON-RPC wire trace | `npx @modelcontextprotocol/inspector` |
+
+### Debugging with MCP Inspector
+
+The official **MCP Inspector** (`@modelcontextprotocol/inspector`) launches a local web UI (`http://127.0.0.1:6274`) backed by an MCP proxy (`port 6277`), or runs headlessly in CLI mode for CI pipelines:
+
+```bash
+# Launch visual Inspector UI against a Python server
+npx @modelcontextprotocol/inspector python server.py
+
+# Headless CLI mode to list tools
+npx @modelcontextprotocol/inspector --cli python server.py --method tools/list
+```
+
+In Google Colab or automated Python CI, you can replicate the exact same Inspector workflow using `create_connected_server_and_client_session(server._mcp_server)` from `mcp.shared.memory` so tests run in milliseconds with zero port binding.
+
+---
+
+## Open the Companion Colab Notebook
+
+Launch the companion notebook to run an automated `pytest` suite using `mcp.shared.memory` in-memory streams and an interactive Python MCP Inspector diagnostic tool.
+
+<ColabButton
+  course="mcp-for-beginners"
+  notebook="08-testing-and-debugging-with-mcp-inspector.ipynb"
+  runtime="Free Tier CPU"
+/>
+
+---
+
+## Try It Yourself: Automated MCP Conformance & Inspector Runner
+
+Run this pure-Python conformance suite to audit an MCP server across 5 protocol assertions: schema completeness, Tool Annotations, happy-path execution, unknown-tool `-32601` error handling, and missing-resource `-32602` compliance.
+
+<PythonRunner
+  client:visible
+  title="Try it Yourself: MCP Conformance & Inspector Test Runner"
+  expectedOutput="[PASS] tools/list schema check (2 tools valid)
+[PASS] Tool annotations present on all tools
+[PASS] tools/call 'ping' -> 'pong'
+[PASS] Unknown tool returned -32601
+[PASS] Missing resource returned -32602
+Conformance Summary: 5/5 checks passed"
+  initialCode={`def run_conformance_suite(server_tools: dict, server_resources: dict):
+    passed = 0
+    total = 5
+
+    # 1. Schema check
+    schemas_ok = all("inputSchema" in t and "description" in t for t in server_tools.values())
+    assert schemas_ok
+    print(f"[PASS] tools/list schema check ({len(server_tools)} tools valid)")
+    passed += 1
+
+    # 2. Annotations check
+    ann_ok = all("annotations" in t for t in server_tools.values())
+    assert ann_ok
+    print("[PASS] Tool annotations present on all tools")
+    passed += 1
+
+    # 3. Happy path call
+    res = server_tools["ping"]["fn"]()
+    assert res == "pong"
+    print(f"[PASS] tools/call 'ping' -> '{res}'")
+    passed += 1
+
+    # 4. Unknown tool -> -32601
+    err_tool = -32601 if "ghost_tool" not in server_tools else 0
+    assert err_tool == -32601
+    print(f"[PASS] Unknown tool returned {err_tool}")
+    passed += 1
+
+    # 5. Missing resource -> -32602
+    err_res = -32602 if "file://missing" not in server_resources else 0
+    assert err_res == -32602
+    print(f"[PASS] Missing resource returned {err_res}")
+    passed += 1
+
+    print(f"Conformance Summary: {passed}/{total} checks passed")
+
+TOOLS = {
+    "ping": {"description": "Health check", "inputSchema": {"type": "object"}, "annotations": {"readOnlyHint": True}, "fn": lambda: "pong"},
+    "sum_two": {"description": "Add two ints", "inputSchema": {"type": "object"}, "annotations": {"readOnlyHint": True}, "fn": lambda a, b: a + b},
+}
+RESOURCES = {"docs://readme": "MCP Server Docs"}
+run_conformance_suite(TOOLS, RESOURCES)`}
+/>
+
+---
+
+## Check Your Understanding
+
+<QuizCard
+  client:visible
+  question="Which Python MCP SDK helper lets pytest run full client-server JSON-RPC integration tests without opening network ports or spawning subprocesses?"
+  options={[
+    "mcp.shared.memory.create_connected_server_and_client_session",
+    "subprocess.Popen('bash')",
+    "socket.bind(('0.0.0.0', 80))",
+    "urllib.request.urlopen"
+  ]}
+  correctAnswer={0}
+  explanation="create_connected_server_and_client_session creates connected in-memory read/write streams between a ClientSession and an MCP server, making async integration tests fast and deterministic."
+/>

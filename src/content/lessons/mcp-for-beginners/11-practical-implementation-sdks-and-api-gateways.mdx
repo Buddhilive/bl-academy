@@ -1,0 +1,114 @@
+---
+title: "Practical Implementation: Multi-Language SDKs & Open-Source MCP API Gateways"
+track: "mcp-for-beginners"
+category: "Module 3: Practical Implementation, Pagination & Protocol Features"
+order: 11
+difficulty: "intermediate"
+xp: 80
+description: "Build composable MCP server workflows across official SDKs and protect remote MCP endpoints with an open-source FastAPI Reverse-Proxy Gateway and token-bucket rate limiter."
+topic: "MCP SDKs & API Gateways"
+prerequisites: ["mcp-for-beginners/10-client-sampling-and-interactive-mcp-apps"]
+---
+import PythonRunner from '../../../components/islands/PythonRunner';
+import QuizCard from '../../../components/islands/QuizCard';
+import ColabButton from '../../../components/static/ColabButton.astro';
+
+When you expose an MCP server over Streamable HTTP to dozens of developers or autonomous agents, putting the raw server directly on the internet is risky. One runaway agent loop can hammer an expensive tool a thousand times in a minute. In production, you place an **MCP API Gateway** in front of your server to enforce rate limits, validate tokens, route by `Mcp-Method` and `Mcp-Name`, and record audit logs.
+
+---
+
+## Cross-SDK Production Patterns
+
+Every official MCP SDK supports the same core server primitives, though each language ecosystem brings its own strengths:
+
+| Ecosystem | Runtime & Framework | Key Production Strength |
+| :--- | :--- | :--- |
+| **Python (`mcp`)** | `asyncio` + `FastMCP` / Starlette | Fastest path for AI/ML, vector search, and Gemini integration |
+| **TypeScript** | Node.js + Express / Zod | Shared types with web frontends and browser MCP Apps |
+| **Java** | Spring Boot + Project Reactor | Enterprise dependency injection and reactive streams |
+| **C# (.NET)** | ASP.NET Core + `ModelContextProtocol` | High-throughput typed services and Windows/cloud tooling |
+
+---
+
+## Token-Bucket Rate Limiting at the MCP Gateway
+
+Unlike simple REST APIs, not all MCP calls cost the same. A `tools/list` metadata lookup is cheap (`cost = 1`), whereas a `tools/call` invoking a heavy database or web search tool is expensive (`cost = 2` or `3`). A **Token-Bucket Rate Limiter** handles burst traffic smoothly while enforcing steady-state limits:
+
+$$B(t) = \min\Big(B_{\max},\; B(t_0) + r \cdot (t - t_0)\Big)$$
+
+Here, $B_{\max}$ is the bucket's maximum burst capacity, $r$ is the refill rate in tokens per second, and each incoming MCP request deducts its method-specific cost $c$. If $B(t) < c$, the gateway immediately returns HTTP `429 Too Many Requests` with a `Retry-After` header before the backend MCP server does any work.
+
+---
+
+## Open the Companion Colab Notebook
+
+Launch the companion notebook to build and test an open-source **FastAPI Reverse-Proxy MCP Gateway** with per-tenant token-bucket rate limiting, JWT checks, and `Mcp-Method` header routing.
+
+<ColabButton
+  course="mcp-for-beginners"
+  notebook="11-practical-implementation-sdks-and-api-gateways.ipynb"
+  runtime="Free Tier CPU"
+/>
+
+---
+
+## Try It Yourself: MCP API Gateway & Token-Bucket Rate Limiter
+
+Run this pure-Python sandbox to simulate an open-source MCP Gateway enforcing weighted token-bucket limits (`tools/list` costs 1 token, `tools/call` costs 2 tokens) and rejecting burst overflow with HTTP `429`.
+
+<PythonRunner
+  client:visible
+  title="Try it Yourself: MCP Gateway Token-Bucket Rate Limiter"
+  expectedOutput="[t=0.0s] tools/list -> 200 OK (remaining_tokens=4.0)
+[t=0.0s] tools/call -> 200 OK (remaining_tokens=2.0)
+[t=0.0s] tools/call -> 200 OK (remaining_tokens=0.0)
+[t=0.0s] tools/call -> 429 Too Many Requests (Retry-After: 2.0s)
+[t=3.0s] tools/call -> 200 OK (remaining_tokens=1.0)"
+  initialCode={`class TokenBucketGateway:
+    def __init__(self, capacity: float, refill_rate: float):
+        self.capacity = capacity
+        self.refill_rate = refill_rate
+        self.buckets = {}
+
+    def allow(self, tenant: str, method: str, now_s: float) -> str:
+        cost = 1.0 if method == "tools/list" else 2.0
+        tokens, last_t = self.buckets.get(tenant, (self.capacity, now_s))
+        tokens = min(self.capacity, tokens + self.refill_rate * (now_s - last_t))
+
+        if tokens < cost:
+            retry_after = (cost - tokens) / self.refill_rate
+            self.buckets[tenant] = (tokens, now_s)
+            return f"429 Too Many Requests (Retry-After: {retry_after:.1f}s)"
+
+        tokens -= cost
+        self.buckets[tenant] = (tokens, now_s)
+        return f"200 OK (remaining_tokens={tokens:.1f})"
+
+gw = TokenBucketGateway(capacity=5.0, refill_rate=1.0)
+events = [
+    (0.0, "tools/list"),
+    (0.0, "tools/call"),
+    (0.0, "tools/call"),
+    (0.0, "tools/call"),
+    (3.0, "tools/call"),
+]
+for t, m in events:
+    print(f"[t={t:.1f}s] {m} -> {gw.allow('tenant-alpha', m, t)}")`}
+/>
+
+---
+
+## Check Your Understanding
+
+<QuizCard
+  client:visible
+  question="Why do MCP 2026-07-28 Streamable HTTP requests include Mcp-Method and Mcp-Name HTTP headers?"
+  options={[
+    "So API gateways and load balancers can route, rate-limit, and meter specific tools without parsing the full JSON-RPC body.",
+    "Because JSON-RPC 2.0 no longer includes a method field in the body.",
+    "To bypass TLS encryption on HTTP connections.",
+    "To replace OAuth Bearer tokens."
+  ]}
+  correctAnswer={0}
+  explanation="Mcp-Method and Mcp-Name allow L7 reverse proxies and API gateways to apply weighted rate limits, routing rules, and metrics per tool without deserializing every JSON payload."
+/>
