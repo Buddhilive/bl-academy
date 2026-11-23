@@ -9,7 +9,6 @@ description: "Learn how data scientists classify raw data into quantitative vs. 
 topic: "Data Classification"
 prerequisites: ["data-science-for-beginners/02-data-science-ethics"]
 ---
-import PythonRunner from '../../../components/islands/PythonRunner';
 import QuizCard from '../../../components/islands/QuizCard';
 import ColabButton from '../../../components/static/ColabButton.astro';
 
@@ -63,20 +62,10 @@ Common retrieval channels include **Relational/NoSQL Databases** (queried via SQ
 
 Let's run a pure-Python classifier and sensor stream sanitizer that inspects mixed fields, separates quantitative metrics from qualitative identifiers, and flags corrupted `"e"` readings in an unstructured sensor stream.
 
-<PythonRunner
-  client:visible
-  title="Try it Yourself: Data Taxonomy & Sensor Stream Sanitizer"
-  expectedOutput="=== Field Classification ===
-temperature_c: Quantitative (numeric)
-aqi_index: Quantitative (numeric)
-zip_code: Qualitative (identifier)
-sensor_status: Qualitative (categorical)
+**Data Taxonomy & Sensor Stream Sanitizer**
 
-=== Unstructured Sensor Stream Audit ===
-Valid readings: [101.2, 101.5, 100.9]
-Corrupted tokens skipped: ['e', 'ERR']
-Mean pressure: 101.20 hPa"
-  initialCode={`sample_record = {
+```python
+sample_record = {
     "temperature_c": 22.4,
     "aqi_index": 42,
     "zip_code": "94107",
@@ -104,8 +93,23 @@ for token in raw_stream:
 print("\n=== Unstructured Sensor Stream Audit ===")
 print(f"Valid readings: {valid}")
 print(f"Corrupted tokens skipped: {corrupted}")
-print(f"Mean pressure: {sum(valid) / len(valid):.2f} hPa")`}
-/>
+print(f"Mean pressure: {sum(valid) / len(valid):.2f} hPa")
+```
+
+**Expected Output:**
+
+```text
+=== Field Classification ===
+temperature_c: Quantitative (numeric)
+aqi_index: Quantitative (numeric)
+zip_code: Qualitative (identifier)
+sensor_status: Qualitative (categorical)
+
+=== Unstructured Sensor Stream Audit ===
+Valid readings: [101.2, 101.5, 100.9]
+Corrupted tokens skipped: ['e', 'ERR']
+Mean pressure: 101.20 hPa
+```
 
 ---
 

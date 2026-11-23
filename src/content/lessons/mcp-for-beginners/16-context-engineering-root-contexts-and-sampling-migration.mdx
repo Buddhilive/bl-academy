@@ -9,7 +9,6 @@ description: "Apply Context Engineering principles in MCP, measure Context Utili
 topic: "Context Engineering"
 prerequisites: ["mcp-for-beginners/15-oauth2-oidc-security-and-identity-hardening"]
 ---
-import PythonRunner from '../../../components/islands/PythonRunner';
 import QuizCard from '../../../components/islands/QuizCard';
 import ColabButton from '../../../components/static/ColabButton.astro';
 
@@ -59,14 +58,10 @@ Launch the companion notebook to build a token-budget context assembler, enforce
 
 Run this pure-Python sandbox to pack MCP context chunks by value-density within a strict token budget, compute Context Utilization Ratio, and block a `../../etc/passwd` traversal attempt.
 
-<PythonRunner
-  client:visible
-  title="Try it Yourself: Context Budget Optimizer & Workspace Sandbox"
-  expectedOutput="Packed 3/4 chunks (tokens=95/100): ['arch_spec', 'auth_rules', 'sql_schema']
-Context Utilization Ratio (CUR): 0.67 (2/3 packed chunks cited)
-Sandbox check '/workspace/src/app.py' -> ALLOWED
-Sandbox check '/workspace/../../etc/passwd' -> BLOCKED (path traversal)"
-  initialCode={`from pathlib import PurePosixPath
+**Context Budget Optimizer & Workspace Sandbox**
+
+```python
+from pathlib import PurePosixPath
 import posixpath
 
 # 1. Greedy value-density context packing within token budget
@@ -98,8 +93,17 @@ def check_workspace_path(candidate: str) -> str:
     return "BLOCKED (path traversal)"
 
 for p in ["/workspace/src/app.py", "/workspace/../../etc/passwd"]:
-    print(f"Sandbox check '{p}' -> {check_workspace_path(p)}")`}
-/>
+    print(f"Sandbox check '{p}' -> {check_workspace_path(p)}")
+```
+
+**Expected Output:**
+
+```text
+Packed 3/4 chunks (tokens=95/100): ['arch_spec', 'auth_rules', 'sql_schema']
+Context Utilization Ratio (CUR): 0.67 (2/3 packed chunks cited)
+Sandbox check '/workspace/src/app.py' -> ALLOWED
+Sandbox check '/workspace/../../etc/passwd' -> BLOCKED (path traversal)
+```
 
 ---
 

@@ -9,7 +9,6 @@ description: "Compare literal vs. ML translation across English, Irish, and Fren
 topic: "Translation & Sentiment"
 prerequisites: ["ml-for-beginners/17-common-nlp-tasks-and-textblob"]
 ---
-import PythonRunner from '../../../components/islands/PythonRunner';
 import QuizCard from '../../../components/islands/QuizCard';
 import ColabButton from '../../../components/static/ColabButton.astro';
 
@@ -54,14 +53,10 @@ Older versions of `TextBlob.translate()` relied on an unauthenticated legacy web
 
 Let's score the opening and closing lines of *Pride and Prejudice* plus Jane Austen's tricky Regency sentences in pure Python to see exactly where simple word-lexicons succeed and where irony fools them.
 
-<PythonRunner
-  client:visible
-  title="Try it Yourself: Pride and Prejudice Sentiment & Irony Audit"
-  expectedOutput="Opening Quote Polarity: +0.55
-Closing Quote Polarity: +0.85
-Irony Trap ('Our distress, my dear Lizzy, is very great.') -> Lexicon: +0.90 (FALSE POSITIVE!)
-Sarcasm Trap ('Great, a wonderful waste of time') -> Lexicon: +0.40 (SARCASTIC NEGATIVE!)"
-  initialCode={`LEXICON = {
+**Pride and Prejudice Sentiment & Irony Audit**
+
+```python
+LEXICON = {
     "good": 0.7, "truth": 0.4, "warmest": 0.9, "gratitude": 0.8, "loved": 0.85,
     "dear": 0.8, "great": 1.0, "wonderful": 1.0, "waste": -0.8, "distress": -0.7,
 }
@@ -80,8 +75,17 @@ irony = "Our distress, my dear Lizzy, is very great."
 print(f"Irony Trap ('{irony}') -> Lexicon: {lexicon_polarity(irony, ignore=('distress',)):+.2f} (FALSE POSITIVE!)")
 
 sarcasm = "Great, a wonderful waste of time"
-print(f"Sarcasm Trap ('{sarcasm}') -> Lexicon: {lexicon_polarity(sarcasm):+.2f} (SARCASTIC NEGATIVE!)")`}
-/>
+print(f"Sarcasm Trap ('{sarcasm}') -> Lexicon: {lexicon_polarity(sarcasm):+.2f} (SARCASTIC NEGATIVE!)")
+```
+
+**Expected Output:**
+
+```text
+Opening Quote Polarity: +0.55
+Closing Quote Polarity: +0.85
+Irony Trap ('Our distress, my dear Lizzy, is very great.') -> Lexicon: +0.90 (FALSE POSITIVE!)
+Sarcasm Trap ('Great, a wonderful waste of time') -> Lexicon: +0.40 (SARCASTIC NEGATIVE!)
+```
 
 ---
 

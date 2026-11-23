@@ -9,7 +9,6 @@ description: "Understand the five fairness-related harms, six Responsible AI pri
 topic: "ML Fairness"
 prerequisites: ["ml-for-beginners/02-history-of-machine-learning"]
 ---
-import PythonRunner from '../../../components/islands/PythonRunner';
 import QuizCard from '../../../components/islands/QuizCard';
 import ColabButton from '../../../components/static/ColabButton.astro';
 
@@ -67,16 +66,10 @@ Once trained, we never rely solely on aggregate accuracy. Instead, we use open-s
 
 Let's audit a loan-approval classifier in Python by measuring **Selection Rate** ($\text{SR}_g = P(\hat{Y}=1 \mid G=g)$) and **True Positive Rate (TPR)** across two demographic groups. Notice how high overall accuracy ($87.5\%$) can hide a severe allocation disparity!
 
-<PythonRunner
-  client:visible
-  title="Try it Yourself: Demographic Parity & Error Disparity Audit"
-  expectedOutput="Overall Accuracy: 82.5%
-Group A -> Accuracy: 90.0%, Selection Rate: 0.60, TPR: 1.00
-Group B -> Accuracy: 75.0%, Selection Rate: 0.25, TPR: 0.50
-Demographic Parity Difference: 0.35
-Equal Opportunity (TPR) Difference: 0.50
-AUDIT WARNING: Significant allocation/service disparity detected!"
-  initialCode={`# (group, y_true, y_pred)
+**Demographic Parity & Error Disparity Audit**
+
+```python
+# (group, y_true, y_pred)
 records = [
     # Group A (20 applicants)
     ("A", 1, 1), ("A", 1, 1), ("A", 1, 1), ("A", 1, 1), ("A", 1, 1),
@@ -111,8 +104,19 @@ tpr_diff = abs(tpr_a - tpr_b)
 print(f"Demographic Parity Difference: {dp_diff:.2f}")
 print(f"Equal Opportunity (TPR) Difference: {tpr_diff:.2f}")
 if dp_diff > 0.10 or tpr_diff > 0.10:
-    print("AUDIT WARNING: Significant allocation/service disparity detected!")`}
-/>
+    print("AUDIT WARNING: Significant allocation/service disparity detected!")
+```
+
+**Expected Output:**
+
+```text
+Overall Accuracy: 82.5%
+Group A -> Accuracy: 90.0%, Selection Rate: 0.60, TPR: 1.00
+Group B -> Accuracy: 75.0%, Selection Rate: 0.25, TPR: 0.50
+Demographic Parity Difference: 0.35
+Equal Opportunity (TPR) Difference: 0.50
+AUDIT WARNING: Significant allocation/service disparity detected!
+```
 
 ---
 

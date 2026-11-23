@@ -9,7 +9,6 @@ description: "Build a binary Logistic Regression classifier to predict orange vs
 topic: "Logistic Regression"
 prerequisites: ["ml-for-beginners/07-linear-and-polynomial-regression"]
 ---
-import PythonRunner from '../../../components/islands/PythonRunner';
 import QuizCard from '../../../components/islands/QuizCard';
 import ColabButton from '../../../components/static/ColabButton.astro';
 
@@ -29,11 +28,16 @@ Our pumpkin dataset contains two distinct kinds of categorical text columns, so 
 
 ## The Sigmoid Function, Confusion Matrix & ROC-AUC
 
-Logistic regression passes a linear score $z$ through the **Sigmoid (Logistic) Function** to squash outputs into $(0, 1)$:
+Logistic regression passes a raw linear score $z$ (which can be any number from $-\infty$ to $+\infty$) through the **Sigmoid (Logistic) Function** to squash it into a probability between $0$ and $1$—like turning a raw volume knob into a $0\%$–$100\%$ confidence dial:
 
 $$\sigma(z) = \frac{1}{1 + e^{-z}}$$
 
-If $\sigma(z) \ge 0.5$, the model predicts class `1`; otherwise `0`. To evaluate performance beyond raw accuracy, we inspect a **$2 \times 2$ Confusion Matrix** (where rows are actual labels and columns are predicted labels):
+Here:
+- **$z$**: The weighted sum of input features (positive values push toward class `1`, negative values push toward class `0`).
+- **$e$**: Euler's number ($\approx 2.718$); when $z = 0$, $e^0 = 1$, so $\sigma(0) = \frac{1}{1+1} = 0.5$ (a 50/50 toss-up).
+- **$\sigma(z)$**: The final probability that the sample belongs to class `1`.
+
+If $\sigma(z) \ge 0.5$, the model predicts class `1`; otherwise `0`. To evaluate performance beyond raw accuracy, we inspect a **$2 \times 2$ Confusion Matrix** (where rows are actual labels and columns are predicted labels). Think of **Precision** as *"when the alarm rings, how often is there actually a fire?"* and **Recall** as *"out of all real fires, how many did the alarm catch?"*:
 
 | Metric | Formula | Pumpkin Model Benchmark |
 | :--- | :--- | :--- |
@@ -56,14 +60,10 @@ Alongside those four core metrics, Scikit-Learn's `classification_report()` prin
 
 Let's compute the exact Sigmoid probabilities, $2 \times 2$ Confusion Matrix (`TN=162, FP=4, FN=11, TP=22`), Precision, Recall, and $F_1$-score in pure Python.
 
-<PythonRunner
-  client:visible
-  title="Try it Yourself: Sigmoid Classifier & Confusion Matrix Metrics"
-  expectedOutput="Sigmoid(z=2.0): 0.8808 -> Class 1 (WHITE)
-Sigmoid(z=-1.5): 0.1824 -> Class 0 (ORANGE)
-Confusion Matrix: [[162, 4], [11, 22]]
-Precision: 0.846 | Recall: 0.667 | F1: 0.746 | Accuracy: 0.925"
-  initialCode={`import math
+**Sigmoid Classifier & Confusion Matrix Metrics**
+
+```python
+import math
 
 def sigmoid(z):
     return 1.0 / (1.0 + math.exp(-z))
@@ -81,8 +81,17 @@ f1 = 2 * precision * recall / (precision + recall)
 accuracy = (tp + tn) / (tp + tn + fp + fn)
 
 print(f"Confusion Matrix: [[{tn}, {fp}], [{fn}, {tp}]]")
-print(f"Precision: {precision:.3f} | Recall: {recall:.3f} | F1: {f1:.3f} | Accuracy: {accuracy:.3f}")`}
-/>
+print(f"Precision: {precision:.3f} | Recall: {recall:.3f} | F1: {f1:.3f} | Accuracy: {accuracy:.3f}")
+```
+
+**Expected Output:**
+
+```text
+Sigmoid(z=2.0): 0.8808 -> Class 1 (WHITE)
+Sigmoid(z=-1.5): 0.1824 -> Class 0 (ORANGE)
+Confusion Matrix: [[162, 4], [11, 22]]
+Precision: 0.846 | Recall: 0.667 | F1: 0.746 | Accuracy: 0.925
+```
 
 ---
 

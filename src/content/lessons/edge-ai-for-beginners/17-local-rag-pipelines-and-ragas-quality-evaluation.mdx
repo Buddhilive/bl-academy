@@ -9,7 +9,6 @@ description: "Build privacy-first local Edge RAG pipelines with sentence-transfo
 topic: "Local Edge RAG & RAGAS"
 prerequisites: ["edge-ai-for-beginners/16-on-device-mcp-integration-for-edge-slms"]
 ---
-import PythonRunner from '../../../components/islands/PythonRunner';
 import QuizCard from '../../../components/islands/QuizCard';
 import ColabButton from '../../../components/static/ColabButton.astro';
 
@@ -40,15 +39,15 @@ flowchart LR
 
 Measuring retrieval and generation separately prevents silent regressions when you quantize an SLM from FP16 to INT4:
 
-1. **Cosine Similarity Retrieval**:
+1. **Cosine Similarity Retrieval**: Measures the angle between query vector $q$ and document vector $d$ (ignoring document length)—`1.0` means identical topic direction, `0.0` means unrelated:
    $$
    \text{sim}(q, d) = \frac{q \cdot d}{\|q\|_2 \, \|d\|_2}
    $$
-2. **RAGAS Faithfulness ($F$)**: Fraction of atomic claims in the generated answer that are directly entailed by the retrieved context:
+2. **RAGAS Faithfulness ($F$)**: Breaks the answer into individual factual claims ($|V_{\text{claims}}|$) and counts how many are actually backed up by the retrieved text ($|V_{\text{supported}}|$)—catching hallucinations:
    $$
    F = \frac{|V_{\text{supported}}|}{|V_{\text{claims}}|}
    $$
-3. **RAGAS Context Precision@K**: Measures whether relevant chunks appear at the top ranks of the retrieved list:
+3. **RAGAS Context Precision@K**: Checks whether the truly relevant chunks ($r_k = 1$) appear at the *top* of your top-$K$ search results rather than buried at the bottom:
    $$
    \text{CP@K} = \frac{\sum_{k=1}^{K} \text{Precision@}k \cdot r_k}{\text{Total Relevant in Top } K}
    $$
@@ -71,15 +70,10 @@ Launch the companion notebook to run local vector retrieval with `sentence-trans
 
 Run this pure-Python RAG engine to compute cosine similarity over normalized term-vectors, retrieve the top-2 passages, and score Faithfulness and Context Precision@2.
 
-<PythonRunner
-  client:visible
-  title="Try it Yourself: Local Edge RAG & RAGAS Metrics Simulator"
-  expectedOutput="Top-2 Retrieved Docs:
-  1. [sim=0.6030] doc_1: INT4 quantization cuts SLM RAM by 75 percent for edge devices.
-  2. [sim=0.0000] doc_3: STDIO MCP servers isolate local tools without open TCP ports.
-RAGAS Faithfulness: 0.67 (2/3 claims grounded)
-RAGAS Context Precision@2: 1.00"
-  initialCode={`import math
+**Local Edge RAG & RAGAS Metrics Simulator**
+
+```python
+import math
 
 docs = [
     ("doc_1", "INT4 quantization cuts SLM RAM by 75 percent for edge devices."),
@@ -113,8 +107,18 @@ prec_at_k = [sum(relevant_flags[:k]) / k for k in range(1, 3)]
 cp_at_2 = sum(p * r for p, r in zip(prec_at_k, relevant_flags)) / sum(relevant_flags)
 
 print(f"RAGAS Faithfulness: {faithfulness:.2f} ({sum(claims_supported)}/{len(claims_supported)} claims grounded)")
-print(f"RAGAS Context Precision@2: {cp_at_2:.2f}")`}
-/>
+print(f"RAGAS Context Precision@2: {cp_at_2:.2f}")
+```
+
+**Expected Output:**
+
+```text
+Top-2 Retrieved Docs:
+  1. [sim=0.6030] doc_1: INT4 quantization cuts SLM RAM by 75 percent for edge devices.
+  2. [sim=0.0000] doc_3: STDIO MCP servers isolate local tools without open TCP ports.
+RAGAS Faithfulness: 0.67 (2/3 claims grounded)
+RAGAS Context Precision@2: 1.00
+```
 
 ---
 

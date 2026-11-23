@@ -9,7 +9,6 @@ description: "Build composable MCP server workflows across official SDKs and pro
 topic: "MCP SDKs & API Gateways"
 prerequisites: ["mcp-for-beginners/10-client-sampling-and-interactive-mcp-apps"]
 ---
-import PythonRunner from '../../../components/islands/PythonRunner';
 import QuizCard from '../../../components/islands/QuizCard';
 import ColabButton from '../../../components/static/ColabButton.astro';
 
@@ -56,15 +55,10 @@ Launch the companion notebook to build and test an open-source **FastAPI Reverse
 
 Run this pure-Python sandbox to simulate an open-source MCP Gateway enforcing weighted token-bucket limits (`tools/list` costs 1 token, `tools/call` costs 2 tokens) and rejecting burst overflow with HTTP `429`.
 
-<PythonRunner
-  client:visible
-  title="Try it Yourself: MCP Gateway Token-Bucket Rate Limiter"
-  expectedOutput="[t=0.0s] tools/list -> 200 OK (remaining_tokens=4.0)
-[t=0.0s] tools/call -> 200 OK (remaining_tokens=2.0)
-[t=0.0s] tools/call -> 200 OK (remaining_tokens=0.0)
-[t=0.0s] tools/call -> 429 Too Many Requests (Retry-After: 2.0s)
-[t=3.0s] tools/call -> 200 OK (remaining_tokens=1.0)"
-  initialCode={`class TokenBucketGateway:
+**MCP Gateway Token-Bucket Rate Limiter**
+
+```python
+class TokenBucketGateway:
     def __init__(self, capacity: float, refill_rate: float):
         self.capacity = capacity
         self.refill_rate = refill_rate
@@ -93,8 +87,18 @@ events = [
     (3.0, "tools/call"),
 ]
 for t, m in events:
-    print(f"[t={t:.1f}s] {m} -> {gw.allow('tenant-alpha', m, t)}")`}
-/>
+    print(f"[t={t:.1f}s] {m} -> {gw.allow('tenant-alpha', m, t)}")
+```
+
+**Expected Output:**
+
+```text
+[t=0.0s] tools/list -> 200 OK (remaining_tokens=4.0)
+[t=0.0s] tools/call -> 200 OK (remaining_tokens=2.0)
+[t=0.0s] tools/call -> 200 OK (remaining_tokens=0.0)
+[t=0.0s] tools/call -> 429 Too Many Requests (Retry-After: 2.0s)
+[t=3.0s] tools/call -> 200 OK (remaining_tokens=1.0)
+```
 
 ---
 

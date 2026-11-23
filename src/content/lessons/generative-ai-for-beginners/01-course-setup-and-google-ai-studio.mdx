@@ -9,7 +9,6 @@ description: "Set up your Generative AI engineering environment with a free Goog
 topic: "GenAI Setup"
 prerequisites: ["ml-for-beginners/27-debugging-ml-models-and-explainability"]
 ---
-import PythonRunner from '../../../components/islands/PythonRunner';
 import QuizCard from '../../../components/islands/QuizCard';
 import ColabButton from '../../../components/static/ColabButton.astro';
 
@@ -82,7 +81,7 @@ Throughout this course, you will combine hosted Gemini API calls with open-weigh
 
 | Environment / Provider | Hardware & Cost | Primary SDK / Package | Best Used For |
 | :--- | :--- | :--- | :--- |
-| **In-Browser Pyodide** | Client-side WASM (Free) | Python Standard Library | Tokenization math, cosine similarity, prompt builders, fast logic checks |
+| **Pure-Python Snippets** | Local Python or Colab CPU (Free) | Python Standard Library | Tokenization math, cosine similarity, prompt builders, fast logic checks |
 | **Google AI Studio** | Cloud Free Tier (`GEMINI_API_KEY`) | `google-genai` (`gemini-2.5-flash`, `gemini-embedding-001`) | Text generation, multi-turn chat, function calling, RAG, multimodal vision |
 | **Google Colab CPU** | Cloud Free Tier (12 GB RAM) | `scikit-learn`, `chromadb`, `faiss-cpu`, `gradio` | Vector databases, semantic search, low-code UIs, LLMOps evaluation |
 | **Google Colab T4 GPU** | Cloud Free Tier (15 GB VRAM) | `transformers`, `diffusers`, `peft`, `trl`, `bitsandbytes` | Open-weight LLMs/SLMs (Gemma, Mistral, Llama), LoRA fine-tuning, image diffusion |
@@ -93,7 +92,7 @@ Free-tier APIs enforce **Requests Per Minute (RPM)**, **Tokens Per Minute (TPM)*
 
 $$t_k = \min\Big(t_{\max},\; t_0 \cdot 2^k\Big) + \epsilon_{\text{jitter}}$$
 
-where $t_0$ is the base delay in seconds and $k$ is the retry attempt index.
+In plain English: $t_0$ is your starting wait time in seconds (e.g., `1s`), $k$ is the retry attempt number (`0, 1, 2...`), and multiplying by $2^k$ doubles your wait after each failure (`1s -> 2s -> 4s -> 8s`) until it hits a ceiling $t_{\max}$. Adding a tiny random delay $\epsilon_{\text{jitter}}$ keeps hundreds of users from retrying at the exact same millisecond.
 
 ---
 
@@ -111,16 +110,12 @@ Launch the interactive setup notebook below to verify your `GEMINI_API_KEY` conn
 
 ## Try It Yourself: `.env` Validator & Backoff Calculator
 
-Run this pure-Python sandbox to practice safe API key masking, `.env` parsing, and free-tier exponential backoff scheduling without touching live network credentials.
+Run this pure-Python script (locally or in a Colab cell) to practice safe API key masking, `.env` parsing, and free-tier exponential backoff scheduling without touching live network credentials.
 
-<PythonRunner
-  client:visible
-  title="Try it Yourself: Secret Hygiene & Free-Tier Rate-Limit Planner"
-  expectedOutput="Loaded key: AIza****9xQ2 (valid_prefix=True, length=16)
-Gitignore protects .env: True
-Batch of 45 requests @ 15 RPM -> 3.00 minutes
-Retry backoff schedule (t0=1.0s, max=10.0s): [1.0, 2.0, 4.0, 8.0, 10.0]"
-  initialCode={`# 1. Simulated .env content and .gitignore entries
+**Secret Hygiene & Free-Tier Rate-Limit Planner**
+
+```python
+# 1. Simulated .env content and .gitignore entries
 env_lines = [
     "# Local secrets file",
     "GEMINI_API_KEY=AIzaDemoKey19xQ2",
@@ -148,8 +143,17 @@ print(f"Batch of {total_requests} requests @ {rpm_limit} RPM -> {total_requests 
 
 t0, t_max = 1.0, 10.0
 backoff = [min(t_max, t0 * (2 ** k)) for k in range(5)]
-print(f"Retry backoff schedule (t0={t0}s, max={t_max}s): {backoff}")`}
-/>
+print(f"Retry backoff schedule (t0={t0}s, max={t_max}s): {backoff}")
+```
+
+**Expected Output:**
+
+```text
+Loaded key: AIza****9xQ2 (valid_prefix=True, length=16)
+Gitignore protects .env: True
+Batch of 45 requests @ 15 RPM -> 3.00 minutes
+Retry backoff schedule (t0=1.0s, max=10.0s): [1.0, 2.0, 4.0, 8.0, 10.0]
+```
 
 ---
 

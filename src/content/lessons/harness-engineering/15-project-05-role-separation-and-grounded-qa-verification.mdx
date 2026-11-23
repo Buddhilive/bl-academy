@@ -9,7 +9,6 @@ description: "Measure the impact of separating Planner, Generator, and Evaluator
 topic: "Hands-On Project 05"
 prerequisites: ["harness-engineering/14-end-to-end-verification-and-agent-oriented-errors"]
 ---
-import PythonRunner from '../../../components/islands/PythonRunner';
 import QuizCard from '../../../components/islands/QuizCard';
 import ColabButton from '../../../components/static/ColabButton.astro';
 
@@ -57,21 +56,26 @@ Launch the companion notebook to run all three role architectures on the **Multi
 
 Run this Python script to simulate the multi-turn Knowledge Base Q&A upgrade and score all three role-separation variants against `evaluator-rubric.md`.
 
-<PythonRunner
-  client:visible
-  title="Try it Yourself: Project 05 Role Separation Scorer"
-  expectedOutput="Variant 1 (single-role): 1.6/5.0 -> FAIL (missing follow-up context)
-Variant 2 (gen-eval): 3.3/5.0 -> REVISED (fixed truncation, minor UI gap)
-Variant 3 (plan-gen-eval): 4.9/5.0 -> PASS (sprint contract + E2E verified)"
-  initialCode={`def score_variant(name: str, scores: list[float], note: str) -> str:
+**Project 05 Role Separation Scorer**
+
+```python
+def score_variant(name: str, scores: list[float], note: str) -> str:
     avg = sum(scores) / len(scores)
     verdict = "PASS" if avg >= 4.5 else ("REVISED" if avg >= 3.0 else "FAIL")
     return f"{name}: {avg:.1f}/5.0 -> {verdict} ({note})"
 
 print(score_variant("Variant 1 (single-role)", [2.0, 1.5, 1.3], "missing follow-up context"))
 print(score_variant("Variant 2 (gen-eval)", [3.5, 3.4, 3.0], "fixed truncation, minor UI gap"))
-print(score_variant("Variant 3 (plan-gen-eval)", [5.0, 4.9, 4.8], "sprint contract + E2E verified"))`}
-/>
+print(score_variant("Variant 3 (plan-gen-eval)", [5.0, 4.9, 4.8], "sprint contract + E2E verified"))
+```
+
+**Expected Output:**
+
+```text
+Variant 1 (single-role): 1.6/5.0 -> FAIL (missing follow-up context)
+Variant 2 (gen-eval): 3.3/5.0 -> REVISED (fixed truncation, minor UI gap)
+Variant 3 (plan-gen-eval): 4.9/5.0 -> PASS (sprint contract + E2E verified)
+```
 
 ---
 

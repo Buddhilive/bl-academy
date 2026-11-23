@@ -9,7 +9,6 @@ description: "Master MCP Server Primitives (Resources, Prompts, Tools), Full JSO
 topic: "MCP Core Concepts"
 prerequisites: ["mcp-for-beginners/01-introduction-to-mcp-and-setup"]
 ---
-import PythonRunner from '../../../components/islands/PythonRunner';
 import QuizCard from '../../../components/islands/QuizCard';
 import ColabButton from '../../../components/static/ColabButton.astro';
 
@@ -20,6 +19,11 @@ When I design an MCP server, the single most helpful mental model is separating 
 ---
 
 ## The 3 Server Primitives
+
+Think of an MCP server like a well-organized restaurant kitchen:
+- **Resources** are the **pantry and reference binder**—read-only data (files, schemas, docs) that the app can look up without changing anything.
+- **Prompts** are **saved house recipes**—reusable workflow templates that *you* trigger (often via a slash command).
+- **Tools** are the **kitchen appliances**—executable actions that actually do work (search, query, or update records) when the AI model asks to use them.
 
 MCP servers expose any combination of these three building blocks:
 
@@ -102,14 +106,10 @@ Launch the companion notebook to register Resources, Prompts, and annotated Tool
 
 Run this pure-Python JSON-RPC 2.0 MCP server simulator. It dispatches `resources/read`, `prompts/get`, and `tools/call`, enforces `destructiveHint` safety checks, and emits standard `-32601` and `-32602` error frames.
 
-<PythonRunner
-  client:visible
-  title="Try it Yourself: MCP Primitives & JSON-RPC 2.0 Engine"
-  expectedOutput='{"jsonrpc": "2.0", "id": 1, "result": {"uri": "database://prod/users/schema", "text": "users(id INT, email TEXT)"}}
-{"jsonrpc": "2.0", "id": 2, "result": {"prompt": "Review PR #42 for security"}}
-{"jsonrpc": "2.0", "id": 3, "result": {"content": [{"type": "text", "text": "Found 2 matches for mcp"}], "annotations": {"readOnlyHint": true}}}
-{"jsonrpc": "2.0", "id": 4, "error": {"code": -32602, "message": "Resource not found: file://missing.md"}}'
-  initialCode={`import json
+**MCP Primitives & JSON-RPC 2.0 Engine**
+
+```python
+import json
 
 RESOURCES = {
     "database://prod/users/schema": "users(id INT, email TEXT)",
@@ -157,8 +157,8 @@ requests = [
     {"jsonrpc": "2.0", "id": 4, "method": "resources/read", "params": {"uri": "file://missing.md"}},
 ]
 for r in requests:
-    print(handle_rpc(r))`}
-/>
+    print(handle_rpc(r))
+```
 
 ---
 

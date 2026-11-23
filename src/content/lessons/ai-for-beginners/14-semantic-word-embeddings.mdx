@@ -9,7 +9,6 @@ description: "Replace sparse one-hot vectors with dense semantic embeddings usin
 topic: "Word Embeddings"
 prerequisites: ["ai-for-beginners/13-text-representation-bow-and-tfidf"]
 ---
-import PythonRunner from '../../../components/islands/PythonRunner';
 import QuizCard from '../../../components/islands/QuizCard';
 import ColabButton from '../../../components/static/ColabButton.astro';
 
@@ -27,9 +26,11 @@ In PyTorch, `nn.Embedding(vocab_size, embed_dim)` acts like a trainable lookup t
 
 ## Semantic Vector Spaces: Word2Vec & GloVe
 
-When trained on billions of words using self-supervised context prediction (**Word2Vec** CBoW/Skip-Gram or **GloVe** co-occurrence factorization), word vectors organize themselves into meaningful linear directions:
+When trained on billions of words using self-supervised context prediction (**Word2Vec** CBoW/Skip-Gram or **GloVe** co-occurrence factorization), word vectors organize themselves into meaningful geometric directions. We measure how close two word vectors $\mathbf{u}$ and $\mathbf{v}$ are using **Cosine Similarity**—which checks the angle $\theta$ between two arrows regardless of their length:
 
 $$\cos(\theta) = \frac{\mathbf{u} \cdot \mathbf{v}}{\|\mathbf{u}\|_2 \, \|\mathbf{v}\|_2}, \qquad \mathbf{v}_{\text{king}} - \mathbf{v}_{\text{man}} + \mathbf{v}_{\text{woman}} \approx \mathbf{v}_{\text{queen}}$$
+
+Here, $\mathbf{u} \cdot \mathbf{v}$ is the dot product (multiplying matching coordinates and summing them), and $\|\mathbf{u}\|_2$ is the Euclidean length of vector $\mathbf{u}$. Two arrows pointing in the exact same direction score `1.0`, perpendicular arrows score `0.0`, and opposite arrows score `-1.0`.
 
 | Embedding Family | Training Signal | Key Trade-off |
 | :--- | :--- | :--- |
@@ -52,13 +53,10 @@ $$\cos(\theta) = \frac{\mathbf{u} \cdot \mathbf{v}}{\|\mathbf{u}\|_2 \, \|\mathb
 
 Let's run vector arithmetic (`king - man + woman`) on a miniature 4D semantic embedding table in pure Python and find the closest word by **Cosine Similarity**.
 
-<PythonRunner
-  client:visible
-  title="Try it Yourself: Semantic Vector Analogy (king - man + woman)"
-  expectedOutput="cos(king, queen): -0.2564
-cos(king, apple): 0.0336
-Analogy 'king - man + woman' -> nearest word: 'queen' (sim=0.9987)"
-  initialCode={`import math
+**Semantic Vector Analogy (king - man + woman)**
+
+```python
+import math
 
 # Toy 4D embeddings: [royalty, masculinity, femininity, food]
 EMB = {
@@ -83,8 +81,16 @@ best_word, best_sim = max(
     ((word, cosine_sim(target, vec)) for word, vec in EMB.items() if word not in {"king", "man", "woman"}),
     key=lambda x: x[1],
 )
-print(f"Analogy 'king - man + woman' -> nearest word: '{best_word}' (sim={best_sim:.4f})")`}
-/>
+print(f"Analogy 'king - man + woman' -> nearest word: '{best_word}' (sim={best_sim:.4f})")
+```
+
+**Expected Output:**
+
+```text
+cos(king, queen): -0.2564
+cos(king, apple): 0.0336
+Analogy 'king - man + woman' -> nearest word: 'queen' (sim=0.9987)
+```
 
 ---
 

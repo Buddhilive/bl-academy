@@ -9,7 +9,6 @@ description: "Explore multiclass classification on 2,448 Asian and Indian recipe
 topic: "Classification & SMOTE"
 prerequisites: ["ml-for-beginners/09-deploying-ml-models-in-web-apps"]
 ---
-import PythonRunner from '../../../components/islands/PythonRunner';
 import QuizCard from '../../../components/islands/QuizCard';
 import ColabButton from '../../../components/static/ColabButton.astro';
 
@@ -47,6 +46,8 @@ Instead of blindly duplicating existing rows, SMOTE selects a minority-class sam
 
 $$x_{\text{new}} = x_i + \lambda \cdot (x_{zi} - x_i), \qquad \lambda \in [0, 1]$$
 
+Think of this like mixing two neighboring recipes: $x_i$ is your starting recipe, $(x_{zi} - x_i)$ is the direction toward a similar neighbor in the same cuisine, and $\lambda$ is a random slider between `0` and `1` that places the new synthetic recipe somewhere along the bridge connecting them.
+
 That lifts all five cuisines to **799 rows each** (`3,995` clean, balanced rows) ready for `cleaned_cuisines.csv`. When we concatenate `transformed_label_df` and `transformed_feature_df` into `transformed_df`, every cuisine has equal representation so downstream classifiers learn distinctive spice signatures instead of defaulting to the majority class.
 
 <ColabButton
@@ -61,14 +62,10 @@ That lifts all five cuisines to **799 rows each** (`3,995` clean, balanced rows)
 
 Let's run a pure-Python ingredient counter that spots confounding ingredients (`rice`, `garlic`, `ginger`), strips them, and balances minority cuisine recipes using SMOTE-style nearest-neighbor interpolation.
 
-<PythonRunner
-  client:visible
-  title="Try it Yourself: Confounder Removal & SMOTE Balancing"
-  expectedOutput="Raw counts -> korean: 4, indian: 3, thai: 2
-Top confounders dropped: ['rice', 'garlic', 'ginger']
-Balanced counts -> korean: 4, indian: 4, thai: 4
-Sample synthetic Thai vector: [1.0, 0.4, 1.0, 0.6]"
-  initialCode={`# Features: [rice, lemongrass, chili, fish_sauce, garam_masala, kimchi, garlic, ginger]
+**Confounder Removal & SMOTE Balancing**
+
+```python
+# Features: [rice, lemongrass, chili, fish_sauce, garam_masala, kimchi, garlic, ginger]
 # After dropping confounders (rice, garlic, ginger) -> [lemongrass, chili, fish_sauce, garam_masala]
 recipes = [
     ("korean", [0, 1, 0, 0]), ("korean", [0, 1, 0, 0]), ("korean", [0, 0, 0, 0]), ("korean", [0, 1, 0, 0]),
@@ -99,8 +96,17 @@ for cls in ["indian", "thai"]:
 
 b_counts = {c: sum(1 for lbl, _ in balanced if lbl == c) for c in ["korean", "indian", "thai"]}
 print(f"Balanced counts -> korean: {b_counts['korean']}, indian: {b_counts['indian']}, thai: {b_counts['thai']}")
-print(f"Sample synthetic Thai vector: {balanced[-1][1]}")`}
-/>
+print(f"Sample synthetic Thai vector: {balanced[-1][1]}")
+```
+
+**Expected Output:**
+
+```text
+Raw counts -> korean: 4, indian: 3, thai: 2
+Top confounders dropped: ['rice', 'garlic', 'ginger']
+Balanced counts -> korean: 4, indian: 4, thai: 4
+Sample synthetic Thai vector: [1.0, 0.4, 1.0, 0.6]
+```
 
 ---
 

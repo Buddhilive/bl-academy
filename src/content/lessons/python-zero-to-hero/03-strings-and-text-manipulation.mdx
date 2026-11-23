@@ -24,11 +24,7 @@ In Python, all textual data is represented using **strings**. This lesson introd
 
 ### The `str` Fundamental Data Type
 
-A **string** in Python is an ordered, immutable collection of characters. In computational terms, a string $s$ of length $n$ represents a finite sequence:
-
-$$s = (c_0, c_1, c_2, \dots, c_{n-1})$$
-
-where each character $c_i$ belongs to an alphabet or character set (specifically, Python uses Unicode code points). 
+A **string** in Python is an ordered, unchangeable sequence of characters. Think of a string like a train of lettered boxcars lined up in a row—each character sits in its own numbered car, in an exact order, and Python uses Unicode so it can hold English letters, accents, math symbols, and even emojis.
 
 In Python, text belongs to the built-in primitive type abbreviated as **`str`**. Strings are considered fundamental data types because they cannot be decomposed into smaller values of a distinct character type—individual characters are themselves simply single-character `str` instances.
 
@@ -45,7 +41,7 @@ You can verify the data type of any literal or variable using Python's built-in 
 
 Strings exhibit three foundational properties:
 1. **Characters**: The discrete symbols, letters, digits, punctuation marks, or whitespace units that constitute the text.
-2. **Length**: The total cardinality or count of characters contained within the string ($|s| = n$).
+2. **Length**: The total number of characters contained within the string.
 3. **Sequence**: Characters occupy an ordered spatial sequence, meaning every character is addressed by a specific numerical coordinate known as its **index**.
 
 ### String Literals and Delimiters
@@ -131,9 +127,7 @@ print(full_name)     # 'Arthur Dent'
 
 ### Zero-Based Indexing
 
-Every character in a string occupies a fixed numerical coordinate called its **index**. Python adheres to **zero-based indexing**, meaning the first character is located at index $0$. For a string of length $n = |s|$, valid positive indices span the discrete interval:
-
-$$I_{\text{pos}} = \{0, 1, 2, \dots, n - 1\}$$
+Every character in a string has a numbered position called its **index**. Python uses **zero-based indexing**, which means counting starts at `0` instead of `1`. For a string of length `n`, valid positive indices run from `0` up to `n - 1`:
 
 ```python
 flavor = "apple pie"
@@ -141,19 +135,13 @@ print(flavor[0])  # 'a'
 print(flavor[1])  # 'p'
 ```
 
-Attempting to retrieve the first character using `flavor[1]` is an **off-by-one error**. Furthermore, querying an index equal to or greater than the string's length ($i \ge n$) causes Python to raise an `IndexError: string index out of range`.
+Trying to grab the first character with `flavor[1]` is a classic **off-by-one error** (it actually grabs the second character). And if you ask for an index that's equal to or larger than the string's length, Python raises an `IndexError: string index out of range`.
 
 ### Negative Indexing
 
-Python uniquely supports **negative indexing** to access characters starting from the end of the sequence without manually computing `len(s) - 1`. The last character is indexed at $-1$, the second-to-last at $-2$, continuing backward to $-n$:
+Python also lets you use **negative indexing** to count backward from the end of a string without having to write `len(s) - 1`. The last character is at `-1`, the second-to-last is at `-2`, and so on all the way back to the first character.
 
-$$I_{\text{neg}} = \{-1, -2, \dots, -n\}$$
-
-Mathematically, a negative index $-k$ maps directly to its positive counterpart via the transformation:
-
-$$\text{index}_{\text{pos}} = n - k \quad (\text{where } n = |s|)$$
-
-Consider the string `"apple pie"` of length $n = 9$:
+Consider the 9-character string `"apple pie"`:
 
 | Character | `a` | `p` | `p` | `l` | `e` | ` ` | `p` | `i` | `e` |
 | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
@@ -166,9 +154,7 @@ Using `flavor[-1]` immediately extracts the final character `'e'`.
 
 To extract a consecutive segment (a **substring**) from a string, use Python's slice syntax: `string[start:end]`. 
 
-Slicing evaluates to a **half-open interval** $[start, end)$: it includes the character at `start`, but **excludes** the character at index `end`. The length of the resulting substring equals:
-
-$$L_{\text{slice}} = \max(0, end - start)$$
+Slicing starts at `start` and stops *right before* `end`—so `flavor[0:3]` grabs characters `0`, `1`, and `2`, giving you `3 - 0 = 3` characters:
 
 ```python
 flavor = "apple pie"
@@ -289,13 +275,13 @@ In browser-based sandboxes (such as WebAssembly Pyodide execution), interactive 
 
 ### Type Mismatches and String Arithmetic
 
-In Python, operators exhibit polymorphic behavior depending on the operands' data types:
+In Python, operators behave differently depending on the data types you give them:
 
-- **String Concatenation (`+`)**: When applied to two strings, `+` glues them together rather than computing a sum:
+- **String Concatenation (`+`)**: When applied to two strings, `+` glues them together rather than adding numbers:
   ```python
   "2" + "2"  # Evaluates to '22', NOT 4
   ```
-- **String Repetition (`*`)**: When multiplying a string $s$ by an integer $k \in \mathbb{Z}_{\ge 0}$, Python concatenates $s$ with itself $k$ times:
+- **String Repetition (`*`)**: When multiplying a string `s` by a whole number `k` (0 or higher), Python repeats `s` `k` times:
   ```python
   "12" * 3   # Evaluates to '121212'
   ```
@@ -310,7 +296,7 @@ In Python, operators exhibit polymorphic behavior depending on the operands' dat
 To perform mathematical arithmetic on numbers captured via `input()`, you must explicitly convert the string to a numeric type using `int()` or `float()`:
 
 - **`int(value)`**: Parses a string containing integer digits into a whole number.
-- **`float(value)`**: Parses a string containing decimal numbers into a 64-bit IEEE 754 floating-point number.
+- **`float(value)`**: Parses a string containing decimal digits into a decimal number (a `float`).
 - **`str(value)`**: Converts numbers, booleans, or objects back into their string representations.
 
 ```python

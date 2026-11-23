@@ -9,13 +9,12 @@ description: "Learn self-supervised representation learning with Encoder-Decoder
 topic: "Autoencoders and VAEs"
 prerequisites: ["ai-for-beginners/08-pretrained-networks-and-transfer-learning"]
 ---
-import PythonRunner from '../../../components/islands/PythonRunner';
 import QuizCard from '../../../components/islands/QuizCard';
 import ColabButton from '../../../components/static/ColabButton.astro';
 
-Collecting millions of manual class labels is expensive. **Self-supervised learning** bypasses manual labels by using the input image itself as the target output. An **Autoencoder** compresses an image into a low-dimensional **latent vector** $\mathbf{z}$ via an **Encoder** network, then reconstructs the original image from $\mathbf{z}$ via a **Decoder** network.
+Collecting millions of manual class labels is expensive. **Self-supervised learning** bypasses manual labels by using the input image itself as the target output. Think of an **Autoencoder** like summarizing a 10-page chapter into 3 bullet points (**Encoder**), then trying to rewrite the original 10 pages using only those 3 bullets (**Decoder**). The compressed middle summary is called the **latent vector** $\mathbf{z}$.
 
-Because $\mathbf{z}$ is much smaller than the raw image (a bottleneck), the network is forced to discard noise and preserve only the essential semantic structure of the data.
+Because $\mathbf{z}$ is much smaller than the raw image (a tight bottleneck), the network is forced to throw away random background noise and keep only the essential structure of the data.
 
 ---
 
@@ -32,15 +31,19 @@ Because $\mathbf{z}$ is much smaller than the raw image (a bottleneck), the netw
 
 ## Variational Autoencoders (VAEs) & The Reparameterization Trick
 
-A standard autoencoder's latent space often has "holes"—sampling a random vector $\mathbf{z}$ produces garbled noise. A **Variational Autoencoder (VAE)** fixes this by forcing the encoder to output the parameters of a Gaussian distribution: a mean vector $\boldsymbol{\mu}$ and log-variance $\log \boldsymbol{\sigma}^2$.
+A standard autoencoder's latent space often has "holes"—if you pick a random point $\mathbf{z}$ between two memorized images, the decoder may output garbled static. A **Variational Autoencoder (VAE)** fixes this by mapping each image not to a single rigid dot, but to a smooth bell-curve cloud (a Gaussian distribution) described by a center (**mean** $\boldsymbol{\mu}$) and a spread (**log-variance** $\log \boldsymbol{\sigma}^2$).
 
-To backpropagate through random sampling, VAEs use the **Reparameterization Trick**:
+Because backpropagation cannot differentiate through a random coin flip directly, VAEs use a clever **Reparameterization Trick**: instead of sampling randomly *inside* the network, we sample standard random noise $\boldsymbol{\epsilon}$ from outside and scale it:
 
 $$\mathbf{z} = \boldsymbol{\mu} + \boldsymbol{\sigma} \odot \boldsymbol{\epsilon}, \qquad \boldsymbol{\epsilon} \sim \mathcal{N}(\mathbf{0}, I)$$
 
-The VAE loss balances pixel reconstruction against **Kullback–Leibler (KL) Divergence**, which pulls the latent distribution toward a standard normal $\mathcal{N}(\mathbf{0}, I)$:
+In plain English: $\boldsymbol{\mu}$ is the center of the cloud, $\boldsymbol{\sigma}$ is its width, $\boldsymbol{\epsilon}$ is pure random noise drawn from a standard bell curve $\mathcal{N}(\mathbf{0}, I)$, and $\odot$ means element-by-element multiplication. Now the randomness is just an external input, so gradients flow cleanly through $\boldsymbol{\mu}$ and $\boldsymbol{\sigma}$!
+
+To keep all those clouds packed neatly together instead of drifting apart, the VAE loss adds **Kullback–Leibler (KL) Divergence**, which measures how far each latent distribution strays from a standard bell curve $\mathcal{N}(\mathbf{0}, I)$:
 
 $$D_{\text{KL}} = -\frac{1}{2}\sum_{j=1}^{d} \left(1 + \log \sigma_j^2 - \mu_j^2 - \sigma_j^2\right)$$
+
+Here, $d$ is the number of dimensions in the latent vector, and the formula hits its minimum ($D_{\text{KL}} = 0$) only when every dimension has center $\mu_j = 0$ and variance $\sigma_j^2 = 1$.
 
 Because the latent space is continuous and well-behaved, you can interpolate smoothly between two encoded digits (for instance, morphing a handwritten `3` into an `8` step by step) or sample brand-new digits from random Gaussian noise. Keep in mind three practical properties of autoencoders: they are **data-specific** (an autoencoder trained on flowers won't reconstruct portraits cleanly), **lossy** (outputs are slightly smoother than originals), and **unsupervised** (requiring zero class labels).
 
@@ -56,13 +59,10 @@ Because the latent space is continuous and well-behaved, you can interpolate smo
 
 Let's implement the VAE reparameterization sampler and closed-form KL divergence in pure Python. Notice how $D_{\text{KL}} = 0$ when $\boldsymbol{\mu} = \mathbf{0}$ and $\log \boldsymbol{\sigma}^2 = \mathbf{0}$ ($\sigma = 1$).
 
-<PythonRunner
-  client:visible
-  title="Try it Yourself: VAE Reparameterization & KL Loss"
-  expectedOutput="Standard Normal (mu=0, logvar=0) -> KL Loss: -0.0000
-Shifted Latent (mu=[1.2, -0.5], logvar=[-0.4, 0.2]) -> KL Loss: 0.8909
-Sampled z: [1.312, -0.648]"
-  initialCode={`import math
+**VAE Reparameterization & KL Loss**
+
+```python
+import math
 
 def kl_divergence(mu: list[float], logvar: list[float]) -> float:
     return -0.5 * sum(1.0 + lv - m**2 - math.exp(lv) for m, lv in zip(mu, logvar))
@@ -78,8 +78,16 @@ z = reparameterize(mu, logvar, eps=[0.137, -0.134])
 
 print(f"Standard Normal (mu=0, logvar=0) -> KL Loss: {kl_zero:.4f}")
 print(f"Shifted Latent (mu={mu}, logvar={logvar}) -> KL Loss: {kl_shifted:.4f}")
-print(f"Sampled z: {z}")`}
-/>
+print(f"Sampled z: {z}")
+```
+
+**Expected Output:**
+
+```text
+Standard Normal (mu=0, logvar=0) -> KL Loss: -0.0000
+Shifted Latent (mu=[1.2, -0.5], logvar=[-0.4, 0.2]) -> KL Loss: 0.8909
+Sampled z: [1.312, -0.648]
+```
 
 ---
 

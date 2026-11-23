@@ -9,19 +9,18 @@ description: "Eliminate the Knowledge Visibility Gap by turning your repository 
 topic: "System of Record"
 prerequisites: ["harness-engineering/03-project-01-prompt-only-vs-rules-first-harness"]
 ---
-import PythonRunner from '../../../components/islands/PythonRunner';
 import QuizCard from '../../../components/islands/QuizCard';
 import ColabButton from '../../../components/static/ColabButton.astro';
 
 Your team's architecture decisions probably live across Slack threads, Jira tickets, Confluence pages, and a few senior engineers' heads. Humans can walk over to a teammate's desk and ask. An AI coding agent cannot. **Information that does not exist inside the repository literally does not exist for the agent.**
 
-An agent only has three input channels: system/task prompts, files in the repository, and tool execution outputs. Everything outside the repo creates a **Knowledge Visibility Gap**:
+An agent only has three input channels: system/task prompts, files in the repository, and tool execution outputs. Everything outside the repo creates a **Knowledge Visibility Gap**—the fraction of project know-how the agent simply cannot see:
 
 $$
 G_{\text{vis}} = 1 - \frac{|K_{\text{repo}}|}{|K_{\text{total}}|}
 $$
 
-The larger $G_{\text{vis}}$ is, the more your agent has to guess—and every wrong guess becomes a bug or wasted context window.
+Here, $|K_{\text{repo}}|$ is the amount of project knowledge written down inside the repository, and $|K_{\text{total}}|$ is all the knowledge needed to work on the project safely. If half your team's rules live in Slack instead of Git, $G_{\text{vis}} = 0.50$—meaning the agent is flying blind 50% of the time, and every wrong guess becomes a bug or wasted context window.
 
 ---
 
@@ -72,14 +71,10 @@ Launch the companion notebook to run an automated **5-Question Fresh Session Tes
 
 Run this Python auditor to inspect a simulated repository, calculate $G_{\text{vis}}$, and identify which of the 5 Fresh Session questions remain unanswered.
 
-<PythonRunner
-  client:visible
-  title="Try it Yourself: 5-Question Fresh Session Auditor"
-  expectedOutput="Repo A Visibility Gap: 0.60 (2/5 answered)
-  Missing: Q2 (Architecture), Q4 (Verify), Q5 (Progress)
-Repo B Visibility Gap: 0.00 (5/5 answered)
-  Fresh Session Test: PASSED"
-  initialCode={`def fresh_session_audit(repo_files: set[str]) -> tuple[float, list[str]]:
+**5-Question Fresh Session Auditor**
+
+```python
+def fresh_session_audit(repo_files: set[str]) -> tuple[float, list[str]]:
     checks = {
         "Q1 (System)": {"AGENTS.md", "README.md"},
         "Q2 (Architecture)": {"ARCHITECTURE.md", "src/api/ARCHITECTURE.md"},
@@ -107,8 +102,17 @@ print("  Missing:", ", ".join(miss_a))
 repo_b = {"AGENTS.md", "src/api/ARCHITECTURE.md", "init.sh", "tests/test_app.py", "PROGRESS.md"}
 gap_b, miss_b = fresh_session_audit(repo_b)
 print(f"Repo B Visibility Gap: {gap_b:.2f} ({5 - len(miss_b)}/5 answered)")
-print("  Fresh Session Test:", "PASSED" if not miss_b else "FAILED")`}
-/>
+print("  Fresh Session Test:", "PASSED" if not miss_b else "FAILED")
+```
+
+**Expected Output:**
+
+```text
+Repo A Visibility Gap: 0.60 (2/5 answered)
+  Missing: Q2 (Architecture), Q4 (Verify), Q5 (Progress)
+Repo B Visibility Gap: 0.00 (5/5 answered)
+  Fresh Session Test: PASSED
+```
 
 ---
 

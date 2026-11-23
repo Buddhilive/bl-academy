@@ -171,32 +171,17 @@ To install a third-party package from PyPI, run `pip install` followed by the pa
 $ python3 -m pip install requests
 ```
 
-#### The Mathematics of Dependency Trees
+#### How Dependency Trees Work
 
-Packages rarely exist in complete isolation. Real-world libraries depend on lower-level utilities to manage network sockets, validate SSL/TLS certificates, or parse character encodings.
+Packages rarely work alone—they often rely on other helper packages under the hood for things like network connections or SSL certificates. You can picture this like a family tree of requirements: `requests` sits at the top and points down to the helper packages it needs to function.
 
-Formally, software dependencies form a **Directed Acyclic Graph (DAG)** $G = (V, E)$:
-* Each vertex $v \in V$ represents a distinct package release.
-* A directed edge $(u, v) \in E$ indicates that package $u$ requires package $v$ to function.
-
-```
-                    ┌─────────────────────────┐
-                    │      requests (u)       │
-                    └────────────┬────────────┘
-         ┌───────────────┬───────┴───────┬───────────────┐
-         ▼               ▼               ▼               ▼
-  ┌─────────────┐ ┌─────────────┐ ┌─────────────┐ ┌─────────────┐
-  │ urllib3 (v₁)│ │ certifi (v₂)│ │ chardet (v₃)│ │  idna (v₄)  │
-  └─────────────┘ └─────────────┘ └─────────────┘ └─────────────┘
-```
-
-When you instruct `pip` to install `requests`, it contacts the PyPI JSON API, parses the dependency specifications of `requests`, and automatically discovers that it requires four additional libraries:
+When you run `pip install requests`, `pip` checks PyPI, reads `requests`'s requirements, and automatically discovers that it needs four helper libraries:
 1. `urllib3`: Low-level HTTP client with connection pooling.
 2. `certifi`: Mozilla's curated collection of root SSL certificates.
 3. `chardet` (or `charset-normalizer`): Universal character encoding detector.
 4. `idna`: Internationalized Domain Names in Applications parser.
 
-`pip` computes the topological sort of graph $G$, downloads each distribution wheel (`.whl`), and installs all five packages into your environment. Re-running `python3 -m pip list` confirms that `requests` and all four dependencies are now active.
+`pip` figures out the right installation order, downloads each package, and installs all five into your environment. Re-running `python3 -m pip list` confirms that `requests` and all four helpers are now active.
 
 ---
 
@@ -204,25 +189,23 @@ When you instruct `pip` to install `requests`, it contacts the PyPI JSON API, pa
 
 By default, executing `pip install <package>` fetches the single newest release hosted on PyPI. In production engineering, allowing dependencies to update unconstrained can introduce breaking API changes that destabilize working software.
 
-Python packaging adheres to **Semantic Versioning (SemVer)**, formatted as:
+Python packaging uses **Semantic Versioning (SemVer)**, written as **`MAJOR.MINOR.PATCH`** (for example, `2.28.1`):
 
-$$\text{Version} = \text{MAJOR}.\text{MINOR}.\text{PATCH}$$
+* **MAJOR**: Incremented when breaking changes are introduced.
+* **MINOR**: Incremented when new, backward-compatible features are added.
+* **PATCH**: Incremented when backward-compatible bug fixes are released.
 
-* $\text{MAJOR}$: Increment when incompatible API changes are introduced.
-* $\text{MINOR}$: Increment when backward-compatible functionality is added.
-* $\text{PATCH}$: Increment when backward-compatible bug fixes are applied.
+### Using Version Specifiers
 
-### Mathematical Formulation of Version Specifiers
+You can tell `pip` exactly which version—or range of versions—you want to install:
 
-Let $\mathcal{V}$ be the total ordered set of all released versions for package $P$. A version constraint $C$ defines an admissible subset of versions $S_C \subseteq \mathcal{V}$:
-
-| Specifier | Definition | Mathematical Set Form | Shell Example |
-| :--- | :--- | :--- | :--- |
-| `==` | Exact version match (Pinning) | $S = \{v \in \mathcal{V} \mid v = v_0\}$ | `python3 -m pip install requests==2.22.0` |
-| `>=` | Inclusive greater than or equal | $S = \{v \in \mathcal{V} \mid v \ge v_0\}$ | `python3 -m pip install requests>=2.0.0` |
-| `<=` | Inclusive less than or equal | $S = \{v \in \mathcal{V} \mid v \le v_0\}$ | `python3 -m pip install requests<=2.28.0` |
-| `>` / `<` | Strict ordering bounds | $S = \{v \in \mathcal{V} \mid v < v_0\}$ | `python3 -m pip install requests<3.0.0` |
-| `,` (Range) | Set intersection of constraints | $S = S_{C_1} \cap S_{C_2}$ | `python3 -m pip install requests>=2.20.0,<3.0.0` |
+| Specifier | Meaning | Shell Example |
+| :--- | :--- | :--- |
+| `==` | Exact version match (Pinning) | `python3 -m pip install requests==2.22.0` |
+| `>=` | At least this version (inclusive) | `python3 -m pip install requests>=2.0.0` |
+| `<=` | At most this version (inclusive) | `python3 -m pip install requests<=2.28.0` |
+| `>` / `<` | Strictly newer or older than | `python3 -m pip install requests<3.0.0` |
+| `,` (Range) | Must satisfy both bounds | `python3 -m pip install requests>=2.20.0,<3.0.0` |
 
 Pinning an exact version via `requests==2.22.0` guarantees reproducible builds across development, staging, and production servers.
 
@@ -335,15 +318,11 @@ Suppose you are developing two distinct projects on the same computer:
 * **Project Alpha:** An existing web service requiring `requests==1.2.0` (due to legacy API endpoints).
 * **Project Beta:** A modern data processing script requiring `requests>=2.28.0`.
 
-Because a standard Python interpreter has only one global `site-packages` directory:
-
-$$\text{Location}(\text{requests}) = \text{Path}(\text{python}) / \text{"site-packages"} / \text{"requests"}$$
-
-Only one version of `requests` can exist in that directory at any given time. Upgrading `requests` for Project Beta will immediately break Project Alpha.
+Because a standard Python installation has only one shared `site-packages` folder (inside your Python directory), only one version of `requests` can live there at any given time. Upgrading `requests` for Project Beta will immediately break Project Alpha.
 
 ### The Solution: Virtual Environments (`venv`)
 
-To solve dependency collisions, Python provides **virtual environments** via the built-in `venv` module. A virtual environment is an isolated, self-contained filesystem directory containing its own Python executable, standard library references, and dedicated `site-packages` folder.
+To solve dependency conflicts, Python provides **virtual environments** via the built-in `venv` module. A virtual environment is an isolated, self-contained folder that holds its own Python executable, standard library links, and dedicated `site-packages` folder.
 
 ```
  ┌────────────────────────────────────────────────────────────────────────┐
@@ -358,9 +337,7 @@ To solve dependency collisions, Python provides **virtual environments** via the
        └───────────────────────────┘    └───────────────────────────┘
 ```
 
-Virtual environments ensure that dependency graphs $G_{\alpha}$ and $G_{\beta}$ remain completely isolated:
-
-$$V(G_{\alpha}) \cap V(G_{\beta}) \implies \text{No Collision}$$
+Virtual environments keep each project's packages completely separate so they never collide.
 
 ---
 

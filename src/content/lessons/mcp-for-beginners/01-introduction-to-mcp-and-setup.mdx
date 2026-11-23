@@ -9,7 +9,6 @@ description: "Understand how the Model Context Protocol solves the M x N integra
 topic: "MCP Foundations"
 prerequisites: ["generative-ai-for-beginners/22-building-with-meta-llama-models"]
 ---
-import PythonRunner from '../../../components/islands/PythonRunner';
 import QuizCard from '../../../components/islands/QuizCard';
 import ColabButton from '../../../components/static/ColabButton.astro';
 
@@ -45,6 +44,12 @@ MCP uses a **Host-Client-Server** model built on a two-layer architecture:
 | **MCP Host** | The user-facing AI application (VS Code, Claude Desktop, custom agent) | Runs or calls the LLM, manages **Tool Registry**, **Authentication**, **Request Handler**, and **Response Formatter** |
 | **MCP Client** | Protocol connector created by the Host (logical 1:1 with a server) | Sends JSON-RPC 2.0 requests, runs `server/discover`, handles notifications and responses |
 | **MCP Server** | Lightweight capability provider (local or remote) | Exposes **Resources** (knowledge), **Prompts** (workflows), and **Tools** (executable actions) |
+
+In plain English, here is what happens step-by-step when you ask your AI assistant a question:
+1. **You ask a question** in the **Host** (for example, *"Check today's sales in our docs"*).
+2. **The Host checks its Tool Registry** and sends the available tool descriptions to the LLM.
+3. **The LLM picks the right tool** and asks the Host to run it—the model never touches your database or files directly.
+4. **The Host's MCP Client forwards the request** to the **MCP Server**, gets the result back, and hands it to the LLM to write your final answer.
 
 ### Knowledge & Tool Federation
 
@@ -90,16 +95,10 @@ Launch the interactive setup notebook to install `mcp` and `google-genai`, verif
 
 Run this pure-Python sandbox to calculate $M \times N$ vs. $M + N$ integration savings and trace how an MCP Host (`Tool Registry` -> `Authentication` -> `Request Handler` -> `Response Formatter`) dispatches a request across two federated MCP servers.
 
-<PythonRunner
-  client:visible
-  title="Try it Yourself: M x N Complexity & MCP Host Dispatch"
-  expectedOutput="Topology: 5 AI Apps x 12 Tools
-Custom connectors (M*N): 60 -> MCP connectors (M+N): 17 (71.7% reduction)
-[Host:Auth] Verified caller='buddhi'
-[Host:Registry] Routed 'search_docs' -> KnowledgeServer
-[Host:Registry] Routed 'calc_sum' -> MathServer
-[Host:Formatter] Combined 2 federated results for LLM"
-  initialCode={`M, N = 5, 12
+**M x N Complexity & MCP Host Dispatch**
+
+```python
+M, N = 5, 12
 custom_count = M * N
 mcp_count = M + N
 reduction = (1 - mcp_count / custom_count) * 100
@@ -125,8 +124,19 @@ def host_dispatch(caller: str, calls: list[tuple[str, dict]]):
     print(f"[Host:Formatter] Combined {len(results)} federated results for LLM")
     return results
 
-host_dispatch("buddhi", [("search_docs", {"q": "MCP"}), ("calc_sum", {"a": 10, "b": 32})])`}
-/>
+host_dispatch("buddhi", [("search_docs", {"q": "MCP"}), ("calc_sum", {"a": 10, "b": 32})])
+```
+
+**Expected Output:**
+
+```text
+Topology: 5 AI Apps x 12 Tools
+Custom connectors (M*N): 60 -> MCP connectors (M+N): 17 (71.7% reduction)
+[Host:Auth] Verified caller='buddhi'
+[Host:Registry] Routed 'search_docs' -> KnowledgeServer
+[Host:Registry] Routed 'calc_sum' -> MathServer
+[Host:Formatter] Combined 2 federated results for LLM
+```
 
 ---
 

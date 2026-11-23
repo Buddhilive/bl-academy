@@ -9,7 +9,6 @@ description: "Master MCP progress notifications, cooperative request cancellatio
 topic: "MCP Protocol Features"
 prerequisites: ["mcp-for-beginners/12-cursor-based-pagination-and-large-result-sets"]
 ---
-import PythonRunner from '../../../components/islands/PythonRunner';
 import QuizCard from '../../../components/islands/QuizCard';
 import ColabButton from '../../../components/static/ColabButton.astro';
 
@@ -48,15 +47,10 @@ Launch the companion notebook to implement async `notifications/progress` stream
 
 Run this pure-Python sandbox to emit progress notifications, trigger cooperative cancellation with rollback at step 3, resolve an RFC 6570 URI template (`reports://{year}/{month}`), and step through a `SEP-2663` Task handle.
 
-<PythonRunner
-  client:visible
-  title="Try it Yourself: MCP Progress, Cancellation, URI Templates & Tasks"
-  expectedOutput="[Progress] 1/4 (25%)
-[Progress] 2/4 (50%)
-[Cancelled] Rolled back partial state at step 3
-[Template Match] reports://{year}/{month} -> {'year': '2026', 'month': '11'}
-[Tasks Ext] Created task_901 -> status=running -> tasks/get -> status=completed"
-  initialCode={`import re
+**MCP Progress, Cancellation, URI Templates & Tasks**
+
+```python
+import re
 
 # 1. Progress notifications + cooperative cancellation
 def run_batch(cancel_at_step: int | None = None):
@@ -78,8 +72,18 @@ print(f"[Template Match] {template} -> {match.groupdict()}")
 task_store = {"task_901": {"status": "running", "progress": 50}}
 print(f"[Tasks Ext] Created task_901 -> status={task_store['task_901']['status']}", end=" -> ")
 task_store["task_901"]["status"] = "completed"
-print(f"tasks/get -> status={task_store['task_901']['status']}")`}
-/>
+print(f"tasks/get -> status={task_store['task_901']['status']}")
+```
+
+**Expected Output:**
+
+```text
+[Progress] 1/4 (25%)
+[Progress] 2/4 (50%)
+[Cancelled] Rolled back partial state at step 3
+[Template Match] reports://{year}/{month} -> {'year': '2026', 'month': '11'}
+[Tasks Ext] Created task_901 -> status=running -> tasks/get -> status=completed
+```
 
 ---
 

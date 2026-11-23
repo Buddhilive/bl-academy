@@ -9,7 +9,6 @@ description: "Run your first side-by-side harness experiment comparing a bare pr
 topic: "Hands-On Project 01"
 prerequisites: ["harness-engineering/02-what-a-harness-actually-is"]
 ---
-import PythonRunner from '../../../components/islands/PythonRunner';
 import QuizCard from '../../../components/islands/QuizCard';
 import ColabButton from '../../../components/static/ColabButton.astro';
 
@@ -72,13 +71,10 @@ Launch the companion notebook to scaffold both `p01-baseline/` and `p01-improved
 
 Run this self-contained Python Knowledge Base shell and comparison harness to verify all four features (`F01`–`F04`) and compare weak vs. strong harness metrics.
 
-<PythonRunner
-  client:visible
-  title="Try it Yourself: Project 01 KB Shell & Harness Metrics"
-  expectedOutput="[Weak Harness] Completed: 2/4 | Retries: 3 | Premature Stop: True
-[Strong Harness] F01 Health: OK | F02 Docs: 2 | F03 Answer: Harness = I+T+E+S+F | F04 DataDir: Ready
-[Strong Harness] Completed: 4/4 | Retries: 0 | Premature Stop: False"
-  initialCode={`from dataclasses import dataclass
+**Project 01 KB Shell & Harness Metrics**
+
+```python
+from dataclasses import dataclass
 
 @dataclass
 class RunMetrics:
@@ -113,8 +109,16 @@ kb = KnowledgeBaseShell({"01-intro.md": "Harness = I+T+E+S+F", "02-rules.md": "R
 print(f"[Strong Harness] F01 Health: {kb.health()} | F02 Docs: {len(kb.list_docs())} | F03 Answer: {kb.ask('What is Harness?')} | F04 DataDir: Ready")
 
 strong = RunMetrics("Strong Harness", completed=4, total=4, retries=0, premature_stop=False)
-print(f"[{strong.label}] Completed: {strong.completed}/{strong.total} | Retries: {strong.retries} | Premature Stop: {strong.premature_stop}")`}
-/>
+print(f"[{strong.label}] Completed: {strong.completed}/{strong.total} | Retries: {strong.retries} | Premature Stop: {strong.premature_stop}")
+```
+
+**Expected Output:**
+
+```text
+[Weak Harness] Completed: 2/4 | Retries: 3 | Premature Stop: True
+[Strong Harness] F01 Health: OK | F02 Docs: 2 | F03 Answer: Harness = I+T+E+S+F | F04 DataDir: Ready
+[Strong Harness] Completed: 4/4 | Retries: 0 | Premature Stop: False
+```
 
 ---
 

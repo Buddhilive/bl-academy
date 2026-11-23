@@ -9,7 +9,6 @@ description: "Master Scaled Dot-Product Self-Attention, Multi-Head Attention, Po
 topic: "Transformers and BERT"
 prerequisites: ["ai-for-beginners/17-generative-recurrent-networks"]
 ---
-import PythonRunner from '../../../components/islands/PythonRunner';
 import QuizCard from '../../../components/islands/QuizCard';
 import ColabButton from '../../../components/static/ColabButton.astro';
 
@@ -21,11 +20,15 @@ In 2017, the landmark paper **"Attention Is All You Need"** replaced recurrence 
 
 ## Scaled Dot-Product Self-Attention
 
-Instead of passing a single hidden vector down a chain, Self-Attention lets *every token* look directly at *every other token* in the sequence simultaneously. Each token embedding is projected into three vectors: a **Query ($Q$)** (*"what am I looking for?"*), a **Key ($K$)** (*"what do I contain?"*), and a **Value ($V$)** (*"what information do I pass forward?"*):
+Think of Self-Attention like searching a library where every word in a sentence acts as both a **reader** and a **book**: instead of passing one summary note down a chain, every token looks at every other token simultaneously to decide who is relevant. To do this, each token vector is projected into three roles: a **Query ($Q$)** (*"what am I looking for?"*), a **Key ($K$)** (*"what topic label do I have?"*), and a **Value ($V$)** (*"what information do I pass forward if selected?"*):
 
 $$\text{Attention}(Q, K, V) = \text{softmax}\left(\frac{QK^{\top}}{\sqrt{d_k}}\right)V$$
 
-Dividing by $\sqrt{d_k}$ keeps dot-product magnitudes stable so Softmax gradients don't saturate when embedding dimensions grow large.
+Let's break down each step in plain English:
+1. $QK^{\top}$ computes the dot product between every Query and every Key—high scores mean a strong match (for example, `"it"` matching `"animal"`).
+2. Dividing by $\sqrt{d_k}$ (the square root of the key vector's dimension) keeps those scores from growing too huge, so Softmax gradients stay healthy.
+3. $\text{softmax}(\dots)$ turns each row of match scores into positive weights that add up to `1.0` (100% attention budget).
+4. Multiplying by $V$ blends the Value vectors according to those attention weights, giving each token a context-aware representation.
 
 ### Positional Encoding & Multi-Head Attention
 
@@ -58,15 +61,10 @@ Once pre-trained, BERT can be fine-tuned in minutes on custom classification, QA
 
 Let's compute exact **Scaled Dot-Product Self-Attention** across 3 tokens (`["bank", "of", "river"]`) in pure Python and inspect the resulting attention weights.
 
-<PythonRunner
-  client:visible
-  title="Try it Yourself: Scaled Dot-Product Self-Attention"
-  expectedOutput="Attention Weight Matrix (3x3):
-  [0.456, 0.225, 0.32]
-  [0.225, 0.456, 0.32]
-  [0.333, 0.333, 0.333]
-Contextual Output[0] ('bank'): [0.456, 0.544]"
-  initialCode={`import math
+**Scaled Dot-Product Self-Attention**
+
+```python
+import math
 
 # 3 tokens, d_k = 2
 Q = [[1.0, 0.0], [0.0, 1.0], [0.5, 0.5]]
@@ -91,8 +89,18 @@ for row in attn_weights:
     print(" ", [round(w, 3) for w in row])
 
 out_0 = [round(sum(attn_weights[0][j] * V[j][d] for j in range(3)), 3) for d in range(2)]
-print(f"Contextual Output[0] ('bank'): {out_0}")`}
-/>
+print(f"Contextual Output[0] ('bank'): {out_0}")
+```
+
+**Expected Output:**
+
+```text
+Attention Weight Matrix (3x3):
+  [0.456, 0.225, 0.32]
+  [0.225, 0.456, 0.32]
+  [0.333, 0.333, 0.333]
+Contextual Output[0] ('bank'): [0.456, 0.544]
+```
 
 ---
 

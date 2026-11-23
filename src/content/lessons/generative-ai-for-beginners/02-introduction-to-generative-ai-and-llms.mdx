@@ -9,7 +9,6 @@ description: "Understand how Large Language Models work under the hood: subword 
 topic: "LLM Foundations"
 prerequisites: ["generative-ai-for-beginners/01-course-setup-and-google-ai-studio"]
 ---
-import PythonRunner from '../../../components/islands/PythonRunner';
 import QuizCard from '../../../components/islands/QuizCard';
 import ColabButton from '../../../components/static/ColabButton.astro';
 
@@ -42,16 +41,21 @@ Every LLM text generation request follows a clean, repeatable pipeline:
 
 ### Autoregressive Probability & Softmax Temperature
 
-Formally, an autoregressive LLM factors the joint probability of a sequence $w_{1:T}$ as a chain of conditional next-token probabilities:
+Think of **autoregressive generation** like your phone's keyboard autocomplete predicting one word at a time: you type `"The sky is"`, it predicts `"blue"`, appends `"blue"` to the sentence, and then predicts the next word from `"The sky is blue"`.
+
+Formally, an autoregressive LLM calculates the probability of an entire sequence of words $w_{1:T}$ by multiplying the probability of each next token $w_t$ given all previous tokens ($w_1, \dots, w_{t-1}$):
 
 $$P(w_{1:T}) = \prod_{t=1}^{T} P(w_t \mid w_1, w_2, \dots, w_{t-1})$$
 
-Before sampling the next token, raw model scores (**logits** $z_i$) are converted into probabilities using **temperature-scaled softmax**:
+Here, $\prod_{t=1}^{T}$ simply means "multiply these probabilities together for every step $t$ from $1$ to $T$."
+
+Before picking the next token, the model's raw scores (**logits** $z_i$ for each word $i$ in the vocabulary $V$) are converted into percentages that add up to `1.0` using **temperature-scaled softmax**:
 
 $$P(w_i \mid w_{<t}) = \frac{\exp(z_i / T)}{\sum_{j=1}^{|V|} \exp(z_j / T)}$$
 
-- **Low Temperature ($T \to 0$)**: Sharpens the distribution toward the highest-scoring token, making responses focused, repeatable, and nearly deterministic.
-- **High Temperature ($T \ge 1.0$)**: Flattens the distribution, boosting lower-probability tokens for creative brainstorming—at the cost of higher **fabrication (hallucination)** risk.
+In plain English: $w_{<t}$ means "all tokens before step $t$," $|V|$ is the total number of words in the vocabulary, and **Temperature** ($T$) acts like a "creativity vs. predictability" dial:
+- **Low Temperature ($T \to 0$)**: Dividing $z_i$ by a small $T$ exaggerates the lead of the top-scoring word, making responses focused, repeatable, and nearly deterministic.
+- **High Temperature ($T \ge 1.0$)**: Dividing by a larger $T$ flattens the differences between scores, boosting lower-probability words for creative brainstorming—at the cost of higher **fabrication (hallucination)** risk.
 
 ---
 
@@ -81,16 +85,12 @@ Run the notebook below on Google Colab to inspect real token counts and compare 
 
 ## Try It Yourself: Subword Tokenizer & Temperature Sampler
 
-Execute this Python sandbox to see how a subword tokenizer maps text to token IDs and how changing temperature $T$ reshapes next-token probabilities in an autoregressive loop.
+Run this Python script (locally or in a Colab cell) to see how a subword tokenizer maps text to token IDs and how changing temperature $T$ reshapes next-token probabilities in an autoregressive loop.
 
-<PythonRunner
-  client:visible
-  title="Try it Yourself: Tokenization & Softmax Temperature Scaling"
-  expectedOutput="Tokens: ['gen', 'er', 'ative', 'ai', 'rocks'] -> IDs: [10, 11, 12, 13, 14]
-T=0.2 (Focused): [('rocks', 0.982), ('helps', 0.018), ('sleeps', 0.0)]
-T=1.5 (Creative): [('rocks', 0.54), ('helps', 0.317), ('sleeps', 0.142)]
-Autoregressive Step 1: 'Generative AI' + ' rocks'"
-  initialCode={`import math
+**Tokenization & Softmax Temperature Scaling**
+
+```python
+import math
 
 # 1. Simple subword vocabulary & greedy longest-match tokenizer
 vocab = {"gen": 10, "er": 11, "ative": 12, "ai": 13, "rocks": 14, "helps": 15}
@@ -126,8 +126,17 @@ print(f"T=1.5 (Creative): {softmax_temp(candidates, 1.5)}")
 # 3. Autoregressive expanding window step
 prompt = "Generative AI"
 next_tok = softmax_temp(candidates, 0.2)[0][0]
-print(f"Autoregressive Step 1: '{prompt}' + ' {next_tok}'")`}
-/>
+print(f"Autoregressive Step 1: '{prompt}' + ' {next_tok}'")
+```
+
+**Expected Output:**
+
+```text
+Tokens: ['gen', 'er', 'ative', 'ai', 'rocks'] -> IDs: [10, 11, 12, 13, 14]
+T=0.2 (Focused): [('rocks', 0.982), ('helps', 0.018), ('sleeps', 0.0)]
+T=1.5 (Creative): [('rocks', 0.54), ('helps', 0.317), ('sleeps', 0.142)]
+Autoregressive Step 1: 'Generative AI' + ' rocks'
+```
 
 ---
 

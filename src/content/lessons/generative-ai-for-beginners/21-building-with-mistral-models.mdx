@@ -9,7 +9,6 @@ description: "Explore the Mistral model family (Mistral Large 3, Small 3.1, NeMo
 topic: "Mistral Models"
 prerequisites: ["generative-ai-for-beginners/20-building-with-small-language-models"]
 ---
-import PythonRunner from '../../../components/islands/PythonRunner';
 import QuizCard from '../../../components/islands/QuizCard';
 import ColabButton from '../../../components/static/ColabButton.astro';
 
@@ -54,16 +53,12 @@ Launch the notebook below to run the complete **FAISS (`IndexFlatL2`) Cross-Lang
 
 ## Try It Yourself: Cross-Language $L_2$ Vector Search & Tekken Token Counter
 
-Execute this pure-Python sandbox to simulate `faiss.IndexFlatL2` Euclidean nearest-neighbor search for the Korean query over Paul Graham's essay chunks and compare multilingual token compression.
+Run this pure-Python script (locally or in a Colab cell) to simulate `faiss.IndexFlatL2` Euclidean nearest-neighbor search for the Korean query over Paul Graham's essay chunks and compare multilingual token compression.
 
-<PythonRunner
-  client:visible
-  title="Try it Yourself: Cross-Language L2 RAG & Tekken Compression"
-  expectedOutput="Korean Query: '저자가 대학에 오기 전에 주로 했던 두 가지 일은 무엇이었나요?'
-FAISS IndexFlatL2 Top-1 Chunk (L2_dist=0.010): Before college, the two main things I worked on outside of school were writing and programming on an IBM 1401.
-Token Count Comparison (get_current_weather + Paris prompt):
-  SentencePiece: 94 tokens | Tekken: 68 tokens (27.7% fewer tokens)"
-  initialCode={`import math
+**Cross-Language L2 RAG & Tekken Compression**
+
+```python
+import math
 
 # 1. Simulated FAISS IndexFlatL2 over Paul Graham essay chunks
 chunks = [
@@ -84,8 +79,17 @@ print(f"FAISS IndexFlatL2 Top-1 Chunk (L2_dist={best_dist:.3f}): {best_text}")
 sentencepiece_tokens, tekken_tokens = 94, 68
 saved = (1 - tekken_tokens / sentencepiece_tokens) * 100
 print("Token Count Comparison (get_current_weather + Paris prompt):")
-print(f"  SentencePiece: {sentencepiece_tokens} tokens | Tekken: {tekken_tokens} tokens ({saved:.1f}% fewer tokens)")`}
-/>
+print(f"  SentencePiece: {sentencepiece_tokens} tokens | Tekken: {tekken_tokens} tokens ({saved:.1f}% fewer tokens)")
+```
+
+**Expected Output:**
+
+```text
+Korean Query: '저자가 대학에 오기 전에 주로 했던 두 가지 일은 무엇이었나요?'
+FAISS IndexFlatL2 Top-1 Chunk (L2_dist=0.010): Before college, the two main things I worked on outside of school were writing and programming on an IBM 1401.
+Token Count Comparison (get_current_weather + Paris prompt):
+  SentencePiece: 94 tokens | Tekken: 68 tokens (27.7% fewer tokens)
+```
 
 ---
 

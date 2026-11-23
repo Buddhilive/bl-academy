@@ -9,7 +9,6 @@ description: "Implement the Tool Use Design Pattern with JSON function schemas, 
 topic: "Tool Use & Agentic RAG"
 prerequisites: ["ai-agents-for-beginners/04-ai-agentic-design-principles"]
 ---
-import PythonRunner from '../../../components/islands/PythonRunner';
 import QuizCard from '../../../components/islands/QuizCard';
 import ColabButton from '../../../components/static/ColabButton.astro';
 
@@ -70,15 +69,10 @@ Launch the companion notebook to run raw JSON-schema function calling, `@tool` a
 
 Run this pure-Python sandbox to execute the two-turn `get_current_time` function-calling loop, query an in-memory Contoso SQLite sales table safely, and watch the read-only guard block a destructive SQL injection attempt.
 
-<PythonRunner
-  client:visible
-  title="Try it Yourself: Tool Calling & Read-Only SQL Guard"
-  expectedOutput="[Turn 1] Model requested tool: get_current_time({'location': 'San Francisco'})
-[Turn 2] Final answer: The current time in San Francisco is 09:24 AM.
-[SalesSQL] Executed SELECT -> [('Widget A', 4200), ('Widget B', 3150)]
-[SQLGuard] BLOCKED unsafe query: DROP TABLE sales;
-[SmokeTest] TravelToolAgent PASS"
-  initialCode={`import json, re, sqlite3
+**Tool Calling & Read-Only SQL Guard**
+
+```python
+import json, re, sqlite3
 
 # 1. Two-turn function calling simulation
 def get_current_time(location: str) -> str:
@@ -106,8 +100,18 @@ try:
 except PermissionError as err:
     print(f"[SQLGuard] {err}")
 
-print("[SmokeTest] TravelToolAgent PASS")`}
-/>
+print("[SmokeTest] TravelToolAgent PASS")
+```
+
+**Expected Output:**
+
+```text
+[Turn 1] Model requested tool: get_current_time({'location': 'San Francisco'})
+[Turn 2] Final answer: The current time in San Francisco is 09:24 AM.
+[SalesSQL] Executed SELECT -> [('Widget A', 4200), ('Widget B', 3150)]
+[SQLGuard] BLOCKED unsafe query: DROP TABLE sales;
+[SmokeTest] TravelToolAgent PASS
+```
 
 ---
 

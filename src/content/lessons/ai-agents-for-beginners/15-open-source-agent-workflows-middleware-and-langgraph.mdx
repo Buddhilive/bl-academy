@@ -9,7 +9,6 @@ description: "Orchestrate production workflows with composable Function/Chat mid
 topic: "Protocols, Context & Memory"
 prerequisites: ["ai-agents-for-beginners/14-managing-agentic-memory"]
 ---
-import PythonRunner from '../../../components/islands/PythonRunner';
 import QuizCard from '../../../components/islands/QuizCard';
 import ColabButton from '../../../components/static/ColabButton.astro';
 
@@ -49,17 +48,10 @@ Launch the companion notebook to build composable Function/Chat Middleware, a 5-
 
 Run this pure-Python sandbox to chain Function & Chat Middleware, serialize/deserialize a conversation thread, and execute a Switch-Case + Fan-Out/Fan-In workflow emitting lifecycle events.
 
-<PythonRunner
-  client:visible
-  title="Try it Yourself: Middleware & Graph Workflow Engine"
-  expectedOutput="[Event] WorkflowStartedEvent
-[ChatMiddleware] Outbound messages=1 -> forwarded to LLM
-[FunctionMiddleware] Calling get_attractions('Seattle') -> completed
-[SwitchCase] customer_tier='VIP' -> Routed to PriorityConciergeExecutor
-[FanOut/FanIn] Merged 2 parallel results (Flights + Hotel)
-[Thread] Serialized & resumed with 2 messages
-[Event] WorkflowOutputEvent"
-  initialCode={`print("[Event] WorkflowStartedEvent")
+**Middleware & Graph Workflow Engine**
+
+```python
+print("[Event] WorkflowStartedEvent")
 
 def chat_middleware(messages, nxt):
     print(f"[ChatMiddleware] Outbound messages={len(messages)} -> forwarded to LLM")
@@ -83,8 +75,20 @@ print(f"[FanOut/FanIn] Merged {len(parallel_results)} parallel results (Flights 
 # Thread serialization
 serialized = {"messages": ["msg1", "msg2"]}
 print(f"[Thread] Serialized & resumed with {len(serialized['messages'])} messages")
-print("[Event] WorkflowOutputEvent")`}
-/>
+print("[Event] WorkflowOutputEvent")
+```
+
+**Expected Output:**
+
+```text
+[Event] WorkflowStartedEvent
+[ChatMiddleware] Outbound messages=1 -> forwarded to LLM
+[FunctionMiddleware] Calling get_attractions('Seattle') -> completed
+[SwitchCase] customer_tier='VIP' -> Routed to PriorityConciergeExecutor
+[FanOut/FanIn] Merged 2 parallel results (Flights + Hotel)
+[Thread] Serialized & resumed with 2 messages
+[Event] WorkflowOutputEvent
+```
 
 ---
 

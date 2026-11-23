@@ -9,7 +9,6 @@ description: "Build tamper-evident agent audit trails using RFC 8785 JCS canonic
 topic: "Production, Local & Security"
 prerequisites: ["ai-agents-for-beginners/18-creating-local-ai-agents-with-ollama-and-qwen"]
 ---
-import PythonRunner from '../../../components/islands/PythonRunner';
 import QuizCard from '../../../components/islands/QuizCard';
 import ColabButton from '../../../components/static/ColabButton.astro';
 
@@ -20,6 +19,8 @@ Suppose your Contoso Travel agent processed 50,000 bookings last quarter, and an
 ---
 
 ## The 3 Pillars of a Cryptographic Receipt
+
+Think of a cryptographic receipt like a **numbered, wax-sealed bank ledger**: every entry is written in a standard format, stamped with a seal only the bank's private key can create, and references the seal of the page before it so nobody can quietly tear out or rewrite an old page.
 
 1. **Canonical Encoding (RFC 8785 JCS)**: Serializes JSON deterministically (sorted keys, no extra whitespace) so any verifier computes the exact same byte sequence before hashing or signing.
 2. **Digital Signature (Ed25519 / `PyNaCl`)**: Signs the canonical payload bytes with the issuer's private key. **Crucial rule**: a verifier must *never* trust `receipt["signature"]["public_key"]` inside the envelope—an attacker can alter `tool_args_hash`, re-sign with their own key, and embed that key! Always verify against an **out-of-band pinned issuer public key**.
@@ -55,15 +56,10 @@ Launch the companion notebook to generate real **Ed25519 (`PyNaCl`) + RFC 8785 (
 
 Run this pure-Python sandbox to canonicalize tool-call payloads per JCS, sign and verify a 3-receipt hash chain against a pinned issuer key, detect both byte tampering and an attacker's self-signed `04_resigned_receipt` forgery, and enforce `human.approval.v1` action-digest binding.
 
-<PythonRunner
-  client:visible
-  title="Try it Yourself: Cryptographic Receipt Chain & Tamper Detector"
-  expectedOutput="[Receipt 0] Signed & verified against PINNED_KEY -> OK
-[Chain] 3-receipt hash chain verified (R0 -> R1 -> R2)
-[Tamper] Modified tool_args_hash -> Verify=False (REJECTED)
-[ReSign] Attacker re-signed with rogue key -> Verify against PINNED_KEY=False (REJECTED)
-[Approval] human.approval.v1 action_digest matched parent_approval_ref -> VALID"
-  initialCode={`import base64, hashlib, hmac, json
+**Cryptographic Receipt Chain & Tamper Detector**
+
+```python
+import base64, hashlib, hmac, json
 
 def jcs(obj) -> bytes:
     return json.dumps(obj, sort_keys=True, separators=(",", ":"), ensure_ascii=False).encode("utf-8")
@@ -107,8 +103,18 @@ print(f"[ReSign] Attacker re-signed with rogue key -> Verify against PINNED_KEY=
 action_digest = sha256_jcs({"action": "refund", "amount": 120})
 approval = {"type": "human.approval.v1", "action_digest": action_digest}
 exec_claim = {"action_digest": action_digest, "parent_approval_ref": sha256_jcs(approval)}
-print("[Approval] human.approval.v1 action_digest matched parent_approval_ref -> VALID" if exec_claim["action_digest"] == approval["action_digest"] else "INVALID")`}
-/>
+print("[Approval] human.approval.v1 action_digest matched parent_approval_ref -> VALID" if exec_claim["action_digest"] == approval["action_digest"] else "INVALID")
+```
+
+**Expected Output:**
+
+```text
+[Receipt 0] Signed & verified against PINNED_KEY -> OK
+[Chain] 3-receipt hash chain verified (R0 -> R1 -> R2)
+[Tamper] Modified tool_args_hash -> Verify=False (REJECTED)
+[ReSign] Attacker re-signed with rogue key -> Verify against PINNED_KEY=False (REJECTED)
+[Approval] human.approval.v1 action_digest matched parent_approval_ref -> VALID
+```
 
 ---
 

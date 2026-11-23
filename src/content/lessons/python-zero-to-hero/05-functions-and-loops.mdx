@@ -51,16 +51,13 @@ To invoke a function object, append parentheses `()` containing any required arg
 
 1. **Call & Input**: The caller halts execution, transfers control to the function subroutine, and evaluates arguments to bind them to formal parameters within a new local execution frame.
 2. **Execution**: The interpreter executes each statement inside the function body sequentially from top to bottom.
-3. **Return**: Execution terminates at a `return` statement (or the end of the body). The evaluated expression is returned to the call site, replacing the function invocation expression:
-
-$$\text{Call Site: } x = \text{len}("four") \implies x = 4$$
+3. **Return**: Execution ends at a `return` statement (or the end of the function body). The returned value replaces the function call itself—for example, in `x = len("four")`, Python runs `len("four")` and hands back `4`, so `x` becomes `4`.
 
 ### 3. Return Values vs. Side Effects
 
-Understanding the architectural boundary between **return values** and **side effects** is critical for writing clean, predictable code:
+Understanding the difference between **return values** and **side effects** is key to writing clean, predictable code:
 
-* **Return Value**: The discrete data value evaluated by a function and handed back to the caller frame. It can be stored in a variable, composed inside mathematical expressions, or passed to further routines:
-  $$y = f(x)$$
+* **Return Value**: The result a function computes and hands back to your code so you can store it in a variable, use it in math, or pass it to another function.
 * **Side Effect**: An observable modification to the environment outside the function's internal scope, such as writing characters to the terminal screen, persisting data to disk, or changing a mutable data structure.
 
 The built-in `print()` function is a classic demonstration of this distinction. Calling `print("Hello")` displays text on the screen as a **side effect**, but its actual return value evaluates to `None` (an instance of `NoneType`):
@@ -195,15 +192,12 @@ This direct traversal is concise, readable, and idiomatic (**Pythonic**) compare
 
 The built-in `range()` constructor generates immutable arithmetic sequences of integers. It supports three call signatures:
 
-1. `range(stop)`: Generates numbers from $0$ up to, but not including, `stop`:
-   $$\text{range}(3) \implies [0, 1, 2]$$
-2. `range(start, stop)`: Generates numbers starting at `start` up to, but not including, `stop`:
-   $$\text{range}(1, 5) \implies [1, 2, 3, 4]$$
-3. `range(start, stop, step)`: Generates numbers with an explicit increment `step`:
-   $$\text{range}(0, 10, 2) \implies [0, 2, 4, 6, 8]$$
+1. `range(stop)`: Generates numbers from `0` up to, but not including, `stop` (so `range(3)` gives `0, 1, 2`).
+2. `range(start, stop)`: Generates numbers starting at `start` up to, but not including, `stop` (so `range(1, 5)` gives `1, 2, 3, 4`).
+3. `range(start, stop, step)`: Generates numbers counting by `step` (so `range(0, 10, 2)` gives `0, 2, 4, 6, 8`).
 
 > [!NOTE]
-> Unlike a standard `list`, `range` does not allocate all numbers in memory at once. It computes elements on demand in $O(1)$ constant space, allowing iteration over massive ranges like `range(1_000_000)` without memory strain.
+> Unlike a standard `list`, `range` does not create all numbers in memory at once. It generates each number on demand, so looping over `range(1_000_000)` uses almost no memory.
 
 ```python
 for i in range(1, 4):
@@ -220,9 +214,7 @@ for outer in range(1, 4):
         print(f"outer={outer}, inner={inner}")
 ```
 
-The total number of loop body executions equals the product of both loop counts:
-
-$$N_{\text{total}} = N_{\text{outer}} \times N_{\text{inner}} = 3 \times 3 = 9 \text{ iterations}$$
+The total number of times the inner loop runs equals the outer count multiplied by the inner count (here, `3 × 3 = 9` iterations).
 
 ### 5. Practical Challenge 6.5: Compound Investment Tracker
 

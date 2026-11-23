@@ -9,7 +9,6 @@ description: "Understand the shift from centralized cloud APIs to on-device Edge
 topic: "Edge AI Foundations"
 prerequisites: ["harness-engineering/24-frontier-harness-design-breakdowns-claude-code-codex-deepseek-and-pi"]
 ---
-import PythonRunner from '../../../components/islands/PythonRunner';
 import QuizCard from '../../../components/islands/QuizCard';
 
 You may know that building reliable AI agents in Course 07 gave us deterministic control over prompts, tools, and verification gates. Yet even the sharpest agent harness hits a physical wall the moment every inference call must travel over the internet to a distant GPU cluster. When a factory camera needs to spot a defect in 15 milliseconds, or a medical monitor must summarize patient vitals offline, waiting on a cloud round-trip simply breaks the system.
@@ -72,11 +71,15 @@ $$
 L_{\text{total}} = L_{\text{rtt}} + L_{\text{queue}} + L_{\text{prefill}} + N_{\text{tok}} \cdot L_{\text{decode}}
 $$
 
-For an edge deployment, $L_{\text{rtt}} = 0$ and $L_{\text{queue}} = 0$. Furthermore, when an edge node filters raw telemetry locally and only escalates anomalies occurring at rate $\rho_{\text{anomaly}} \in [0, 1]$, the upstream bandwidth saved per device is:
+Think of this like ordering coffee: $L_{\text{rtt}}$ is the drive to the café and back, $L_{\text{queue}}$ is waiting in line, $L_{\text{prefill}}$ is the barista reading your order, and $N_{\text{tok}} \cdot L_{\text{decode}}$ is pouring each cup (each output token). Running on-device sets the drive ($L_{\text{rtt}}$) and line ($L_{\text{queue}}$) to zero.
+
+Furthermore, when an edge node filters raw telemetry locally and only escalates anomalies occurring at rate $\rho_{\text{anomaly}} \in [0, 1]$, the upstream bandwidth saved per device is:
 
 $$
 B_{\text{saved}} = R_{\text{sensor}} \cdot (1 - \rho_{\text{anomaly}})
 $$
+
+Here $R_{\text{sensor}}$ is the raw sensor data rate, and $(1 - \rho_{\text{anomaly}})$ is the fraction of normal, routine readings that never need to leave the device.
 
 By the way, even when a local model decodes slightly slower per token than a data center H100, eliminating a 350ms network round-trip and cold queue often makes the user-perceived response feel instantaneous.
 
@@ -86,13 +89,10 @@ By the way, even when a local model decodes slightly slower per token than a dat
 
 Run this Python simulation to compare total response time and monthly bandwidth usage across three workloads: an autonomous vehicle perception loop, a hospital point-of-care assistant, and an industrial sensor gateway.
 
-<PythonRunner
-  client:visible
-  title="Try it Yourself: Cloud vs. Edge Latency & Bandwidth Simulator"
-  expectedOutput="Workload: Autonomous Perception | Cloud=465.0ms | Edge=22.0ms | Speedup=21.14x | Bandwidth Saved=99.0%
-Workload: Clinical Point-of-Care | Cloud=740.0ms | Edge=180.0ms | Speedup=4.11x | Bandwidth Saved=100.0%
-Workload: Factory Anomaly Gateway | Cloud=510.0ms | Edge=45.0ms | Speedup=11.33x | Bandwidth Saved=95.0%"
-  initialCode={`from dataclasses import dataclass
+**Cloud vs. Edge Latency & Bandwidth Simulator**
+
+```python
+from dataclasses import dataclass
 
 @dataclass
 class Workload:
@@ -118,8 +118,16 @@ for w in workloads:
         f"Workload: {w.name} | Cloud={cloud_total:.1f}ms | "
         f"Edge={edge_total:.1f}ms | Speedup={speedup:.2f}x | "
         f"Bandwidth Saved={bw_saved:.1f}%"
-    )`}
-/>
+    )
+```
+
+**Expected Output:**
+
+```text
+Workload: Autonomous Perception | Cloud=465.0ms | Edge=22.0ms | Speedup=21.14x | Bandwidth Saved=99.0%
+Workload: Clinical Point-of-Care | Cloud=740.0ms | Edge=180.0ms | Speedup=4.11x | Bandwidth Saved=100.0%
+Workload: Factory Anomaly Gateway | Cloud=510.0ms | Edge=45.0ms | Speedup=11.33x | Bandwidth Saved=95.0%
+```
 
 ---
 

@@ -9,7 +9,6 @@ description: "Apply Space, Time, and Core Agentic Design Principles alongside Tr
 topic: "Agent Foundations"
 prerequisites: ["ai-agents-for-beginners/03-exploring-ai-agentic-frameworks"]
 ---
-import PythonRunner from '../../../components/islands/PythonRunner';
 import QuizCard from '../../../components/islands/QuizCard';
 import ColabButton from '../../../components/static/ColabButton.astro';
 
@@ -56,14 +55,10 @@ Launch the companion notebook to build a principle-compliant Travel Agent with `
 
 Run this pure-Python sandbox to test how Transparency (AI disclosure + prompt audit log), Control (verbosity toggle + `forget_history()`), and Time-aware contextual nudging work inside a Travel Agent.
 
-<PythonRunner
-  client:visible
-  title="Try it Yourself: Human-Centric Travel Agent Controls"
-  expectedOutput="[Disclosure] AI Travel Agent active | Restrictions: No medical/legal advice
-[Control] Verbosity set to 'concise'
-[Nudge:Now] Gate B12 boarding in 35m; terminal shuttle is 4m away.
-[Control:Forget] Cleared 1 prompt(s) and 1 preference(s) from memory."
-  initialCode={`class HumanCentricTravelAgent:
+**Human-Centric Travel Agent Controls**
+
+```python
+class HumanCentricTravelAgent:
     def __init__(self):
         self.ai_disclosure = "AI Travel Agent active | Restrictions: No medical/legal advice"
         self.verbosity = "detailed"
@@ -89,8 +84,17 @@ agent = HumanCentricTravelAgent()
 print(f"[Disclosure] {agent.ai_disclosure}")
 agent.set_verbosity("concise")
 print(f"[Nudge:Now] {agent.ask('Flight status?')}")
-agent.forget_all()`}
-/>
+agent.forget_all()
+```
+
+**Expected Output:**
+
+```text
+[Disclosure] AI Travel Agent active | Restrictions: No medical/legal advice
+[Control] Verbosity set to 'concise'
+[Nudge:Now] Gate B12 boarding in 35m; terminal shuttle is 4m away.
+[Control:Forget] Cleared 1 prompt(s) and 1 preference(s) from memory.
+```
 
 ---
 

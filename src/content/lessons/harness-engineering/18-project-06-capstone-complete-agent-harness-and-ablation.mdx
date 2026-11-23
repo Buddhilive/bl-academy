@@ -9,7 +9,6 @@ description: "Assemble the complete 5-subsystem Knowledge Base harness, apply ha
 topic: "Capstone Project 06"
 prerequisites: ["harness-engineering/17-clean-session-exits-and-entropy-control"]
 ---
-import PythonRunner from '../../../components/islands/PythonRunner';
 import QuizCard from '../../../components/islands/QuizCard';
 import ColabButton from '../../../components/static/ColabButton.astro';
 
@@ -61,13 +60,10 @@ Launch the companion notebook to run the complete **Capstone Benchmark**, **Clea
 
 Run this Python capstone runner to verify all 8 required harness artifacts, execute the cleanup scanner, and summarize the ablation results.
 
-<PythonRunner
-  client:visible
-  title="Try it Yourself: Project 06 Capstone Harness Benchmark"
-  expectedOutput="Capstone Artifact Check: 8/8 present -> PASS
-Cleanup Scanner: 0 stale artifacts -> CLEAN
-Ablation Study Winner (largest drop when removed): Verification Gates (-38%)"
-  initialCode={`required_artifacts = [
+**Project 06 Capstone Harness Benchmark**
+
+```python
+required_artifacts = [
     "AGENTS.md", "GEMINI.md", "init.sh", "feature_list.json",
     "session-handoff.md", "clean-state-checklist.md", "QUALITY.md", ".agents/hooks.json"
 ]
@@ -80,8 +76,16 @@ print(f"Cleanup Scanner: {len(stale_files)} stale artifacts -> {'CLEAN' if not s
 
 ablation_drops = {"Verification Gates": 38, "Modular AGENTS.md": 26, "State Handoff": 22, "Init Script": 14}
 top_component = max(ablation_drops.items(), key=lambda kv: kv[1])
-print(f"Ablation Study Winner (largest drop when removed): {top_component[0]} (-{top_component[1]}%)")`}
-/>
+print(f"Ablation Study Winner (largest drop when removed): {top_component[0]} (-{top_component[1]}%)")
+```
+
+**Expected Output:**
+
+```text
+Capstone Artifact Check: 8/8 present -> PASS
+Cleanup Scanner: 0 stale artifacts -> CLEAN
+Ablation Study Winner (largest drop when removed): Verification Gates (-38%)
+```
 
 ---
 

@@ -9,7 +9,6 @@ description: "Compare truly open-source LLMs (OLMo) vs. open-weight models (Llam
 topic: "Open-Source Models"
 prerequisites: ["generative-ai-for-beginners/16-the-generative-ai-application-lifecycle"]
 ---
-import PythonRunner from '../../../components/islands/PythonRunner';
 import QuizCard from '../../../components/islands/QuizCard';
 import ColabButton from '../../../components/static/ColabButton.astro';
 
@@ -35,8 +34,9 @@ Hosted APIs like Gemini are unbeatable for rapid prototyping, but many teams eve
 
 ## Architectural Optimizations: MQA, FlashAttention & Sparse MoE
 
-1. **Multi-Query Attention (MQA) & Grouped-Query Attention (GQA)**: Standard Multi-Head Attention (MHA) stores separate Key ($K$) and Value ($V$) caches for every query head. MQA shares a single $K/V$ head across all query heads, slashing **KV-Cache** VRAM usage by $n_{\text{heads}}\times$:
+1. **Multi-Query Attention (MQA) & Grouped-Query Attention (GQA)**: Standard Multi-Head Attention (MHA) keeps a separate Key ($K$) and Value ($V$) scratchpad (**KV-Cache**) for every single attention head—like giving 32 readers 32 separate copies of the same reference book. MQA shares one $K/V$ head across all query heads (and GQA shares a few grouped $K/V$ heads), slashing KV-Cache VRAM usage:
    $$\text{KV Cache Bytes} = 2 \cdot b \cdot s \cdot L \cdot n_{\text{kv\_heads}} \cdot d_{\text{head}} \cdot \text{bytes}$$
+   Here, `2` accounts for both Key and Value tensors, $b$ is batch size, $s$ is sequence length, $L$ is the number of Transformer layers, $n_{\text{kv\_heads}}$ is how many $K/V$ heads are stored, $d_{\text{head}}$ is each head's vector size, and $\text{bytes}$ is precision (`2` for FP16).
 2. **FlashAttention**: Reorders attention matrix tiling inside fast GPU SRAM to avoid quadratic $O(N^2)$ memory bottlenecks.
 3. **Sparse Mixture-of-Experts (MoE)**: Routes each token to only the top-$k$ specialized feed-forward experts—giving a 47B total-parameter model the inference speed of a ~13B active-parameter model.
 
@@ -56,16 +56,12 @@ Launch the notebook below on a **Colab Free Tier T4 GPU** to load an open-weight
 
 ## Try It Yourself: KV-Cache VRAM Profiler (MHA vs. GQA vs. MQA)
 
-Execute this Python sandbox to calculate exact FP16 KV-cache memory across MHA, GQA, and MQA at a 32,768-token context length.
+Run this Python script (locally or in a Colab cell) to calculate exact FP16 KV-cache memory across MHA, GQA, and MQA at a 32,768-token context length.
 
-<PythonRunner
-  client:visible
-  title="Try it Yourself: Attention KV-Cache Memory Profiler"
-  expectedOutput="Context=32768, Layers=32, HeadDim=128, FP16:
-  MHA (32 kv_heads): 16.00 GB
-  GQA (8 kv_heads):  4.00 GB
-  MQA (1 kv_head):   0.50 GB (32.0x smaller)"
-  initialCode={`def kv_cache_gb(batch, seq_len, layers, kv_heads, head_dim, bytes_per_param=2):
+**Attention KV-Cache Memory Profiler**
+
+```python
+def kv_cache_gb(batch, seq_len, layers, kv_heads, head_dim, bytes_per_param=2):
     total_bytes = 2 * batch * seq_len * layers * kv_heads * head_dim * bytes_per_param
     return total_bytes / (1024 ** 3)
 
@@ -77,8 +73,17 @@ mqa = kv_cache_gb(1, seq, layers, 1, dim)
 print(f"Context={seq}, Layers={layers}, HeadDim={dim}, FP16:")
 print(f"  MHA (32 kv_heads): {mha:.2f} GB")
 print(f"  GQA (8 kv_heads):  {gqa:.2f} GB")
-print(f"  MQA (1 kv_head):   {mqa:.2f} GB ({mha / mqa:.1f}x smaller)")`}
-/>
+print(f"  MQA (1 kv_head):   {mqa:.2f} GB ({mha / mqa:.1f}x smaller)")
+```
+
+**Expected Output:**
+
+```text
+Context=32768, Layers=32, HeadDim=128, FP16:
+  MHA (32 kv_heads): 16.00 GB
+  GQA (8 kv_heads):  4.00 GB
+  MQA (1 kv_head):   0.50 GB (32.0x smaller)
+```
 
 ---
 

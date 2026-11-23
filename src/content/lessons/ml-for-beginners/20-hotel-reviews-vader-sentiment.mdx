@@ -9,7 +9,6 @@ description: "Normalize European hotel addresses, extract 8 binary guest/trip ta
 topic: "VADER Sentiment Pipeline"
 prerequisites: ["ml-for-beginners/19-exploring-european-hotel-reviews"]
 ---
-import PythonRunner from '../../../components/islands/PythonRunner';
 import QuizCard from '../../../components/islands/QuizCard';
 import ColabButton from '../../../components/static/ColabButton.astro';
 
@@ -51,14 +50,10 @@ Remember VADER's blind spot: a sarcastic review like *"Of course I LOVED sleepin
 
 Let's run the city normalizer, 8-tag binary encoder, cached stop-word stripper, and VADER-style compound sentiment scorer in pure Python.
 
-<PythonRunner
-  client:visible
-  title="Try it Yourself: Hotel Tag Encoder & Sentiment Pipeline"
-  expectedOutput="City: London, United Kingdom | Tags -> Leisure: 1, Couple: 1, Pet: 0
-Filtered Negative Words: ['room', 'noisy', 'broken', 'heating']
-VADER-Style Compound -> Neg: -0.66, Pos: 0.00 (No Positive sentinel)
-Sarcasm Alert ('Of course I LOVED sleeping in a room with no heating'): Lexicon=+0.64 vs True=Negative"
-  initialCode={`STOPWORDS = {"the", "a", "an", "in", "with", "and", "was", "were", "no", "of", "to"}
+**Hotel Tag Encoder & Sentiment Pipeline**
+
+```python
+STOPWORDS = {"the", "a", "an", "in", "with", "and", "was", "were", "no", "of", "to"}
 VALENCE = {"noisy": -1.6, "broken": -1.8, "heating": 0.0, "loved": 3.2, "great": 2.5}
 
 raw_addr = "123 Westminster Bridge Rd, London, United Kingdom"
@@ -85,8 +80,17 @@ pos_score = compound_score("No Positive")
 print(f"VADER-Style Compound -> Neg: {neg_score:.2f}, Pos: {pos_score:.2f} (No Positive sentinel)")
 
 sarcastic = "Of course I LOVED sleeping in a room with no heating"
-print(f"Sarcasm Alert ('{sarcastic}'): Lexicon={compound_score(sarcastic):+.2f} vs True=Negative")`}
-/>
+print(f"Sarcasm Alert ('{sarcastic}'): Lexicon={compound_score(sarcastic):+.2f} vs True=Negative")
+```
+
+**Expected Output:**
+
+```text
+City: London, United Kingdom | Tags -> Leisure: 1, Couple: 1, Pet: 0
+Filtered Negative Words: ['room', 'noisy', 'broken', 'heating']
+VADER-Style Compound -> Neg: -0.66, Pos: 0.00 (No Positive sentinel)
+Sarcasm Alert ('Of course I LOVED sleeping in a room with no heating'): Lexicon=+0.64 vs True=Negative
+```
 
 ---
 

@@ -9,7 +9,6 @@ description: "Build Zava Retail FastMCP introspection and read-only SQL tools pa
 topic: "FastMCP Tools & Semantic Search"
 prerequisites: ["mcp-for-beginners/20-zava-retail-database-mcp-architecture-and-rls"]
 ---
-import PythonRunner from '../../../components/islands/PythonRunner';
 import QuizCard from '../../../components/islands/QuizCard';
 import ColabButton from '../../../components/static/ColabButton.astro';
 
@@ -55,15 +54,10 @@ Launch the companion notebook to run the Zava Retail `FastMCP` Server with `sqli
 
 Run this pure-Python sandbox to introspect the Zava schema, block a `DROP TABLE` SQL injection attempt, compute Seattle store KPIs, and run hybrid cosine-similarity product search.
 
-<PythonRunner
-  client:visible
-  title="Try it Yourself: Zava Retail Schema, SQLi Guard & Hybrid Search"
-  expectedOutput="Schema tables: ['products', 'sales_transactions']
-SQLi Guard 'DROP TABLE products;' -> BLOCKED (DDL/DML forbidden)
-Seattle KPIs -> orders=2, revenue=$314.00, AOV=$157.00
-Hybrid Search ('rainy running shoes', store='seattle', max_price=150):
-  1. Aero Trail Runner ($129.00, sim=0.985)"
-  initialCode={`import math
+**Zava Retail Schema, SQLi Guard & Hybrid Search**
+
+```python
+import math
 import re
 import sqlite3
 
@@ -89,7 +83,7 @@ print("SQLi Guard 'DROP TABLE products;' ->", safe_select("DROP TABLE products;"
 
 # 3. Store KPIs (RLS='seattle')
 cnt, rev = db.execute("SELECT COUNT(*), SUM(total) FROM sales_transactions WHERE store_id = ?", ("seattle",)).fetchone()
-print(f"Seattle KPIs -> orders={cnt}, revenue=\${rev:.2f}, AOV=\${rev/cnt:.2f}")
+print(f"Seattle KPIs -> orders={cnt}, revenue=${rev:.2f}, AOV=${rev/cnt:.2f}")
 
 # 4. Hybrid Semantic + SQL Search
 def cosine(u: list[float], v: list[float]) -> float:
@@ -110,8 +104,18 @@ hits = [
 hits.sort(reverse=True)
 print("Hybrid Search ('rainy running shoes', store='seattle', max_price=150):")
 for idx, (sim, name, price) in enumerate(hits, start=1):
-    print(f"  {idx}. {name} (\${price:.2f}, sim={sim:.3f})")`}
-/>
+    print(f"  {idx}. {name} (${price:.2f}, sim={sim:.3f})")
+```
+
+**Expected Output:**
+
+```text
+Schema tables: ['products', 'sales_transactions']
+SQLi Guard 'DROP TABLE products;' -> BLOCKED (DDL/DML forbidden)
+Seattle KPIs -> orders=2, revenue=$314.00, AOV=$157.00
+Hybrid Search ('rainy running shoes', store='seattle', max_price=150):
+  1. Aero Trail Runner ($129.00, sim=0.985)
+```
 
 ---
 

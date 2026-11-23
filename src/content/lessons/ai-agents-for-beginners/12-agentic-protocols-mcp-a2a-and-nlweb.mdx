@@ -9,7 +9,6 @@ description: "Connect agents to tools, other agents, and websites using Model Co
 topic: "Protocols, Context & Memory"
 prerequisites: ["ai-agents-for-beginners/11-ai-agents-in-production-observability-and-evaluation"]
 ---
-import PythonRunner from '../../../components/islands/PythonRunner';
 import QuizCard from '../../../components/islands/QuizCard';
 import ColabButton from '../../../components/static/ColabButton.astro';
 
@@ -20,6 +19,8 @@ In this lesson, we unify the three core protocols shaping modern agent architect
 ---
 
 ## Comparing MCP, A2A, and NLWeb
+
+If you are new to agent protocols, picture a repair shop: **MCP** is how one mechanic picks up and uses tools, **A2A** is how two independent mechanics hand off jobs to each other, and **NLWeb** is how a store publishes an AI-readable catalog anyone can ask questions against.
 
 | Protocol | Primary Connection | Core Primitives / Components | Travel Booking Role |
 | :--- | :--- | :--- | :--- |
@@ -53,16 +54,12 @@ Launch the companion notebook to implement an Airline `FastMCP` tool server, an 
 
 Run this pure-Python sandbox to watch a Travel Agent discover `search_flights` via MCP, delegate hotel and car rentals via A2A Agent Cards and Artifacts, and query a Honolulu resort catalog through `NLWeb.ask()`.
 
-<PythonRunner
-  client:visible
-  title="Try it Yourself: MCP + A2A + NLWeb Travel Orchestrator"
-  expectedOutput="[MCP] Discovered AirlineMCP tools: ['search_flights', 'book_flight'] -> PDX->HNL $410
-[A2A] AgentCard 'HotelAgent' (skills=['book_hotel']) -> Artifact: Waikiki Family Suite confirmed
-[A2A] AgentCard 'CarRentalAgent' (skills=['rent_car']) -> Artifact: SUV reserved via EventQueue
-[NLWeb] ask('family-friendly hotel with pool in Honolulu') -> Schema.org match: OceanBreeze Resort"
-  initialCode={`# 1. MCP Tool Discovery & Invocation
+**MCP + A2A + NLWeb Travel Orchestrator**
+
+```python
+# 1. MCP Tool Discovery & Invocation
 airline_mcp_tools = ["search_flights", "book_flight"]
-print(f"[MCP] Discovered AirlineMCP tools: {airline_mcp_tools} -> PDX->HNL \$410")
+print(f"[MCP] Discovered AirlineMCP tools: {airline_mcp_tools} -> PDX->HNL $410")
 
 # 2. A2A Cross-Agent Collaboration
 agent_cards = [
@@ -76,8 +73,17 @@ for card in agent_cards:
 nlweb_catalog = [{"@type": "Hotel", "name": "OceanBreeze Resort", "tags": ["family-friendly", "pool", "honolulu"]}]
 query = "family-friendly hotel with pool in Honolulu"
 match = next(h["name"] for h in nlweb_catalog if "pool" in h["tags"] and "honolulu" in h["tags"])
-print(f"[NLWeb] ask('{query}') -> Schema.org match: {match}")`}
-/>
+print(f"[NLWeb] ask('{query}') -> Schema.org match: {match}")
+```
+
+**Expected Output:**
+
+```text
+[MCP] Discovered AirlineMCP tools: ['search_flights', 'book_flight'] -> PDX->HNL $410
+[A2A] AgentCard 'HotelAgent' (skills=['book_hotel']) -> Artifact: Waikiki Family Suite confirmed
+[A2A] AgentCard 'CarRentalAgent' (skills=['rent_car']) -> Artifact: SUV reserved via EventQueue
+[NLWeb] ask('family-friendly hotel with pool in Honolulu') -> Schema.org match: OceanBreeze Resort
+```
 
 ---
 

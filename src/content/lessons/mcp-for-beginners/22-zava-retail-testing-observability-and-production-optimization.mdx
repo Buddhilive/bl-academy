@@ -9,7 +9,6 @@ description: "Verify Zava Retail with automated RLS and SQLi tests, W3C tracepar
 topic: "Testing, Observability & Optimization"
 prerequisites: ["mcp-for-beginners/21-zava-retail-fastmcp-tools-and-semantic-vector-search"]
 ---
-import PythonRunner from '../../../components/islands/PythonRunner';
 import QuizCard from '../../../components/islands/QuizCard';
 import ColabButton from '../../../components/static/ColabButton.astro';
 
@@ -48,14 +47,10 @@ Launch the final capstone notebook to run the automated RLS & SQLi test suite, e
 
 Run this pure-Python sandbox to execute a 4-check RLS/SQLi security audit, propagate a W3C `traceparent` span, and calculate $P_{50}$/$P_{95}$ query latencies and embedding cache hit ratio.
 
-<PythonRunner
-  client:visible
-  title="Try it Yourself: Zava Retail Security Audit & P95 Observability"
-  expectedOutput="[Audit] 4/4 RLS & SQLi checks passed
-[OTel Span] traceparent=00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01 | span=zava.hybrid_search
-[Latency] P50=14.0ms, P95=42.0ms
-[Cache] hits=8, misses=2 -> hit_ratio=80.0%"
-  initialCode={`# 1. Automated RLS & SQLi security checks
+**Zava Retail Security Audit & P95 Observability**
+
+```python
+# 1. Automated RLS & SQLi security checks
 checks = [
     ("seattle_cannot_read_redmond", True),
     ("redmond_cannot_read_seattle", True),
@@ -77,8 +72,17 @@ print(f"[Latency] P50={p50:.1f}ms, P95={p95:.1f}ms")
 
 hits, misses = 8, 2
 hit_ratio = hits / (hits + misses) * 100
-print(f"[Cache] hits={hits}, misses={misses} -> hit_ratio={hit_ratio:.1f}%")`}
-/>
+print(f"[Cache] hits={hits}, misses={misses} -> hit_ratio={hit_ratio:.1f}%")
+```
+
+**Expected Output:**
+
+```text
+[Audit] 4/4 RLS & SQLi checks passed
+[OTel Span] traceparent=00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01 | span=zava.hybrid_search
+[Latency] P50=14.0ms, P95=42.0ms
+[Cache] hits=8, misses=2 -> hit_ratio=80.0%
+```
 
 ---
 

@@ -9,7 +9,6 @@ description: "Design AI Agent architectures combining LLMs, State, and Tools acr
 topic: "AI Agents"
 prerequisites: ["generative-ai-for-beginners/17-open-source-models-and-hugging-face"]
 ---
-import PythonRunner from '../../../components/islands/PythonRunner';
 import QuizCard from '../../../components/islands/QuizCard';
 import ColabButton from '../../../components/static/ColabButton.astro';
 
@@ -55,20 +54,12 @@ Launch the notebook below to run a typed tool-calling agent, a Sequential `[Rese
 
 ## Try It Yourself: JARVIS Task-DAG Planner & Pitch Boardroom
 
-Execute this pure-Python sandbox to topologically resolve a JARVIS multimodal task DAG and run the multi-department EdTech Startup Pitch Boardroom simulation.
+Run this pure-Python script (locally or in a Colab cell) to topologically resolve a JARVIS multimodal task DAG and run the multi-department EdTech Startup Pitch Boardroom simulation.
 
-<PythonRunner
-  client:visible
-  title="Try it Yourself: JARVIS DAG Planner & Multi-Agent Pitch Boardroom"
-  expectedOutput="JARVIS DAG Execution Order:
-  Step 1: id=0 task=image-to-text (deps=[])
-  Step 2: id=1 task=object-detection (deps=[0])
-  Step 3: id=2 task=text-to-speech (deps=[1])
-Concurrent Pitch Boardroom Critiques:
-  [Pedagogy Lead]: Align quiz difficulty with Bloom's taxonomy.
-  [Systems Architect]: Cache embeddings to cut latency under 200ms.
-  [Finance Officer]: Cap free-tier calls at 15 RPM per user."
-  initialCode={`# 1. JARVIS / HuggingGPT 4-stage dependency DAG topological resolver
+**JARVIS DAG Planner & Multi-Agent Pitch Boardroom**
+
+```python
+# 1. JARVIS / HuggingGPT 4-stage dependency DAG topological resolver
 dag = [
     {"id": 2, "task": "text-to-speech", "dep": [1]},
     {"id": 0, "task": "image-to-text", "dep": [-1]},
@@ -98,8 +89,21 @@ agents = {
 }
 print("Concurrent Pitch Boardroom Critiques:")
 for role, critique in agents.items():
-    print(f"  [{role}]: {critique}")`}
-/>
+    print(f"  [{role}]: {critique}")
+```
+
+**Expected Output:**
+
+```text
+JARVIS DAG Execution Order:
+  Step 1: id=0 task=image-to-text (deps=[])
+  Step 2: id=1 task=object-detection (deps=[0])
+  Step 3: id=2 task=text-to-speech (deps=[1])
+Concurrent Pitch Boardroom Critiques:
+  [Pedagogy Lead]: Align quiz difficulty with Bloom's taxonomy.
+  [Systems Architect]: Cache embeddings to cut latency under 200ms.
+  [Finance Officer]: Cap free-tier calls at 15 RPM per user.
+```
 
 ---
 

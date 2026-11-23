@@ -1,91 +1,92 @@
 # BuddhiAI Academy
 
-> Free, high-performance, bite-sized interactive STEM learning platform covering Python, Data Science, AI, Mathematics, and Computer Science (inspired by Brilliant.org).
+> Free, open-source, beginner-friendly 9-course AI Engineering learning platform — from Python fundamentals to Edge AI and Harness Engineering.
+
+[![License: MIT](https://img.shields.io/badge/License-MIT-A7452A.svg)](./LICENSE)
 
 ---
 
-## 1. Executive Summary & Vision
+## Overview
 
-BuddhiAI Academy empowers learners with intuitive, active STEM education. Lessons combine concise conceptual storytelling, rigorous mathematical foundations, and immediate hands-on code execution directly within the browser.
+**BuddhiAI Academy** is a static-first, zero-backend interactive learning platform built with **Astro 7** and **React** islands. It guides learners step-by-step through a connected 9-course AI Engineering curriculum using plain-English explanations, copyable code examples, interactive self-check quizzes, and free-tier hands-on labs.
 
-### Key Architectural Constraints
-- **Zero-Backend / 100% Client-Side Execution**: All dynamic code runs client-side via **Pyodide (WebAssembly)** inside an isolated Web Worker (`/src/workers/pyodide.worker.ts`). There is zero remote code execution server to manage, scale, or secure.
-- **Static First & AdSense Optimized**: Built on **Astro SSG**. Every lesson page pre-renders full semantic HTML and rich explanatory prose at build time, ensuring optimal SEO indexing and adherence to Google AdSense high-value content guidelines.
-- **Island Architecture**: Interactive components (`PythonRunner`, `VisualQuiz`, `ConceptSlider`) are isolated UI islands (React / Preact) hydrated on-demand using `client:visible`.
-- **Offline-First State & Progress Sync**: Learner progress, streaks, and scratchpad code are saved instantly in `localStorage` for anonymous users and synced seamlessly to **Supabase** (PostgreSQL + Row Level Security) upon authentication.
-- **Source Grounding**: All curriculum, exercises, and interactive lessons are strictly synthesized from authoritative reference materials in the `/docs` folder.
+### Execution & Free-Tier Stack
+
+- **Course 00 (`python-zero-to-hero`) — In-Browser Pyodide**: Python basics run 100% client-side via **Pyodide (WebAssembly)** inside an isolated Web Worker (`/src/workers/pyodide.worker.ts`) with a 5-second timeout. No backend server required.
+- **Courses 01–08 — Google Colab Free Tier**: Machine learning, deep learning, GenAI, MCP, AI agents, and edge AI labs use static reference code blocks inline and 1-click **Open with Google Colab** notebooks (`./notebook/<course>/`) runnable on Colab Free Tier CPU or T4 GPU.
+- **LLM & Agent Courses — Google AI Studio Free Tier**: Courses 04–08 use open-source frameworks paired with a free `GEMINI_API_KEY` from [Google AI Studio](https://aistudio.google.com/apikey) (`google-genai` SDK) — no paid cloud credits required.
 
 ---
 
-## 2. Architecture & Technology Stack
+## 9-Course Sequential Curriculum
+
+| Step | Track ID | Course Title | Runtime Stack |
+| :--- | :--- | :--- | :--- |
+| `00` | `python` | **Python Zero to Hero** | In-Browser Pyodide |
+| `01` | `ai-for-beginners` | **AI for Beginners** | Colab Free CPU / T4 GPU |
+| `02` | `data-science-for-beginners` | **Data Science for Beginners** | Colab Free CPU |
+| `03` | `ml-for-beginners` | **ML for Beginners** | Colab Free CPU |
+| `04` | `generative-ai-for-beginners` | **Generative AI for Beginners** | Colab Free CPU + Google AI Studio |
+| `05` | `mcp-for-beginners` | **MCP for Beginners** | Colab Free CPU + Google AI Studio |
+| `06` | `ai-agents-for-beginners` | **AI Agents for Beginners** | Colab Free CPU + Google AI Studio |
+| `07` | `harness-engineering` | **Harness Engineering** | Colab Free CPU + Google AI Studio |
+| `08` | `edge-ai-for-beginners` | **Edge AI for Beginners** | Colab Free T4 GPU / CPU + Google AI Studio |
+
+---
+
+## Tech Stack
 
 | Layer | Technology | Details |
 | :--- | :--- | :--- |
-| **Framework** | **Astro 5+** (SSG) | Content Layer / Content Collections, MDX |
-| **Interactive Islands** | **React / Preact** | Hydrated selectively with `client:visible` |
-| **Python WASM Engine** | **Pyodide v0.26+** | Dedicated Web Worker with a 5-second hard execution timeout |
-| **Backend & Auth** | **Supabase** | PostgreSQL + RLS, Auth via `@supabase/supabase-js` |
-| **Styling & Theme** | **Tailwind CSS** | Light and Dark mode with primary `#A7452A` (terracotta) |
-| **Math Typesetting** | **KaTeX** | Fast, server-rendered and client-compatible mathematical formulas |
-| **Monetization** | **Google AdSense** | Fixed-dimension slots with reserved height to eliminate CLS |
+| **Framework** | **Astro 7+** (SSG) | Content Collections (`src/content.config.ts`), MDX, Sitemap |
+| **Interactive Islands** | **React 19** | Hydrated selectively via `client:visible` (`PythonRunner`, `QuizCard`) |
+| **Python WASM (Course 00)** | **Pyodide v0.26+** | Off-main-thread Web Worker sandbox |
+| **Styling & Theme** | **Tailwind CSS** | Light & Dark mode (`#A7452A` / `#E07A5F` terracotta accent), WCAG 2.2 AA |
+| **Math Typesetting** | **KaTeX** | `remark-math` + `rehype-katex` |
+| **Progress & XP** | **LocalStorage** | Client-side Pathfinder XP & completion tracking |
 
 ---
 
-## 3. Directory Conventions
+## Project Structure
 
 ```text
-/
-├── docs/                      # Authoritative reference materials (PDFs, notes, syllabi)
-├── public/                    # Static assets (favicons, images, Pyodide wheels if self-hosted)
+bl-academy/
+├── notebook/                  # Companion Google Colab notebooks (.ipynb) for Courses 01–08
+├── public/                    # Static assets (favicons, CNAME, images)
 ├── src/
-│   ├── assets/                # Images, illustrations, and SVG icons
 │   ├── components/
-│   │   ├── islands/           # Hydrated interactive components (PythonRunner, VisualQuiz)
-│   │   └── static/            # Zero-JS Astro components (AdBanner.astro, LessonLayout.astro)
+│   │   ├── islands/           # Hydrated React islands (PythonRunner, QuizCard, LessonFooter)
+│   │   └── static/            # Zero-JS Astro components (ColabButton, AdSlot, LessonSidebar)
 │   ├── content/
-│   │   └── lessons/           # Validated MDX lesson collections
-│   ├── layouts/               # Shared page and lesson layouts
-│   ├── pages/                 # Astro routes (catalog, lesson pages, user profile)
-│   ├── styles/                # Global styles, Tailwind base, and theme tokens
-│   └── workers/               # Off-thread Web Workers (pyodide.worker.ts)
-├── .agents/                   # Agent harness (skills, rules, memory, hooks)
-├── AGENTS.md                  # Operational context and non-negotiable agent directives
-├── DESIGN.md                  # Machine-readable tokens + visual aesthetic design system
-├── astro.config.mjs           # Astro configuration
-└── package.json               # Dependencies and scripts
+│   │   └── lessons/           # Validated MDX lessons organized by course folder
+│   ├── layouts/               # Page and lesson layouts (Layout.astro, LessonLayout.astro)
+│   ├── lib/                   # Curriculum metadata & helpers (curriculum.ts)
+│   ├── pages/                 # Astro routes (/, /learn/[track]/[slug], etc.)
+│   └── workers/               # Pyodide Web Worker (pyodide.worker.ts)
+├── ACKNOWLEDGEMENTS.md        # Upstream open-source curriculum credits & links
+├── AGENTS.md                  # AI coding agent instructions and curriculum principles
+├── DESIGN.md                  # Design tokens and WCAG 2.2 AA system spec
+├── LICENSE                    # MIT License
+└── astro.config.mjs           # Astro SSG configuration (outputs to ./docs)
 ```
 
 ---
 
-## 4. Lesson Generation Guidelines
+## Development & Commands
 
-All curriculum lessons are mapped from source documents in `/docs` to MDX files under `/src/content/lessons/`:
-
-1. **Source Citation**: Every lesson must ground its explanations, code snippets, and algorithms in reference documents located in `/docs`.
-2. **AdSense & SEO Minimums**: Each lesson must contain at least **350+ words** of clear, conceptual explanation accompanied by relevant KaTeX formulas before or alongside interactive widgets.
-3. **Non-Blocking Execution**: Code execution must always use `<PythonRunner client:visible />` powered by the Pyodide Web Worker. Main thread execution is strictly prohibited.
-4. **Frontmatter Validation**: Strict schema matching Astro's Content Collection definition:
-   ```yaml
-   ---
-   title: "Gradient Descent: Intuition and Implementation"
-   topic: "machine-learning"
-   difficulty: "intermediate"
-   xp: 150
-   prerequisites: ["derivatives-basics", "python-vectors"]
-   ---
-   ```
-
----
-
-## 5. Development & Commands
-
-All commands are run from the project root:
+All commands are run from the project root using `pnpm`:
 
 | Command | Description |
 | :--- | :--- |
 | `pnpm install` | Install project dependencies |
-| `pnpm dev` | Start Astro dev server at `localhost:4321` |
-| `astro dev --background` | Start Astro dev server in background mode |
-| `pnpm build` | Build production SSG site to `./dist/` |
+| `pnpm dev` | Start Astro dev server at `http://localhost:4321` |
+| `pnpm build` | Build production SSG site to `./docs/` |
 | `pnpm preview` | Preview production build locally |
-| `pnpm astro check` | Run Astro schema and TypeScript type checks |
+| `pnpm astro check` | Run Astro content schema and TypeScript checks |
+
+---
+
+## Acknowledgements & License
+
+- **Upstream Curriculum Credits**: See [ACKNOWLEDGEMENTS.md](./ACKNOWLEDGEMENTS.md) for attributions and links to the open-source curricula that inspired Courses 01–08.
+- **License**: Released under the [MIT License](./LICENSE) — Copyright (c) 2026 BuddhiLive.

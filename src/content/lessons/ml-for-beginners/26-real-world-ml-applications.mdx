@@ -9,7 +9,6 @@ description: "Survey how classical machine learning powers production systems ac
 topic: "Real-World ML Applications"
 prerequisites: ["ml-for-beginners/25-reinforcement-learning-cartpole-gym"]
 ---
-import PythonRunner from '../../../components/islands/PythonRunner';
 import QuizCard from '../../../components/islands/QuizCard';
 import ColabButton from '../../../components/static/ColabButton.astro';
 
@@ -44,13 +43,10 @@ Notice how often **hybrid pipelines** win in practice—such as Ireland's smart-
 
 Let's run two real-world classical ML detectors in pure Python: a **Finance K-Means credit-card outlier fraud detector** and an **Education controlled regression** slope estimator.
 
-<PythonRunner
-  client:visible
-  title="Try it Yourself: Finance Fraud Outlier & Education Retention"
-  expectedOutput="Normal Transaction Cluster Center: ($45.00, 12.0 km)
-Tx #4 ($1250.00, 820.0 km) -> Distance: 1450.82 => FLAG: FRAUD OUTLIER!
-Education Regression: +1 NPS point -> +2.50% Course Retention"
-  initialCode={`import math
+**Finance Fraud Outlier & Education Retention**
+
+```python
+import math
 
 # 1. Finance: Credit Card Fraud Outlier Detection via distance from normal cluster centroid
 normal_txs = [(38.0, 10.0), (52.0, 14.0), (41.0, 11.0), (49.0, 13.0)]
@@ -68,8 +64,16 @@ nps = [2, 4, 6, 8, 10]
 retention = [60.0, 65.0, 70.0, 75.0, 80.0]
 mx, my = sum(nps) / len(nps), sum(retention) / len(retention)
 slope = sum((x - mx) * (y - my) for x, y in zip(nps, retention)) / sum((x - mx) ** 2 for x in nps)
-print(f"Education Regression: +1 NPS point -> +{slope:.2f}% Course Retention")`}
-/>
+print(f"Education Regression: +1 NPS point -> +{slope:.2f}% Course Retention")
+```
+
+**Expected Output:**
+
+```text
+Normal Transaction Cluster Center: ($45.00, 12.0 km)
+Tx #4 ($1250.00, 820.0 km) -> Distance: 1450.82 => FLAG: FRAUD OUTLIER!
+Education Regression: +1 NPS point -> +2.50% Course Retention
+```
 
 ---
 

@@ -9,7 +9,6 @@ description: "Run private, zero-cost, offline AI agents locally using Ollama, Qw
 topic: "Production, Local & Security"
 prerequisites: ["ai-agents-for-beginners/17-deploying-scalable-agents-in-production"]
 ---
-import PythonRunner from '../../../components/islands/PythonRunner';
 import QuizCard from '../../../components/islands/QuizCard';
 import ColabButton from '../../../components/static/ColabButton.astro';
 
@@ -19,7 +18,7 @@ In Lesson 17, we scaled agents *up* into the cloud. Now we bring them *down* ont
 
 ## The Golden Rule of Local SLM Agents
 
-Small Language Models (SLMs, 3B–7B parameters fitting in 8–16 GB RAM) have less world knowledge than giant frontier models, but **Qwen2.5 (`qwen2.5:7b` / `qwen2.5:3b`)** excels at structured **tool calling**. The winning architecture is simple: **let the SLM orchestrate, and let local tools do the heavy lifting** (`read_file`, `search_docs`, `find_todos`).
+Small Language Models (SLMs, 3B–7B parameters fitting in 8–16 GB RAM) have less world knowledge than giant frontier models, but **Qwen2.5 (`qwen2.5:7b` / `qwen2.5:3b`)** excels at structured **tool calling**. Think of the winning architecture like a nimble local shop foreman: **let the SLM orchestrate, and let deterministic local tools do the heavy lifting** (`read_file`, `search_docs`, `find_todos`).
 
 Because **Ollama** exposes an **OpenAI-compatible `/v1` HTTP endpoint** (`http://localhost:11434/v1`), your cloud agent code runs locally with a single `base_url` change.
 
@@ -56,15 +55,10 @@ Launch the companion notebook to run a **Local Engineering Assistant & Documenta
 
 Run this pure-Python sandbox to enforce directory-traversal sandboxing, scan project files for `TODO`/`FIXME` comments, and test the Hybrid Local/Cloud Router.
 
-<PythonRunner
-  client:visible
-  title="Try it Yourself: Local Sandboxed Tools & Hybrid Router"
-  expectedOutput="[Sandbox] read_file('auth.py') -> OK (37 bytes)
-[Sandbox] BLOCKED path traversal: '../../etc/passwd'
-[Tool:find_todos] Found 2 items -> ['auth.py:1 # TODO: rotate keys', 'rag.py:2 # FIXME: tune top_k']
-[HybridRouter] sensitive=True -> Local Ollama (qwen2.5:7b)
-[HybridRouter] sensitive=False, complex=True -> Cloud Gemini (gemini-2.5-flash)"
-  initialCode={`from pathlib import PurePosixPath
+**Local Sandboxed Tools & Hybrid Router**
+
+```python
+from pathlib import PurePosixPath
 
 PROJECT_FILES = {
     "auth.py": "# TODO: rotate keys\ndef login(): pass",
@@ -94,8 +88,18 @@ def hybrid_route(sensitive: bool, complex_task: bool, offline: bool = False) -> 
     return "Cloud Gemini (gemini-2.5-flash)"
 
 print(f"[HybridRouter] sensitive=True -> {hybrid_route(True, True)}")
-print(f"[HybridRouter] sensitive=False, complex=True -> {hybrid_route(False, True)}")`}
-/>
+print(f"[HybridRouter] sensitive=False, complex=True -> {hybrid_route(False, True)}")
+```
+
+**Expected Output:**
+
+```text
+[Sandbox] read_file('auth.py') -> OK (37 bytes)
+[Sandbox] BLOCKED path traversal: '../../etc/passwd'
+[Tool:find_todos] Found 2 items -> ['auth.py:1 # TODO: rotate keys', 'rag.py:2 # FIXME: tune top_k']
+[HybridRouter] sensitive=True -> Local Ollama (qwen2.5:7b)
+[HybridRouter] sensitive=False, complex=True -> Cloud Gemini (gemini-2.5-flash)
+```
 
 ---
 

@@ -9,7 +9,6 @@ description: "Implement the 7 types of AI agent memory using Mem0's extraction/u
 topic: "Protocols, Context & Memory"
 prerequisites: ["ai-agents-for-beginners/13-context-engineering-for-ai-agents"]
 ---
-import PythonRunner from '../../../components/islands/PythonRunner';
 import QuizCard from '../../../components/islands/QuizCard';
 import ColabButton from '../../../components/static/ColabButton.astro';
 
@@ -60,14 +59,10 @@ Launch the companion notebook to run both a **Mem0-style 2-phase memory pipeline
 
 Run this pure-Python sandbox to execute Mem0's `ADD`/`UPDATE` reconciliation on Ben's ski preferences, query a Cognee-style entity-relationship graph, and run an SLM-gated Knowledge Observer.
 
-<PythonRunner
-  client:visible
-  title="Try it Yourself: Mem0 Two-Phase & Cognee Knowledge Graph"
-  expectedOutput="[Mem0:Extract] Candidate facts: ['likes mountain-view coffee', 'avoids advanced ski slopes']
-[Mem0:Update] ADD -> mem_1: 'likes mountain-view coffee' | ADD -> mem_2: 'avoids advanced ski slopes'
-[Cognee:Graph] (Ben) -[AVOIDS_DUE_TO_INJURY]-> (Advanced Ski Slopes)
-[KnowledgeObserver] SLM gate=STORE -> Saved episodic preference for next session."
-  initialCode={`# 1. Mem0 Two-Phase Extraction & Update
+**Mem0 Two-Phase & Cognee Knowledge Graph**
+
+```python
+# 1. Mem0 Two-Phase Extraction & Update
 memory_store = {}
 extracted = ["likes mountain-view coffee", "avoids advanced ski slopes"]
 print(f"[Mem0:Extract] Candidate facts: {extracted}")
@@ -86,8 +81,17 @@ print(f"[Cognee:Graph] ({avoid_edge[0]}) -[{avoid_edge[1]}]-> ({avoid_edge[2]})"
 # 3. SLM-Gated Knowledge Observer
 turn_has_preference = True
 gate = "STORE" if turn_has_preference else "SKIP"
-print(f"[KnowledgeObserver] SLM gate={gate} -> Saved episodic preference for next session.")`}
-/>
+print(f"[KnowledgeObserver] SLM gate={gate} -> Saved episodic preference for next session.")
+```
+
+**Expected Output:**
+
+```text
+[Mem0:Extract] Candidate facts: ['likes mountain-view coffee', 'avoids advanced ski slopes']
+[Mem0:Update] ADD -> mem_1: 'likes mountain-view coffee' | ADD -> mem_2: 'avoids advanced ski slopes'
+[Cognee:Graph] (Ben) -[AVOIDS_DUE_TO_INJURY]-> (Advanced Ski Slopes)
+[KnowledgeObserver] SLM gate=STORE -> Saved episodic preference for next session.
+```
 
 ---
 

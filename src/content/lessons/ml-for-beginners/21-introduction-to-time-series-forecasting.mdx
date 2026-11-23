@@ -9,7 +9,6 @@ description: "Understand time series definitions, trends, seasonality, cycles, o
 topic: "Time Series Foundations"
 prerequisites: ["ml-for-beginners/20-hotel-reviews-vader-sentiment"]
 ---
-import PythonRunner from '../../../components/islands/PythonRunner';
 import QuizCard from '../../../components/islands/QuizCard';
 import ColabButton from '../../../components/static/ColabButton.astro';
 
@@ -47,13 +46,10 @@ Zooming into the first week of July 2014 (`energy['2014-07-01':'2014-07-07']`) r
 
 Let's analyze a 48-hour slice of July 2014 electricity load in pure Python—computing the 24-hour moving-average trend, peak-to-trough amplitude, and outlier z-score detection.
 
-<PythonRunner
-  client:visible
-  title="Try it Yourself: Time Series Trend & Diurnal Cycle Analyzer"
-  expectedOutput="48h Mean Load: 3318.5 MW | Peak: 4100.0 MW | Trough: 2450.0 MW
-Day 1 (24h) Avg: 3293.7 MW -> Day 2 (24h) Avg: 3343.3 MW (+49.7 MW trend)
-Diurnal Peak Hour Index: 15:00 (4100.0 MW)"
-  initialCode={`# Simulated 48 hourly electricity load readings (MW) for 2014-07-01 to 2014-07-02
+**Time Series Trend & Diurnal Cycle Analyzer**
+
+```python
+# Simulated 48 hourly electricity load readings (MW) for 2014-07-01 to 2014-07-02
 day1 = [2698, 2558, 2450, 2460, 2520, 2700, 2950, 3200, 3420, 3580, 3700, 3810,
         3900, 3960, 4010, 4050, 3980, 3850, 3690, 3510, 3320, 3100, 2890, 2742]
 day2 = [2710, 2590, 2490, 2500, 2570, 2750, 3010, 3260, 3480, 3640, 3760, 3860,
@@ -68,8 +64,16 @@ avg2 = sum(day2) / len(day2)
 print(f"Day 1 (24h) Avg: {avg1:.1f} MW -> Day 2 (24h) Avg: {avg2:.1f} MW ({avg2 - avg1:+.1f} MW trend)")
 
 peak_hr = load.index(max(load)) % 24
-print(f"Diurnal Peak Hour Index: {peak_hr:02d}:00 ({max(load):.1f} MW)")`}
-/>
+print(f"Diurnal Peak Hour Index: {peak_hr:02d}:00 ({max(load):.1f} MW)")
+```
+
+**Expected Output:**
+
+```text
+48h Mean Load: 3318.5 MW | Peak: 4100.0 MW | Trough: 2450.0 MW
+Day 1 (24h) Avg: 3293.7 MW -> Day 2 (24h) Avg: 3343.3 MW (+49.7 MW trend)
+Diurnal Peak Hour Index: 15:00 (4100.0 MW)
+```
 
 ---
 

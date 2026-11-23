@@ -9,7 +9,6 @@ description: "Explore Weak vs. Strong AI, the Turing Test, Symbolic vs. Connecti
 topic: "AI History and Paradigms"
 prerequisites: ["ai-for-beginners/00-course-setup-and-colab-environment"]
 ---
-import PythonRunner from '../../../components/islands/PythonRunner';
 import QuizCard from '../../../components/islands/QuizCard';
 
 **Artificial Intelligence** studies how to build computer systems that exhibit behaviors we normally associate with human intelligence—recognizing faces, understanding language, playing strategy games, or making medical diagnoses.
@@ -78,17 +77,10 @@ AI did not appear overnight. Over seven decades, the field swung between symboli
 
 To feel the difference between Top-Down (Symbolic) and Bottom-Up (Weighted) AI, let's run both approaches on a simple sentence-analysis problem in pure Python. Notice how the **ELIZA-style symbolic matcher** relies on exact keyword patterns, whereas the **weighted feature scorer** sums learned numerical weights.
 
-<PythonRunner
-  client:visible
-  title="Try it Yourself: Symbolic Pattern Matching vs. Weighted Scorer"
-  expectedOutput="=== Top-Down Symbolic (ELIZA Rule) ===
-Input: 'I feel worried about my exam'
-Response: Why do you feel worried about my exam?
+**Symbolic Pattern Matching vs. Weighted Scorer**
 
-=== Bottom-Up Weighted Scorer (Sentiment) ===
-Text: 'great fast helpful tool' -> score=2.20 -> POSITIVE
-Text: 'slow broken confusing ui' -> score=-2.10 -> NEGATIVE"
-  initialCode={`import re
+```python
+import re
 
 # 1. Top-Down Symbolic Approach (ELIZA-style pattern transformation)
 def eliza_respond(user_input: str) -> str:
@@ -117,8 +109,20 @@ def predict_sentiment(text: str) -> tuple[float, str]:
 print("=== Bottom-Up Weighted Scorer (Sentiment) ===")
 for review in ["great fast helpful tool", "slow broken confusing ui"]:
     score, label = predict_sentiment(review)
-    print(f"Text: '{review}' -> score={score:.2f} -> {label}")`}
-/>
+    print(f"Text: '{review}' -> score={score:.2f} -> {label}")
+```
+
+**Expected Output:**
+
+```text
+=== Top-Down Symbolic (ELIZA Rule) ===
+Input: 'I feel worried about my exam'
+Response: Why do you feel worried about my exam?
+
+=== Bottom-Up Weighted Scorer (Sentiment) ===
+Text: 'great fast helpful tool' -> score=2.20 -> POSITIVE
+Text: 'slow broken confusing ui' -> score=-2.10 -> NEGATIVE
+```
 
 ---
 

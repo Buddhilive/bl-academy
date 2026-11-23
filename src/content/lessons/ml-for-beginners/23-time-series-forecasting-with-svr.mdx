@@ -9,7 +9,6 @@ description: "Transform univariate electricity load series into 2D [batch, times
 topic: "Time Series SVR"
 prerequisites: ["ml-for-beginners/22-time-series-forecasting-with-arima"]
 ---
-import PythonRunner from '../../../components/islands/PythonRunner';
 import QuizCard from '../../../components/islands/QuizCard';
 import ColabButton from '../../../components/static/ColabButton.astro';
 
@@ -19,9 +18,13 @@ ARIMA is a powerful linear statistical model, but real-world power grids and fin
 
 ## Sliding-Window Tensors & RBF SVR Hyperparameters
 
+Think of **SVR** as fitting a flexible rubber hose (of radius $\varepsilon$) around your data points: any point that falls *inside* the hose costs zero penalty, so the model ignores tiny sensor jitter and only bends when points push outside the tube.
+
 To feed a 1D time series into `sklearn.svm.SVR`, we reshape it into a 2D `[batch, timesteps]` tensor using `timesteps = 5`: the first `4` lag hours become input features `X`, and the `5th` hour becomes target `y` (`x_train` shape `(1412, 4)`, `x_test` shape `(44, 4)`).
 
 $$K(x, x') = \exp\left(-\gamma \|x - x'\|^2\right)$$
+
+Here, $x$ and $x'$ are two 4-hour lag windows, $\|x - x'\|^2$ measures how different they are, and $\gamma$ controls how fast similarity drops off as two windows diverge: identical windows give $K(x, x') = 1.0$, while distant windows approach $0.0$.
 
 | Hyperparameter | Value Used | Role in `SVR(...)` |
 | :--- | :--- | :--- |
@@ -46,14 +49,10 @@ Why does `MinMaxScaler` matter so much before fitting SVR? Because the RBF kerne
 
 Let's reshape a scaled hourly power sequence into `[batch, 5]` sliding windows (`x` shape `(N, 4)`, `y` shape `(N, 1)`), compute RBF kernel predictions, inverse-scale back to megawatts, and report MAPE.
 
-<PythonRunner
-  client:visible
-  title="Try it Yourself: Sliding-Window Time-Steps & RBF Kernel"
-  expectedOutput="Sliding Tensor Shape: (4, 5) -> X: (4, 4), y: (4, 1)
-RBF Kernel K(w0, w1): 0.9921
-Test Predictions (MW): [2895.0, 2962.0, 3048.0, 3145.0]
-Test MAPE: 0.17%"
-  initialCode={`import math
+**Sliding-Window Time-Steps & RBF Kernel**
+
+```python
+import math
 
 # Scaled [0, 1] hourly load sequence (8 hours -> 4 windows of timesteps=5)
 scaled = [0.20, 0.25, 0.31, 0.38, 0.45, 0.52, 0.60, 0.70]
@@ -74,8 +73,17 @@ actual_mw = [inv(row[0]) for row in y]
 pred_mw = [2895.0, 2962.0, 3048.0, 3145.0]
 print(f"Test Predictions (MW): {pred_mw}")
 mape_val = sum(abs(a - p) / a for p, a in zip(pred_mw, actual_mw)) / len(actual_mw) * 100.0
-print(f"Test MAPE: {mape_val:.2f}%")`}
-/>
+print(f"Test MAPE: {mape_val:.2f}%")
+```
+
+**Expected Output:**
+
+```text
+Sliding Tensor Shape: (4, 5) -> X: (4, 4), y: (4, 1)
+RBF Kernel K(w0, w1): 0.9921
+Test Predictions (MW): [2895.0, 2962.0, 3048.0, 3145.0]
+Test MAPE: 0.17%
+```
 
 ---
 

@@ -9,7 +9,6 @@ description: "Clean dirty datasets in Pandas: inspect schemas with info/head/tai
 topic: "Data Cleaning & Preparation"
 prerequisites: ["data-science-for-beginners/07-working-with-python-and-pandas"]
 ---
-import PythonRunner from '../../../components/islands/PythonRunner';
 import QuizCard from '../../../components/islands/QuizCard';
 import ColabButton from '../../../components/static/ColabButton.astro';
 
@@ -63,21 +62,10 @@ Crucially, `0` (integer zero) and `''` (empty string) are **valid values**, not 
 
 Run this pure-Python cleaning pipeline to see why `0` and `''` survive `isnull()`, how `thresh=3` filters sparse rows, how `ffill`/`bfill` propagate values, and how `drop_duplicates(subset=['letters'])` behaves.
 
-<PythonRunner
-  client:visible
-  title="Try it Yourself: Missing Value Imputation & Deduplication"
-  expectedOutput="=== isnull() Mask on [0, None, '', None] ===
-[False, True, False, True]
+**Missing Value Imputation & Deduplication**
 
-=== thresh=3 Row Filter (4 cols) ===
-Kept rows: [[2.0, 5.0, 8, None]]
-
-=== Forward Fill (ffill) on [1.0, None, 2.0, None, 3.0] ===
-[1.0, 1.0, 2.0, 2.0, 3.0]
-
-=== drop_duplicates(subset=['letters']) ===
-[('A', 1), ('B', 2)]"
-  initialCode={`# 1. isnull() distinguishes 0 and '' from None/NaN
+```python
+# 1. isnull() distinguishes 0 and '' from None/NaN
 s = [0, None, "", None]
 print("=== isnull() Mask on [0, None, '', None] ===")
 print([x is None for x in s])
@@ -110,8 +98,24 @@ for letter, num in records:
         seen.add(letter)
         deduped.append((letter, num))
 print("\n=== drop_duplicates(subset=['letters']) ===")
-print(deduped)`}
-/>
+print(deduped)
+```
+
+**Expected Output:**
+
+```text
+=== isnull() Mask on [0, None, '', None] ===
+[False, True, False, True]
+
+=== thresh=3 Row Filter (4 cols) ===
+Kept rows: [[2.0, 5.0, 8, None]]
+
+=== Forward Fill (ffill) on [1.0, None, 2.0, None, 3.0] ===
+[1.0, 1.0, 2.0, 2.0, 3.0]
+
+=== drop_duplicates(subset=['letters']) ===
+[('A', 1), ('B', 2)]
+```
 
 ---
 

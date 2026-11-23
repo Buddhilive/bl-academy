@@ -26,9 +26,7 @@ Python features three native numeric types: **integers** (`int`), **floating-poi
 
 ### Integers (`int`)
 
-An **integer** is a whole number that contains no fractional or decimal component:
-
-$$n \in \mathbb{Z} = \{\dots, -3, -2, -1, 0, 1, 2, 3, \dots\}$$
+An **integer** (`int`) is any whole number with no fractional or decimal part—whether negative, zero, or positive (like `-3`, `0`, or `42`).
 
 In Python source code, integer literals can be typed directly as digits or instantiated explicitly through the built-in `int()` constructor:
 
@@ -39,7 +37,7 @@ print(type(num1))  # Output: <class 'int'>
 ```
 
 #### Underscores as Visual Digit Separators
-When working with large numbers—such as financial budgets, timestamps, or physical constants—long digit sequences can be challenging for developers to read. Under **PEP 515**, Python allows single underscores (`_`) between digits as visual separators. The Python interpreter strips these underscores during lexical analysis, leaving the numeric value completely identical:
+When working with large numbers—such as financial budgets, timestamps, or physical constants—long digit sequences can be hard for humans to read. Under **PEP 515**, Python lets you place single underscores (`_`) between digits as visual separators, just like commas in everyday writing. Python simply ignores these underscores when reading your code, leaving the numeric value completely unchanged:
 
 ```python
 num1 = 25000000
@@ -61,9 +59,7 @@ print(huge_number)
 
 ### Floating-Point Numbers (`float`)
 
-A **floating-point number** (commonly referred to as a **float**) represents a real number that includes a decimal point:
-
-$$x \in \mathbb{R}$$
+A **floating-point number** (commonly called a **float**) is a number that includes a decimal point.
 
 Examples of float literals include `1.0`, `-2.75`, and `0.003`. You can create float objects directly or convert numbers and numeric strings using the `float()` function:
 
@@ -110,9 +106,9 @@ Python provides seven built-in arithmetic operators for carrying out mathematica
 | `-` | **Subtraction** | $x - y$ | `5 - 3` | `2` | `int` |
 | `*` | **Multiplication**| $x \times y$ | `3 * 4` | `12` | `int` |
 | `/` | **True Division** | $x \div y$ | `9 / 3` | `3.0` | `float` |
-| `//`| **Floor Division**| $\lfloor x / y \rfloor$ | `5.0 // 2` | `2.0` | `float` |
+| `//`| **Floor Division**| Divide and round down | `5.0 // 2` | `2.0` | `float` |
 | `**`| **Exponentiation**| $x^y$ | `2 ** 3` | `8` | `int` |
-| `%` | **Modulus** | $x \pmod y$ | `5 % 3` | `2` | `int` |
+| `%` | **Modulus** | Remainder of `x / y` | `5 % 3` | `2` | `int` |
 
 ### Key Execution Rules & Caveats
 
@@ -131,10 +127,8 @@ print(8 / 4)   # Output: 2.0 (not 2)
 print(7 / 2)   # Output: 3.5
 ```
 
-#### 3. Floor Division (`//`) Rounds Toward Negative Infinity
-The double slash `//` operator performs **floor division** (often termed integer division). It computes the division and rounds the quotient downward to the nearest integer toward negative infinity:
-
-$$\lfloor x / y \rfloor = \max \{ n \in \mathbb{Z} \mid n \le x / y \}$$
+#### 3. Floor Division (`//`) Always Rounds Down
+The double slash `//` operator performs **floor division** (often called integer division). Think of a number line: `//` divides two numbers and always steps *down* (to the left on the number line) to the nearest whole number.
 
 When applied to positive numbers, floor division appears to truncate the decimal part:
 
@@ -238,7 +232,7 @@ $$\text{Stored}(0.2) \approx 0.2000000000000000111022302462515654042363166809082
 
 When Python computes their sum and converts the binary representation back into base 10 for display on your screen, the accumulated microscopic difference surfaces as `0.30000000000000004`.
 
-When comparing floats for equality in production software (such as financial or engineering calculations), never compare them with `==`. Instead, check if their absolute difference falls within an acceptable tolerance (an $\epsilon$ margin):
+When comparing floats for equality in production software (such as financial or engineering calculations), never compare them with `==`. Instead, check whether they are close enough within a tiny tolerance margin:
 
 ```python
 import math
@@ -341,11 +335,11 @@ print(f"Accuracy: {accuracy:.2%}")  # Output: Accuracy: 85.26%
 
 ## 4.6 Complex Numbers
 
-Python provides first-class, built-in support for **complex numbers**, which consist of a real component and an imaginary component:
+Python provides built-in support for **complex numbers**, which have a regular (real) part and an imaginary part:
 
-$$z = a + bj \quad (a, b \in \mathbb{R}, \quad j = \sqrt{-1})$$
+$$z = a + bj$$
 
-In Python, the imaginary unit is denoted by the letter `j` (or `J`), following engineering conventions:
+Here, `a` and `b` are regular numbers, and `j` is the imaginary unit ($\sqrt{-1}$), following electrical engineering conventions:
 
 ```python
 z = 1 + 2j

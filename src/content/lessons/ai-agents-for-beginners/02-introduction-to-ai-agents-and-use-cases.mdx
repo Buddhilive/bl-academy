@@ -9,7 +9,6 @@ description: "Understand what defines an AI Agent, explore Environment/Sensors/A
 topic: "Agent Foundations"
 prerequisites: ["ai-agents-for-beginners/01-course-setup-colab-and-gemini-agent-stack"]
 ---
-import PythonRunner from '../../../components/islands/PythonRunner';
 import QuizCard from '../../../components/islands/QuizCard';
 import ColabButton from '../../../components/static/ColabButton.astro';
 
@@ -79,14 +78,10 @@ Launch the interactive notebook to build a `TravelAgent` powered by `gemini-2.5-
 
 Run this pure-Python sandbox to compare Simple Reflex, Goal-Based, and Utility-Based travel agents, then execute a `TravelAgent` day-trip planner and verify its output against a smoke-test assertion catalog.
 
-<PythonRunner
-  client:visible
-  title="Try it Yourself: Utility-Based Travel Agent & Smoke Test"
-  expectedOutput="[SimpleReflex] Rule matched -> Forwarded to Support
-[UtilityAgent] Best option: Direct Express (utility=0.84)
-[TravelAgent] Tool get_random_destination() -> Kyoto, Japan
-[SmokeTest] PASS (contains_any=['Kyoto', 'day trip'], contains_none=['error'])"
-  initialCode={`# 1. Simple Reflex Agent
+**Utility-Based Travel Agent & Smoke Test**
+
+```python
+# 1. Simple Reflex Agent
 email = "Urgent complaint about delayed baggage"
 action = "Forwarded to Support" if "complaint" in email.lower() else "Archive"
 print(f"[SimpleReflex] Rule matched -> {action}")
@@ -112,8 +107,17 @@ smoke_test = {"contains_any": ["Kyoto", "day trip"], "contains_none": ["error"]}
 passed = any(k.lower() in reply.lower() for k in smoke_test["contains_any"]) and not any(
     b.lower() in reply.lower() for b in smoke_test["contains_none"]
 )
-print(f"[SmokeTest] {'PASS' if passed else 'FAIL'} (contains_any={smoke_test['contains_any']}, contains_none={smoke_test['contains_none']})")`}
-/>
+print(f"[SmokeTest] {'PASS' if passed else 'FAIL'} (contains_any={smoke_test['contains_any']}, contains_none={smoke_test['contains_none']})")
+```
+
+**Expected Output:**
+
+```text
+[SimpleReflex] Rule matched -> Forwarded to Support
+[UtilityAgent] Best option: Direct Express (utility=0.84)
+[TravelAgent] Tool get_random_destination() -> Kyoto, Japan
+[SmokeTest] PASS (contains_any=['Kyoto', 'day trip'], contains_none=['error'])
+```
 
 ---
 

@@ -9,7 +9,6 @@ description: "Build with Small Language Models (SLMs): compare SLMs vs. LLMs, ex
 topic: "Small Language Models"
 prerequisites: ["generative-ai-for-beginners/19-fine-tuning-llms-with-lora"]
 ---
-import PythonRunner from '../../../components/islands/PythonRunner';
 import QuizCard from '../../../components/islands/QuizCard';
 import ColabButton from '../../../components/static/ColabButton.astro';
 
@@ -52,17 +51,12 @@ Launch the notebook below on a **Colab Free Tier T4 GPU** to run an open-weight 
 
 ## Try It Yourself: OpenCV Keyframe Detector & Top-2 Sparse MoE Router
 
-Execute this Python sandbox to compute frame-to-frame histogram correlation (extracting keyframes when correlation $< 0.9$) and route a token through a 16-expert Top-2 Sparse MoE gate.
+Run this Python script (locally or in a Colab cell) to compute frame-to-frame histogram correlation (extracting keyframes when correlation $< 0.9$) and route a token through a 16-expert Top-2 Sparse MoE gate.
 
-<PythonRunner
-  client:visible
-  title="Try it Yourself: Keyframe Histogram Filter & Top-2 MoE Router"
-  expectedOutput="Frame 1 -> Frame 2 corr=1.000 (Keep=False: static scene)
-Frame 2 -> Frame 3 corr=-0.795 (Keep=True: NEW KEYFRAME)
-Sparse MoE (16 experts, top-2 active):
-  Active Experts: [(4, 0.318), (11, 0.236)]
-  Active Compute Ratio: 2/16 experts (12.5%)"
-  initialCode={`import math
+**Keyframe Histogram Filter & Top-2 MoE Router**
+
+```python
+import math
 
 # 1. OpenCV-style histogram correlation for video keyframe extraction
 def hist_corr(h1, h2):
@@ -90,8 +84,18 @@ probs = [e / sum(exps) for e in exps]
 top2 = sorted(enumerate(probs), key=lambda x: x[1], reverse=True)[:2]
 print("Sparse MoE (16 experts, top-2 active):")
 print(f"  Active Experts: {[(idx, round(p, 3)) for idx, p in top2]}")
-print(f"  Active Compute Ratio: 2/{len(logits)} experts ({2/len(logits)*100:.1f}%)")`}
-/>
+print(f"  Active Compute Ratio: 2/{len(logits)} experts ({2/len(logits)*100:.1f}%)")
+```
+
+**Expected Output:**
+
+```text
+Frame 1 -> Frame 2 corr=1.000 (Keep=False: static scene)
+Frame 2 -> Frame 3 corr=-0.795 (Keep=True: NEW KEYFRAME)
+Sparse MoE (16 experts, top-2 active):
+  Active Experts: [(4, 0.318), (11, 0.236)]
+  Active Compute Ratio: 2/16 experts (12.5%)
+```
 
 ---
 

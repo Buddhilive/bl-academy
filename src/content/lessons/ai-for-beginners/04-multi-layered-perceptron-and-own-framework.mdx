@@ -9,7 +9,6 @@ description: "Overcome linear limits with Multi-Layered Perceptrons, non-linear 
 topic: "Backpropagation and Custom Neural Framework"
 prerequisites: ["ai-for-beginners/03-the-perceptron"]
 ---
-import PythonRunner from '../../../components/islands/PythonRunner';
 import QuizCard from '../../../components/islands/QuizCard';
 import ColabButton from '../../../components/static/ColabButton.astro';
 
@@ -21,22 +20,30 @@ In this lesson, you will build your own modular neural network framework from sc
 
 ## Formalizing Loss, Softmax & Gradient Descent
 
-Suppose our network computes a function $f(\mathbf{x}; \theta)$ parameterized by weights and biases $\theta = \langle W, \mathbf{b} \rangle$. We measure how wrong the predictions are using a **Loss Function** $\mathcal{L}$:
+Think of training a neural network like tuning a recipe by tasting it: you need a way to score *how far off* the dish is (**Loss Function**), and a rule for adjusting each ingredient slightly to improve the next batch (**Gradient Descent**).
 
-- **Regression**: Mean Squared Error $\mathcal{L}_{\text{MSE}} = \frac{1}{N}\sum_{i=1}^N (\hat{y}_i - y_i)^2$.
-- **Multi-Class Classification**: Convert raw output scores (logits) $\mathbf{z}$ into probabilities using **Softmax**, then compute **Cross-Entropy Loss**:
+In math notation, our network computes a prediction $f(\mathbf{x}; \theta)$, where $\theta = \langle W, \mathbf{b} \rangle$ is simply shorthand for all the learnable weight matrices $W$ and bias vectors $\mathbf{b}$ in the network. We measure how wrong those predictions are using a **Loss Function** $\mathcal{L}$:
+
+- **Regression (predicting a continuous number, like house price)**: **Mean Squared Error** $\mathcal{L}_{\text{MSE}} = \frac{1}{N}\sum_{i=1}^N (\hat{y}_i - y_i)^2$. It subtracts each predicted value $\hat{y}_i$ from the true value $y_i$, squares the difference (so negative and positive errors don't cancel out and big mistakes hurt more), and averages across all $N$ samples.
+- **Multi-Class Classification (picking 1 category out of $K$, like digits `0`–`9`)**: First, convert the network's raw output scores (**logits** $\mathbf{z}$) into clean probabilities that sum to `1.0` using **Softmax**, then measure how far those probabilities are from the true label $y_k$ using **Cross-Entropy Loss**:
 
 $$\sigma(\mathbf{z})_k = \frac{e^{z_k}}{\sum_{j=1}^K e^{z_j}}, \qquad \mathcal{L}_{\text{CE}} = -\sum_{k=1}^K y_k \log \sigma(\mathbf{z})_k$$
 
-To minimize $\mathcal{L}$, **Stochastic Gradient Descent (SGD)** updates every parameter on random minibatches:
+In plain English: Softmax exponentiates ($e^{z_k}$) every raw score so all values become positive, then divides by the sum of all exponentiated scores so they add up to 100%. Cross-Entropy then penalizes the model heavily if it assigns a low probability to the true class ($y_k = 1$).
+
+To shrink $\mathcal{L}$, **Stochastic Gradient Descent (SGD)** updates every weight and bias on small random batches (**minibatches**) of data:
 
 $$W^{(t+1)} = W^{(t)} - \eta \frac{\partial \mathcal{L}}{\partial W}, \qquad \mathbf{b}^{(t+1)} = \mathbf{b}^{(t)} - \eta \frac{\partial \mathcal{L}}{\partial \mathbf{b}}$$
+
+Here, $\frac{\partial \mathcal{L}}{\partial W}$ is the **gradient** (the slope telling us whether increasing $W$ makes the error go up or down), and $\eta$ is the **learning rate** (how big a step we take downhill).
 
 ---
 
 ## Non-Linear Activations & Backpropagation
 
-If you stack two linear layers without a non-linearity in between ($W_2(W_1\mathbf{x}) = (W_2 W_1)\mathbf{x}$), the result is still just a single linear transformation! Inserting a non-linear **activation function** $\alpha(\cdot)$ between layers unlocks universal function approximation:
+Why can't we just stack two `Linear` layers back-to-back? Imagine multiplying a number by `2` and then multiplying the result by `3`—you could have just multiplied by `6` in one step! Mathematically, stacking two linear layers without a bend in between ($W_2(W_1\mathbf{x}) = (W_2 W_1)\mathbf{x}$) collapses into a single straight-line transformation.
+
+Inserting a non-linear **activation function** $\alpha(\cdot)$ (like `ReLU`, which zeroes out negative values, or `Tanh`, which squashes values into an S-curve between `-1` and `+1`) bends the space between layers so the network can learn curved boundaries like XOR or handwritten digits:
 
 | Layer / Component | Forward Pass | Backward Pass (Gradient) |
 | :--- | :--- | :--- |
@@ -45,7 +52,7 @@ If you stack two linear layers without a non-linearity in between ($W_2(W_1\math
 | **`Tanh`** | $\tanh(z)$ | $\frac{\partial \mathcal{L}}{\partial z} \cdot (1 - \tanh^2(z))$ |
 | **`Softmax + CrossEntropy`** | $p_k = \text{softmax}(z)_k$ | $\frac{\partial \mathcal{L}}{\partial z_k} = p_k - y_k$ |
 
-Using the **Chain Rule**, **Backpropagation** passes the error gradient backward from the loss function through each layer's `.backward()` method in reverse order. Every layer receives the upstream gradient $\frac{\partial \mathcal{L}}{\partial \text{out}}$, caches any local parameter gradients (`dW`, `db`), and returns the downstream gradient $\frac{\partial \mathcal{L}}{\partial \text{in}}$ to the preceding layer. Separating `forward()`, `backward()`, and `update()` into clean object-oriented classes makes it trivial to stack arbitrary architectures—from simple two-layer XOR nets to multi-class MNIST classifiers.
+Think of **Backpropagation** as a blame-assignment relay race running in reverse. Using the calculus **Chain Rule**, it passes the error signal backward from the loss function through each layer's `.backward()` method. Every layer receives the incoming error slope from the layer ahead of it ($\frac{\partial \mathcal{L}}{\partial \text{out}}$), calculates how much its own weights contributed (`dW`, `db`), and passes the remaining blame ($\frac{\partial \mathcal{L}}{\partial \text{in}}$) back to the previous layer. Separating `forward()`, `backward()`, and `update()` into clean object-oriented classes makes it trivial to stack arbitrary architectures—from simple two-layer XOR nets to multi-class MNIST classifiers.
 
 <ColabButton
   course="ai-for-beginners"
@@ -59,18 +66,10 @@ Using the **Chain Rule**, **Backpropagation** passes the error gradient backward
 
 Let's assemble a complete 2-layer neural network (`Linear` → `Tanh` → `Linear` → `Sigmoid`) in pure Python and train it on XOR (`[0,0]->0`, `[0,1]->1`, `[1,0]->1`, `[1,1]->0`).
 
-<PythonRunner
-  client:visible
-  title="Try it Yourself: 2-Layer MLP Backpropagation on XOR"
-  expectedOutput="Epoch 0   | Loss: 0.2850
-Epoch 500 | Loss: 0.0012
-Epoch 1000| Loss: 0.0005
-XOR Predictions:
-  [0, 0] -> 0.020 (target 0)
-  [0, 1] -> 0.974 (target 1)
-  [1, 0] -> 0.975 (target 1)
-  [1, 1] -> 0.018 (target 0)"
-  initialCode={`import math, random
+**2-Layer MLP Backpropagation on XOR**
+
+```python
+import math, random
 
 random.seed(42)
 
@@ -111,8 +110,21 @@ print("XOR Predictions:")
 for x, y in xor_data:
     h = [math.tanh(w1[j][0]*x[0] + w1[j][1]*x[1] + b1[j]) for j in range(2)]
     y_hat = sigmoid(w2[0]*h[0] + w2[1]*h[1] + b2)
-    print(f"  {x} -> {y_hat:.3f} (target {int(y)})")`}
-/>
+    print(f"  {x} -> {y_hat:.3f} (target {int(y)})")
+```
+
+**Expected Output:**
+
+```text
+Epoch 0   | Loss: 0.2850
+Epoch 500 | Loss: 0.0012
+Epoch 1000| Loss: 0.0005
+XOR Predictions:
+  [0, 0] -> 0.020 (target 0)
+  [0, 1] -> 0.974 (target 1)
+  [1, 0] -> 0.975 (target 1)
+  [1, 1] -> 0.018 (target 0)
+```
 
 ---
 

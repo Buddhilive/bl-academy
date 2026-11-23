@@ -9,7 +9,6 @@ description: "Master the 5-stage Data Science Lifecycle (Capturing, Processing, 
 topic: "Data Science Lifecycle"
 prerequisites: ["data-science-for-beginners/13-meaningful-visualizations"]
 ---
-import PythonRunner from '../../../components/islands/PythonRunner';
 import QuizCard from '../../../components/islands/QuizCard';
 import ColabButton from '../../../components/static/ColabButton.astro';
 
@@ -55,16 +54,10 @@ Different teams name these stages differently, though the underlying work is ide
 
 Run this pure-Python lifecycle evaluator to compare monthly storage costs between Hot-only vs Hot/Cold tiered data and score a dataset against Capturing and Security readiness checks.
 
-<PythonRunner
-  client:visible
-  title="Try it Yourself: Storage Tier Optimizer & Lifecycle Readiness"
-  expectedOutput="=== Storage Tier Cost Comparison (10 TB Dataset) ===
-All-Hot Storage: $230.00/mo
-Tiered (20% Hot / 80% Cold): $78.00/mo (66.1% savings)
+**Storage Tier Optimizer & Lifecycle Readiness**
 
-=== Lifecycle Readiness Audit ===
-Score: 4/5 checks passed -> Ready with minor remediation (add encryption)"
-  initialCode={`total_gb = 10_000
+```python
+total_gb = 10_000
 hot_price_per_gb = 0.023
 cold_price_per_gb = 0.004
 
@@ -73,8 +66,8 @@ tiered = (total_gb * 0.20 * hot_price_per_gb) + (total_gb * 0.80 * cold_price_pe
 savings_pct = (all_hot - tiered) / all_hot * 100
 
 print("=== Storage Tier Cost Comparison (10 TB Dataset) ===")
-print(f"All-Hot Storage: \${all_hot:.2f}/mo")
-print(f"Tiered (20% Hot / 80% Cold): \${tiered:.2f}/mo ({savings_pct:.1f}% savings)")
+print(f"All-Hot Storage: ${all_hot:.2f}/mo")
+print(f"Tiered (20% Hot / 80% Cold): ${tiered:.2f}/mo ({savings_pct:.1f}% savings)")
 
 checks = {
     "measurable_goal": True,
@@ -86,8 +79,19 @@ checks = {
 passed = sum(checks.values())
 missing = [k for k, ok in checks.items() if not ok]
 print(f"\n=== Lifecycle Readiness Audit ===")
-print(f"Score: {passed}/{len(checks)} checks passed -> Ready with minor remediation (add encryption)")`}
-/>
+print(f"Score: {passed}/{len(checks)} checks passed -> Ready with minor remediation (add encryption)")
+```
+
+**Expected Output:**
+
+```text
+=== Storage Tier Cost Comparison (10 TB Dataset) ===
+All-Hot Storage: $230.00/mo
+Tiered (20% Hot / 80% Cold): $78.00/mo (66.1% savings)
+
+=== Lifecycle Readiness Audit ===
+Score: 4/5 checks passed -> Ready with minor remediation (add encryption)
+```
 
 ---
 

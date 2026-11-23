@@ -9,7 +9,6 @@ description: "Build seasonal ARIMA (SARIMAX) forecasting models with statsmodels
 topic: "ARIMA & SARIMAX"
 prerequisites: ["ml-for-beginners/21-introduction-to-time-series-forecasting"]
 ---
-import PythonRunner from '../../../components/islands/PythonRunner';
 import QuizCard from '../../../components/islands/QuizCard';
 import ColabButton from '../../../components/static/ColabButton.astro';
 
@@ -19,7 +18,7 @@ import ColabButton from '../../../components/static/ColabButton.astro';
 
 ## Stationarity, Differencing & SARIMAX Parameters
 
-A time series is **stationary** when its mean and variance stay constant over time. **Differencing** ($\nabla y_t = y_t - y_{t-1}$) removes trends so ARIMA can model stable patterns.
+Imagine trying to measure the height of ocean waves while the tide is steadily rising: your baseline keeps shifting. A time series is **stationary** when that tide is flat—its average and spread stay steady over time. **Differencing** ($\nabla y_t = y_t - y_{t-1}$) subtracts yesterday's or last hour's value from today's so the model can focus on repeatable wave patterns instead of upward or downward drift.
 
 | Parameter | Component Name | What It Controls |
 | :--- | :--- | :--- |
@@ -38,6 +37,8 @@ Using a 720-hour (30-day) sliding training window and `HORIZON = 3` hours (`load
 
 $$\text{MAPE} = \frac{100\%}{n} \sum_{t=1}^{n} \left| \frac{\text{actual}_t - \text{predicted}_t}{\text{actual}_t} \right|$$
 
+Reading this formula left to right: for each of the $n$ forecast timestamps $t$, take the absolute error $|\text{actual}_t - \text{predicted}_t|$, divide by the actual value so you get a relative fraction, and average across all $n$ steps as a percentage. A MAPE of `1%` means your forecast is off by only 1% on average.
+
 Our SARIMAX model achieves **`0.56%` one-step MAPE** and **`1.15%` multi-step MAPE**—a remarkably low error rate considering that a MAPE of $10\%$ means predictions drift by $10\%$ on average. Remember to call `scaler.inverse_transform()` on both `prediction` and `actual` columns in your evaluation DataFrame (`eval_df`) so you interpret errors in real megawatts rather than $[0, 1]$ scaled units. Keep the sliding `training_window` fixed (720 hours) so each walk-forward re-fit stays fast.
 
 <ColabButton
@@ -52,14 +53,10 @@ Our SARIMAX model achieves **`0.56%` one-step MAPE** and **`1.15%` multi-step MA
 
 Let's execute seasonal differencing, `MinMaxScaler` normalization, a 3-step walk-forward forecast, and exact MAPE calculation in pure Python.
 
-<PythonRunner
-  client:visible
-  title="Try it Yourself: Walk-Forward Forecasting & MAPE Evaluator"
-  expectedOutput="First-order diff sample: [-140.0, -114.0, -42.0]
-Horizon t+1 Predicted: [3008.74, 2955.53, 2900.17]
-Horizon t+1 Actual:    [3023.0, 2935.0, 2899.0]
-One-step MAPE: 0.40% | Multi-step (3h) MAPE: 0.99%"
-  initialCode={`series = [2698.0, 2558.0, 2444.0, 2402.0]
+**Walk-Forward Forecasting & MAPE Evaluator**
+
+```python
+series = [2698.0, 2558.0, 2444.0, 2402.0]
 diffs = [series[i] - series[i - 1] for i in range(1, len(series))]
 print(f"First-order diff sample: {diffs}")
 
@@ -77,8 +74,17 @@ one_step_mape = mape(pred_t1, act_t1)
 all_preds = pred_t1 + [2910.0, 2875.0, 2945.0]
 all_acts  = act_t1  + [2960.0, 2915.0, 2995.0]
 multi_mape = mape(all_preds, all_acts)
-print(f"One-step MAPE: {one_step_mape:.2f}% | Multi-step (3h) MAPE: {multi_mape:.2f}%")`}
-/>
+print(f"One-step MAPE: {one_step_mape:.2f}% | Multi-step (3h) MAPE: {multi_mape:.2f}%")
+```
+
+**Expected Output:**
+
+```text
+First-order diff sample: [-140.0, -114.0, -42.0]
+Horizon t+1 Predicted: [3008.74, 2955.53, 2900.17]
+Horizon t+1 Actual:    [3023.0, 2935.0, 2899.0]
+One-step MAPE: 0.40% | Multi-step (3h) MAPE: 0.99%
+```
 
 ---
 

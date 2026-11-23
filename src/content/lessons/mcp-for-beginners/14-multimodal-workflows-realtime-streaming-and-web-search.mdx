@@ -9,7 +9,6 @@ description: "Build multi-modal MCP servers returning ImageContent, AudioContent
 topic: "Multi-Modal & Search MCP"
 prerequisites: ["mcp-for-beginners/13-protocol-features-progress-cancellation-and-templates"]
 ---
-import PythonRunner from '../../../components/islands/PythonRunner';
 import QuizCard from '../../../components/islands/QuizCard';
 import ColabButton from '../../../components/static/ColabButton.astro';
 
@@ -54,14 +53,10 @@ Launch the companion notebook to generate a base64 `ImageContent` chart, pass it
 
 Run this pure-Python sandbox to construct valid `TextContent`, base64 `ImageContent`, and `EmbeddedResource` MCP blocks, and route user queries across the 4 specialized search tools.
 
-<PythonRunner
-  client:visible
-  title="Try it Yourself: Multi-Modal MCP Payloads & Search Router"
-  expectedOutput="Multi-modal response blocks: ['text', 'image', 'resource'] (image_mime=image/png)
-[Search:news_search] Query='MCP 2026-07-28 release' -> 2 fresh articles
-[Search:product_search] Query='ergonomic keyboard' -> 2 ranked products
-[Search:qna] Query='What is Streamable HTTP?' -> Direct grounded answer"
-  initialCode={`import base64
+**Multi-Modal MCP Payloads & Search Router**
+
+```python
+import base64
 
 # 1. Build multi-modal MCP tool response blocks
 png_stub = base64.b64encode(b"\\x89PNG\\r\\n\\x1a\\nMOCK_CHART").decode()
@@ -87,8 +82,17 @@ for intent, q in [
     ("product_search", "ergonomic keyboard"),
     ("qna", "What is Streamable HTTP?"),
 ]:
-    print(route_search(intent, q))`}
-/>
+    print(route_search(intent, q))
+```
+
+**Expected Output:**
+
+```text
+Multi-modal response blocks: ['text', 'image', 'resource'] (image_mime=image/png)
+[Search:news_search] Query='MCP 2026-07-28 release' -> 2 fresh articles
+[Search:product_search] Query='ergonomic keyboard' -> 2 ranked products
+[Search:qna] Query='What is Streamable HTTP?' -> Direct grounded answer
+```
 
 ---
 

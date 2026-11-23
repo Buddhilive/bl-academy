@@ -9,7 +9,6 @@ description: "Implement document chunking, metadata extraction, indexing progres
 topic: "Hands-On Project 03"
 prerequisites: ["harness-engineering/10-feature-lists-as-harness-primitives"]
 ---
-import PythonRunner from '../../../components/islands/PythonRunner';
 import QuizCard from '../../../components/islands/QuizCard';
 import ColabButton from '../../../components/static/ColabButton.astro';
 
@@ -61,14 +60,10 @@ Launch the companion notebook to run the complete **Project 03 RAG Knowledge Bas
 
 Run this pure-Python implementation of all four Project 03 features and watch the Pass-State Gate verify each one in sequence.
 
-<PythonRunner
-  client:visible
-  title="Try it Yourself: Project 03 RAG KB & Pass-State Gate"
-  expectedOutput="F01 Chunking: 2 chunks created -> PASS
-F02 Metadata: {'doc_id': 'guide', 'chunk_idx': 0, 'words': 8} -> PASS
-F03 Index Status: {'docs': 1, 'chunks': 2} -> PASS
-F04 Grounded Q&A: Use WIP=1 to avoid overreach. [guide#0] -> PASS"
-  initialCode={`def chunk_text(text: str, max_words: int = 8, overlap: int = 2) -> list[str]:
+**Project 03 RAG KB & Pass-State Gate**
+
+```python
+def chunk_text(text: str, max_words: int = 8, overlap: int = 2) -> list[str]:
     words = text.split()
     chunks, start = [], 0
     while start < len(words):
@@ -94,8 +89,17 @@ def grounded_answer(question: str, idx: list[dict]) -> str:
     return f"Use WIP=1 to avoid overreach. [{hit['doc_id']}#{hit['chunk_idx']}]"
 
 ans = grounded_answer("How do we avoid overreach?", index)
-print(f"F04 Grounded Q&A: {ans} -> {'PASS' if '[guide#0]' in ans else 'FAIL'}")`}
-/>
+print(f"F04 Grounded Q&A: {ans} -> {'PASS' if '[guide#0]' in ans else 'FAIL'}")
+```
+
+**Expected Output:**
+
+```text
+F01 Chunking: 2 chunks created -> PASS
+F02 Metadata: {'doc_id': 'guide', 'chunk_idx': 0, 'words': 8} -> PASS
+F03 Index Status: {'docs': 1, 'chunks': 2} -> PASS
+F04 Grounded Q&A: Use WIP=1 to avoid overreach. [guide#0] -> PASS
+```
 
 ---
 

@@ -9,7 +9,6 @@ description: "Learn the DIKW pyramid, semantic triplets, RDF ontologies, and how
 topic: "Symbolic AI and Knowledge Representation"
 prerequisites: ["ai-for-beginners/01-introduction-and-history-of-ai"]
 ---
-import PythonRunner from '../../../components/islands/PythonRunner';
 import QuizCard from '../../../components/islands/QuizCard';
 import ColabButton from '../../../components/static/ColabButton.astro';
 
@@ -83,22 +82,12 @@ You can query massive public knowledge graphs like **Wikidata** and **DBpedia** 
 
 ## Hands-On: Animal Expert System in Python
 
-Let's build a clean **Forward-Chaining** and **Backward-Chaining** expert system right here in the browser. Given a small set of physical observations, the engine infers intermediate classes (`mammal`, `carnivore`, `ungulate`) and identifies the exact animal.
+Let's build a clean **Forward-Chaining** and **Backward-Chaining** expert system in pure Python. Given a small set of physical observations, the engine infers intermediate classes (`mammal`, `carnivore`, `ungulate`) and identifies the exact animal.
 
-<PythonRunner
-  client:visible
-  title="Try it Yourself: Forward & Backward Chaining Animal Expert System"
-  expectedOutput="=== Forward Chaining Inference ===
-Initial facts: ['gives milk', 'has hooves', 'long neck', 'long legs', 'dark spots']
-  Fired rule -> inferred 'mammal'
-  Fired rule -> inferred 'ungulate'
-  Fired rule -> inferred 'animal:giraffe'
-Final Diagnosis: animal:giraffe
+**Forward & Backward Chaining Animal Expert System**
 
-=== Backward Chaining Proof ===
-Can we prove 'animal:tiger' from tiger facts? True
-Can we prove 'animal:giraffe' from tiger facts? False"
-  initialCode={`# Production rules: (goal_fact, list_of_OR_clauses_where_each_clause_is_AND_list)
+```python
+# Production rules: (goal_fact, list_of_OR_clauses_where_each_clause_is_AND_list)
 RULES = [
     ("mammal", [["hair"], ["gives milk"]]),
     ("carnivore", [["eats meat"], ["sharp teeth", "claws", "forward-looking eyes"]]),
@@ -147,8 +136,23 @@ print(f"Final Diagnosis: {animals[0] if animals else 'unknown'}\n")
 print("=== Backward Chaining Proof ===")
 tiger_facts = {"hair", "eats meat", "red-brown", "dark stripes"}
 print(f"Can we prove 'animal:tiger' from tiger facts? {backward_prove('animal:tiger', tiger_facts)}")
-print(f"Can we prove 'animal:giraffe' from tiger facts? {backward_prove('animal:giraffe', tiger_facts)}")`}
-/>
+print(f"Can we prove 'animal:giraffe' from tiger facts? {backward_prove('animal:giraffe', tiger_facts)}")
+```
+
+**Expected Output:**
+
+```text
+=== Forward Chaining Inference ===
+Initial facts: ['gives milk', 'has hooves', 'long neck', 'long legs', 'dark spots']
+  Fired rule -> inferred 'mammal'
+  Fired rule -> inferred 'ungulate'
+  Fired rule -> inferred 'animal:giraffe'
+Final Diagnosis: animal:giraffe
+
+=== Backward Chaining Proof ===
+Can we prove 'animal:tiger' from tiger facts? True
+Can we prove 'animal:giraffe' from tiger facts? False
+```
 
 ---
 

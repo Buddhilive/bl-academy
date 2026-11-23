@@ -80,7 +80,6 @@ export const CURRICULUM_COURSES: CourseMeta[] = [
     plannedLessonCount: 26,
     difficulty: 'Beginner',
     runtimeBadges: [
-      'In-Browser Pyodide',
       'Colab Free CPU',
       'Colab Free T4 GPU',
       'Google AI Studio Free Tier',
@@ -147,7 +146,6 @@ export const CURRICULUM_COURSES: CourseMeta[] = [
     plannedLessonCount: 20,
     difficulty: 'Beginner',
     runtimeBadges: [
-      'In-Browser Pyodide',
       'Colab Free CPU',
       'Google AI Studio Free Tier',
     ],
@@ -206,7 +204,7 @@ export const CURRICULUM_COURSES: CourseMeta[] = [
     notebookFolder: 'ml-for-beginners',
     plannedLessonCount: 27,
     difficulty: 'Intermediate',
-    runtimeBadges: ['In-Browser Pyodide', 'Colab Free CPU', 'Google AI Studio Free Tier'],
+    runtimeBadges: ['Colab Free CPU', 'Google AI Studio Free Tier'],
     usesGeminiApi: true,
     prerequisiteTrack: 'data-science-for-beginners',
     nextTrack: 'generative-ai-for-beginners',
@@ -279,7 +277,6 @@ export const CURRICULUM_COURSES: CourseMeta[] = [
     plannedLessonCount: 22,
     difficulty: 'Intermediate',
     runtimeBadges: [
-      'In-Browser Pyodide',
       'Google AI Studio Free Tier',
       'Colab Free T4 GPU',
       'Colab Free CPU',
@@ -350,7 +347,7 @@ export const CURRICULUM_COURSES: CourseMeta[] = [
     notebookFolder: 'mcp-for-beginners',
     plannedLessonCount: 22,
     difficulty: 'Intermediate',
-    runtimeBadges: ['In-Browser Pyodide', 'Google AI Studio Free Tier', 'Colab Free CPU'],
+    runtimeBadges: ['Google AI Studio Free Tier', 'Colab Free CPU'],
     usesGeminiApi: true,
     prerequisiteTrack: 'generative-ai-for-beginners',
     nextTrack: 'ai-agents-for-beginners',
@@ -418,7 +415,6 @@ export const CURRICULUM_COURSES: CourseMeta[] = [
     plannedLessonCount: 19,
     difficulty: 'Advanced',
     runtimeBadges: [
-      'In-Browser Pyodide',
       'Google AI Studio Free Tier',
       'Colab Free CPU',
       'Colab Free T4 GPU',
@@ -486,7 +482,7 @@ export const CURRICULUM_COURSES: CourseMeta[] = [
     notebookFolder: 'harness-engineering',
     plannedLessonCount: 24,
     difficulty: 'Advanced',
-    runtimeBadges: ['In-Browser Pyodide', 'Google AI Studio Free Tier', 'Colab Free CPU'],
+    runtimeBadges: ['Google AI Studio Free Tier', 'Colab Free CPU'],
     usesGeminiApi: true,
     prerequisiteTrack: 'ai-agents-for-beginners',
     nextTrack: 'edge-ai-for-beginners',
@@ -556,7 +552,6 @@ export const CURRICULUM_COURSES: CourseMeta[] = [
     plannedLessonCount: 20,
     difficulty: 'Advanced',
     runtimeBadges: [
-      'In-Browser Pyodide',
       'Colab Free T4 GPU',
       'Colab Free CPU',
       'Google AI Studio Free Tier',

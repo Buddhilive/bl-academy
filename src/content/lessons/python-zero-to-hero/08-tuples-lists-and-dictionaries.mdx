@@ -34,14 +34,12 @@ Understanding how each data structure allocates memory, manages mutability, and 
 
 ### What is a Tuple?
 
-A **tuple** is an ordered sequence of elements borrowed directly from mathematical notation. In mathematics, an ordered $k$-tuple is denoted as:
+A **tuple** is an ordered sequence of items—like a locked row in a spreadsheet or a fixed `(x, y)` coordinate pair.
 
-$$\tau = (x_0, x_1, x_2, \dots, x_{k-1})$$
-
-In Python, tuples share several defining characteristics:
-* **Zero-Indexed**: The first element resides at index $0$, and the last element resides at index $k-1$ (where $k = \text{len}(\tau)$).
-* **Heterogeneous**: A single tuple can hold elements of differing data types simultaneously.
-* **Immutable**: Once instantiated, the size, sequence, and object references of a tuple cannot be changed.
+In Python, tuples share three defining characteristics:
+* **Zero-Indexed**: The first item sits at index `0`, and the last item sits at index `len(t) - 1`.
+* **Mixed Types**: A single tuple can hold items of different types at the same time (numbers, strings, booleans).
+* **Immutable**: Once created, you cannot add, remove, or swap items inside a tuple.
 
 ### Creating Tuples
 
@@ -247,11 +245,8 @@ print(f"Average:  {sum(temperatures) / len(temperatures):.2f}")  # 22.98
 
 ### List Comprehensions: Expressive Transformations
 
-A **list comprehension** provides a compact, declarative syntax for transforming one iterable into a new list. It corresponds directly to mathematical **set-builder notation**:
+A **list comprehension** is a clean, one-line shortcut for building a new list from an existing sequence (like a `for` loop and an optional `if` filter combined into one expression):
 
-$$S_{\text{new}} = \{ f(x) \mid x \in S_{\text{old}} \land P(x) \}$$
-
-In Python syntax:
 ```python
 new_list = [expression for item in iterable if condition]
 ```

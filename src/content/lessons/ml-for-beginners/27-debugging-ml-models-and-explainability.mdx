@@ -9,7 +9,6 @@ description: "Debug black-box ML models using open-source Cohort Error Analysis,
 topic: "Model Debugging & XAI"
 prerequisites: ["ml-for-beginners/26-real-world-ml-applications"]
 ---
-import PythonRunner from '../../../components/islands/PythonRunner';
 import QuizCard from '../../../components/islands/QuizCard';
 import ColabButton from '../../../components/static/ColabButton.astro';
 
@@ -42,15 +41,10 @@ In practice, remember Ronald Coase's warning: *"If you torture the data long eno
 
 Let's audit a hospital readmission classifier in pure Python—uncovering a hidden high-error cohort, measuring selection-rate disparity, and computing local Shapley feature attributions for an individual patient.
 
-<PythonRunner
-  client:visible
-  title="Try it Yourself: Cohort Error & Local Attribution Debugger"
-  expectedOutput="Overall Accuracy: 88.9% | Error Rate: 11.1%
-Cohort (time_in_hospital < 3)  -> Error Rate: 0.0%
-Cohort (time_in_hospital >= 7) -> Error Rate: 40.0% (HOTSPOT!)
-Local SHAP Attribution (Patient: age=68, prior_visits=3, time_in_hospital=8):
-  prior_visits: +0.28 | age_over_60: +0.19 | time_in_hospital: +0.14"
-  initialCode={`# (time_in_hospital, age_over_60, y_true, y_pred)
+**Cohort Error & Local Attribution Debugger**
+
+```python
+# (time_in_hospital, age_over_60, y_true, y_pred)
 patients = [
     (1, 0, 0, 0), (2, 0, 0, 0), (2, 1, 1, 1), (1, 0, 0, 0), (2, 1, 0, 0),
     (2, 0, 0, 0), (1, 1, 1, 1), (2, 0, 0, 0), (1, 0, 0, 0), (2, 1, 1, 1),
@@ -73,8 +67,18 @@ print(f"Cohort (time_in_hospital >= 7) -> Error Rate: {err_long * 100:.1f}% (HOT
 # Local Shapley-style additive feature contributions for an individual patient
 local_shap = {"prior_visits": 0.28, "age_over_60": 0.19, "time_in_hospital": 0.14}
 print("Local SHAP Attribution (Patient: age=68, prior_visits=3, time_in_hospital=8):")
-print("  " + " | ".join(f"{k}: +{v:.2f}" for k, v in local_shap.items()))`}
-/>
+print("  " + " | ".join(f"{k}: +{v:.2f}" for k, v in local_shap.items()))
+```
+
+**Expected Output:**
+
+```text
+Overall Accuracy: 88.9% | Error Rate: 11.1%
+Cohort (time_in_hospital < 3)  -> Error Rate: 0.0%
+Cohort (time_in_hospital >= 7) -> Error Rate: 40.0% (HOTSPOT!)
+Local SHAP Attribution (Patient: age=68, prior_visits=3, time_in_hospital=8):
+  prior_visits: +0.28 | age_over_60: +0.19 | time_in_hospital: +0.14
+```
 
 ---
 

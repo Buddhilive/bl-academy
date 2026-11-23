@@ -9,7 +9,6 @@ description: "Use Matplotlib line, scatter, and horizontal bar charts on the Min
 topic: "Visualizing Quantities"
 prerequisites: ["data-science-for-beginners/08-data-preparation-and-cleaning"]
 ---
-import PythonRunner from '../../../components/islands/PythonRunner';
 import QuizCard from '../../../components/islands/QuizCard';
 import ColabButton from '../../../components/static/ColabButton.astro';
 
@@ -61,21 +60,10 @@ Plotting raw ungrouped rows as a vertical bar chart produces an unreadable wall 
 
 Run this pure-Python bird analyzer to flag the `> 500 cm` wingspan typos, filter them out, and render a horizontal bar chart of category counts and length ranges.
 
-<PythonRunner
-  client:visible
-  title="Try it Yourself: Bird Wingspan Outlier Filter & Category Bars"
-  expectedOutput="=== Wingspan Outliers (> 500 cm) ===
-FLAGGED: Bald eagle (2300 cm)
-FLAGGED: Prairie falcon (2500 cm)
+**Bird Wingspan Outlier Filter & Category Bars**
 
-=== Clean Max Wingspan Mean ===
-118.4 cm across 5 valid species
-
-=== Species Count by Category ===
-Ducks/Geese/Waterfowl | ### (3)
-Hawks/Eagles          | # (1)
-Hummingbirds          | # (1)"
-  initialCode={`birds = [
+```python
+birds = [
     {"Name": "Black-bellied whistling-duck", "Category": "Ducks/Geese/Waterfowl", "MaxWingspan": 94},
     {"Name": "Snow goose", "Category": "Ducks/Geese/Waterfowl", "MaxWingspan": 165},
     {"Name": "Ross's goose", "Category": "Ducks/Geese/Waterfowl", "MaxWingspan": 116},
@@ -102,8 +90,24 @@ for b in clean:
 
 print("\n=== Species Count by Category ===")
 for cat, n in sorted(counts.items(), key=lambda x: -x[1]):
-    print(f"{cat:<21} | {'#' * n} ({n})")`}
-/>
+    print(f"{cat:<21} | {'#' * n} ({n})")
+```
+
+**Expected Output:**
+
+```text
+=== Wingspan Outliers (> 500 cm) ===
+FLAGGED: Bald eagle (2300 cm)
+FLAGGED: Prairie falcon (2500 cm)
+
+=== Clean Max Wingspan Mean ===
+118.4 cm across 5 valid species
+
+=== Species Count by Category ===
+Ducks/Geese/Waterfowl | ### (3)
+Hawks/Eagles          | # (1)
+Hummingbirds          | # (1)
+```
 
 ---
 

@@ -9,7 +9,6 @@ description: "Build reproducible code-first ML workflows on the Heart Failure da
 topic: "Programmatic ML Pipelines"
 prerequisites: ["data-science-for-beginners/18-low-code-data-science-and-automl"]
 ---
-import PythonRunner from '../../../components/islands/PythonRunner';
 import QuizCard from '../../../components/islands/QuizCard';
 import ColabButton from '../../../components/static/ColabButton.astro';
 
@@ -59,15 +58,10 @@ pipe = Pipeline([
 
 Run this pure-Python simulation of a programmatic ML pipeline—standardizing numeric features, logging an experiment run, and calling `run(test_sample)` with the 60-year-old patient JSON payload.
 
-<PythonRunner
-  client:visible
-  title="Try it Yourself: Programmatic Pipeline & JSON Scoring Service"
-  expectedOutput="=== MLflow Experiment Run Log ===
-experiment='heart-failure-pipeline' | metric_auc=0.884 | status=REGISTERED
+**Programmatic Pipeline & JSON Scoring Service**
 
-=== score.py JSON Endpoint Response ===
-{'result': [False]}"
-  initialCode={`import json
+```python
+import json
 import math
 
 # Simulated fitted Pipeline state (StandardScaler means/stds + logistic weights)
@@ -100,8 +94,18 @@ test_sample = json.dumps({
 })
 
 print("\n=== score.py JSON Endpoint Response ===")
-print(json.loads(score_run(test_sample)))`}
-/>
+print(json.loads(score_run(test_sample)))
+```
+
+**Expected Output:**
+
+```text
+=== MLflow Experiment Run Log ===
+experiment='heart-failure-pipeline' | metric_auc=0.884 | status=REGISTERED
+
+=== score.py JSON Endpoint Response ===
+{'result': [False]}
+```
 
 ---
 

@@ -9,7 +9,6 @@ description: "Build reliable edge AI agents powered by SLMs using the 6-step fun
 topic: "Edge Agents & Function Calling"
 prerequisites: ["edge-ai-for-beginners/14-peft-lora-qlora-fine-tuning-and-edge-export"]
 ---
-import PythonRunner from '../../../components/islands/PythonRunner';
 import QuizCard from '../../../components/islands/QuizCard';
 import ColabButton from '../../../components/static/ColabButton.astro';
 
@@ -76,13 +75,10 @@ Launch the companion notebook to implement typed Pydantic tool guardrails and ru
 
 Run this pure-Python edge agent dispatcher to validate SLM JSON tool calls, block out-of-range hardware commands, and emit an immutable audit log.
 
-<PythonRunner
-  client:visible
-  title="Try it Yourself: Edge SLM Function Calling Dispatcher"
-  expectedOutput="Dispatch 1: {'status': 'ok', 'sensor': 'turbine_01', 'temp_c': 68.4}
-Dispatch 2: {'status': 'blocked', 'reason': 'rpm 9500 exceeds safe limit [500, 4500]'}
-Audit Log Entries: 2"
-  initialCode={`import json
+**Edge SLM Function Calling Dispatcher**
+
+```python
+import json
 
 audit_log = []
 
@@ -112,8 +108,16 @@ r2 = execute_slm_tool_call('{"name": "set_fan_rpm", "arguments": {"rpm": 9500}}'
 
 print("Dispatch 1:", r1)
 print("Dispatch 2:", r2)
-print("Audit Log Entries:", len(audit_log))`}
-/>
+print("Audit Log Entries:", len(audit_log))
+```
+
+**Expected Output:**
+
+```text
+Dispatch 1: {'status': 'ok', 'sensor': 'turbine_01', 'temp_c': 68.4}
+Dispatch 2: {'status': 'blocked', 'reason': 'rpm 9500 exceeds safe limit [500, 4500]'}
+Audit Log Entries: 2
+```
 
 ---
 

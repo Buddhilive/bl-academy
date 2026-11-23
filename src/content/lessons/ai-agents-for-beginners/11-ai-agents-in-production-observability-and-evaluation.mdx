@@ -9,7 +9,6 @@ description: "Transform black-box agents into observable glass-box systems with 
 topic: "Planning & Multi-Agent"
 prerequisites: ["ai-agents-for-beginners/10-metacognition-in-ai-agents"]
 ---
-import PythonRunner from '../../../components/islands/PythonRunner';
 import QuizCard from '../../../components/islands/QuizCard';
 import ColabButton from '../../../components/static/ColabButton.astro';
 
@@ -62,13 +61,10 @@ Launch the companion notebook to instrument an **Expense Claim Audit Agent** wit
 
 Run this pure-Python sandbox to emit nested OpenTelemetry-style spans for an Expense Claim Agent, score an offline golden test suite, and compute token-cost savings from caching and SLM routing.
 
-<PythonRunner
-  client:visible
-  title="Try it Yourself: Expense Claim OTel Trace & Cost Router"
-  expectedOutput="[OTel:Trace] expense_claim_run | spans=2 | total_ms=142
-[Eval:Offline] Pass rate: 3/3 (100%) -> RELEASE GATE PASS
-[CostRouter] 10 queries: 3 cached ($0), 5 SLM (gemini-2.5-flash-lite), 2 LLM (gemini-2.5-flash) -> 68% savings"
-  initialCode={`spans = [
+**Expense Claim OTel Trace & Cost Router**
+
+```python
+spans = [
     {"name": "parse_receipt", "duration_ms": 48, "model": "gemini-2.5-flash-lite"},
     {"name": "check_policy", "duration_ms": 94, "model": "gemini-2.5-flash"},
 ]
@@ -76,7 +72,7 @@ total_ms = sum(s["duration_ms"] for s in spans)
 print(f"[OTel:Trace] expense_claim_run | spans={len(spans)} | total_ms={total_ms}")
 
 # Offline evaluation gate
-golden = [("meal \$35", "APPROVED"), ("flight \$420", "APPROVED"), ("luxury watch \$900", "REJECTED")]
+golden = [("meal $35", "APPROVED"), ("flight $420", "APPROVED"), ("luxury watch $900", "REJECTED")]
 preds = ["APPROVED", "APPROVED", "REJECTED"]
 passed = sum(1 for (_, exp), pred in zip(golden, preds) if exp == pred)
 print(f"[Eval:Offline] Pass rate: {passed}/{len(golden)} ({passed/len(golden):.0%}) -> RELEASE GATE PASS")
@@ -86,8 +82,16 @@ cached, slm, llm = 3, 5, 2
 cost = cached * 0.0 + slm * 0.002 + llm * 0.011
 baseline = 10 * 0.010
 savings = (1 - cost / baseline) * 100
-print(f"[CostRouter] 10 queries: {cached} cached (\$0), {slm} SLM (gemini-2.5-flash-lite), {llm} LLM (gemini-2.5-flash) -> {savings:.0f}% savings")`}
-/>
+print(f"[CostRouter] 10 queries: {cached} cached ($0), {slm} SLM (gemini-2.5-flash-lite), {llm} LLM (gemini-2.5-flash) -> {savings:.0f}% savings")
+```
+
+**Expected Output:**
+
+```text
+[OTel:Trace] expense_claim_run | spans=2 | total_ms=142
+[Eval:Offline] Pass rate: 3/3 (100%) -> RELEASE GATE PASS
+[CostRouter] 10 queries: 3 cached ($0), 5 SLM (gemini-2.5-flash-lite), 2 LLM (gemini-2.5-flash) -> 68% savings
+```
 
 ---
 

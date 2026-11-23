@@ -9,7 +9,6 @@ description: "Implement K-Means clustering on Nigerian Spotify audio features, e
 topic: "K-Means Clustering"
 prerequisites: ["ml-for-beginners/14-introduction-to-clustering"]
 ---
-import PythonRunner from '../../../components/islands/PythonRunner';
 import QuizCard from '../../../components/islands/QuizCard';
 import ColabButton from '../../../components/static/ColabButton.astro';
 
@@ -23,12 +22,18 @@ import ColabButton from '../../../components/static/ColabButton.astro';
 
 ## Silhouette Score, WCSS Inertia & The Elbow Method
 
+Think of **K-Means** like placing $k$ coffee shops in a city so that every resident lives as close as possible to their nearest shop: you drop $k$ pins, assign each person to their closest pin, move each pin to the center of its customers, and repeat until the pins stop moving.
+
 To pick and evaluate $k$ without ground-truth labels, we rely on two geometric metrics:
 
 | Metric | Formula / Definition | Ideal Value & Interpretation |
 | :--- | :--- | :--- |
 | **WCSS (Inertia)** | $\sum_{j=1}^{k} \sum_{x_i \in C_j} \|x_i - \mu_j\|^2$ | Lower is tighter; plot $k = 1..10$ (`init='k-means++'`) to find the "elbow" bend |
 | **Silhouette Score** | $s(i) = \frac{b(i) - a(i)}{\max(a(i), b(i))}$ | Ranges $[-1, 1]$; $1$ = dense, well-separated clusters, $0$ = overlapping boundaries |
+
+In plain English:
+- **WCSS (Within-Cluster Sum of Squares)** adds up the squared distance from every point $x_i$ to its cluster center $\mu_j$. Adding more clusters always lowers WCSS, so we look for the **"elbow"**—the value of $k$ where adding another cluster stops giving big reductions.
+- **Silhouette Score $s(i)$** compares $a(i)$ (how close point $i$ is to its *own* cluster neighbors) against $b(i)$ (how far point $i$ is from the *nearest rival* cluster). A score near `+1` means clusters are tight and well-separated; near `0` means clusters overlap.
 
 On our Nigerian Spotify audio features (`artist_top_genre`, `popularity`, `danceability`, `acousticness`, `loudness`, `energy`), `KMeans(n_clusters=3)` yields a **Silhouette score of `0.53`** and an Elbow bend around $k=3$. Checking predicted clusters against true genre labels still shows low raw accuracy, because genres overlap heavily in audio feature space and unscaled column variances pull centroids toward high-magnitude features.
 
@@ -46,14 +51,10 @@ On our Nigerian Spotify audio features (`artist_top_genre`, `popularity`, `dance
 
 Let's run K-Means from scratch in pure Python for $k=1..3$ on Nigerian song audio features, print the WCSS Elbow drop, and compute the exact Silhouette score at $k=3$.
 
-<PythonRunner
-  client:visible
-  title="Try it Yourself: K-Means WCSS Elbow & Silhouette Score"
-  expectedOutput="k=1 -> WCSS (Inertia): 3181.99
-k=2 -> WCSS (Inertia): 1047.75
-k=3 -> WCSS (Inertia): 31.34
-k=3 Silhouette Score: 0.867"
-  initialCode={`import math
+**K-Means WCSS Elbow & Silhouette Score**
+
+```python
+import math
 
 # (popularity, danceability * 10)
 points = [
@@ -99,8 +100,17 @@ for i, p in enumerate(points):
         for c in set(labels) if c != own
     )
     sil_vals.append((b_i - a_i) / max(a_i, b_i))
-print(f"k=3 Silhouette Score: {sum(sil_vals) / len(sil_vals):.3f}")`}
-/>
+print(f"k=3 Silhouette Score: {sum(sil_vals) / len(sil_vals):.3f}")
+```
+
+**Expected Output:**
+
+```text
+k=1 -> WCSS (Inertia): 3181.99
+k=2 -> WCSS (Inertia): 1047.75
+k=3 -> WCSS (Inertia): 31.34
+k=3 Silhouette Score: 0.867
+```
 
 ---
 

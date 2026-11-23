@@ -9,7 +9,6 @@ description: "Generate and edit images with open-source Hugging Face diffusers a
 topic: "Image Generation"
 prerequisites: ["generative-ai-for-beginners/11-rag-and-vector-databases"]
 ---
-import PythonRunner from '../../../components/islands/PythonRunner';
 import QuizCard from '../../../components/islands/QuizCard';
 import ColabButton from '../../../components/static/ColabButton.astro';
 
@@ -63,15 +62,12 @@ Launch the notebook below on a **Google Colab Free Tier T4 GPU** to run open-sou
 
 ## Try It Yourself: Child-Safe Metaprompt & Mask Compositor
 
-Run this pure-Python sandbox to enforce `disallow_list` policy filtering, compile the child-safe Arc de Triomphe metaprompt, and simulate pixel-level alpha-mask inpainting compositing.
+Run this pure-Python script (locally or in a Colab cell) to enforce `disallow_list` policy filtering, compile the child-safe Arc de Triomphe metaprompt, and simulate pixel-level alpha-mask inpainting compositing.
 
-<PythonRunner
-  client:visible
-  title="Try it Yourself: Visual Metaprompt Guard & Mask Inpainting"
-  expectedOutput="[Policy Check 1] BLOCKED: matched disallowed term 'swords'
-[Policy Check 2] APPROVED -> 16:9 landscape | Arc of Triumph in Paris, France, in ev...
-Inpainting Canvas (4x4): 4 masked pool pixels regenerated, 12 background pixels preserved."
-  initialCode={`DISALLOW_LIST = {"swords", "violence", "blood", "gore", "nudity"}
+**Visual Metaprompt Guard & Mask Inpainting**
+
+```python
+DISALLOW_LIST = {"swords", "violence", "blood", "gore", "nudity"}
 
 def build_safe_image_prompt(user_prompt):
     tokens = set(user_prompt.lower().replace(",", "").split())
@@ -92,8 +88,16 @@ mask_grid = [
 ]
 masked_pixels = sum(sum(row) for row in mask_grid)
 total_pixels = len(mask_grid) * len(mask_grid[0])
-print(f"Inpainting Canvas (4x4): {masked_pixels} masked pool pixels regenerated, {total_pixels - masked_pixels} background pixels preserved.")`}
-/>
+print(f"Inpainting Canvas (4x4): {masked_pixels} masked pool pixels regenerated, {total_pixels - masked_pixels} background pixels preserved.")
+```
+
+**Expected Output:**
+
+```text
+[Policy Check 1] BLOCKED: matched disallowed term 'swords'
+[Policy Check 2] APPROVED -> 16:9 landscape | Arc of Triumph in Paris, France, in ev...
+Inpainting Canvas (4x4): 4 masked pool pixels regenerated, 12 background pixels preserved.
+```
 
 ---
 

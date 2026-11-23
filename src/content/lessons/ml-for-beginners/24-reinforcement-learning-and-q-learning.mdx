@@ -9,7 +9,6 @@ description: "Learn Reinforcement Learning fundamentals—agents, environments, 
 topic: "Q-Learning"
 prerequisites: ["ml-for-beginners/23-time-series-forecasting-with-svr"]
 ---
-import PythonRunner from '../../../components/islands/PythonRunner';
 import QuizCard from '../../../components/islands/QuizCard';
 import ColabButton from '../../../components/static/ColabButton.astro';
 
@@ -27,9 +26,16 @@ If Peter follows a baseline `random_policy`, he wanders blindly for **30–40 st
 
 ## The Bellman Equation & Exploration vs. Exploitation
 
+Think of a **Q-Table** as a giant cheat sheet taped to every tile of the forest: for each square $s$, it records four "quality scores" $Q(s, a)$—one for Up, Down, Left, and Right—estimating how much total reward Peter will earn if he takes that step and plays smartly afterward.
+
 To learn an optimal navigation **policy**, we maintain an $8 \times 8 \times 4$ **Q-Table** initialized uniformly at `0.25`. Whenever Peter transitions from state $s$ to $s'$ via action $a$ and receives reward $r$, we update $Q(s, a)$ with the **Bellman Equation**:
 
 $$Q(s, a) \leftarrow (1 - \alpha)\, Q(s, a) + \alpha \left( r + \gamma \max_{a'} Q(s', a') \right)$$
+
+Here is what each piece of the update does in plain English:
+- **$Q(s, a)$**: Your old estimate for taking action $a$ from tile $s$.
+- **$r + \gamma \max_{a'} Q(s', a')$**: The *new* evidence—the immediate reward $r$ you just got, plus the discounted ($\gamma$) best score you can earn from the next tile $s'$.
+- **$\alpha$ (Learning Rate)**: How much you blend the new evidence into your old estimate (e.g., $\alpha = 0.25$ means 25% new experience, 75% prior memory).
 
 | Hyperparameter / Strategy | Role in Q-Learning | Practical Insight |
 | :--- | :--- | :--- |
@@ -52,13 +58,10 @@ During 5,000 training epochs, the average path length first rises (as Peter lear
 
 Let's run a pure-Python $5 \times 5$ *Peter and the Wolf* Q-Learning simulation comparing a baseline `random_policy` against a Bellman-trained Q-Table policy.
 
-<PythonRunner
-  client:visible
-  title="Try it Yourself: Bellman Q-Table Training on Grid World"
-  expectedOutput="Random Policy (20 episodes) -> Avg Steps: 50.0 | Wolf/Trap Hits: 20
-Trained Q-Policy (20 episodes) -> Avg Steps: 8.0 | Wolf/Trap Hits: 0
-Learned Best Action at Start (0,0): D"
-  initialCode={`import random
+**Bellman Q-Table Training on Grid World**
+
+```python
+import random
 
 SIZE = 5
 APPLE = (4, 4)
@@ -114,8 +117,16 @@ for ep in range(400):
 
 q_steps, q_wolves = eval_policy(lambda p: max(ACT_KEYS, key=lambda k: Q[p][k]))
 print(f"Trained Q-Policy (20 episodes) -> Avg Steps: {q_steps:.1f} | Wolf/Trap Hits: {q_wolves}")
-print(f"Learned Best Action at Start (0,0): {max(ACT_KEYS, key=lambda k: Q[(0, 0)][k])}")`}
-/>
+print(f"Learned Best Action at Start (0,0): {max(ACT_KEYS, key=lambda k: Q[(0, 0)][k])}")
+```
+
+**Expected Output:**
+
+```text
+Random Policy (20 episodes) -> Avg Steps: 50.0 | Wolf/Trap Hits: 20
+Trained Q-Policy (20 episodes) -> Avg Steps: 8.0 | Wolf/Trap Hits: 0
+Learned Best Action at Start (0,0): D
+```
 
 ---
 

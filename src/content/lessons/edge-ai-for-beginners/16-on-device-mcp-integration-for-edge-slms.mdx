@@ -9,7 +9,6 @@ description: "Integrate local Small Language Models with the Model Context Proto
 topic: "On-Device MCP Integration"
 prerequisites: ["edge-ai-for-beginners/15-edge-ai-agents-and-slm-function-calling"]
 ---
-import PythonRunner from '../../../components/islands/PythonRunner';
 import QuizCard from '../../../components/islands/QuizCard';
 import ColabButton from '../../../components/static/ColabButton.astro';
 
@@ -70,13 +69,10 @@ Launch the companion notebook to install the open-source Python `mcp` SDK (`Fast
 
 Run this pure-Python JSON-RPC 2.0 MCP simulator to trace `initialize`, `tools/list`, and `tools/call` frames between a local SLM host and an on-device sensor MCP server.
 
-<PythonRunner
-  client:visible
-  title="Try it Yourself: On-Device MCP JSON-RPC 2.0 Simulator"
-  expectedOutput="Initialize: {'jsonrpc': '2.0', 'id': 1, 'result': {'protocolVersion': '2026-07-28', 'serverInfo': {'name': 'EdgeSensorMCP'}}}
-Tools List: ['read_npu_stats']
-Tool Call:  {'jsonrpc': '2.0', 'id': 3, 'result': {'npu_util_pct': 42, 'power_w': 1.5}}"
-  initialCode={`def mcp_server_handle(req):
+**On-Device MCP JSON-RPC 2.0 Simulator**
+
+```python
+def mcp_server_handle(req):
     method = req["method"]
     req_id = req["id"]
     if method == "initialize":
@@ -95,8 +91,16 @@ call_resp = mcp_server_handle({"jsonrpc": "2.0", "id": 3, "method": "tools/call"
 
 print("Initialize:", init_resp)
 print("Tools List:", [t["name"] for t in list_resp["result"]["tools"]])
-print("Tool Call: ", call_resp)`}
-/>
+print("Tool Call: ", call_resp)
+```
+
+**Expected Output:**
+
+```text
+Initialize: {'jsonrpc': '2.0', 'id': 1, 'result': {'protocolVersion': '2026-07-28', 'serverInfo': {'name': 'EdgeSensorMCP'}}}
+Tools List: ['read_npu_stats']
+Tool Call:  {'jsonrpc': '2.0', 'id': 3, 'result': {'npu_util_pct': 42, 'power_w': 1.5}}
+```
 
 ---
 

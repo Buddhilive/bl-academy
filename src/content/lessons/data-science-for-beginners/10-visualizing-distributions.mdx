@@ -9,7 +9,6 @@ description: "Explore data distributions using Matplotlib 1D/2D histograms, IUCN
 topic: "Visualizing Distributions"
 prerequisites: ["data-science-for-beginners/09-visualizing-quantities"]
 ---
-import PythonRunner from '../../../components/islands/PythonRunner';
 import QuizCard from '../../../components/islands/QuizCard';
 import ColabButton from '../../../components/static/ColabButton.astro';
 
@@ -44,9 +43,11 @@ Even though histograms require numbers, we can compare distributions across cate
 
 ## Smooth Density Plots with Seaborn (`sns.kdeplot`)
 
-Histograms look "stepped" because of discrete bin edges. **Seaborn**'s `sns.kdeplot()` fits a smooth **Kernel Density Estimate (KDE)** curve over the data:
+Histograms look "stepped" because of discrete bin edges. **Seaborn**'s `sns.kdeplot()` fits a smooth **Kernel Density Estimate (KDE)** curve over the data—imagine placing a small, smooth bell-shaped bump over each data point and adding all the bumps together into one continuous curve:
 
 $$\hat{f}_h(x) = \frac{1}{nh}\sum_{i=1}^{n} K\!\left(\frac{x - x_i}{h}\right)$$
+
+Here, $\hat{f}_h(x)$ is the estimated density at value $x$, $n$ is the number of data points, $x_i$ is each individual data point, $h$ is the **bandwidth** (how wide each bell-shaped bump is), and $K$ is the **kernel** function (usually a standard bell curve) that shapes each bump.
 
 - **`bw_adjust`**: Controls the smoothing bandwidth $h$—smaller values (`bw_adjust=0.2`) hug local peaks closely, while larger values smooth them out.
 - **`hue="Order", fill=True`**: Layers translucent density ridges across bird orders.
@@ -64,17 +65,10 @@ $$\hat{f}_h(x) = \frac{1}{nh}\sum_{i=1}^{n} K\!\left(\frac{x - x_i}{h}\right)$$
 
 Run this pure-Python distribution analyzer to bin small-bird body masses (`< 60 g`) and evaluate a Gaussian Kernel Density Estimate at target points.
 
-<PythonRunner
-  client:visible
-  title="Try it Yourself: Histogram Bins & Gaussian KDE Evaluator"
-  expectedOutput="=== Body Mass Histogram (< 60g, 3 bins of width 20g) ===
-[00-20g): 4 birds | ####
-[20-40g): 3 birds | ###
-[40-60g): 1 birds | #
+**Histogram Bins & Gaussian KDE Evaluator**
 
-=== Gaussian KDE Density at x=25g (h=8.0) ===
-f_hat(25.0) = 0.0236"
-  initialCode={`import math
+```python
+import math
 
 masses = [3.5, 11.2, 14.0, 18.5, 22.0, 27.5, 34.0, 48.0]
 
@@ -91,8 +85,20 @@ def gaussian_kde(x, data, h):
 
 density = gaussian_kde(25.0, masses, h=8.0)
 print(f"\n=== Gaussian KDE Density at x=25g (h=8.0) ===")
-print(f"f_hat(25.0) = {density:.4f}")`}
-/>
+print(f"f_hat(25.0) = {density:.4f}")
+```
+
+**Expected Output:**
+
+```text
+=== Body Mass Histogram (< 60g, 3 bins of width 20g) ===
+[00-20g): 4 birds | ####
+[20-40g): 3 birds | ###
+[40-60g): 1 birds | #
+
+=== Gaussian KDE Density at x=25g (h=8.0) ===
+f_hat(25.0) = 0.0236
+```
 
 ---
 

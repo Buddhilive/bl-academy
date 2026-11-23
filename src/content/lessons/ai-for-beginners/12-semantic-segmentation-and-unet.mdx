@@ -9,7 +9,6 @@ description: "Learn pixel-level classification, Semantic vs Instance Segmentatio
 topic: "Semantic Segmentation and U-Net"
 prerequisites: ["ai-for-beginners/11-object-detection"]
 ---
-import PythonRunner from '../../../components/islands/PythonRunner';
 import QuizCard from '../../../components/islands/QuizCard';
 import ColabButton from '../../../components/static/ColabButton.astro';
 
@@ -39,7 +38,7 @@ Because background pixels often outnumber foreground pixels (for example, a smal
 
 $$\text{IoU}(X, Y) = \frac{|X \cap Y|}{|X \cup Y|}, \qquad \text{Dice}(X, Y) = \frac{2|X \cap Y|}{|X| + |Y|}$$
 
-Both metrics range from `0.0` (no overlap) to `1.0` (perfect pixel-by-pixel match), with Dice weighting true positive overlap slightly more generously than IoU. In medical imaging—such as segmenting dermoscopy lesions—and human body pose or background removal, combining BCE with Dice Loss produces crisp, well-calibrated boundaries across even small foreground regions. In the companion Colab notebook, you'll build a compact U-Net in PyTorch and evaluate both BCE loss and validation IoU on segmentation masks.
+In plain English: $|X \cap Y|$ counts the foreground pixels where your prediction $X$ and the ground-truth mask $Y$ agree, while $|X \cup Y|$ counts all pixels covered by either mask. Both metrics range from `0.0` (no overlap) to `1.0` (perfect pixel-by-pixel match), with Dice doubling the overlap in the numerator so it weights true-positive agreement slightly more generously than IoU. In medical imaging—such as segmenting dermoscopy lesions—and human body pose or background removal, combining BCE with Dice Loss produces crisp, well-calibrated boundaries across even small foreground regions. In the companion Colab notebook, you'll build a compact U-Net in PyTorch and evaluate both BCE loss and validation IoU on segmentation masks.
 
 <ColabButton
   course="ai-for-beginners"
@@ -53,14 +52,10 @@ Both metrics range from `0.0` (no overlap) to `1.0` (perfect pixel-by-pixel matc
 
 Let's compute Pixel Accuracy, Intersection over Union ($\text{IoU}$), and Dice Score on a $4 \times 4$ binary segmentation mask in pure Python.
 
-<PythonRunner
-  client:visible
-  title="Try it Yourself: Segmentation IoU & Dice Score"
-  expectedOutput="Pixel Accuracy: 0.8750 (14/16)
-Foreground IoU: 0.6000
-Dice Score:     0.7500
-Dice Loss:      0.2500"
-  initialCode={`gt_mask = [
+**Segmentation IoU & Dice Score**
+
+```python
+gt_mask = [
     [0, 0, 0, 0],
     [0, 1, 1, 0],
     [0, 1, 1, 0],
@@ -87,8 +82,17 @@ dice = (2 * tp) / (2 * tp + fp + fn)
 print(f"Pixel Accuracy: {correct / len(gt_flat):.4f} ({correct}/{len(gt_flat)})")
 print(f"Foreground IoU: {iou:.4f}")
 print(f"Dice Score:     {dice:.4f}")
-print(f"Dice Loss:      {1.0 - dice:.4f}")`}
-/>
+print(f"Dice Loss:      {1.0 - dice:.4f}")
+```
+
+**Expected Output:**
+
+```text
+Pixel Accuracy: 0.8750 (14/16)
+Foreground IoU: 0.6000
+Dice Score:     0.7500
+Dice Loss:      0.2500
+```
 
 ---
 

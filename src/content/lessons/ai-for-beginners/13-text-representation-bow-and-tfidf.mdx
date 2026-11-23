@@ -9,7 +9,6 @@ description: "Convert raw text into numerical tensors using character and word t
 topic: "NLP Text Representation"
 prerequisites: ["ai-for-beginners/12-semantic-segmentation-and-unet"]
 ---
-import PythonRunner from '../../../components/islands/PythonRunner';
 import QuizCard from '../../../components/islands/QuizCard';
 import ColabButton from '../../../components/static/ColabButton.astro';
 
@@ -41,6 +40,8 @@ Mathematically, **Term Frequency–Inverse Document Frequency (TF-IDF)** for ter
 
 $$\text{TF-IDF}(t, d) = \text{tf}(t, d) \times \log\left(\frac{N}{1 + \text{df}(t)}\right)$$
 
+In plain English: $\text{tf}(t, d)$ is how often word $t$ appears in document $d$, while $\text{df}(t)$ is how many documents in the entire collection contain that word. Dividing total documents $N$ by $1 + \text{df}(t)$ shrinks the score of everyday words like `"the"` (which appear everywhere) toward zero and boosts rare, topic-defining words like `"neural"` or `"markets"`.
+
 While BoW, N-grams, and TF-IDF provide fast, interpretable baselines for topic classification and spam filtering, they treat every word as an independent coordinate and cannot recognize that *"laptop"* and *"notebook"* share similar meaning. To capture true semantics, we'll move to dense word embeddings next.
 
 <ColabButton
@@ -55,13 +56,10 @@ While BoW, N-grams, and TF-IDF provide fast, interpretable baselines for topic c
 
 Let's build a pure-Python text vectorizer that generates **word unigrams**, **bigrams**, and **TF-IDF scores** across three mini news headlines. Notice how common words like `"the"` score near zero while domain words like `"neural"` or `"markets"` stand out.
 
-<PythonRunner
-  client:visible
-  title="Try it Yourself: Bigrams & TF-IDF Vectorizer"
-  expectedOutput="Bigrams for Doc 0: [('the', 'neural'), ('neural', 'network'), ('network', 'learns')]
-Doc 0 Top TF-IDF Terms: [('learns', 0.2747), ('network', 0.2747), ('neural', 0.2747), ('the', 0.0)]
-Doc 1 Top TF-IDF Terms: [('markets', 0.3662), ('rally', 0.3662), ('the', 0.0)]"
-  initialCode={`import math
+**Bigrams & TF-IDF Vectorizer**
+
+```python
+import math
 from collections import Counter
 
 docs = [
@@ -90,8 +88,16 @@ def tfidf_scores(words: list[str]) -> list[tuple[str, float]]:
     return sorted(scores.items(), key=lambda x: (-x[1], x[0]))
 
 print(f"Doc 0 Top TF-IDF Terms: {tfidf_scores(tokenized[0])}")
-print(f"Doc 1 Top TF-IDF Terms: {tfidf_scores(tokenized[1])}")`}
-/>
+print(f"Doc 1 Top TF-IDF Terms: {tfidf_scores(tokenized[1])}")
+```
+
+**Expected Output:**
+
+```text
+Bigrams for Doc 0: [('the', 'neural'), ('neural', 'network'), ('network', 'learns')]
+Doc 0 Top TF-IDF Terms: [('learns', 0.2747), ('network', 0.2747), ('neural', 0.2747), ('the', 0.0)]
+Doc 1 Top TF-IDF Terms: [('markets', 0.3662), ('rally', 0.3662), ('the', 0.0)]
+```
 
 ---
 

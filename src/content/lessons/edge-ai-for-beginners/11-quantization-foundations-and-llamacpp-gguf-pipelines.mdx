@@ -9,7 +9,6 @@ description: "Master 1-bit to 8-bit quantization boundaries, GGUF binary layout,
 topic: "Quantization & llama.cpp"
 prerequisites: ["edge-ai-for-beginners/10-containerized-slm-deployment-vllm-and-onnx-runtime"]
 ---
-import PythonRunner from '../../../components/islands/PythonRunner';
 import QuizCard from '../../../components/islands/QuizCard';
 import ColabButton from '../../../components/static/ColabButton.astro';
 
@@ -38,17 +37,23 @@ Practitioners group quantization into three precision bands:
 
 ## Block Quantization & Super-Block Overhead
 
+Think of quantization like measuring a room with a standard tape measure instead of a laser micrometer: you round each high-precision float $x$ to a whole-number integer tick $q$ on a smaller grid, and keep a single scale factor $s$ (the grid spacing) so you can convert back later.
+
 In uniform affine quantization, a floating-point weight block $x$ is mapped to $b$-bit integers using scale $s$ and zero-point $z$:
 
 $$
 q = \text{clamp}\!\left(\text{round}\!\left(\frac{x}{s}\right) + z,\; q_{\min},\; q_{\max}\right), \qquad \hat{x} = s \cdot (q - z)
 $$
 
+Here $q$ is the compressed integer stored on disk (clamped between $[q_{\min}, q_{\max}]$, such as $[-8, 7]$ for 4-bit), $z$ shifts the grid if the weights aren't centered at zero, and $\hat{x}$ is the approximate float reconstructed at runtime.
+
 Because storing one FP16 scale per 32 weights (`Q4_0`) adds $\frac{16}{32} = 0.5\text{ bpw}$ overhead, **K-quants** (`Q4_K_M`) group 256 weights into a **super-block** and quantize the sub-block scales themselves! The effective bits per weight is:
 
 $$
 \text{bpw} = b + \frac{b_{\text{scale}}}{B_{\text{block}}}
 $$
+
+In other words, each weight's true storage cost is its base bit-width $b$ plus the scale's bit size $b_{\text{scale}}$ divided across the $B_{\text{block}}$ weights sharing that scale.
 
 And the end-to-end `llama.cpp` conversion workflow takes three commands:
 
@@ -76,13 +81,10 @@ Launch the companion notebook to download a real `Q4_K_M` GGUF model and run `ll
 
 Run this Python block quantizer to quantize a 32-weight tensor at 8-bit (`Q8_0`), 4-bit (`Q4_0`), and 2-bit (`Q2`) precision and compare Signal-to-Quantization-Noise Ratio (SQNR) and effective bits per weight.
 
-<PythonRunner
-  client:visible
-  title="Try it Yourself: Block Quantization & SQNR Comparison"
-  expectedOutput="Precision=8-bit | Effective bpw=8.50 | SQNR=47.79 dB | Size Reduction=46.9%
-Precision=4-bit | Effective bpw=4.50 | SQNR=23.75 dB | Size Reduction=71.9%
-Precision=2-bit | Effective bpw=2.50 | SQNR=6.26 dB | Size Reduction=84.4%"
-  initialCode={`import math
+**Block Quantization & SQNR Comparison**
+
+```python
+import math
 
 # Deterministic 32-element weight block
 weights = [math.sin(i * 0.45) * 0.8 + math.cos(i * 0.2) * 0.2 for i in range(32)]
@@ -101,8 +103,16 @@ def symmetric_block_quant(block, bits):
 
 for bits in (8, 4, 2):
     bpw, sqnr, red = symmetric_block_quant(weights, bits)
-    print(f"Precision={bits}-bit | Effective bpw={bpw:.2f} | SQNR={sqnr:.2f} dB | Size Reduction={red:.1f}%")`}
-/>
+    print(f"Precision={bits}-bit | Effective bpw={bpw:.2f} | SQNR={sqnr:.2f} dB | Size Reduction={red:.1f}%")
+```
+
+**Expected Output:**
+
+```text
+Precision=8-bit | Effective bpw=8.50 | SQNR=47.79 dB | Size Reduction=46.9%
+Precision=4-bit | Effective bpw=4.50 | SQNR=23.75 dB | Size Reduction=71.9%
+Precision=2-bit | Effective bpw=2.50 | SQNR=6.26 dB | Size Reduction=84.4%
+```
 
 ---
 

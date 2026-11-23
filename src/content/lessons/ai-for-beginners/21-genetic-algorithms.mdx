@@ -9,7 +9,6 @@ description: "Solve combinatorial and non-differentiable optimization problems u
 topic: "Genetic Algorithms"
 prerequisites: ["ai-for-beginners/20-large-language-models-and-prompting"]
 ---
-import PythonRunner from '../../../components/islands/PythonRunner';
 import QuizCard from '../../../components/islands/QuizCard';
 import ColabButton from '../../../components/static/ColabButton.astro';
 
@@ -21,25 +20,27 @@ Gradient descent works brilliantly when your loss function is smooth and differe
 
 ## Core Evolutionary Operators
 
-Every Genetic Algorithm models a candidate solution as a **chromosome** (often a list of numbers or bits called **genes** $g \in \Gamma$) and evolves a population over generations using four building blocks:
+Imagine trying to invent the best cookie recipe when you have no calculus formula to guide you. You start by baking 20 random batches, taste-testing them to keep the best 4, mixing the first half of one great recipe with the second half of another, and occasionally tweaking one ingredient at random—then repeating for 15 generations.
 
-| Operator | Mathematical Role | How It Works |
+That is exactly how a **Genetic Algorithm (GA)** works. Each candidate solution is modeled as a **chromosome** (a list of numbers or bits called **genes** $g$ from the space of all possible solutions $\Gamma$). Over successive generations, the population evolves using four building blocks:
+
+| Operator | Plain-English Role | How It Works |
 | :--- | :--- | :--- |
-| **Fitness Function** | $\text{fit}: \Gamma \to \mathbb{R}$ | Scores how close a candidate solution is to the target objective (e.g., error $= 0$). |
-| **Selection** | Survival of the fittest | Picks top-performing parents (via Tournament or Roulette-Wheel sampling) to reproduce. |
-| **Crossover** | $\text{crossover}: \Gamma^2 \to \Gamma$ | Combines slices from two parent chromosomes to produce offspring sharing both parents' traits. |
-| **Mutation** | $\text{mutate}: \Gamma \to \Gamma$ | Randomly perturbs a gene with low probability $p_m$ to escape local minima and preserve diversity. |
+| **Fitness Function** | Scorekeeper ($\text{fit}: \Gamma \to \mathbb{R}$) | Takes any candidate solution and outputs a single real number scoring how close it is to the goal (e.g., error $= 0$). |
+| **Selection** | Survival of the fittest | Picks top-performing parents (either **Tournament**—picking the best of a small random group—or **Roulette-Wheel**—giving higher-scoring parents a bigger slice of probability). |
+| **Crossover** | Recombining parents ($\Gamma^2 \to \Gamma$) | Splits two parent chromosomes at a cut point and swaps slices to create offspring sharing traits from both. |
+| **Mutation** | Random exploration ($\Gamma \to \Gamma$) | Flips or nudges a single gene with a small probability $p_m$ so the population doesn't get stuck repeating the same ideas. |
 
 ---
 
 ## The Evolutionary Loop
 
-1. Initialize a random population $G \subset \Gamma$ of $N$ chromosomes.
+1. Initialize a random population $G$ of $N$ candidate chromosomes.
 2. Score every chromosome using the fitness function.
-3. Keep the best individuals (**elitism**) and generate new offspring via **selection + crossover + mutation**.
-4. Repeat until an optimal solution ($\text{error} = 0$) is found or a generation budget is reached.
+3. Keep the top performers unchanged (**elitism**) so good solutions are never lost, and fill the rest of the next generation via **selection + crossover + mutation**.
+4. Repeat until an exact solution ($\text{error} = 0$) is found or a generation limit is reached.
 
-Genetic Algorithms shine on **NP-hard combinatorial problems** like timetable scheduling, vehicle routing, circuit layout, fair treasure partitioning, and solving **Diophantine equations** ($a + 2b + 3c + 4d = 30$) where brute-force search is too slow. Because GAs never require gradients, you can even use them to evolve neural network architectures or game-playing policies directly from sparse fitness scores.
+Genetic Algorithms shine on **combinatorial search problems** (tasks where there are too many discrete combinations to check one by one, such as timetable scheduling, vehicle routing, circuit layout, or solving integer **Diophantine equations** like $a + 2b + 3c + 4d = 30$) where smooth derivatives don't exist. Because GAs never require gradients, you can even use them to evolve neural network architectures or game-playing policies directly from sparse fitness scores.
 
 <ColabButton
   course="ai-for-beginners"
@@ -53,13 +54,10 @@ Genetic Algorithms shine on **NP-hard combinatorial problems** like timetable sc
 
 Let's evolve a population of 4-integer chromosomes $[a, b, c, d] \in [0, 30]^4$ in pure Python until it discovers an exact root of $a + 2b + 3c + 4d = 30$.
 
-<PythonRunner
-  client:visible
-  title="Try it Yourself: Genetic Algorithm Diophantine Solver"
-  expectedOutput="Generation 0 | Best Error: 2 | Best Gene: [7, 4, 3, 2]
-Solved at Generation 15!
-Solution: a=5, b=4, c=3, d=2 -> 5 + 2(4) + 3(3) + 4(2) = 30"
-  initialCode={`import random
+**Genetic Algorithm Diophantine Solver**
+
+```python
+import random
 
 random.seed(42)
 
@@ -90,8 +88,16 @@ for gen in range(100):
         if random.random() < 0.3:
             child[random.randint(0, 3)] = random.randint(0, 15)
         next_pop.append(child)
-    pop = next_pop`}
-/>
+    pop = next_pop
+```
+
+**Expected Output:**
+
+```text
+Generation 0 | Best Error: 2 | Best Gene: [7, 4, 3, 2]
+Solved at Generation 15!
+Solution: a=5, b=4, c=3, d=2 -> 5 + 2(4) + 3(3) + 4(2) = 30
+```
 
 ---
 

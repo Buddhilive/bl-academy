@@ -9,7 +9,6 @@ description: "Walk the Scikit-Learn estimator map to benchmark Linear SVC, KNeig
 topic: "Comparing Classifiers"
 prerequisites: ["ml-for-beginners/11-multiclass-classification-and-solvers"]
 ---
-import PythonRunner from '../../../components/islands/PythonRunner';
 import QuizCard from '../../../components/islands/QuizCard';
 import ColabButton from '../../../components/static/ColabButton.astro';
 
@@ -18,6 +17,14 @@ Logistic regression gave us a solid $80\%$ baseline, but can non-linear boundari
 ---
 
 ## Benchmarking Five Classifier Families
+
+Before looking at the benchmark numbers, here is how each of these five algorithms "thinks" in plain English:
+
+- **Linear SVC (Support Vector Classifier)**: Imagine drawing the widest possible straight highway between two neighborhoods of data points so neither side crowds the road. The `C` parameter controls how strictly the model avoids letting any point stray onto the wrong side.
+- **K-Nearest Neighbors (KNN)**: Think of asking your `k` closest neighbors on the block what cuisine they are cooking and going with the majority vote. It needs zero training math upfront, but can struggle when recipes have hundreds of sparse `0/1` ingredient columns.
+- **RBF SVC (Radial Basis Function SVM)**: When a straight line cannot separate two groups (like a bullseye inside a ring), the RBF kernel mathematically lifts the points into a higher dimension where a flat sheet *can* slice them cleanly—producing curved boundaries back in the original space.
+- **Random Forest**: Instead of trusting one decision tree that might memorize quirks in the training recipes, a Random Forest grows 100 slightly different trees (each seeing random subsets of rows and ingredients) and takes a committee vote.
+- **AdaBoost (Adaptive Boosting)**: Picture a relay team of simple "stump" rules: the first learner tries its best, and every time it misclassifies a tricky dish, AdaBoost turns up the spotlight weight on that dish so the next learner focuses on getting it right.
 
 Running a single `classifiers` dictionary loop lets us compare all five algorithms on the exact same `train_test_split`:
 
@@ -52,13 +59,10 @@ Ensemble methods combine multiple base estimators to beat any single weak model:
 
 Let's run a pure-Python classifier benchmark comparing a distance-based **KNN** voter against a **Random Forest-style** majority-vote tree ensemble on held-out cuisine recipes.
 
-<PythonRunner
-  client:visible
-  title="Try it Yourself: KNN vs. Ensemble Classifier Benchmark"
-  expectedOutput="KNN (k=3) Accuracy: 75.0%
-Decision Stump Ensemble Accuracy: 100.0%
-Macro-F1 Improvement: +0.25"
-  initialCode={`# Features: [soy_sauce, mirin, gochujang, garam_masala, lemongrass]
+**KNN vs. Ensemble Classifier Benchmark**
+
+```python
+# Features: [soy_sauce, mirin, gochujang, garam_masala, lemongrass]
 train = [
     ([1, 1, 0, 0, 0], "japanese"), ([1, 1, 0, 0, 0], "japanese"),
     ([1, 0, 1, 0, 0], "korean"),
@@ -93,8 +97,16 @@ knn_acc = sum(1 for x, y in test if knn_predict(x) == y) / len(test)
 ens_acc = sum(1 for x, y in test if ensemble_predict(x) == y) / len(test)
 print(f"KNN (k=3) Accuracy: {knn_acc * 100:.1f}%")
 print(f"Decision Stump Ensemble Accuracy: {ens_acc * 100:.1f}%")
-print(f"Macro-F1 Improvement: +{ens_acc - knn_acc:.2f}")`}
-/>
+print(f"Macro-F1 Improvement: +{ens_acc - knn_acc:.2f}")
+```
+
+**Expected Output:**
+
+```text
+KNN (k=3) Accuracy: 75.0%
+Decision Stump Ensemble Accuracy: 100.0%
+Macro-F1 Improvement: +0.25
+```
 
 ---
 

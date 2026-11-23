@@ -9,7 +9,6 @@ description: "Step outside the prompt loop with /goal, /schedule, Maker-Checker 
 topic: "Loop Engineering"
 prerequisites: ["harness-engineering/18-project-06-capstone-complete-agent-harness-and-ablation"]
 ---
-import PythonRunner from '../../../components/islands/PythonRunner';
 import QuizCard from '../../../components/islands/QuizCard';
 import ColabButton from '../../../components/static/ColabButton.astro';
 
@@ -48,7 +47,7 @@ Autonomous loops accelerate output—and risk. Watch for **Four Silent Costs**:
 1. **Verification Debt**: Never let stopping conditions rely on *"feels right."*
 2. **Comprehension Rot**: Fast loops outpace your mental model—review diffs and summaries regularly.
 3. **Cognitive Surrender**: Use loops to amplify thinking, never to avoid thinking.
-4. **Quadratic Token Blowout**: Re-sending growing history across $N$ rounds scales input cost as $\mathcal{O}(N^2)$ unless you compact or reset state on disk.
+4. **Quadratic Token Blowout**: Think of this like re-reading an entire group chat from message #1 before every new reply—re-sending growing history across $N$ rounds makes input cost grow quadratically ($\mathcal{O}(N^2)$) instead of linearly ($\mathcal{O}(N)$), unless you compact or reset state on disk.
 
 | Maturity Level | Description | Google Antigravity Mapping |
 | :--- | :--- | :--- |
@@ -76,15 +75,10 @@ Launch the companion notebook to run a **Karpathy-style 9-step Ratchet Loop**, a
 
 Run this Python script to simulate a 4-round `autoresearch` ratchet (keeping only verified improvements) and compare $\mathcal{O}(N^2)$ raw history cost against $\mathcal{O}(N)$ compacted external state.
 
-<PythonRunner
-  client:visible
-  title="Try it Yourself: Ratchet Loop & Token Cost Simulator"
-  expectedOutput="Round 1: val_bpb=1.234 -> KEEP (baseline)
-Round 2: val_bpb=1.228 -> KEEP (improved)
-Round 3: val_bpb=1.241 -> REVERT (git reset HEAD~1)
-Round 4: val_bpb=1.219 -> KEEP (improved)
-10-Round Cumulative Tokens -> Uncompacted O(N^2): 55000 | External State O(N): 10000"
-  initialCode={`experiments = [(1, 1.234, "baseline"), (2, 1.228, "lr +10%"), (3, 1.241, "gelu"), (4, 1.219, "weight decay")]
+**Ratchet Loop & Token Cost Simulator**
+
+```python
+experiments = [(1, 1.234, "baseline"), (2, 1.228, "lr +10%"), (3, 1.241, "gelu"), (4, 1.219, "weight decay")]
 best = float("inf")
 for r, val, desc in experiments:
     if val < best:
@@ -98,8 +92,18 @@ rounds = 10
 per_round = 1000
 uncompacted = sum(per_round * i for i in range(1, rounds + 1))
 external_state = per_round * rounds
-print(f"10-Round Cumulative Tokens -> Uncompacted O(N^2): {uncompacted} | External State O(N): {external_state}")`}
-/>
+print(f"10-Round Cumulative Tokens -> Uncompacted O(N^2): {uncompacted} | External State O(N): {external_state}")
+```
+
+**Expected Output:**
+
+```text
+Round 1: val_bpb=1.234 -> KEEP (baseline)
+Round 2: val_bpb=1.228 -> KEEP (improved)
+Round 3: val_bpb=1.241 -> REVERT (git reset HEAD~1)
+Round 4: val_bpb=1.219 -> KEEP (improved)
+10-Round Cumulative Tokens -> Uncompacted O(N^2): 55000 | External State O(N): 10000
+```
 
 ---
 

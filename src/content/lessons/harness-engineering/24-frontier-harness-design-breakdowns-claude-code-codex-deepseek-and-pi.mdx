@@ -9,7 +9,6 @@ description: "Compare how Google Antigravity, Claude Code, OpenAI Codex, DeepSee
 topic: "Frontier Harnesses"
 prerequisites: ["harness-engineering/23-google-antigravity-harness-architecture-deep-dive"]
 ---
-import PythonRunner from '../../../components/islands/PythonRunner';
 import QuizCard from '../../../components/islands/QuizCard';
 import ColabButton from '../../../components/static/ColabButton.astro';
 
@@ -56,13 +55,10 @@ Launch the companion notebook to run an interactive **5-Subsystem Frontier Harne
 
 Run this Python script to verify DeepSeek's *"Model-visible means logged"* invariant and branch a Pi-style Session Tree.
 
-<PythonRunner
-  client:visible
-  title="Try it Yourself: Frontier Harness Patterns"
-  expectedOutput="DeepSeek Invariant Check: 3/3 model-visible items logged -> PASS
-Pi Session Tree Branches: main=['turn1', 'turn2a'] | alt=['turn1', 'turn2b']
-Course 07 Complete! Next Stop: Course 08 (Edge AI for Beginners)"
-  initialCode={`session_event_log = []
+**Frontier Harness Patterns**
+
+```python
+session_event_log = []
 model_request_items = ["system_rules", "tool_result:pytest", "user_prompt"]
 for item in model_request_items:
     session_event_log.append({"event": "model_visible", "payload": item})
@@ -72,8 +68,16 @@ print(f"DeepSeek Invariant Check: {len(session_event_log)}/{len(model_request_it
 
 tree = {"root": ["turn1"], "main": ["turn1", "turn2a"], "alt": ["turn1", "turn2b"]}
 print(f"Pi Session Tree Branches: main={tree['main']} | alt={tree['alt']}")
-print("Course 07 Complete! Next Stop: Course 08 (Edge AI for Beginners)")`}
-/>
+print("Course 07 Complete! Next Stop: Course 08 (Edge AI for Beginners)")
+```
+
+**Expected Output:**
+
+```text
+DeepSeek Invariant Check: 3/3 model-visible items logged -> PASS
+Pi Session Tree Branches: main=['turn1', 'turn2a'] | alt=['turn1', 'turn2b']
+Course 07 Complete! Next Stop: Course 08 (Edge AI for Beginners)
+```
 
 ---
 

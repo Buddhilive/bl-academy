@@ -9,7 +9,6 @@ description: "Explore Microsoft's Phi SLM family from Phi-1 to Phi-4-mini, textb
 topic: "Phi SLM Family"
 prerequisites: ["edge-ai-for-beginners/04-edge-deployment-hardware-npus-gpus-and-jetson"]
 ---
-import PythonRunner from '../../../components/islands/PythonRunner';
 import QuizCard from '../../../components/islands/QuizCard';
 import ColabButton from '../../../components/static/ColabButton.astro';
 
@@ -66,15 +65,10 @@ Launch the companion notebook to compute exact GQA KV-cache savings and run 4-bi
 
 Run this pure-Python simulator to score candidate training samples for "textbook-quality" density and calculate the GQA memory savings at a 32K context length.
 
-<PythonRunner
-  client:visible
-  title="Try it Yourself: Phi Curriculum Scorer & GQA KV-Cache Profiler"
-  expectedOutput="Selected Samples (score >= 0.75):
-  - [0.92] Step-by-step matrix factorization proof with Python check
-  - [0.85] Edge quantization derivation with edge-case unit tests
-Rejected Samples: 1
-MHA KV Cache (32K ctx): 12288.0 MB | Phi-4-mini GQA (32K ctx): 4096.0 MB | Savings: 66.7%"
-  initialCode={`samples = [
+**Phi Curriculum Scorer & GQA KV-Cache Profiler**
+
+```python
+samples = [
     ("Step-by-step matrix factorization proof with Python check", 0.92),
     ("Unfiltered forum thread with broken HTML tags", 0.28),
     ("Edge quantization derivation with edge-case unit tests", 0.85),
@@ -95,8 +89,18 @@ def kv_cache_mb(layers, kv_heads, head_dim, seq_len, bytes_per_elem=2):
 mha = kv_cache_mb(32, 24, 128, 32768)
 gqa = kv_cache_mb(32, 8, 128, 32768)
 savings = (1.0 - gqa / mha) * 100.0
-print(f"MHA KV Cache (32K ctx): {mha:.1f} MB | Phi-4-mini GQA (32K ctx): {gqa:.1f} MB | Savings: {savings:.1f}%")`}
-/>
+print(f"MHA KV Cache (32K ctx): {mha:.1f} MB | Phi-4-mini GQA (32K ctx): {gqa:.1f} MB | Savings: {savings:.1f}%")
+```
+
+**Expected Output:**
+
+```text
+Selected Samples (score >= 0.75):
+  - [0.92] Step-by-step matrix factorization proof with Python check
+  - [0.85] Edge quantization derivation with edge-case unit tests
+Rejected Samples: 1
+MHA KV Cache (32K ctx): 12288.0 MB | Phi-4-mini GQA (32K ctx): 4096.0 MB | Savings: 66.7%
+```
 
 ---
 

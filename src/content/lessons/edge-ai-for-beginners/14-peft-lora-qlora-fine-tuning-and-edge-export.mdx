@@ -9,7 +9,6 @@ description: "Customize Small Language Models on a single Colab T4 GPU using PEF
 topic: "LoRA, QLoRA & Edge Export"
 prerequisites: ["edge-ai-for-beginners/13-slmops-lifecycle-and-knowledge-distillation-with-gemini"]
 ---
-import PythonRunner from '../../../components/islands/PythonRunner';
 import QuizCard from '../../../components/islands/QuizCard';
 import ColabButton from '../../../components/static/ColabButton.astro';
 
@@ -29,11 +28,15 @@ Here is an overview of how LoRA rank decomposition works, how QLoRA fits multi-b
 
 ### Low-Rank Weight Decomposition & Zero-Overhead Merging
 
+Think of **LoRA** like putting transparent sticky-note annotations on top of a printed textbook instead of reprinting the entire book: the original weights $W_0$ stay frozen, and you only train two tiny side-matrices ($B$ and $A$) that capture your domain-specific adjustments.
+
 Instead of updating a dense weight matrix $W_0 \in \mathbb{R}^{d \times k}$ directly, LoRA freezes $W_0$ and injects two small trainable matrices $B \in \mathbb{R}^{d \times r}$ and $A \in \mathbb{R}^{r \times k}$ where rank $r \ll \min(d, k)$:
 
 $$
 h = W_0 x + \frac{\alpha}{r} B A x
 $$
+
+Here $W_0 x$ is the frozen base model's output, $\frac{\alpha}{r} B A x$ is the learned adapter's correction, $r$ (the **rank**, typically `4` to `16`) controls how expressive the patch is, and $\alpha$ scales how strongly the adapter influences the final output $h$.
 
 The trainable parameter fraction for a linear layer is:
 
@@ -41,7 +44,7 @@ $$
 \rho_{\text{LoRA}} = \frac{r(d + k)}{d \cdot k}
 $$
 
-For a $3072 \times 3072$ projection with rank $r = 8$, LoRA trains only **0.52 percent** of the weights! And once training finishes, you do not need to ship separate adapter files to the edge device: simply compute $W_{\text{merged}} = W_0 + \frac{\alpha}{r} B A$ (`peft_model.merge_and_unload()`), then export the merged model to **GGUF `Q4_K_M`** or **ONNX INT4** with zero extra runtime latency.
+Because $r(d + k)$ is tiny compared to $d \cdot k$, for a $3072 \times 3072$ projection with rank $r = 8$, LoRA trains only **0.52 percent** of the weights! And once training finishes, you do not need to ship separate adapter files to the edge device: simply compute $W_{\text{merged}} = W_0 + \frac{\alpha}{r} B A$ (`peft_model.merge_and_unload()`), then export the merged model to **GGUF `Q4_K_M`** or **ONNX INT4** with zero extra runtime latency.
 
 ---
 
@@ -61,15 +64,10 @@ Launch the companion notebook to attach a PEFT LoRA adapter, inspect trainable p
 
 Run this pure-Python simulator to compute LoRA parameter savings across ranks $r \in \{4, 8, 16\}$ and verify that merging $W_0 + \frac{\alpha}{r} B A$ produces the exact same output as running the unmerged adapter branch.
 
-<PythonRunner
-  client:visible
-  title="Try it Yourself: LoRA Rank Savings & Adapter Merger Verification"
-  expectedOutput="Rank r= 4 | Trainable Params=  24,576 / 9,437,184 (0.26%)
-Rank r= 8 | Trainable Params=  49,152 / 9,437,184 (0.52%)
-Rank r=16 | Trainable Params=  98,304 / 9,437,184 (1.04%)
-Unmerged LoRA Output: [1.2000, 1.1500]
-Merged Edge Output:   [1.2000, 1.1500] | Max Diff: 0.00e+00"
-  initialCode={`d, k = 3072, 3072
+**LoRA Rank Savings & Adapter Merger Verification**
+
+```python
+d, k = 3072, 3072
 base_params = d * k
 
 for r in (4, 8, 16):
@@ -103,8 +101,18 @@ merged = matvec(W_merged, x)
 max_diff = max(abs(a - b) for a, b in zip(unmerged, merged))
 
 print(f"Unmerged LoRA Output: [{unmerged[0]:.4f}, {unmerged[1]:.4f}]")
-print(f"Merged Edge Output:   [{merged[0]:.4f}, {merged[1]:.4f}] | Max Diff: {max_diff:.2e}")`}
-/>
+print(f"Merged Edge Output:   [{merged[0]:.4f}, {merged[1]:.4f}] | Max Diff: {max_diff:.2e}")
+```
+
+**Expected Output:**
+
+```text
+Rank r= 4 | Trainable Params=  24,576 / 9,437,184 (0.26%)
+Rank r= 8 | Trainable Params=  49,152 / 9,437,184 (0.52%)
+Rank r=16 | Trainable Params=  98,304 / 9,437,184 (1.04%)
+Unmerged LoRA Output: [1.2000, 1.1500]
+Merged Edge Output:   [1.2000, 1.1500] | Max Diff: 0.00e+00
+```
 
 ---
 

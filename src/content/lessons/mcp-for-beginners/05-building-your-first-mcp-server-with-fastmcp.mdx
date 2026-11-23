@@ -9,7 +9,6 @@ description: "Build a complete Python MCP Scientific Calculator and Engineering 
 topic: "FastMCP Servers"
 prerequisites: ["mcp-for-beginners/04-mcp-security-owasp-top-10-and-cimd-auth"]
 ---
-import PythonRunner from '../../../components/islands/PythonRunner';
 import QuizCard from '../../../components/islands/QuizCard';
 import ColabButton from '../../../components/static/ColabButton.astro';
 
@@ -67,16 +66,10 @@ Launch the companion notebook to run a full `FastMCP` Scientific Calculator serv
 
 Run this pure-Python sandbox to see how `@tool`, `@resource`, and `@prompt` decorators automatically build a JSON Schema registry from Python type hints and handle mathematical edge cases safely.
 
-<PythonRunner
-  client:visible
-  title="Try it Yourself: FastMCP Decorator Registry & Calculator"
-  expectedOutput="Registered tools: ['divide', 'power', 'summary_stats']
-Schema for 'divide': {'a': 'float', 'b': 'float'}
-divide(22, 7) -> 3.1429
-divide(10, 0) -> Error: Division by zero is not allowed.
-summary_stats([10, 20, 30]) -> {'mean': 20.0, 'stdev': 8.165}
-Resource calc://constants/pi -> 3.141592653589793"
-  initialCode={`import inspect
+**FastMCP Decorator Registry & Calculator**
+
+```python
+import inspect
 import math
 
 class MiniFastMCP:
@@ -129,8 +122,19 @@ try:
 except ValueError as exc:
     print("divide(10, 0) -> Error:", exc)
 print("summary_stats([10, 20, 30]) ->", mcp.tools["summary_stats"]["fn"]([10, 20, 30]))
-print("Resource calc://constants/pi ->", mcp.resources["calc://constants/pi"]())`}
-/>
+print("Resource calc://constants/pi ->", mcp.resources["calc://constants/pi"]())
+```
+
+**Expected Output:**
+
+```text
+Registered tools: ['divide', 'power', 'summary_stats']
+Schema for 'divide': {'a': 'float', 'b': 'float'}
+divide(22, 7) -> 3.1429
+divide(10, 0) -> Error: Division by zero is not allowed.
+summary_stats([10, 20, 30]) -> {'mean': 20.0, 'stdev': 8.165}
+Resource calc://constants/pi -> 3.141592653589793
+```
 
 ---
 

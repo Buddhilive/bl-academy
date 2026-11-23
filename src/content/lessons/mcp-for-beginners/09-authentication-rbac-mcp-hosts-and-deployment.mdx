@@ -9,7 +9,6 @@ description: "Add Bearer JWT and RBAC middleware to remote MCP servers, configur
 topic: "Auth, Hosts & Deployment"
 prerequisites: ["mcp-for-beginners/08-testing-and-debugging-with-mcp-inspector"]
 ---
-import PythonRunner from '../../../components/islands/PythonRunner';
 import QuizCard from '../../../components/islands/QuizCard';
 import ColabButton from '../../../components/static/ColabButton.astro';
 
@@ -19,7 +18,7 @@ Once your MCP server passes local tests, you need to wire it into real developer
 
 ## Authentication & RBAC Middleware
 
-Authentication answers *"Who are you?"* (HTTP `401 Unauthorized` when missing or invalid), while Authorization / RBAC answers *"Are you allowed to invoke this specific tool?"* (HTTP `403 Forbidden` when your role lacks permission).
+Think of **Authentication** as showing your photo ID at a building lobby (*"Who are you?"*, returning HTTP `401 Unauthorized` if missing or invalid), and **Authorization / RBAC** as your keycard deciding which rooms you can open (*"Are you allowed to invoke this specific tool?"*, returning HTTP `403 Forbidden` when your role lacks permission).
 
 | Role | Allowed Tool Annotations / Operations | Denied Operations |
 | :--- | :--- | :--- |
@@ -80,15 +79,10 @@ Launch the companion notebook to implement an ASGI JWT + RBAC middleware gate, v
 
 Run this pure-Python sandbox to enforce RBAC permissions across `viewer`, `developer`, and `admin` roles and validate a `.vscode/mcp.json` configuration without hardcoded secrets.
 
-<PythonRunner
-  client:visible
-  title="Try it Yourself: MCP RBAC Gate & Host Config Validator"
-  expectedOutput="Missing token -> 401 Unauthorized
-viewer calling 'list_docs' -> 200 ALLOWED
-viewer calling 'delete_record' -> 403 Forbidden (requires admin)
-admin calling 'delete_record' -> 200 ALLOWED
-Host config valid: secret_hygiene=True, servers=['calc-mcp']"
-  initialCode={`import json
+**MCP RBAC Gate & Host Config Validator**
+
+```python
+import json
 
 ROLE_PERMS = {
     "viewer": {"read"},
@@ -116,12 +110,22 @@ print("admin calling 'delete_record' ->", authorize_call("admin", "delete_record
 
 vscode_mcp = {
     "inputs": [{"type": "promptString", "id": "gemini-key", "password": True}],
-    "servers": {"calc-mcp": {"type": "stdio", "command": "python", "args": ["calc.py"], "env": {"GEMINI_API_KEY": "\${input:gemini-key}"}}},
+    "servers": {"calc-mcp": {"type": "stdio", "command": "python", "args": ["calc.py"], "env": {"GEMINI_API_KEY": "${input:gemini-key}"}}},
 }
 raw = json.dumps(vscode_mcp)
-secret_hygiene = "AIza" not in raw and "\${input:" in raw
-print(f"Host config valid: secret_hygiene={secret_hygiene}, servers={list(vscode_mcp['servers'].keys())}")`}
-/>
+secret_hygiene = "AIza" not in raw and "${input:" in raw
+print(f"Host config valid: secret_hygiene={secret_hygiene}, servers={list(vscode_mcp['servers'].keys())}")
+```
+
+**Expected Output:**
+
+```text
+Missing token -> 401 Unauthorized
+viewer calling 'list_docs' -> 200 ALLOWED
+viewer calling 'delete_record' -> 403 Forbidden (requires admin)
+admin calling 'delete_record' -> 200 ALLOWED
+Host config valid: secret_hygiene=True, servers=['calc-mcp']
+```
 
 ---
 

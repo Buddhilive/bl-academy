@@ -9,7 +9,6 @@ description: "Explore real-world data science across industry, MIT Gender Shades
 topic: "Real-World Data Science"
 prerequisites: ["data-science-for-beginners/19-cloud-ml-sdk-and-pipelines"]
 ---
-import PythonRunner from '../../../components/islands/PythonRunner';
 import QuizCard from '../../../components/islands/QuizCard';
 import ColabButton from '../../../components/static/ColabButton.astro';
 
@@ -46,18 +45,10 @@ In the companion notebook, you'll run two real-world pipelines without any propr
 
 Run this pure-Python capstone suite to audit intersectional error rates (inspired by *Gender Shades*), classify seasonal tone in Emily Dickinson verses, and filter a STAC satellite catalog by cloud cover.
 
-<PythonRunner
-  client:visible
-  title="Try it Yourself: Real-World Fairness, Humanities & STAC Suite"
-  expectedOutput="=== Intersectional Error Rate Audit (Gender Shades) ===
-Lighter Male Error: 0.8% | Darker Female Error: 34.7% | Gap: 33.9%
+**Real-World Fairness, Humanities & STAC Suite**
 
-=== Emily Dickinson Tone Classifier ===
-Poem 1 ('Hope is the thing with feathers'): Optimistic (score +2)
-
-=== Open STAC Satellite Catalog Filter ===
-Found 1 low-cloud Sentinel-2 scene(s): ['S2A_20261110_T10SEG']"
-  initialCode={`# 1. Intersectional Subgroup Error Audit
+```python
+# 1. Intersectional Subgroup Error Audit
 subgroups = {"Lighter Male": 0.8, "Darker Female": 34.7}
 gap = subgroups["Darker Female"] - subgroups["Lighter Male"]
 print("=== Intersectional Error Rate Audit (Gender Shades) ===")
@@ -78,8 +69,21 @@ scenes = [
 ]
 clear = [s["id"] for s in scenes if s["cloud_cover"] < 15.0]
 print("\n=== Open STAC Satellite Catalog Filter ===")
-print(f"Found {len(clear)} low-cloud Sentinel-2 scene(s): {clear}")`}
-/>
+print(f"Found {len(clear)} low-cloud Sentinel-2 scene(s): {clear}")
+```
+
+**Expected Output:**
+
+```text
+=== Intersectional Error Rate Audit (Gender Shades) ===
+Lighter Male Error: 0.8% | Darker Female Error: 34.7% | Gap: 33.9%
+
+=== Emily Dickinson Tone Classifier ===
+Poem 1 ('Hope is the thing with feathers'): Optimistic (score +2)
+
+=== Open STAC Satellite Catalog Filter ===
+Found 1 low-cloud Sentinel-2 scene(s): ['S2A_20261110_T10SEG']
+```
 
 ---
 

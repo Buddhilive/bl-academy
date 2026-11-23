@@ -9,7 +9,6 @@ description: "Build low-code AI apps in Python using Gradio, SQLite, and Gemini 
 topic: "Low-Code AI Apps"
 prerequisites: ["generative-ai-for-beginners/12-building-image-generation-applications"]
 ---
-import PythonRunner from '../../../components/islands/PythonRunner';
 import QuizCard from '../../../components/islands/QuizCard';
 import ColabButton from '../../../components/static/ColabButton.astro';
 
@@ -60,16 +59,12 @@ Launch the notebook below to run the interactive **Gradio Student Assignment Tra
 
 ## Try It Yourself: SQLite Assignment & Invoice Automation Engine
 
-Execute this pure-Python sandbox using built-in `sqlite3` to initialize both tables, extract structured invoice fields, and generate the automated supplier notification payload.
+Run this pure-Python script (locally or in a Colab cell) using built-in `sqlite3` to initialize both tables, extract structured invoice fields, and generate the automated supplier notification payload.
 
-<PythonRunner
-  client:visible
-  title="Try it Yourself: SQLite Low-Code Assignment & Invoice Pipeline"
-  expectedOutput="Student Assignments Pending: 1 | Graded: 1
-Extracted Invoice: {'id': 'INV-204', 'amount': 420.5, 'date': '2026-11-18', 'vendor': 'CloudCompute Co', 'status': 'Approved'}
-SQLite InvoiceInfo rows: 1
-Automated Notification -> To: billing@cloudcompute.co | Subject: Invoice INV-204 Approved ($420.50)"
-  initialCode={`import sqlite3, json
+**SQLite Low-Code Assignment & Invoice Pipeline**
+
+```python
+import sqlite3, json
 
 conn = sqlite3.connect(":memory:")
 cur = conn.cursor()
@@ -92,8 +87,17 @@ cur.execute("CREATE TABLE InvoiceInfo (id TEXT, amount REAL, date TEXT, vendor T
 cur.execute("INSERT INTO InvoiceInfo VALUES (:id, :amount, :date, :vendor, :status, :email)", invoice)
 row_count = cur.execute("SELECT COUNT(*) FROM InvoiceInfo").fetchone()[0]
 print(f"SQLite InvoiceInfo rows: {row_count}")
-print(f"Automated Notification -> To: {invoice['email']} | Subject: Invoice {invoice['id']} {invoice['status']} (\${invoice['amount']:.2f})")`}
-/>
+print(f"Automated Notification -> To: {invoice['email']} | Subject: Invoice {invoice['id']} {invoice['status']} (${invoice['amount']:.2f})")
+```
+
+**Expected Output:**
+
+```text
+Student Assignments Pending: 1 | Graded: 1
+Extracted Invoice: {'id': 'INV-204', 'amount': 420.5, 'date': '2026-11-18', 'vendor': 'CloudCompute Co', 'status': 'Approved'}
+SQLite InvoiceInfo rows: 1
+Automated Notification -> To: billing@cloudcompute.co | Subject: Invoice INV-204 Approved ($420.50)
+```
 
 ---
 

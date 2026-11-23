@@ -9,7 +9,6 @@ description: "Implement SLMOps lifecycle workflows and two-stage knowledge disti
 topic: "SLMOps & Distillation"
 prerequisites: ["edge-ai-for-beginners/12-hardware-aware-optimization-onnx-openvino-mlx-and-qnn"]
 ---
-import PythonRunner from '../../../components/islands/PythonRunner';
 import QuizCard from '../../../components/islands/QuizCard';
 import ColabButton from '../../../components/static/ColabButton.astro';
 
@@ -48,7 +47,9 @@ $$
 \mathcal{L}_{\text{KD}} = (1 - \alpha)\,\mathcal{L}_{\text{CE}}\big(y, \sigma(z_S)\big) + \alpha \, T^2 \, D_{\text{KL}}\!\left(\sigma\!\left(\frac{z_T}{T}\right) \;\middle\|\; \sigma\!\left(\frac{z_S}{T}\right)\right)
 $$
 
-Multiplying the KL term by $T^2$ keeps gradient magnitudes invariant as temperature $T$ changes.
+In plain English, this loss blends two teachers into one scorecard:
+- **Hard-Label Term $(1-\alpha)\,\mathcal{L}_{\text{CE}}$**: Checks whether the student's predictions $\sigma(z_S)$ match the true ground-truth answer $y$.
+- **Soft-Teacher Term $\alpha\,T^2\,D_{\text{KL}}$**: Measures how closely the student's softened probability curve matches the teacher's softened curve $\sigma(z_T/T)$, where $\alpha \in [0, 1]$ balances how much weight to give the teacher vs. the ground truth. Multiplying the KL term by $T^2$ keeps gradient magnitudes invariant as temperature $T$ changes.
 
 ---
 
@@ -68,13 +69,10 @@ Launch the companion notebook to generate synthetic reasoning traces using **Goo
 
 Run this pure-Python implementation of temperature-scaled softmax, cross-entropy, and Kullback-Leibler divergence to observe how temperature $T = 2.0$ reveals relative class probabilities from teacher logits.
 
-<PythonRunner
-  client:visible
-  title="Try it Yourself: Knowledge Distillation Soft-Target KL Loss"
-  expectedOutput="Teacher Soft Probs (T=2.0): [0.7795, 0.1654, 0.0551]
-Student Soft Probs (T=2.0): [0.4908, 0.3458, 0.1634]
-Hard CE Loss: 0.4746 | Scaled KL Loss: 0.7149 | Combined KD Loss (alpha=0.7): 0.6428"
-  initialCode={`import math
+**Knowledge Distillation Soft-Target KL Loss**
+
+```python
+import math
 
 def softmax(logits, temp=1.0):
     scaled = [z / temp for z in logits]
@@ -100,8 +98,16 @@ total_kd = (1.0 - alpha) * ce_loss + alpha * scaled_kl
 
 print("Teacher Soft Probs (T=2.0):", [round(x, 4) for x in p_t_soft])
 print("Student Soft Probs (T=2.0):", [round(x, 4) for x in p_s_soft])
-print(f"Hard CE Loss: {ce_loss:.4f} | Scaled KL Loss: {scaled_kl:.4f} | Combined KD Loss (alpha={alpha}): {total_kd:.4f}")`}
-/>
+print(f"Hard CE Loss: {ce_loss:.4f} | Scaled KL Loss: {scaled_kl:.4f} | Combined KD Loss (alpha={alpha}): {total_kd:.4f}")
+```
+
+**Expected Output:**
+
+```text
+Teacher Soft Probs (T=2.0): [0.7795, 0.1654, 0.0551]
+Student Soft Probs (T=2.0): [0.4908, 0.3458, 0.1634]
+Hard CE Loss: 0.4746 | Scaled KL Loss: 0.7149 | Combined KD Loss (alpha=0.7): 0.6428
+```
 
 ---
 

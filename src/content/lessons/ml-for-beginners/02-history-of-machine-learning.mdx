@@ -9,7 +9,6 @@ description: "Trace machine learning's evolution from Bayes' Theorem (1763), Lea
 topic: "History of ML"
 prerequisites: ["ml-for-beginners/01-introduction-to-machine-learning"]
 ---
-import PythonRunner from '../../../components/islands/PythonRunner';
 import QuizCard from '../../../components/islands/QuizCard';
 import ColabButton from '../../../components/static/ColabButton.astro';
 
@@ -35,6 +34,12 @@ Long before Alan Turing asked whether machines could think, mathematicians built
 Bayes' Theorem remains the backbone of probabilistic classifiers:
 
 $$P(A \mid B) = \frac{P(B \mid A)\,P(A)}{P(B)}$$
+
+Think of this like updating a weather forecast after stepping outside:
+- **$P(A)$ (Prior)**: Your starting belief before seeing new clues (e.g., how common spam emails are overall).
+- **$P(B \mid A)$ (Likelihood)**: How often the clue $B$ (like the word `"FREE"`) shows up when $A$ (spam) is true.
+- **$P(B)$ (Evidence)**: How often the clue $B$ appears across *all* emails, spam or not.
+- **$P(A \mid B)$ (Posterior)**: Your updated probability that an email is spam *after* spotting the clue.
 
 ---
 
@@ -72,15 +77,12 @@ From **1993 to 2011**, the democratization of personal computing, the web, and t
 
 ## Try It Yourself: Three Historical ML Equations in Action
 
-Let's execute three foundational algorithms from **1763**, **1805**, and **1913** right in your browser to see how pre-computer mathematics powers modern machine learning.
+Let's walk through three foundational algorithms from **1763**, **1805**, and **1913** in pure Python (or run them in the Colab notebook above) to see how pre-computer mathematics powers modern machine learning.
 
-<PythonRunner
-  client:visible
-  title="Try it Yourself: 1763 Bayes, 1805 Least Squares & 1913 Markov Chain"
-  expectedOutput="1763 Bayes Posterior P(Spam|Free): 0.857
-1805 Least Squares Fit: Y = 2.00 + 1.50*X
-1913 Markov Sunny->Rainy->Sunny (2 steps): 0.610"
-  initialCode={`# 1. 1763 Bayes' Theorem: Spam filter update
+**1763 Bayes, 1805 Least Squares & 1913 Markov Chain**
+
+```python
+# 1. 1763 Bayes' Theorem: Spam filter update
 p_spam = 0.30
 p_free_given_spam = 0.80
 p_free_given_ham = 0.057142857
@@ -100,8 +102,16 @@ print(f"1805 Least Squares Fit: Y = {a:.2f} + {b:.2f}*X")
 # Transition matrix: Sunny -> (0.7 Sunny, 0.3 Rainy), Rainy -> (0.4 Sunny, 0.6 Rainy)
 p_sunny_step1, p_rainy_step1 = 0.7, 0.3
 p_sunny_step2 = p_sunny_step1 * 0.7 + p_rainy_step1 * 0.4
-print(f"1913 Markov Sunny->Rainy->Sunny (2 steps): {p_sunny_step2:.3f}")`}
-/>
+print(f"1913 Markov Sunny->Rainy->Sunny (2 steps): {p_sunny_step2:.3f}")
+```
+
+**Expected Output:**
+
+```text
+1763 Bayes Posterior P(Spam|Free): 0.857
+1805 Least Squares Fit: Y = 2.00 + 1.50*X
+1913 Markov Sunny->Rainy->Sunny (2 steps): 0.610
+```
 
 ---
 

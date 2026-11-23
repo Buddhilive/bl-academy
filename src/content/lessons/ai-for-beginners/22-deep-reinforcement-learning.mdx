@@ -9,7 +9,6 @@ description: "Learn Markov Decision Processes, the Bellman Q-learning equation, 
 topic: "Deep Reinforcement Learning"
 prerequisites: ["ai-for-beginners/21-genetic-algorithms"]
 ---
-import PythonRunner from '../../../components/islands/PythonRunner';
 import QuizCard from '../../../components/islands/QuizCard';
 import ColabButton from '../../../components/static/ColabButton.astro';
 
@@ -19,18 +18,20 @@ In supervised learning, every training example comes with a ground-truth label. 
 
 ## Core RL Concepts & The Bellman Update
 
-An RL task is formalized as a **Markov Decision Process (MDP)** where the agent maximizes expected **discounted cumulative return**:
+Think of training a puppy with treats: the puppy tries actions in a room, and when it eventually sits on the mat, it gets a reward. An RL task is formalized as a **Markov Decision Process (MDP)**—a step-by-step loop of states, actions, and rewards—where the agent maximizes its total **discounted cumulative return**:
 
 $$G_t = \sum_{k=0}^{\infty} \gamma^k r_{t+k+1}, \qquad \gamma \in [0, 1)$$
 
-A discount factor like $\gamma = 0.99$ values immediate rewards slightly more than distant future rewards. Throughout training, the agent balances **Exploration** (trying new actions with probability $\epsilon$) against **Exploitation** (picking the best-known action with probability $1 - \epsilon$).
+In plain English: $r_{t+k+1}$ is the reward received $k+1$ steps in the future, and $\gamma$ (`gamma`, the **discount factor**, e.g., `0.99`) shrinks distant future rewards slightly so the agent prefers getting rewards sooner rather than waiting forever. Throughout training, the agent balances **Exploration** (trying random new actions with probability $\epsilon$) against **Exploitation** (picking the best-known action with probability $1 - \epsilon$).
 
 ### Tabular Q-Learning vs. Deep Policy Gradients
 
+In **Tabular Q-Learning**, the agent keeps a cheat-sheet table $Q(s, a)$ estimating *"how good is it to take action $a$ when I am in state $s$?"* After each step to a new state $s'$ with reward $r$, it nudges its old estimate toward the new reality using learning rate $\alpha$: $Q(s,a) \leftarrow (1-\alpha)Q(s,a) + \alpha[r + \gamma \max_{a'} Q(s',a')]$.
+
 | RL Algorithm | What It Learns | Update Rule / Loss | Best Used For |
 | :--- | :--- | :--- | :--- |
-| **Tabular Q-Learning** | State–action value table $Q(s, a)$ | $Q(s,a) \leftarrow (1-\alpha)Q(s,a) + \alpha[r + \gamma \max_{a'} Q(s',a')]$ | Small discrete gridworlds (like *Peter & the Wolf*). |
-| **Policy Gradients (REINFORCE)** | Neural network policy $\pi_\theta(a \mid s)$ | Reinforce actions that led to high discounted returns $G_t$. | Continuous or high-dimensional states (`CartPole-v1`). |
+| **Tabular Q-Learning** | State–action value table $Q(s, a)$ | Nudges $Q(s,a)$ toward immediate reward $r$ plus discounted best next-state value $\gamma \max_{a'} Q(s',a')$. | Small discrete gridworlds (like *Peter & the Wolf*). |
+| **Policy Gradients (REINFORCE)** | Neural network policy $\pi_\theta(a \mid s)$ | Increases the probability of actions that led to high returns $G_t$. | Continuous or high-dimensional states (`CartPole-v1`). |
 | **Actor–Critic** | Policy (**Actor**) + Value baseline (**Critic**) | Critic estimates expected return; Actor improves policy with lower variance. | Complex control (`MountainCar`, robotics, Atari). |
 
 In Python, modern RL environments use the open-source **`gymnasium`** library (`env = gym.make("CartPole-v1")`) with standardized `env.reset()` and `env.step(action)` loops. Each step returns `(observation, reward, terminated, truncated, info)`, letting you swap physics simulators, classic Atari games, or custom gridworlds without rewriting your training agent. Beyond games, RL powers industrial control systems, warehouse robotics, autonomous navigation, and **RLHF** (Reinforcement Learning from Human Feedback) for aligning modern Large Language Models with human preferences. In the companion Colab notebook, you'll train a REINFORCE Policy Gradient agent in PyTorch on `CartPole-v1` and explore `MountainCar-v0`.
@@ -47,14 +48,10 @@ In Python, modern RL environments use the open-source **`gymnasium`** library (`
 
 Let's train a pure-Python **Q-Learning** agent on a 5-tile corridor (`0..4`) where tile `4` holds an apple (`+10` reward) and tile `0` has a wolf (`-10` penalty). Watch how the Bellman update propagates value backward from the goal!
 
-<PythonRunner
-  client:visible
-  title="Try it Yourself: Tabular Q-Learning Agent"
-  expectedOutput="Learned Q-Values (Left vs Right) per State:
-  State 1: L=-2.00, R=7.90 -> Best: RIGHT
-  State 2: L=6.96, R=8.90 -> Best: RIGHT
-  State 3: L=7.89, R=10.00 -> Best: RIGHT"
-  initialCode={`import random
+**Tabular Q-Learning Agent**
+
+```python
+import random
 
 random.seed(42)
 # States: 0 (wolf: -10), 1, 2, 3, 4 (apple: +10)
@@ -88,8 +85,17 @@ for _ in range(250):
 print("Learned Q-Values (Left vs Right) per State:")
 for s in (1, 2, 3):
     best = "RIGHT" if Q[s]["R"] >= Q[s]["L"] else "LEFT"
-    print(f"  State {s}: L={Q[s]['L']:.2f}, R={Q[s]['R']:.2f} -> Best: {best}")`}
-/>
+    print(f"  State {s}: L={Q[s]['L']:.2f}, R={Q[s]['R']:.2f} -> Best: {best}")
+```
+
+**Expected Output:**
+
+```text
+Learned Q-Values (Left vs Right) per State:
+  State 1: L=-2.00, R=7.90 -> Best: RIGHT
+  State 2: L=6.96, R=8.90 -> Best: RIGHT
+  State 3: L=7.89, R=10.00 -> Best: RIGHT
+```
 
 ---
 

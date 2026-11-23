@@ -9,7 +9,6 @@ description: "Master prompt engineering fundamentals: subword tokenization with 
 topic: "Prompt Engineering"
 prerequisites: ["generative-ai-for-beginners/04-using-generative-ai-responsibly"]
 ---
-import PythonRunner from '../../../components/islands/PythonRunner';
 import QuizCard from '../../../components/islands/QuizCard';
 import ColabButton from '../../../components/static/ColabButton.astro';
 
@@ -78,20 +77,12 @@ Run all five hands-on exercises in Colab: Jupiter tokenization with `tiktoken` a
 
 ## Try It Yourself: Prompt Anatomy Compiler & Fabrication Guard
 
-Execute this Python sandbox to tokenize the Jupiter passage, compile a delimited multi-part prompt with a cue, and watch how an explicit "out" instruction prevents the *"Martian War of 2076"* fabrication.
+Run this Python script (locally or in a Colab cell) to tokenize the Jupiter passage, compile a delimited multi-part prompt with a cue, and watch how an explicit "out" instruction prevents the *"Martian War of 2076"* fabrication.
 
-<PythonRunner
-  client:visible
-  title="Try it Yourself: Prompt Compiler & Fabrication Guard"
-  expectedOutput="Jupiter passage: 20 words | Estimated tokens: 27
---- Compiled Prompt ---
-[INSTRUCTION] Summarize for a 2nd grader. If unknown, say UNVERIFIED.
-[PASSAGE] '''Jupiter is the fifth planet from the Sun and the largest in the Solar System.'''
-[CUE] Simple Summary:
---- Fabrication Check ---
-Unguarded: Generates fictional timeline for 'Martian War of 2076'
-With 'Out' Guard: UNVERIFIED - No historical record of 'Martian War of 2076'."
-  initialCode={`# 1. Token estimation on the Jupiter astronomy passage
+**Prompt Compiler & Fabrication Guard**
+
+```python
+# 1. Token estimation on the Jupiter astronomy passage
 jupiter_text = (
     "Jupiter is the fifth planet from the Sun and the largest in the Solar System. "
     "It is a gas giant."
@@ -122,8 +113,21 @@ topic = "Martian War of 2076"
 known_events = {"World Series 2020", "Apollo 11"}
 print(f"Unguarded: Generates fictional timeline for '{topic}'")
 if topic not in known_events:
-    print(f"With 'Out' Guard: UNVERIFIED - No historical record of '{topic}'.")`}
-/>
+    print(f"With 'Out' Guard: UNVERIFIED - No historical record of '{topic}'.")
+```
+
+**Expected Output:**
+
+```text
+Jupiter passage: 20 words | Estimated tokens: 27
+--- Compiled Prompt ---
+[INSTRUCTION] Summarize for a 2nd grader. If unknown, say UNVERIFIED.
+[PASSAGE] '''Jupiter is the fifth planet from the Sun and the largest in the Solar System.'''
+[CUE] Simple Summary:
+--- Fabrication Check ---
+Unguarded: Generates fictional timeline for 'Martian War of 2076'
+With 'Out' Guard: UNVERIFIED - No historical record of 'Martian War of 2076'.
+```
 
 ---
 

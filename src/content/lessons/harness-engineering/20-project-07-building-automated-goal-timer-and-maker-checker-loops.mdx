@@ -9,7 +9,6 @@ description: "Transition from manual prompting to autonomous loops by running th
 topic: "Hands-On Project 07"
 prerequisites: ["harness-engineering/19-loop-engineering-from-manual-prompting-to-autonomous-loops"]
 ---
-import PythonRunner from '../../../components/islands/PythonRunner';
 import QuizCard from '../../../components/islands/QuizCard';
 import ColabButton from '../../../components/static/ColabButton.astro';
 
@@ -58,14 +57,10 @@ Launch the companion notebook to execute all three Project 07 experiments—incl
 
 Run this Python loop controller to execute a multi-round Maker-Checker cycle with `loop-state.md` tracking and a 2-consecutive-pass stop condition.
 
-<PythonRunner
-  client:visible
-  title="Try it Yourself: Project 07 Maker-Checker Loop"
-  expectedOutput="Round 1: Maker wrote chunker -> Checker FAIL (missing empty-text guard)
-Round 2: Maker added empty-text guard -> Checker PASS (streak=1)
-Round 3: Maker added edge tests -> Checker PASS (streak=2)
-Loop Stopped: 2 consecutive passes reached!"
-  initialCode={`def run_maker_checker(max_rounds: int = 5, target_streak: int = 2):
+**Project 07 Maker-Checker Loop**
+
+```python
+def run_maker_checker(max_rounds: int = 5, target_streak: int = 2):
     streak = 0
     rounds = [
         ("wrote chunker", False, "missing empty-text guard"),
@@ -83,8 +78,17 @@ Loop Stopped: 2 consecutive passes reached!"
             streak = 0
             print(f"Round {r_num}: Maker {maker_act} -> Checker FAIL ({note})")
 
-run_maker_checker()`}
-/>
+run_maker_checker()
+```
+
+**Expected Output:**
+
+```text
+Round 1: Maker wrote chunker -> Checker FAIL (missing empty-text guard)
+Round 2: Maker added empty-text guard -> Checker PASS (streak=1)
+Round 3: Maker added edge tests -> Checker PASS (streak=2)
+Loop Stopped: 2 consecutive passes reached!
+```
 
 ---
 

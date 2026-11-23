@@ -9,7 +9,6 @@ description: "Explore computational linguistics, Alan Turing's Imitation Game, J
 topic: "NLP Foundations"
 prerequisites: ["ml-for-beginners/15-k-means-clustering"]
 ---
-import PythonRunner from '../../../components/islands/PythonRunner';
 import QuizCard from '../../../components/islands/QuizCard';
 import ColabButton from '../../../components/static/ColabButton.astro';
 
@@ -45,26 +44,12 @@ Unlike ELIZA's hand-written grammar rules, our starter bot **Marvin** uses a min
 
 ## Try It Yourself: ELIZA Reflection & Marvin Dialogue Simulator
 
-Let's run both a deterministic **ELIZA** pronoun-reflection engine and **Marvin**'s random-response loop on a multi-turn conversation transcript right in your browser.
+Let's trace both a deterministic **ELIZA** pronoun-reflection engine and **Marvin**'s random-response loop on a multi-turn conversation transcript in Python (or run it in the Colab notebook above).
 
-<PythonRunner
-  client:visible
-  title="Try it Yourself: ELIZA Reflection vs. Marvin Bot"
-  expectedOutput="--- ELIZA Reflection Engine ---
-User: I am sad
-ELIZA: How long have you been sad?
-User: You are a bicycle
-ELIZA: How long have I been a bicycle?
+**ELIZA Reflection vs. Marvin Bot**
 
---- Marvin Baseline Bot ---
-Hello, I am Marvin, the simple robot.
-> I am good thanks
-Marvin: Did you catch the game last night?
-> today I went for a walk
-Marvin: That is quite interesting, please tell me more.
-> bye
-Marvin: It was nice talking to you, goodbye!"
-  initialCode={`import random
+```python
+import random
 import re
 
 def eliza_reply(text):
@@ -98,8 +83,27 @@ for user_msg in ["I am good thanks", "today I went for a walk", "bye"]:
     if user_msg.lower() == "bye":
         print("Marvin: It was nice talking to you, goodbye!")
         break
-    print(f"Marvin: {rng.choice(random_responses)}")`}
-/>
+    print(f"Marvin: {rng.choice(random_responses)}")
+```
+
+**Expected Output:**
+
+```text
+--- ELIZA Reflection Engine ---
+User: I am sad
+ELIZA: How long have you been sad?
+User: You are a bicycle
+ELIZA: How long have I been a bicycle?
+
+--- Marvin Baseline Bot ---
+Hello, I am Marvin, the simple robot.
+> I am good thanks
+Marvin: Did you catch the game last night?
+> today I went for a walk
+Marvin: That is quite interesting, please tell me more.
+> bye
+Marvin: It was nice talking to you, goodbye!
+```
 
 ---
 

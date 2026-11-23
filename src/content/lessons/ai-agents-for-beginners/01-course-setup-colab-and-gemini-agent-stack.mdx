@@ -9,7 +9,6 @@ description: "Set up a zero-cost AI agent workspace on Google Colab Free Tier wi
 topic: "Agent Foundations"
 prerequisites: ["mcp-for-beginners/22-zava-retail-testing-observability-and-production-optimization"]
 ---
-import PythonRunner from '../../../components/islands/PythonRunner';
 import QuizCard from '../../../components/islands/QuizCard';
 import ColabButton from '../../../components/static/ColabButton.astro';
 
@@ -25,11 +24,11 @@ Every hands-on notebook in this course runs out of the box on Google Colab Free 
 
 ```bash
 # Shallow clone (minimal history)
-git clone --depth 1 https://github.com/<your-username>/<repo>.git
+git clone --depth 1 https://github.com/buddhilive/bl-academy.git
 
 # Partial sparse clone (fetch only specific lesson folders)
-git clone --depth 1 --filter=blob:none --sparse https://github.com/<your-username>/<repo>.git
-cd <repo>
+git clone --depth 1 --filter=blob:none --sparse https://github.com/buddhilive/bl-academy.git
+cd bl-academy
 git sparse-checkout set 00-course-setup 01-intro-to-ai-agents
 ```
 
@@ -112,15 +111,10 @@ Launch Lesson 01's notebook in Google Colab to install the open-source agent sta
 
 Run this pure-Python sandbox to validate multi-provider agent endpoints, verify fallback routing between Google AI Studio and local Ollama, and test an in-memory cosine similarity search ($\cos(\theta) = \frac{\mathbf{q}\cdot\mathbf{d}}{\|\mathbf{q}\|_2\|\mathbf{d}\|_2}$).
 
-<PythonRunner
-  client:visible
-  title="Try it Yourself: Agent Stack & Vector Search Readiness Check"
-  expectedOutput="[Config] Primary: google-ai-studio (gemini-2.5-flash) -> READY
-[Config] Router: google-ai-studio (gemini-2.5-flash-lite) -> READY
-[Config] Local Fallback: ollama (qwen2.5:7b @ http://127.0.0.1:11434/v1) -> READY
-[VectorDB] Top match for 'refund policy': doc_refund (score=0.991)
-[Health] All 3 agent providers and vector index verified."
-  initialCode={`import math
+**Agent Stack & Vector Search Readiness Check**
+
+```python
+import math
 
 providers = [
     {"name": "google-ai-studio", "role": "Primary", "model": "gemini-2.5-flash", "endpoint": "https://generativelanguage.googleapis.com/v1beta/openai/"},
@@ -146,8 +140,18 @@ docs = {
 query_vec = [0.88, 0.48, 0.12]
 best_id, best_score = max(((k, cosine_sim(query_vec, v)) for k, v in docs.items()), key=lambda x: x[1])
 print(f"[VectorDB] Top match for 'refund policy': {best_id} (score={best_score:.3f})")
-print("[Health] All 3 agent providers and vector index verified.")`}
-/>
+print("[Health] All 3 agent providers and vector index verified.")
+```
+
+**Expected Output:**
+
+```text
+[Config] Primary: google-ai-studio (gemini-2.5-flash) -> READY
+[Config] Router: google-ai-studio (gemini-2.5-flash-lite) -> READY
+[Config] Local Fallback: ollama (qwen2.5:7b @ http://127.0.0.1:11434/v1) -> READY
+[VectorDB] Top match for 'refund policy': doc_refund (score=0.991)
+[Health] All 3 agent providers and vector index verified.
+```
 
 ---
 

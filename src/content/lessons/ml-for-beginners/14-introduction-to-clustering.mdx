@@ -9,7 +9,6 @@ description: "Explore unsupervised clustering concepts—transductive vs. induct
 topic: "Clustering Foundations"
 prerequisites: ["ml-for-beginners/13-cuisine-recommender-with-onnx"]
 ---
-import PythonRunner from '../../../components/islands/PythonRunner';
 import QuizCard from '../../../components/islands/QuizCard';
 import ColabButton from '../../../components/static/ColabButton.astro';
 
@@ -52,13 +51,10 @@ The dataset tracks 16 attributes (`popularity`, `danceability`, `acousticness`, 
 
 Let's filter out `'Missing'` genres and zero-popularity tracks in pure Python, count the top three Nigerian genres, and compute the exact Pearson correlation between `energy` and `loudness`.
 
-<PythonRunner
-  client:visible
-  title="Try it Yourself: Nigerian Spotify Genre Filter & Correlation"
-  expectedOutput="Filtered tracks: 6 of 8
-Top genres -> afropop: 2, afro dancehall: 2, nigerian pop: 2
-Pearson corr(energy, loudness): 0.951"
-  initialCode={`import math
+**Nigerian Spotify Genre Filter & Correlation**
+
+```python
+import math
 
 songs = [
     {"genre": "afropop",        "pop": 48, "energy": 0.42, "loudness": -6.70},
@@ -84,8 +80,16 @@ me, ml = sum(es) / len(es), sum(ls) / len(ls)
 cov = sum((e - me) * (l - ml) for e, l in zip(es, ls))
 std_e = math.sqrt(sum((e - me) ** 2 for e in es))
 std_l = math.sqrt(sum((l - ml) ** 2 for l in ls))
-print(f"Pearson corr(energy, loudness): {cov / (std_e * std_l):.3f}")`}
-/>
+print(f"Pearson corr(energy, loudness): {cov / (std_e * std_l):.3f}")
+```
+
+**Expected Output:**
+
+```text
+Filtered tracks: 6 of 8
+Top genres -> afropop: 2, afro dancehall: 2, nigerian pop: 2
+Pearson corr(energy, loudness): 0.951
+```
 
 ---
 

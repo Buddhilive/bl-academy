@@ -9,7 +9,6 @@ description: "Explore what data science really means, Jim Gray's four scientific
 topic: "Data Science Foundations"
 prerequisites: ["ai-for-beginners/25-multimodal-networks-clip-and-vqgan"]
 ---
-import PythonRunner from '../../../components/islands/PythonRunner';
 import QuizCard from '../../../components/islands/QuizCard';
 import ColabButton from '../../../components/static/ColabButton.astro';
 
@@ -62,17 +61,17 @@ Every data science project moves through five core stages:
 
 Many organizations confuse **digitalization** with **digital transformation**. Translating paper records or manual workflows into digital logs is *digitalization*. Using data science on those logs to fundamentally improve how a product works is *digital transformation*.
 
-Consider an online learning platform like this one. By digitizing how long each student spends on a lesson ($t_{i,m}$) and normalizing by the lesson's character length ($L_m$), we can compute a fair difficulty index per module:
+Consider an online learning platform like this one. To spot which lessons are genuinely hardest—rather than just longest—we can divide each student's reading time by the lesson's character length, then average that reading pace across all students:
 
 $$\bar{d}_m = \frac{1}{N} \sum_{i=1}^{N} \frac{t_{i,m}}{L_m}$$
 
-By mapping quiz questions to specific concepts, we can pinpoint exact topics where learners stall and redesign those sections—turning raw telemetry into better education.
+Here, $\bar{d}_m$ is the average difficulty score for module $m$, $N$ is the total number of students, $t_{i,m}$ is the time student $i$ spent on module $m$, and $L_m$ is the character length of module $m$. By mapping quiz questions to specific concepts, we can pinpoint exact topics where learners stall and redesign those sections—turning raw telemetry into better education.
 
 ---
 
 ## Setting Up Google Colab & Google AI Studio Free Tier
 
-Every lesson in this course pairs our fast **In-Browser Python Sandbox** with a self-contained **Google Colab** notebook. For lessons that analyze unstructured text or poetry with Large Language Models, we also use the **Google AI Studio Free Tier** (`google-genai` SDK).
+Every lesson in this course pairs copy-and-paste Python examples with a self-contained **Google Colab** notebook. For lessons that analyze unstructured text or poetry with Large Language Models, we also use the **Google AI Studio Free Tier** (`google-genai` SDK).
 
 <ColabButton
   course="data-science-for-beginners"
@@ -97,20 +96,12 @@ client = genai.Client(api_key=userdata.get("GEMINI_API_KEY"))
 
 ## Try It Yourself: Keyword Extraction & Module Difficulty
 
-Let's run a pure-Python text analyzer right in your browser to extract top domain concepts across Data Science, Big Data, and Machine Learning snippets, and compute normalized module difficulty scores.
+Let's run a pure-Python text analyzer in Google Colab (or your local Python environment) to extract top domain concepts across Data Science, Big Data, and Machine Learning snippets, and compute normalized module difficulty scores.
 
-<PythonRunner
-  client:visible
-  title="Try it Yourself: Domain Keyword Extractor & Difficulty Index"
-  expectedOutput="=== Top Concepts by Domain ===
-Data Science: data (4), science (1), extracts (1)
-Big Data: data (3), big (1), systems (1)
-Machine Learning: models (2), machine (1), learning (1)
+**Domain Keyword Extractor & Difficulty Index**
 
-=== Normalized Module Difficulty (sec per 100 chars) ===
-Module 1 (Intro): 1.60
-Module 2 (Stats): 3.00"
-  initialCode={`import re
+```python
+import re
 from collections import Counter
 
 STOPWORDS = {"is", "the", "and", "of", "to", "a", "in", "from", "on", "with"}
@@ -135,8 +126,21 @@ modules = [
 print("\n=== Normalized Module Difficulty (sec per 100 chars) ===")
 for name, times, chars in modules:
     norm_score = sum(t / (chars / 100.0) for t in times) / len(times)
-    print(f"{name}: {norm_score:.2f}")`}
-/>
+    print(f"{name}: {norm_score:.2f}")
+```
+
+**Expected Output:**
+
+```text
+=== Top Concepts by Domain ===
+Data Science: data (4), science (1), extracts (1)
+Big Data: data (3), big (1), systems (1)
+Machine Learning: models (2), machine (1), learning (1)
+
+=== Normalized Module Difficulty (sec per 100 chars) ===
+Module 1 (Intro): 1.60
+Module 2 (Stats): 3.00
+```
 
 ---
 

@@ -9,7 +9,6 @@ description: "Understand Public, Private, and Hybrid clouds, IaaS/PaaS/SaaS laye
 topic: "Cloud Data Science"
 prerequisites: ["data-science-for-beginners/16-data-science-lifecycle-communication"]
 ---
-import PythonRunner from '../../../components/islands/PythonRunner';
 import QuizCard from '../../../components/islands/QuizCard';
 import ColabButton from '../../../components/static/ColabButton.astro';
 
@@ -63,16 +62,10 @@ print(resp.text)
 
 Run this pure-Python cloud analytics simulator to aggregate a sliding window of social media hashtag sentiment and extract structured medical entities from a research abstract.
 
-<PythonRunner
-  client:visible
-  title="Try it Yourself: Cloud Stream Window & Medical Paper Extractor"
-  expectedOutput="=== Real-Time Hashtag Sentiment Window ===
-#datascience: 2 posts | avg_sentiment=+0.85
-#python: 1 posts | avg_sentiment=+0.60
+**Cloud Stream Window & Medical Paper Extractor**
 
-=== Scientific Paper Structured Extraction ===
-Treatments: ['dexamethasone', 'oxygen'] | Outcome: reduced mortality"
-  initialCode={`stream = [
+```python
+stream = [
     {"tag": "#datascience", "score": 0.9},
     {"tag": "#datascience", "score": 0.8},
     {"tag": "#python", "score": 0.6},
@@ -92,8 +85,19 @@ found = [t for t in known_treatments if t in abstract.lower()]
 outcome = "reduced mortality" if "reduced mortality" in abstract.lower() else "inconclusive"
 
 print("\n=== Scientific Paper Structured Extraction ===")
-print(f"Treatments: {found} | Outcome: {outcome}")`}
-/>
+print(f"Treatments: {found} | Outcome: {outcome}")
+```
+
+**Expected Output:**
+
+```text
+=== Real-Time Hashtag Sentiment Window ===
+#datascience: 2 posts | avg_sentiment=+0.85
+#python: 1 posts | avg_sentiment=+0.60
+
+=== Scientific Paper Structured Extraction ===
+Treatments: ['dexamethasone', 'oxygen'] | Outcome: reduced mortality
+```
 
 ---
 

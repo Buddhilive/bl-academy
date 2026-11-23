@@ -9,7 +9,6 @@ description: "Implement cursor-based pagination in MCP using opaque base64 JSON 
 topic: "MCP Pagination"
 prerequisites: ["mcp-for-beginners/11-practical-implementation-sdks-and-api-gateways"]
 ---
-import PythonRunner from '../../../components/islands/PythonRunner';
 import QuizCard from '../../../components/islands/QuizCard';
 import ColabButton from '../../../components/static/ColabButton.astro';
 
@@ -54,16 +53,10 @@ Launch the companion notebook to implement Base64 opaque cursor pagination in Py
 
 Run this pure-Python sandbox to page through a 35-tool catalog in chunks of 10 using URL-safe Base64 cursors, attach `ttlMs` caching metadata, and reject a tampered cursor with `-32602`.
 
-<PythonRunner
-  client:visible
-  title="Try it Yourself: Opaque Base64 Cursor Pagination"
-  expectedOutput="Page 1: 10 items (nextCursor=eyJvZmZzZXQiOiAxMH0=)
-Page 2: 10 items (nextCursor=eyJvZmZzZXQiOiAyMH0=)
-Page 3: 10 items (nextCursor=eyJvZmZzZXQiOiAzMH0=)
-Page 4: 5 items (nextCursor=None)
-Collected 35 unique tools across 4 pages (ttlMs=30000)
-Tampered cursor -> Error -32602: Invalid pagination cursor"
-  initialCode={`import base64
+**Opaque Base64 Cursor Pagination**
+
+```python
+import base64
 import json
 
 ALL_TOOLS = [f"tool_{i:02d}" for i in range(35)]
@@ -108,8 +101,19 @@ print(f"Collected {len(set(collected))} unique tools across {page_num} pages (tt
 try:
     list_tools_page("!!!not-valid-base64!!!")
 except ValueError as exc:
-    print("Tampered cursor -> Error", exc)`}
-/>
+    print("Tampered cursor -> Error", exc)
+```
+
+**Expected Output:**
+
+```text
+Page 1: 10 items (nextCursor=eyJvZmZzZXQiOiAxMH0=)
+Page 2: 10 items (nextCursor=eyJvZmZzZXQiOiAyMH0=)
+Page 3: 10 items (nextCursor=eyJvZmZzZXQiOiAzMH0=)
+Page 4: 5 items (nextCursor=None)
+Collected 35 unique tools across 4 pages (ttlMs=30000)
+Tampered cursor -> Error -32602: Invalid pagination cursor
+```
 
 ---
 

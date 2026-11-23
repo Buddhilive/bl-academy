@@ -9,7 +9,6 @@ description: "Bridge prototype to production with stateless hosting, complexity 
 topic: "Production, Local & Security"
 prerequisites: ["ai-agents-for-beginners/16-building-computer-use-agents"]
 ---
-import PythonRunner from '../../../components/islands/PythonRunner';
 import QuizCard from '../../../components/islands/QuizCard';
 import ColabButton from '../../../components/static/ColabButton.astro';
 
@@ -55,15 +54,10 @@ Launch the companion notebook to build the end-to-end **Contoso & SaaS Subscript
 
 Run this pure-Python sandbox to execute a cached/routed support handler, enforce a `\$50` human-approval gate on `issue_credit`, pass an `0.80` offline evaluation gate, and run post-deploy smoke assertions.
 
-<PythonRunner
-  client:visible
-  title="Try it Yourself: Scalable Agent Router, HITL & Eval Gate"
-  expectedOutput="[Request 1] Cache=MISS | Routed=gemini-2.5-flash-lite | Span(customer.tier='pro')
-[Request 2] Cache=HIT | Cost=0 tokens
-[HITL] issue_credit($75) > $50 threshold -> PAUSED for human approval
-[EvalGate] Pass rate: 4/4 (100%) >= 80% threshold -> DEPLOY APPROVED
-[SmokeTest] ContosoSupportAgent 2/2 assertions PASS"
-  initialCode={`cache = {}
+**Scalable Agent Router, HITL & Eval Gate**
+
+```python
+cache = {}
 
 def handle_request(query: str, tier: str):
     key = query.strip().lower()
@@ -81,7 +75,7 @@ handle_request("How do I reset password?", "pro")
 
 def issue_credit(amount: float):
     if amount > 50.0:
-        print(f"[HITL] issue_credit(\${amount:.0f}) > \$50 threshold -> PAUSED for human approval")
+        print(f"[HITL] issue_credit(${amount:.0f}) > $50 threshold -> PAUSED for human approval")
         return "PENDING_APPROVAL"
     return "ISSUED"
 
@@ -90,8 +84,18 @@ issue_credit(75.0)
 # Offline Evaluation Gate & Smoke Test
 eval_pass = 4 / 4
 print(f"[EvalGate] Pass rate: 4/4 ({eval_pass:.0%}) >= 80% threshold -> DEPLOY APPROVED")
-print("[SmokeTest] ContosoSupportAgent 2/2 assertions PASS")`}
-/>
+print("[SmokeTest] ContosoSupportAgent 2/2 assertions PASS")
+```
+
+**Expected Output:**
+
+```text
+[Request 1] Cache=MISS | Routed=gemini-2.5-flash-lite | Span(customer.tier='pro')
+[Request 2] Cache=HIT | Cost=0 tokens
+[HITL] issue_credit($75) > $50 threshold -> PAUSED for human approval
+[EvalGate] Pass rate: 4/4 (100%) >= 80% threshold -> DEPLOY APPROVED
+[SmokeTest] ContosoSupportAgent 2/2 assertions PASS
+```
 
 ---
 

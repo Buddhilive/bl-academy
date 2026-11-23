@@ -9,7 +9,6 @@ description: "Set up Scikit-Learn for regression, slice and reshape 2D feature m
 topic: "Regression Tools"
 prerequisites: ["ml-for-beginners/04-techniques-of-machine-learning"]
 ---
-import PythonRunner from '../../../components/islands/PythonRunner';
 import QuizCard from '../../../components/islands/QuizCard';
 import ColabButton from '../../../components/static/ColabButton.astro';
 
@@ -60,16 +59,12 @@ Passing `-1` to `reshape((-1, 1))` tells NumPy to calculate the row count automa
 
 ## Try It Yourself: Diabetes BMI Linear Regression
 
-Let's run the exact 2D reshape, 67/33 train-test split, and Ordinary Least Squares fit on normalized Diabetes BMI samples right in your browser.
+Let's walk through the exact 2D reshape, 67/33 train-test split, and Ordinary Least Squares fit on normalized Diabetes BMI samples in Python (you can also run the full Scikit-Learn version in the Colab notebook above).
 
-<PythonRunner
-  client:visible
-  title="Try it Yourself: Scikit-Learn Style BMI Regression"
-  expectedOutput="Matrix shape: (12, 1) -> Train: 8, Test: 4
-Fitted Line: y = 940.59 * bmi + 150.89
-Test Predictions: [180.1, 121.7, 208.3, 93.5]
-Actual Targets:   [182.0, 125.0, 210.0, 95.0]"
-  initialCode={`# Representative normalized BMI (X[:, 2]) and 1-year disease progression (y)
+**Scikit-Learn Style BMI Regression**
+
+```python
+# Representative normalized BMI (X[:, 2]) and 1-year disease progression (y)
 bmi_values = [-0.061, -0.045, -0.031, -0.015, 0.002, 0.018, 0.031, 0.045, 0.061, 0.075, -0.052, 0.025]
 targets    = [95.0,   108.0,  125.0,  138.0,  152.0, 168.0, 182.0, 194.0, 210.0, 221.0, 102.0,  174.0]
 
@@ -93,8 +88,17 @@ intercept = mean_y - slope * mean_x
 print(f"Fitted Line: y = {slope:.2f} * bmi + {intercept:.2f}")
 preds = [round(slope * x + intercept, 1) for x in X_test]
 print(f"Test Predictions: {preds}")
-print(f"Actual Targets:   {y_test}")`}
-/>
+print(f"Actual Targets:   {y_test}")
+```
+
+**Expected Output:**
+
+```text
+Matrix shape: (12, 1) -> Train: 8, Test: 4
+Fitted Line: y = 940.59 * bmi + 150.89
+Test Predictions: [180.1, 121.7, 208.3, 93.5]
+Actual Targets:   [182.0, 125.0, 210.0, 95.0]
+```
 
 ---
 

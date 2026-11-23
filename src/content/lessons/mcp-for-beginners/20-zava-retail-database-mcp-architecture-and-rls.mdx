@@ -9,7 +9,6 @@ description: "Design the Zava Retail multi-tenant MCP server architecture, Postg
 topic: "Zava Retail DB & RLS"
 prerequisites: ["mcp-for-beginners/19-real-world-case-studies-workshops-and-safe-write-servers"]
 ---
-import PythonRunner from '../../../components/islands/PythonRunner';
 import QuizCard from '../../../components/islands/QuizCard';
 import ColabButton from '../../../components/static/ColabButton.astro';
 
@@ -30,7 +29,7 @@ Connecting an LLM to a single toy CSV is easy. Connecting an AI assistant to a *
 
 ## Multi-Tenant Schema & Row-Level Security (RLS)
 
-In a **shared-database, shared-schema** multi-tenant design, `stores`, `customers`, `products`, `sales_transactions`, `sales_transaction_items`, and `product_embeddings` all carry a `store_id` tenant column.
+In a **shared-database, shared-schema** multi-tenant design, `stores`, `customers`, `products`, `sales_transactions`, `sales_transaction_items`, and `product_embeddings` all carry a `store_id` tenant column. Think of **Row-Level Security (RLS)** like a shared apartment building: all four stores live in the same database building, but the database itself checks your store keycard on every query so a Seattle manager can never even see a Redmond customer's row.
 
 In production PostgreSQL + `pgvector`, you enforce isolation right inside the database engine so even a buggy query cannot leak another store's data:
 
@@ -43,7 +42,7 @@ CREATE POLICY customers_store_isolation ON retail.customers
     USING (store_id = current_setting('app.current_store_id', true));
 ```
 
-To make our labs 100% runnable in your browser and on **Google Colab Free Tier** with zero Docker setup, our Python `DatabaseProvider` mirrors that exact PostgreSQL RLS policy using an in-memory `sqlite3` tenant-scoped view layer bound to `current_store_id`.
+To make our labs 100% runnable locally and on **Google Colab Free Tier** with zero Docker setup, our Python `DatabaseProvider` mirrors that exact PostgreSQL RLS policy using an in-memory `sqlite3` tenant-scoped view layer bound to `current_store_id`.
 
 ---
 
@@ -63,14 +62,10 @@ Launch the companion notebook to provision the full Zava Retail multi-store `sql
 
 Run this pure-Python `sqlite3` sandbox to provision the Zava Retail stores, customers, and sales tables, then prove that setting `rls_store_id` strictly isolates Seattle data from Redmond data.
 
-<PythonRunner
-  client:visible
-  title="Try it Yourself: Zava Retail Multi-Tenant RLS Isolation"
-  expectedOutput="Provisioned 4 Zava Retail stores: ['seattle', 'redmond', 'bellevue', 'online']
-[RLS store='seattle'] Visible customers: ['Maya Lin (seattle)', 'Liam Patel (seattle)']
-[RLS store='redmond'] Visible customers: ['Noah Kim (redmond)']
-Cross-tenant leak count: 0"
-  initialCode={`import sqlite3
+**Zava Retail Multi-Tenant RLS Isolation**
+
+```python
+import sqlite3
 
 db = sqlite3.connect(":memory:")
 db.executescript("""
@@ -106,8 +101,17 @@ redmond_rows = query_customers_rls("redmond")
 print("[RLS store='seattle'] Visible customers:", seattle_rows)
 print("[RLS store='redmond'] Visible customers:", redmond_rows)
 leaks = sum(1 for r in seattle_rows if "redmond" in r or "bellevue" in r)
-print("Cross-tenant leak count:", leaks)`}
-/>
+print("Cross-tenant leak count:", leaks)
+```
+
+**Expected Output:**
+
+```text
+Provisioned 4 Zava Retail stores: ['seattle', 'redmond', 'bellevue', 'online']
+[RLS store='seattle'] Visible customers: ['Maya Lin (seattle)', 'Liam Patel (seattle)']
+[RLS store='redmond'] Visible customers: ['Noah Kim (redmond)']
+Cross-tenant leak count: 0
+```
 
 ---
 

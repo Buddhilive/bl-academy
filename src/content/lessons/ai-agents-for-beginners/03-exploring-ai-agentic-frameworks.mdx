@@ -9,7 +9,6 @@ description: "Compare lightweight code-first agent SDKs against stateful Thread/
 topic: "Agent Foundations"
 prerequisites: ["ai-agents-for-beginners/02-introduction-to-ai-agents-and-use-cases"]
 ---
-import PythonRunner from '../../../components/islands/PythonRunner';
 import QuizCard from '../../../components/islands/QuizCard';
 import ColabButton from '../../../components/static/ColabButton.astro';
 
@@ -66,15 +65,10 @@ Open the companion notebook to run both patterns side by side with `google-genai
 
 Run this pure-Python sandbox to execute a `@tool`-equipped `travel_agent`, chain `dataretrieval` into `dataanalysis`, and step through a multi-turn `Thread` on a restaurant menu `Host` agent.
 
-<PythonRunner
-  client:visible
-  title="Try it Yourself: Agent SDK Pipeline & Stateful Thread Runtime"
-  expectedOutput="[SDK] travel_agent -> Travel was booked to New York on 2026-01-01
-[Pipeline] dataretrieval -> Q4 Revenue: $120,000 (+18% YoY)
-[Pipeline] dataanalysis -> Insight: Q4 grew 18% YoY; scale top channel.
-[Thread:t_01] User: What is the special soup? -> Host: Clam Chowder
-[Thread:t_01] User: How much does that cost? -> Host: $9.99"
-  initialCode={`def tool(fn):
+**Agent SDK Pipeline & Stateful Thread Runtime**
+
+```python
+def tool(fn):
     fn._is_tool = True
     return fn
 
@@ -108,8 +102,18 @@ def run_thread(thread_id: str, user_msg: str) -> str:
 
 for q in ["What is the special soup?", "How much does that cost?"]:
     ans = run_thread("t_01", q)
-    print(f"[Thread:t_01] User: {q} -> Host: {ans}")`}
-/>
+    print(f"[Thread:t_01] User: {q} -> Host: {ans}")
+```
+
+**Expected Output:**
+
+```text
+[SDK] travel_agent -> Travel was booked to New York on 2026-01-01
+[Pipeline] dataretrieval -> Q4 Revenue: $120,000 (+18% YoY)
+[Pipeline] dataanalysis -> Insight: Q4 grew 18% YoY; scale top channel.
+[Thread:t_01] User: What is the special soup? -> Host: Clam Chowder
+[Thread:t_01] User: How much does that cost? -> Host: $9.99
+```
 
 ---
 

@@ -9,7 +9,6 @@ description: "Explore decentralized Multi-Agent Systems, reactive vs deliberativ
 topic: "Multi-Agent Systems"
 prerequisites: ["ai-for-beginners/22-deep-reinforcement-learning"]
 ---
-import PythonRunner from '../../../components/islands/PythonRunner';
 import QuizCard from '../../../components/islands/QuizCard';
 import ColabButton from '../../../components/static/ColabButton.astro';
 
@@ -53,14 +52,10 @@ Change just one parameter—such as setting viewing radius to `0`—and the enti
 
 Let's simulate 4 agents with different starting headings in pure Python and watch **local Alignment** synchronize their headings without any central controller.
 
-<PythonRunner
-  client:visible
-  title="Try it Yourself: Emergent Multi-Agent Alignment"
-  expectedOutput="Step 0 headings: [10.0, 80.0, 20.0, 70.0] (spread=70.0)
-Step 1 headings: [53.3, 36.7, 56.7, 33.3] (spread=23.3)
-Step 2 headings: [41.1, 48.9, 42.2, 47.8] (spread=7.8)
-Step 3 headings: [45.9, 44.1, 46.3, 43.7] (spread=2.6)"
-  initialCode={`# 4 agents on a 1D ring with initial headings (degrees)
+**Emergent Multi-Agent Alignment**
+
+```python
+# 4 agents on a 1D ring with initial headings (degrees)
 headings = [10.0, 80.0, 20.0, 70.0]
 
 for step in range(4):
@@ -72,8 +67,17 @@ for step in range(4):
     for i in range(n):
         neighbors = [headings[(i - 1) % n], headings[i], headings[(i + 1) % n]]
         new_headings.append(sum(neighbors) / len(neighbors))
-    headings = new_headings`}
-/>
+    headings = new_headings
+```
+
+**Expected Output:**
+
+```text
+Step 0 headings: [10.0, 80.0, 20.0, 70.0] (spread=70.0)
+Step 1 headings: [53.3, 36.7, 56.7, 33.3] (spread=23.3)
+Step 2 headings: [41.1, 48.9, 42.2, 47.8] (spread=7.8)
+Step 3 headings: [45.9, 44.1, 46.3, 43.7] (spread=2.6)
+```
 
 ---
 

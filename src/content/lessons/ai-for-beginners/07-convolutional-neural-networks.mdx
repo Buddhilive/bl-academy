@@ -9,7 +9,6 @@ description: "Learn 2D convolutional filters, stride, padding, pooling, pyramid 
 topic: "Convolutional Neural Networks"
 prerequisites: ["ai-for-beginners/06-introduction-to-computer-vision-and-opencv"]
 ---
-import PythonRunner from '../../../components/islands/PythonRunner';
 import QuizCard from '../../../components/islands/QuizCard';
 import ColabButton from '../../../components/static/ColabButton.astro';
 
@@ -21,29 +20,33 @@ Standard fully connected networks flatten an image into a 1D vector, throwing aw
 
 ## 2D Convolution & Output Dimensions
 
-Given a 2D input matrix $I$ and a $K \times K$ filter kernel $W$, the 2D convolution (technically cross-correlation in deep learning frameworks) computes a weighted sum at every position $(i, j)$:
+Imagine sliding a small $3 \times 3$ magnifying glass (called a **filter kernel** $W$) across a grid of image pixels $I$, one patch at a time. At each stop, you multiply the overlapping pixels by the filter numbers and add them up into a single score. If the filter is tuned to detect vertical edges, it will light up with a high score wherever a vertical edge appears!
+
+In math notation, for a 2D input image $I$ and a $K \times K$ filter kernel $W$, the 2D convolution (technically cross-correlation in deep learning frameworks) computes that weighted sum at every output position $(i, j)$:
 
 $$S(i, j) = \sum_{m=0}^{K-1} \sum_{n=0}^{K-1} I(i \cdot S_{\text{stride}} + m,\, j \cdot S_{\text{stride}} + n) \cdot W(m, n)$$
 
-With input width $W_{\text{in}}$, kernel size $K$, padding $P$, and stride $S$, the output spatial size is:
+Here, $(m, n)$ loops over the rows and columns inside the $K \times K$ filter window, and $S_{\text{stride}}$ (**stride**) is how many pixels the window jumps between stops (stride `1` moves one pixel at a time; stride `2` skips every other pixel).
+
+To keep the output grid from shrinking too fast at the edges, we can wrap the input image in a border of zeros called **padding** ($P$). Given input width $W_{\text{in}}$, kernel size $K$, padding $P$, and stride $S$, the output width is:
 
 $$W_{\text{out}} = \left\lfloor \frac{W_{\text{in}} - K + 2P}{S} \right\rfloor + 1$$
 
-Following convolution + ReLU, **Pooling layers** (`MaxPool2d` or `AvgPool2d`) downsample spatial dimensions (typically $2 \times 2$ with stride 2), reducing compute and granting local translation invariance.
+The $\lfloor \cdot \rfloor$ brackets simply mean "round down to the nearest whole number" (integer floor division). Following convolution + ReLU, **Pooling layers** (`MaxPool2d` or `AvgPool2d`) shrink the feature map further—for example, taking only the maximum value in each $2 \times 2$ block—which reduces compute and helps the network recognize a pattern even if it shifts slightly.
 
 ---
 
 ## Pyramid Architecture & Classic CNN Families
 
-Most CNNs follow a **pyramid architecture**: as spatial resolution shrinks ($224 \to 112 \to 56 \to \dots$), channel depth grows ($3 \to 64 \to 128 \to 512$).
+Most CNNs follow a **pyramid architecture**: as spatial resolution shrinks ($224 \to 112 \to 56 \to \dots$), channel depth grows ($3 \to 64 \to 128 \to 512$), trading pixel coordinates for richer visual concepts.
 
 | Architecture | Year | Key Innovation | When to Choose |
 | :--- | :--- | :--- | :--- |
 | **LeNet-5** | 1998 | First practical Conv + Pooling + FC pipeline for digits. | Lightweight educational benchmarks. |
 | **VGG-16** | 2014 | Uniform stack of $3 \times 3$ convolutions and $2 \times 2$ max pooling. | Simple baseline; great for feature visualization. |
 | **GoogLeNet / Inception** | 2014 | Parallel multi-scale filters ($1\times1$, $3\times3$, $5\times5$) + $1\times1$ channel bottlenecks. | Multi-scale feature efficiency. |
-| **ResNet (50/101/152)** | 2015 | **Residual skip connections** ($\mathcal{F}(\mathbf{x}) + \mathbf{x}$) solving vanishing gradients in very deep nets. | Default backbone for most vision tasks. |
-| **MobileNet** | 2017 | **Depthwise separable convolutions** splitting spatial and channel filtering. | Mobile, browser, and edge devices. |
+| **ResNet (50/101/152)** | 2015 | **Residual skip connections** ($\mathcal{F}(\mathbf{x}) + \mathbf{x}$) add the input directly to a block's output so gradients don't vanish in very deep nets. | Default backbone for most vision tasks. |
+| **MobileNet** | 2017 | **Depthwise separable convolutions** split filtering into two cheap steps (spatial per-channel, then $1\times1$ mixing) to cut compute. | Mobile, web, and edge devices. |
 
 <ColabButton
   course="ai-for-beginners"
@@ -57,17 +60,10 @@ Most CNNs follow a **pyramid architecture**: as spatial resolution shrinks ($224
 
 Let's apply a $3 \times 3$ **vertical edge kernel** over a $5 \times 5$ synthetic digit stroke and downsample the feature map with $2 \times 2$ Max Pooling in pure Python.
 
-<PythonRunner
-  client:visible
-  title="Try it Yourself: 2D Convolution & MaxPool2D"
-  expectedOutput="Conv2D Output (3x3):
-  [3, -3, -3]
-  [3, -3, -3]
-  [3, -3, -3]
-MaxPool2D Output (2x2 stride 1):
-  [3, -3]
-  [3, -3]"
-  initialCode={`# 5x5 grayscale image with a vertical bright bar in columns 1 and 2
+**2D Convolution & MaxPool2D**
+
+```python
+# 5x5 grayscale image with a vertical bright bar in columns 1 and 2
 image = [
     [0, 1, 1, 0, 0],
     [0, 1, 1, 0, 0],
@@ -109,8 +105,20 @@ for r in conv_out:
     print(f"  {r}")
 print("MaxPool2D Output (2x2 stride 1):")
 for r in pool_out:
-    print(f"  {r}")`}
-/>
+    print(f"  {r}")
+```
+
+**Expected Output:**
+
+```text
+Conv2D Output (3x3):
+  [3, -3, -3]
+  [3, -3, -3]
+  [3, -3, -3]
+MaxPool2D Output (2x2 stride 1):
+  [3, -3]
+  [3, -3]
+```
 
 ---
 

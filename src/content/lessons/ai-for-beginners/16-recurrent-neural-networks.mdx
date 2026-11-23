@@ -9,29 +9,30 @@ description: "Process sequential text with Recurrent Neural Networks, Backpropag
 topic: "Recurrent Neural Networks and LSTMs"
 prerequisites: ["ai-for-beginners/15-language-modeling-and-custom-embeddings"]
 ---
-import PythonRunner from '../../../components/islands/PythonRunner';
 import QuizCard from '../../../components/islands/QuizCard';
 import ColabButton from '../../../components/static/ColabButton.astro';
 
 Pooling word embeddings together throws away word order—meaning `"not good"` and `"good, not bad"` can look dangerously similar to a linear classifier. To capture sequential grammar, negation, and long-range context, we need **Recurrent Neural Networks (RNNs)**.
 
-An RNN reads a sentence one token $\mathbf{x}_t$ at a time, maintaining a running **hidden state** $\mathbf{h}_t$ that summarizes everything it has read so far.
+Think of an RNN like reading a book one word at a time while keeping a single sticky note in your hand: after each new word $\mathbf{x}_t$, you erase and rewrite your sticky-note summary (**hidden state** $\mathbf{h}_t$) so it blends the new word with what you remember so far.
 
 ---
 
 ## Simple RNN Cells & Vanishing Gradients
 
-At each time step $t$, a basic RNN cell shares the same weight matrices $W_{xh}$ and $W_{hh}$ across the entire sequence:
+At each time step $t$, a basic RNN cell reuses the exact same weight matrices $W_{xh}$ (for the incoming word) and $W_{hh}$ (for the previous memory) across the entire sequence:
 
 $$\mathbf{h}_t = \tanh\left(W_{xh}\mathbf{x}_t + W_{hh}\mathbf{h}_{t-1} + \mathbf{b}\right)$$
 
-When we train the unrolled sequence via **Backpropagation Through Time (BPTT)**, gradients must multiply by $W_{hh}^{\top}$ at every step backward. On long sentences (50+ tokens), those repeated multiplications shrink exponentially toward zero—the **vanishing gradient problem**—causing simple RNNs to forget words from the start of a paragraph.
+In plain English: take the current word vector $\mathbf{x}_t$ multiplied by $W_{xh}$, add the previous sticky-note summary $\mathbf{h}_{t-1}$ multiplied by $W_{hh}$ plus a bias $\mathbf{b}$, and squash the result through $\tanh$ (an S-curve keeping values smoothly between `-1` and `+1`).
+
+When we train the unrolled sequence via **Backpropagation Through Time (BPTT)**, gradients must pass backward through $W_{hh}^{\top}$ at every single word step. Imagine whispering a message down a 50-person telephone chain where each person speaks slightly quieter: by the time the error signal reaches the start of a long sentence, those repeated multiplications shrink exponentially toward zero—the **vanishing gradient problem**—causing simple RNNs to forget words from the beginning of a paragraph.
 
 ---
 
 ## Gated Memory: LSTMs & GRUs
 
-**Long Short-Term Memory (LSTM)** networks solve vanishing gradients by adding an explicit **Cell State** $\mathbf{c}_t$ (an unobstructed highway across time) controlled by three sigmoid gates in $[0, 1]$:
+**Long Short-Term Memory (LSTM)** networks solve vanishing gradients by adding a separate **Cell State** $\mathbf{c}_t$—think of it as an unobstructed conveyor belt running straight through time—controlled by three learned **gates** (using sigmoid $\sigma$, which outputs a dial between `0` = completely closed and `1` = completely open):
 
 | LSTM / GRU Component | Equation / Mechanism | Role in Sequence Memory |
 | :--- | :--- | :--- |
@@ -54,14 +55,10 @@ When we train the unrolled sequence via **Backpropagation Through Time (BPTT)**,
 
 Let's trace a 1D recurrent cell with a negation detector across a 3-token sequence (`["movie", "not", "good"]`) in pure Python to watch the hidden state update step by step.
 
-<PythonRunner
-  client:visible
-  title="Try it Yourself: Unrolling an RNN Hidden State"
-  expectedOutput="Step 1 ('movie') -> h=0.0000
-Step 2 ('not') -> h=-0.6169
-Step 3 ('good') -> h=-0.0751
-Final Sentiment: NEGATIVE"
-  initialCode={`import math
+**Unrolling an RNN Hidden State**
+
+```python
+import math
 
 # Toy 1D RNN: h_t = tanh(w_x * x_t + w_h * h_{t-1})
 token_val = {"movie": 0.0, "good": 0.8, "not": -1.2}
@@ -73,8 +70,17 @@ for step, word in enumerate(["movie", "not", "good"], 1):
     h = math.tanh(w_x * x_t + w_h * h)
     print(f"Step {step} ('{word}') -> h={h:.4f}")
 
-print("Final Sentiment:", "POSITIVE" if h >= 0 else "NEGATIVE")`}
-/>
+print("Final Sentiment:", "POSITIVE" if h >= 0 else "NEGATIVE")
+```
+
+**Expected Output:**
+
+```text
+Step 1 ('movie') -> h=0.0000
+Step 2 ('not') -> h=-0.6169
+Step 3 ('good') -> h=-0.0751
+Final Sentiment: NEGATIVE
+```
 
 ---
 

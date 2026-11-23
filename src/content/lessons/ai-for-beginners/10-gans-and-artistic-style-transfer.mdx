@@ -9,7 +9,6 @@ description: "Understand the two-player minimax game behind GANs and DCGANs, com
 topic: "GANs and Style Transfer"
 prerequisites: ["ai-for-beginners/09-autoencoders-and-vaes"]
 ---
-import PythonRunner from '../../../components/islands/PythonRunner';
 import QuizCard from '../../../components/islands/QuizCard';
 import ColabButton from '../../../components/static/ColabButton.astro';
 
@@ -19,9 +18,15 @@ While Variational Autoencoders generate smooth images, they often blur fine deta
 
 ## The Two-Player Minimax Game
 
-A GAN pairs a **Generator** $G(\mathbf{z})$ (which transforms random noise $\mathbf{z}$ into a synthetic image via transposed convolutions) against a **Discriminator** $D(\mathbf{x})$ (a CNN binary classifier predicting whether $\mathbf{x}$ is real or fake):
+Think of a GAN as a duel between an **Art Forger** (the **Generator** $G$) and an **Art Detective** (the **Discriminator** $D$). The Forger takes random noise $\mathbf{z}$ and tries to paint a realistic image $G(\mathbf{z})$ using transposed convolutions (upsampling layers). The Detective looks at a mix of real photos and fake paintings and tries to output `1` for real and `0` for fake. As the Detective gets sharper, the Forger must paint sharper details to fool them!
+
+In math notation, this tug-of-war is written as a **minimax game** where $G$ tries to minimize the score while $D$ tries to maximize it:
 
 $$\min_G \max_D V(D, G) = \mathbb{E}_{\mathbf{x} \sim p_{\text{data}}}[\log D(\mathbf{x})] + \mathbb{E}_{\mathbf{z} \sim p_{\mathbf{z}}}[\log(1 - D(G(\mathbf{z})))]$$
+
+Let's read each piece in plain English:
+- $\mathbb{E}_{\mathbf{x} \sim p_{\text{data}}}[\log D(\mathbf{x})]$ is the average score when the Detective sees **real** images $\mathbf{x}$: $D$ wants $D(\mathbf{x}) \to 1$ so $\log(1) = 0$ (no penalty).
+- $\mathbb{E}_{\mathbf{z} \sim p_{\mathbf{z}}}[\log(1 - D(G(\mathbf{z})))]$ is the average score when the Detective sees **fake** images $G(\mathbf{z})$ made from random noise $\mathbf{z}$: $D$ wants $D(G(\mathbf{z})) \to 0$ (catching the fake), while $G$ wants $D(G(\mathbf{z})) \to 1$ (fooling the Detective).
 
 Training alternates in two steps:
 1. **Update Discriminator ($D$)**: Show $D$ real images (label $1$) and generated images $G(\mathbf{z})$ (label $0$), updating $D$ to tell them apart.
@@ -29,18 +34,18 @@ Training alternates in two steps:
 
 | Challenge in GAN Training | What Happens | Mitigation Strategy |
 | :--- | :--- | :--- |
-| **Mode Collapse** | $G$ discovers one single image that fools $D$ and ignores diversity. | Minibatch discrimination, Wasserstein loss (WGAN), diverse noise sampling. |
+| **Mode Collapse** | $G$ discovers one single image that fools $D$ and outputs only that image. | Minibatch discrimination (penalizing identical batch outputs), Wasserstein loss (WGAN, measuring smooth Earth-Mover distance), or diverse noise. |
 | **Discriminator Dominance** | $D$ reaches 100% accuracy too quickly, leaving $G$ with zero gradient. | Tune separate learning rates ($lr_G, lr_D$) or skip $D$ updates when loss is near zero. |
-| **High-Resolution Artifacts** | Deep deconvolution stacks introduce checkerboard patterns. | Progressive growing (ProGAN) or multi-scale gradient training. |
+| **High-Resolution Artifacts** | Deep upsampling stacks introduce checkerboard patterns. | Progressive growing (ProGAN) or multi-scale gradient training. |
 
 ---
 
 ## Neural Artistic Style Transfer
 
-GANs aren't the only way to synthesize art. **Neural Style Transfer** starts with a noise image $\mathbf{x}$ and optimizes the pixels directly via gradient descent against a frozen pre-trained VGG network to minimize three losses:
-- **Content Loss**: Feature distance between $\mathbf{x}$ and the content photo at deeper layers.
-- **Style Loss**: Distance between **Gram matrices** $G_{ij}^l = \sum_k F_{ik}^l F_{jk}^l$, which measure *feature correlations* (texture and brushstrokes) regardless of spatial position.
-- **Total Variation Loss**: Smooths neighboring pixel jumps to suppress high-frequency noise.
+GANs aren't the only way to synthesize art. **Neural Style Transfer** starts with a blank noise image $\mathbf{x}$ and directly tweaks its pixels via gradient descent against a frozen pre-trained VGG network to balance three scores:
+- **Content Loss**: How well $\mathbf{x}$ matches the shapes and objects of the content photo in deeper CNN layers.
+- **Style Loss**: How well $\mathbf{x}$ matches the texture and brushstrokes of the painting, measured using **Gram matrices** ($G_{ij}^l = \sum_k F_{ik}^l F_{jk}^l$). In plain English, multiplying feature channel $i$ by channel $j$ across all pixel positions $k$ measures *which textures appear together* (e.g., swirling blue + bright yellow) while throwing away *where* they sit on the canvas.
+- **Total Variation Loss**: Smooths neighboring pixel jumps to suppress high-frequency static.
 
 By tuning the relative weights of Content, Style, and Variation losses, you can blend the recognizable geometry of a photograph with the color palette and brushwork of Van Gogh or Monet. Unlike GANs, classical optimization-based Style Transfer doesn't train a generator network from scratch—it optimizes the pixels of a single canvas directly via backpropagation.
 
@@ -56,14 +61,10 @@ By tuning the relative weights of Content, Style, and Variation losses, you can 
 
 Let's compute the **Gram matrix** of a 2-channel feature map and evaluate the GAN Discriminator/Generator minimax objective in pure Python.
 
-<PythonRunner
-  client:visible
-  title="Try it Yourself: Gram Matrix & GAN Minimax Loss"
-  expectedOutput="Gram Matrix (2x2 feature correlation):
-  [[14.0, 19.0], [19.0, 26.0]]
-GAN Discriminator Loss: 0.4463
-GAN Generator Loss:     1.6094"
-  initialCode={`import math
+**Gram Matrix & GAN Minimax Loss**
+
+```python
+import math
 
 # Two flattened feature channels (length 3 each)
 F = [
@@ -87,8 +88,17 @@ d_real, d_fake = 0.8, 0.2
 d_loss = -(math.log(d_real) + math.log(1.0 - d_fake))
 g_loss = -math.log(d_fake)  # non-saturating generator objective
 print(f"GAN Discriminator Loss: {d_loss:.4f}")
-print(f"GAN Generator Loss:     {g_loss:.4f}")`}
-/>
+print(f"GAN Generator Loss:     {g_loss:.4f}")
+```
+
+**Expected Output:**
+
+```text
+Gram Matrix (2x2 feature correlation):
+  [[14.0, 19.0], [19.0, 26.0]]
+GAN Discriminator Loss: 0.4463
+GAN Generator Loss:     1.6094
+```
 
 ---
 

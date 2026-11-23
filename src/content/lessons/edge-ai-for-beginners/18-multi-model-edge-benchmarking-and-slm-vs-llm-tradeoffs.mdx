@@ -9,7 +9,6 @@ description: "Benchmark local SLMs against cloud LLMs using Time-To-First-Token 
 topic: "Edge Benchmarking & Trade-Offs"
 prerequisites: ["edge-ai-for-beginners/17-local-rag-pipelines-and-ragas-quality-evaluation"]
 ---
-import PythonRunner from '../../../components/islands/PythonRunner';
 import QuizCard from '../../../components/islands/QuizCard';
 import ColabButton from '../../../components/static/ColabButton.astro';
 
@@ -21,7 +20,7 @@ Here is an overview of how to benchmark edge models systematically across **Time
 
 ## Streaming Telemetry & Pareto Efficiency
 
-In streaming inference, total response time for $N$ generated tokens splits into two measurable phases:
+In streaming inference, total response time for $N$ generated tokens splits into two measurable phases—waiting for the *first* word to appear (**TTFT**) and the steady rhythm of the remaining $N-1$ words (**ITL**):
 
 $$
 T_{\text{stream}}(N) = \text{TTFT} + (N - 1) \cdot \text{ITL}, \qquad \text{TPS} = \frac{N - 1}{T_{\text{total}} - \text{TTFT}}
@@ -36,6 +35,8 @@ To compare heterogeneous candidates fairly across quality, speed, and memory foo
 $$
 E(m) = \frac{\text{Quality}(m)}{\text{Latency}(m) \cdot \text{Memory}(m)}
 $$
+
+Think of $E(m)$ as "bang for your buck": higher accuracy/quality raises the score, while slower latency or heavier RAM usage shrinks it.
 
 | Metric | Micro SLM (`Qwen2.5-0.5B`) | Small SLM (`Phi-4-mini-3.8B`) | Cloud LLM (`gemini-2.5-flash`) |
 | :--- | :--- | :--- | :--- |
@@ -64,14 +65,10 @@ Launch the companion notebook to run live latency and tokens/sec benchmarks acro
 
 Run this Python benchmark harness to compute TTFT, decode TPS, p95 latency, and the Pareto efficiency winner across three candidate models.
 
-<PythonRunner
-  client:visible
-  title="Try it Yourself: Multi-Model Edge Benchmark & Pareto Ranker"
-  expectedOutput="qwen2.5-0.5b   | Avg=175.0ms | p95=185.0ms | TPS=153.8 | Eff=3.07
-phi-4-mini     | Avg=430.0ms | p95=450.0ms | TPS=71.4 | Eff=0.65
-gemini-flash   | Avg=620.0ms | p95=710.0ms | TPS=112.4 | Eff=0.77
-Pareto Efficiency Winner: qwen2.5-0.5b"
-  initialCode={`def percentile_95(values):
+**Multi-Model Edge Benchmark & Pareto Ranker**
+
+```python
+def percentile_95(values):
     s = sorted(values)
     idx = min(len(s) - 1, int(0.95 * len(s)))
     return s[idx]
@@ -92,8 +89,17 @@ for name, totals, ttft, n_toks, qual, mem_gb in runs:
         best_eff, best_name = eff, name
     print(f"{name:14s} | Avg={avg_ms:.1f}ms | p95={p95_ms:.1f}ms | TPS={tps:.1f} | Eff={eff:.2f}")
 
-print(f"Pareto Efficiency Winner: {best_name}")`}
-/>
+print(f"Pareto Efficiency Winner: {best_name}")
+```
+
+**Expected Output:**
+
+```text
+qwen2.5-0.5b   | Avg=175.0ms | p95=185.0ms | TPS=153.8 | Eff=3.07
+phi-4-mini     | Avg=430.0ms | p95=450.0ms | TPS=71.4 | Eff=0.65
+gemini-flash   | Avg=620.0ms | p95=710.0ms | TPS=112.4 | Eff=0.77
+Pareto Efficiency Winner: qwen2.5-0.5b
+```
 
 ---
 

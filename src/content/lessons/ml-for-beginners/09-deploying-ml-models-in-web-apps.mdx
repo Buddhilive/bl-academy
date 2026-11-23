@@ -9,7 +9,6 @@ description: "Train a Logistic Regression classifier on NUFORC UFO sightings, se
 topic: "ML Web Deployment"
 prerequisites: ["ml-for-beginners/08-logistic-regression-and-roc-curves"]
 ---
-import PythonRunner from '../../../components/islands/PythonRunner';
 import QuizCard from '../../../components/islands/QuizCard';
 import ColabButton from '../../../components/static/ColabButton.astro';
 
@@ -58,12 +57,10 @@ In Google Colab, we can also launch the exact same pickled model with **Gradio**
 
 Let's serialize a trained UFO country-centroid classifier in memory using Python's `pickle.dumps` and `pickle.loads`, then process a simulated `/predict` form request for `[50, 44, -12]`.
 
-<PythonRunner
-  client:visible
-  title="Try it Yourself: Pickle Model Serialization & /predict Route"
-  expectedOutput="Serialized model size: 136 bytes
-Reloaded model prediction for [50, 44, -12]: index=3 -> Likely country: UK"
-  initialCode={`import math
+**Pickle Model Serialization & /predict Route**
+
+```python
+import math
 import pickle
 
 COUNTRIES = ["Australia", "Canada", "Germany", "UK", "US"]
@@ -88,8 +85,15 @@ best_idx = min(
     loaded_centroids,
     key=lambda idx: (query[1] - loaded_centroids[idx][1]) ** 2 + (query[2] - loaded_centroids[idx][2]) ** 2,
 )
-print(f"Reloaded model prediction for {query}: index={best_idx} -> Likely country: {COUNTRIES[best_idx]}")`}
-/>
+print(f"Reloaded model prediction for {query}: index={best_idx} -> Likely country: {COUNTRIES[best_idx]}")
+```
+
+**Expected Output:**
+
+```text
+Serialized model size: 136 bytes
+Reloaded model prediction for [50, 44, -12]: index=3 -> Likely country: UK
+```
 
 ---
 

@@ -9,7 +9,6 @@ description: "Design human-centered AI user experiences using the 4 AI UX pillar
 topic: "AI UX Design"
 prerequisites: ["generative-ai-for-beginners/13-building-low-code-ai-applications"]
 ---
-import PythonRunner from '../../../components/islands/PythonRunner';
 import QuizCard from '../../../components/islands/QuizCard';
 import ColabButton from '../../../components/static/ColabButton.astro';
 
@@ -53,15 +52,12 @@ Launch the notebook below to build a persona-aware EdTech Tutor in Python with `
 
 ## Try It Yourself: Persona-Aware UX & Trust Calibration Controller
 
-Run this pure-Python sandbox to test how persona routing, `data_opt_in` privacy redaction, and graceful out-of-scope boundary checks shape an AI assistant's behavior.
+Run this pure-Python script (locally or in a Colab cell) to test how persona routing, `data_opt_in` privacy redaction, and graceful out-of-scope boundary checks shape an AI assistant's behavior.
 
-<PythonRunner
-  client:visible
-  title="Try it Yourself: Persona-Aware AI UX & Out-of-Scope Controller"
-  expectedOutput="[Student | Math] Socratic Hint: Try isolating x on one side first—what happens if you subtract 3 from both sides? (Log saved: False)
-[Teacher | Math] Grading Rubric: 1 pt for isolating 2x, 1 pt for x=4. (Log saved: True)
-[Student | Geography] Out-of-Scope: I'm trained to help with History and Math, not Geography."
-  initialCode={`SUPPORTED_SUBJECTS = {"history", "math"}
+**Persona-Aware AI UX & Out-of-Scope Controller**
+
+```python
+SUPPORTED_SUBJECTS = {"history", "math"}
 
 def handle_ux_request(persona, subject, query, data_opt_in):
     subj = subject.lower()
@@ -77,8 +73,16 @@ def handle_ux_request(persona, subject, query, data_opt_in):
 
 print(handle_ux_request("student", "Math", "Solve 2x + 3 = 11", data_opt_in=False))
 print(handle_ux_request("teacher", "Math", "Rubric for 2x + 3 = 11", data_opt_in=True))
-print(handle_ux_request("student", "Geography", "Capital of Peru?", data_opt_in=True))`}
-/>
+print(handle_ux_request("student", "Geography", "Capital of Peru?", data_opt_in=True))
+```
+
+**Expected Output:**
+
+```text
+[Student | Math] Socratic Hint: Try isolating x on one side first—what happens if you subtract 3 from both sides? (Log saved: False)
+[Teacher | Math] Grading Rubric: 1 pt for isolating 2x, 1 pt for x=4. (Log saved: True)
+[Student | Geography] Out-of-Scope: I'm trained to help with History and Math, not Geography.
+```
 
 ---
 

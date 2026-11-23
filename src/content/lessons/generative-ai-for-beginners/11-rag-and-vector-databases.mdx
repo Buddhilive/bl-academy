@@ -9,7 +9,6 @@ description: "Build a complete RAG pipeline over Neural Network docs using word-
 topic: "RAG & Vector Databases"
 prerequisites: ["generative-ai-for-beginners/10-integrating-with-function-calling"]
 ---
-import PythonRunner from '../../../components/islands/PythonRunner';
 import QuizCard from '../../../components/islands/QuizCard';
 import ColabButton from '../../../components/static/ColabButton.astro';
 
@@ -45,6 +44,8 @@ Never ship a RAG pipeline on vibes alone. Measure retrieval and answer relevance
 
 $$\text{MAP} = \frac{1}{|Q|} \sum_{q=1}^{|Q|} \text{AP}(q), \qquad \text{AP}(q) = \sum_{k=1}^{n} (R_k - R_{k-1}) P_k$$
 
+In plain English: for each test query $q$ in your set of $|Q|$ questions, **Average Precision ($\text{AP}(q)$)** rewards the retriever for putting relevant chunks near rank `1` (where $P_k$ is precision at rank $k$ and $R_k - R_{k-1}$ marks each new relevant hit). **MAP** simply averages those scores across all test queries so a single number tells you how well your retriever ranks answers.
+
 ---
 
 ## Open the Companion Colab Notebook
@@ -61,16 +62,12 @@ Launch the notebook below—it embeds `perceptron.md`, `own_framework.md`, and `
 
 ## Try It Yourself: Word-Bounded RAG Chunker & MAP Evaluator
 
-Execute this Python sandbox to split a Neural Network document cleanly along word boundaries (`300–400` chars), retrieve the top chunk via nearest-neighbor cosine similarity, and compute Average Precision across ranked answers.
+Run this Python script (locally or in a Colab cell) to split a Neural Network document cleanly along word boundaries (`300–400` chars), retrieve the top chunk via nearest-neighbor cosine similarity, and compute Average Precision across ranked answers.
 
-<PythonRunner
-  client:visible
-  title="Try it Yourself: Word-Bounded RAG Chunker & MAP Evaluator"
-  expectedOutput="Chunk 1 (len=397): A perceptron is the simplest neural network unit, inspired by a biological neuro...
-Retrieved Top-1 for 'what is a perceptron?': Chunk 1 (sim=0.990)
-Average Precision (AP) for query: 1.000
-Mean Average Precision (MAP) across 2 queries: 0.917"
-  initialCode={`import math
+**Word-Bounded RAG Chunker & MAP Evaluator**
+
+```python
+import math
 
 doc = (
     "A perceptron is the simplest neural network unit, inspired by a biological neuron. "
@@ -117,8 +114,17 @@ def average_precision(relevance_flags):
 ap1 = average_precision([1, 1, 0])
 ap2 = average_precision([1, 0, 1])
 print(f"Average Precision (AP) for query: {ap1:.3f}")
-print(f"Mean Average Precision (MAP) across 2 queries: {(ap1 + ap2) / 2:.3f}")`}
-/>
+print(f"Mean Average Precision (MAP) across 2 queries: {(ap1 + ap2) / 2:.3f}")
+```
+
+**Expected Output:**
+
+```text
+Chunk 1 (len=397): A perceptron is the simplest neural network unit, inspired by a biological neuro...
+Retrieved Top-1 for 'what is a perceptron?': Chunk 1 (sim=0.990)
+Average Precision (AP) for query: 1.000
+Mean Average Precision (MAP) across 2 queries: 0.917
+```
 
 ---
 

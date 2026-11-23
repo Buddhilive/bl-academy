@@ -9,7 +9,6 @@ description: "Scale MCP horizontally with header-based routing and custom transp
 topic: "Scaling & Adversarial Agents"
 prerequisites: ["mcp-for-beginners/16-context-engineering-root-contexts-and-sampling-migration"]
 ---
-import PythonRunner from '../../../components/islands/PythonRunner';
 import QuizCard from '../../../components/islands/QuizCard';
 import ColabButton from '../../../components/static/ColabButton.astro';
 
@@ -19,7 +18,7 @@ Single-agent LLM pipelines have a well-known blind spot: they tend to agree with
 
 ## Routing, Horizontal Scaling & Custom Transports
 
-Before scaling to multi-agent debates, distributed MCP deployments rely on three infrastructure patterns:
+Before scaling to multi-agent debates, distributed MCP deployments rely on three infrastructure patterns. Think of **Header-Based Routing** like sorting mail by reading the label on the outside of the envelope (`Mcp-Method` / `Mcp-Name`) rather than opening and reading every letter (parsing the JSON body):
 
 | Pattern | How It Works | Primary Benefit |
 | :--- | :--- | :--- |
@@ -53,15 +52,10 @@ Launch the companion notebook to run a live 3-agent **Adversarial Multi-Agent De
 
 Run this pure-Python sandbox to route stateless MCP requests across backend worker pools and simulate a 2-round `ForAgent` vs. `AgainstAgent` debate evaluated by `JudgeAgent` over shared MCP tools.
 
-<PythonRunner
-  client:visible
-  title="Try it Yourself: Stateless MCP Router & Adversarial Debate"
-  expectedOutput="[Router] tools/call:run_python -> Pool-Sandbox-2
-[Shared MCP Tool] run_python('2 + 2 == 4') -> True
-[Round 1] ForAgent: Stateless HTTP removes sticky-session bottlenecks.
-[Round 1] AgainstAgent: Stateless retries still need idempotency keys for writes.
-[JudgeAgent] Verdict: ADOPT_WITH_GUARDRAILS (For=8.5, Against=9.0 -> add Reliability Sidecar)"
-  initialCode={`# 1. Stateless header-based router
+**Stateless MCP Router & Adversarial Debate**
+
+```python
+# 1. Stateless header-based router
 ROUTES = {"run_python": "Pool-Sandbox-2", "search_docs": "Pool-Read-1"}
 print(f"[Router] tools/call:run_python -> {ROUTES['run_python']}")
 
@@ -81,8 +75,18 @@ for speaker, arg in debate_log:
 
 scores = {"For": 8.5, "Against": 9.0}
 verdict = "ADOPT_WITH_GUARDRAILS (For=8.5, Against=9.0 -> add Reliability Sidecar)"
-print(f"[JudgeAgent] Verdict: {verdict}")`}
-/>
+print(f"[JudgeAgent] Verdict: {verdict}")
+```
+
+**Expected Output:**
+
+```text
+[Router] tools/call:run_python -> Pool-Sandbox-2
+[Shared MCP Tool] run_python('2 + 2 == 4') -> True
+[Round 1] ForAgent: Stateless HTTP removes sticky-session bottlenecks.
+[Round 1] AgainstAgent: Stateless retries still need idempotency keys for writes.
+[JudgeAgent] Verdict: ADOPT_WITH_GUARDRAILS (For=8.5, Against=9.0 -> add Reliability Sidecar)
+```
 
 ---
 

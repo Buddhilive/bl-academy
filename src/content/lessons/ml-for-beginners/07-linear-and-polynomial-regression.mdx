@@ -9,7 +9,6 @@ description: "Derive Least-Squares regression math, build Scikit-Learn polynomia
 topic: "Linear & Polynomial Regression"
 prerequisites: ["ml-for-beginners/06-preparing-and-visualizing-pumpkin-data"]
 ---
-import PythonRunner from '../../../components/islands/PythonRunner';
 import QuizCard from '../../../components/islands/QuizCard';
 import ColabButton from '../../../components/static/ColabButton.astro';
 
@@ -28,13 +27,19 @@ The Root Mean Squared Error (**RMSE**) and Coefficient of Determination (**$R^2$
 
 $$\text{RMSE} = \sqrt{\frac{1}{n}\sum_{i=1}^{n}(y_i - \hat{y}_i)^2}, \qquad R^2 = 1 - \frac{\sum (y_i - \hat{y}_i)^2}{\sum (y_i - \bar{y})^2}$$
 
+Here is what each symbol tells you in plain English:
+- **$y_i$ and $\hat{y}_i$**: The actual price and your model's predicted price for pumpkin $i$, across $n$ total pumpkins.
+- **$\bar{y}$**: The simple average price of all pumpkins—think of this as a "lazy baseline" model that ignores all features and guesses the average every time.
+- **$\text{RMSE}$**: Your typical prediction error in the same units as the target (dollars). Lower is better.
+- **$R^2$**: Compares your model's squared error (top of the fraction) against the lazy average's squared error (bottom). An $R^2$ of `0.07` means your line barely beats guessing the average; `0.97` means your model explains 97% of the price swings.
+
 Always compute RMSE with `np.sqrt(mean_squared_error(y_test, pred))` for full compatibility across modern Scikit-Learn versions.
 
 ---
 
 ## From Simple Linear to 97% Polynomial Pipelines
 
-When we correlate `Month` ($-0.15$) or `DayOfYear` ($-0.17$) against all pumpkin prices, the relationship looks weak because different **varieties** (`PIE TYPE`, `MINIATURE`, `FAIRYTALE`, `MIXED HEIRLOOM VARIETIES`) sit in completely separate price bands.
+Think of **Linear Regression** as laying a rigid wooden ruler across a scatter plot, while **Polynomial Regression** is like bending a flexible wire so it can curve up and down to follow seasonal price peaks. When we correlate `Month` ($-0.15$) or `DayOfYear` ($-0.17$) against all pumpkin prices, the relationship looks weak because different **varieties** (`PIE TYPE`, `MINIATURE`, `FAIRYTALE`, `MIXED HEIRLOOM VARIETIES`) sit in completely separate price bands.
 
 Why not convert `Variety` into integers `0, 1, 2, 3`? Because linear regression multiplies indices by a slope, falsely assuming `Variety 3` costs $3\times$ more than `Variety 1`. Instead, we use **One-Hot Encoding** (`pd.get_dummies()`), creating a binary `0/1` indicator column per category.
 
@@ -60,14 +65,10 @@ To plot smooth polynomial curves without zigzagging, evaluate `pipeline.predict(
 
 Let's run a pure-Python Ordinary Least Squares solver comparing a `DayOfYear`-only model against a **One-Hot Encoded Variety + Month** model to see the exact $R^2$ jump in action.
 
-<PythonRunner
-  client:visible
-  title="Try it Yourself: DayOfYear vs. One-Hot Variety Regression"
-  expectedOutput="1. DayOfYear Linear  -> RMSE: 10.50, R2: 0.00
-2. One-Hot Variety   -> RMSE: 1.11, R2: 0.99
-Predicted PIE TYPE (Day 280): $15.23
-Predicted MINIATURE (Day 280): $36.00"
-  initialCode={`import math
+**DayOfYear vs. One-Hot Variety Regression**
+
+```python
+import math
 
 # (DayOfYear, Variety, Price)
 rows = [
@@ -99,8 +100,17 @@ pred_oh = [pie_mean if r[1] == "PIE" else mini_mean for r in rows]
 rmse2, r2_2 = metrics(ys, pred_oh)
 print(f"2. One-Hot Variety   -> RMSE: {rmse2:.2f}, R2: {r2_2:.2f}")
 print("Predicted PIE TYPE (Day 280): $" + f"{pie_mean + 0.118:.2f}")
-print("Predicted MINIATURE (Day 280): $" + f"{mini_mean:.2f}")`}
-/>
+print("Predicted MINIATURE (Day 280): $" + f"{mini_mean:.2f}")
+```
+
+**Expected Output:**
+
+```text
+1. DayOfYear Linear  -> RMSE: 10.50, R2: 0.00
+2. One-Hot Variety   -> RMSE: 1.11, R2: 0.99
+Predicted PIE TYPE (Day 280): $15.23
+Predicted MINIATURE (Day 280): $36.00
+```
 
 ---
 

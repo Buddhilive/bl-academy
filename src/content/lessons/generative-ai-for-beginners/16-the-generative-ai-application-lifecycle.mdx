@@ -9,7 +9,6 @@ description: "Manage the GenAI application lifecycle with LLMOps: contrast MLOps
 topic: "LLMOps Lifecycle"
 prerequisites: ["generative-ai-for-beginners/15-securing-generative-ai-applications"]
 ---
-import PythonRunner from '../../../components/islands/PythonRunner';
 import QuizCard from '../../../components/islands/QuizCard';
 import ColabButton from '../../../components/static/ColabButton.astro';
 
@@ -39,6 +38,7 @@ Every GenAI application cycles continuously through three stages, wrapped in ove
    - **Honesty (Groundedness)**: Adherence to retrieved context without hallucinations.
    - **Cost**: Token expenditure across input and output:
      $$\text{Cost} = \frac{N_{\text{in}} \cdot c_{\text{in}} + N_{\text{out}} \cdot c_{\text{out}}}{10^6}$$
+     (where $N_{\text{in}}$ and $N_{\text{out}}$ are input/output token counts, and $c_{\text{in}}, c_{\text{out}}$ are their prices per million tokens).
    - **Latency**: Time-to-First-Token ($\text{TTFT}$) and end-to-end wall-clock milliseconds.
 3. **Stage 3 — Operationalizing**: Deploy to production with CI/CD, live telemetry, A/B routing, and automated regression alerts.
 
@@ -58,16 +58,12 @@ Launch the notebook below to run a Python LLMOps DAG tracer and LLM-as-a-Judge e
 
 ## Try It Yourself: LLMOps DAG Tracer & 5-Metric Release Gate
 
-Execute this Python sandbox to trace a 3-node DAG (`Retrieve -> Generate -> Guard`) across a golden test suite and evaluate whether the candidate passes the Stage 2 $\rightarrow$ Stage 3 release gate.
+Run this Python script (locally or in a Colab cell) to trace a 3-node DAG (`Retrieve -> Generate -> Guard`) across a golden test suite and evaluate whether the candidate passes the Stage 2 $\rightarrow$ Stage 3 release gate.
 
-<PythonRunner
-  client:visible
-  title="Try it Yourself: LLMOps 5-Metric DAG Evaluation Harness"
-  expectedOutput="DAG Trace: retrieve(18ms) -> generate(142ms) -> safety_guard(9ms) | Total=169ms
-5-Metric Scorecard:
-  Quality=0.92 | Honesty=0.95 | Harm=0.00 | Cost=$0.000240 | Latency=169ms
-Stage 2 -> Stage 3 Release Gate: PASSED"
-  initialCode={`# 1. Simulated DAG execution trace
+**LLMOps 5-Metric DAG Evaluation Harness**
+
+```python
+# 1. Simulated DAG execution trace
 stages = [("retrieve", 18), ("generate", 142), ("safety_guard", 9)]
 total_ms = sum(ms for _, ms in stages)
 trace_str = " -> ".join(f"{name}({ms}ms)" for name, ms in stages)
@@ -81,12 +77,21 @@ tokens_in, tokens_out = 800, 300
 cost_usd = (tokens_in * 0.15 + tokens_out * 0.40) / 1_000_000
 
 print("5-Metric Scorecard:")
-print(f"  Quality={quality:.2f} | Honesty={honesty:.2f} | Harm={harm:.2f} | Cost=\${cost_usd:.6f} | Latency={total_ms}ms")
+print(f"  Quality={quality:.2f} | Honesty={honesty:.2f} | Harm={harm:.2f} | Cost=${cost_usd:.6f} | Latency={total_ms}ms")
 
 # 3. Release gate check
 passed = quality >= 0.85 and honesty >= 0.90 and harm == 0.0 and total_ms <= 500
-print(f"Stage 2 -> Stage 3 Release Gate: {'PASSED' if passed else 'BLOCKED'}")`}
-/>
+print(f"Stage 2 -> Stage 3 Release Gate: {'PASSED' if passed else 'BLOCKED'}")
+```
+
+**Expected Output:**
+
+```text
+DAG Trace: retrieve(18ms) -> generate(142ms) -> safety_guard(9ms) | Total=169ms
+5-Metric Scorecard:
+  Quality=0.92 | Honesty=0.95 | Harm=0.00 | Cost=$0.000240 | Latency=169ms
+Stage 2 -> Stage 3 Release Gate: PASSED
+```
 
 ---
 

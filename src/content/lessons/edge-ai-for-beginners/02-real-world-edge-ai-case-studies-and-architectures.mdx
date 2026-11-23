@@ -9,7 +9,6 @@ description: "Analyze production Edge AI architectures including QuaRot 4-bit ou
 topic: "Edge AI Case Studies"
 prerequisites: ["edge-ai-for-beginners/01-introduction-to-edge-ai-and-paradigm-shift"]
 ---
-import PythonRunner from '../../../components/islands/PythonRunner';
 import QuizCard from '../../../components/islands/QuizCard';
 
 You may know that shrinking a 7B model down to 4 bits looks easy on paper, until a handful of massive activation outliers destroy the quantization scale and turn coherent sentences into gibberish. Real-world Edge AI engineering is defined by how teams solve these numerical and systems bottlenecks under strict memory and battery limits.
@@ -68,13 +67,10 @@ By running a quantized SLM directly on cabin tablets, JAL enabled attendants to 
 
 Run this pure-Python simulation to see how multiplying an activation vector containing a 24.0 outlier by an orthogonal 4x4 Walsh-Hadamard matrix slashes symmetric INT4 quantization Mean Squared Error (MSE).
 
-<PythonRunner
-  client:visible
-  title="Try it Yourself: QuaRot Hadamard Rotation vs. Naive INT4 Quantization"
-  expectedOutput="Original max |x|: 24.0000 | Naive INT4 MSE: 0.375000
-Rotated max |xH|: 12.5000 | QuaRot INT4 MSE: 0.082908
-MSE Reduction Factor: 4.52x"
-  initialCode={`import math
+**QuaRot Hadamard Rotation vs. Naive INT4 Quantization**
+
+```python
+import math
 
 def int4_quant_dequant(vec):
     max_abs = max(abs(v) for v in vec)
@@ -104,8 +100,16 @@ rot_max, quarot_mse = int4_quant_dequant(x_rot)
 
 print(f"Original max |x|: {orig_max:.4f} | Naive INT4 MSE: {naive_mse:.6f}")
 print(f"Rotated max |xH|: {rot_max:.4f} | QuaRot INT4 MSE: {quarot_mse:.6f}")
-print(f"MSE Reduction Factor: {naive_mse / quarot_mse:.2f}x")`}
-/>
+print(f"MSE Reduction Factor: {naive_mse / quarot_mse:.2f}x")
+```
+
+**Expected Output:**
+
+```text
+Original max |x|: 24.0000 | Naive INT4 MSE: 0.375000
+Rotated max |xH|: 12.5000 | QuaRot INT4 MSE: 0.082908
+MSE Reduction Factor: 4.52x
+```
 
 ---
 

@@ -9,19 +9,18 @@ description: "Deconstruct the formal 5-Subsystem Harness Model (Instructions, To
 topic: "Harness Anatomy"
 prerequisites: ["harness-engineering/01-why-capable-agents-still-fail"]
 ---
-import PythonRunner from '../../../components/islands/PythonRunner';
 import QuizCard from '../../../components/islands/QuizCard';
 import ColabButton from '../../../components/static/ColabButton.astro';
 
 People throw the word "harness" around a lot in AI coding circles, and most of the time they really just mean a prompt file. A prompt file is **not** a harness.
 
-Think of dropping a newly hired engineer into a codebase with zero README, no comments, no test commands, and buried CI scripts. A human can eventually tap a colleague on the shoulder; an AI agent cannot. It only sees the files you put in front of it and the commands it can run. Formally, a harness $\mathcal{H}$ is the 5-tuple of engineering infrastructure surrounding the model weights:
+Think of dropping a newly hired engineer into a codebase with zero README, no comments, no test commands, and buried CI scripts. A human can eventually tap a colleague on the shoulder; an AI agent cannot. It only sees the files you put in front of it and the commands it can run. Think of a harness $\mathcal{H}$ as a five-part checklist—a **5-tuple** (an ordered set of five connected building blocks) of engineering infrastructure surrounding the model weights:
 
 $$
 \mathcal{H} = \langle I, T, E, S, F \rangle
 $$
 
-where $I$ is **Instructions**, $T$ is **Tools**, $E$ is **Environment**, $S$ is **State**, and $F$ is **Feedback**.
+where $I$ is **Instructions** (what to do), $T$ is **Tools** (what actions it can take), $E$ is **Environment** (where the code runs), $S$ is **State** (memory across sessions), and $F$ is **Feedback** (tests and checks that catch mistakes).
 
 ---
 
@@ -51,7 +50,7 @@ flowchart LR
 
 - **Give a map, not a manual**: Keep your root `AGENTS.md` to ~100 lines. Put deep module rules in `docs/` or `.agents/skills/` so the agent loads them on demand.
 - **Constrain, don't micromanage**: Enforce invariants (*"all DB queries must be parameterized"*), not step-by-step code recipes. Separate the worker from the checker so the model never grades its own homework.
-- **Controlled Variable Exclusion Tests**: Keep the model fixed and remove one subsystem at a time to measure its marginal contribution. Remember: ablation tells you *which component had the biggest drop*, while failure logs tell you *where the real bottleneck lives*.
+- **Controlled Variable Exclusion Tests**: Keep the model fixed and remove one subsystem at a time to measure its marginal contribution. Remember: an **ablation** (turning off one piece at a time) tells you *which component had the biggest drop*, while failure logs tell you *where the real bottleneck lives*.
 
 A real React + TypeScript team proved this across four stages using the exact same model (GPT-4o): bare README (**20%** success) → added `AGENTS.md` (**60%**) → added explicit verification commands (**80%**) → added structured progress files (**80–100%**). Zero model upgrades required.
 
@@ -73,17 +72,10 @@ Launch the companion notebook to run a **5-Subsystem Harness Audit** and a **Con
 
 Execute this Python script to score a repository's five subsystems and observe how removing Feedback ($F$) or Instructions ($I$) impacts task pass rates.
 
-<PythonRunner
-  client:visible
-  title="Try it Yourself: 5-Subsystem Ablation Simulator"
-  expectedOutput="Full Harness Score: 23/25 -> Predicted Pass Rate: 90.0%
-Exclusion Ablation Results:
-  - Without Instructions (I): 66.0% (drop: -24.0%)
-  - Without Feedback (F): 70.0% (drop: -20.0%)
-  - Without State (S): 74.0% (drop: -16.0%)
-  - Without Environment (E): 80.4% (drop: -9.6%)
-  - Without Tools (T): 83.6% (drop: -6.4%)"
-  initialCode={`subsystems = {
+**5-Subsystem Ablation Simulator**
+
+```python
+subsystems = {
     "Instructions (I)": {"score": 5, "weight": 0.30},
     "Tools (T)": {"score": 4, "weight": 0.10},
     "Environment (E)": {"score": 4, "weight": 0.15},
@@ -109,8 +101,20 @@ for name in subsystems:
     drops.append((full_rate - ablated, name, ablated))
 
 for drop, name, ablated in sorted(drops, reverse=True):
-    print(f"  - Without {name}: {ablated:.1f}% (drop: -{drop:.1f}%)")`}
-/>
+    print(f"  - Without {name}: {ablated:.1f}% (drop: -{drop:.1f}%)")
+```
+
+**Expected Output:**
+
+```text
+Full Harness Score: 23/25 -> Predicted Pass Rate: 90.0%
+Exclusion Ablation Results:
+  - Without Instructions (I): 66.0% (drop: -24.0%)
+  - Without Feedback (F): 70.0% (drop: -20.0%)
+  - Without State (S): 74.0% (drop: -16.0%)
+  - Without Environment (E): 80.4% (drop: -9.6%)
+  - Without Tools (T): 83.6% (drop: -6.4%)
+```
 
 ---
 

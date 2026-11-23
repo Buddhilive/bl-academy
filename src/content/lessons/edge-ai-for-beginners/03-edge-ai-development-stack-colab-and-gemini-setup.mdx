@@ -9,7 +9,6 @@ description: "Set up a zero-cost Edge AI development environment on Google Colab
 topic: "Edge AI Environment Setup"
 prerequisites: ["edge-ai-for-beginners/02-real-world-edge-ai-case-studies-and-architectures"]
 ---
-import PythonRunner from '../../../components/islands/PythonRunner';
 import QuizCard from '../../../components/islands/QuizCard';
 import ColabButton from '../../../components/static/ColabButton.astro';
 
@@ -63,7 +62,7 @@ $$
 M_{\text{total}} = P \cdot \frac{b_w}{8} + 2 \cdot L \cdot n_{\text{kv}} \cdot d_{\text{head}} \cdot S \cdot \frac{b_{\text{kv}}}{8} + M_{\text{overhead}}
 $$
 
-Here $P$ is the parameter count, $b_w$ is weight bit-width (4 for INT4, 16 for FP16), $L$ is the number of transformer layers, $n_{\text{kv}}$ is the number of key-value attention heads, $d_{\text{head}}$ is head dimension, $S$ is sequence length, and $b_{\text{kv}}$ is KV-cache precision. This formula explains why a 3.8B model in FP16 (~7.6 GB weights alone) struggles on an 8 GB laptop, whereas INT4 quantization (~1.9 GB weights) leaves ample headroom for a 4K context window.
+Here $P$ is the parameter count, $b_w$ is weight bit-width (4 for INT4, 16 for FP16), $L$ is the number of transformer layers, $n_{\text{kv}}$ is the number of key-value attention heads, $d_{\text{head}}$ is head dimension, $S$ is sequence length, and $b_{\text{kv}}$ is KV-cache precision. Think of the first term ($P \cdot \frac{b_w}{8}$) as the **permanent furniture** (the model weights) and the second term as the **scratchpad desk space** (the KV cache that grows with conversation length $S$). This formula explains why a 3.8B model in FP16 (~7.6 GB weights alone) struggles on an 8 GB laptop, whereas INT4 quantization (~1.9 GB weights) leaves ample headroom for a 4K context window.
 
 ---
 
@@ -81,16 +80,12 @@ Launch the companion notebook to inspect your Colab CPU/T4 GPU hardware, verify 
 
 ## Try It Yourself: Edge Memory & Device Fit Profiler
 
-Run this pure-Python memory profiler in your browser to determine which SLM configurations fit within an 8 GB edge laptop, a 4 GB mobile device, and a 15 GB Colab Free T4 GPU.
+Run this pure-Python memory profiler (in Python or the Colab notebook above) to determine which SLM configurations fit within an 8 GB edge laptop, a 4 GB mobile device, and a 15 GB Colab Free T4 GPU.
 
-<PythonRunner
-  client:visible
-  title="Try it Yourself: SLM Memory Budget & Device Fit Profiler"
-  expectedOutput="Qwen2.5-0.5B (INT4)    | Total=0.53 GB | Mobile 4GB=FIT | Laptop 8GB=FIT | Colab T4 15GB=FIT
-Gemma-3n-E2B (INT4)    | Total=1.65 GB | Mobile 4GB=FIT | Laptop 8GB=FIT | Colab T4 15GB=FIT
-Phi-4-mini-3.8B (INT4) | Total=2.52 GB | Mobile 4GB=FIT | Laptop 8GB=FIT | Colab T4 15GB=FIT
-Phi-4-mini-3.8B (FP16) | Total=7.83 GB | Mobile 4GB=OOM | Laptop 8GB=OOM | Colab T4 15GB=FIT"
-  initialCode={`def memory_gb(params_b, w_bits, layers, kv_heads, head_dim, seq_len=4096, kv_bits=16):
+**SLM Memory Budget & Device Fit Profiler**
+
+```python
+def memory_gb(params_b, w_bits, layers, kv_heads, head_dim, seq_len=4096, kv_bits=16):
     w_bytes = params_b * 1e9 * (w_bits / 8.0)
     kv_bytes = 2 * layers * kv_heads * head_dim * seq_len * (kv_bits / 8.0)
     overhead = 0.25 * (1024 ** 3)  # runtime & activation buffer
@@ -108,8 +103,17 @@ for name, p, wb, l, kvh, hd in models:
     m4 = "FIT" if mem <= 3.2 else "OOM"
     l8 = "FIT" if mem <= 7.6 else "OOM"
     t15 = "FIT" if mem <= 14.5 else "OOM"
-    print(f"{name:22s} | Total={mem:.2f} GB | Mobile 4GB={m4} | Laptop 8GB={l8} | Colab T4 15GB={t15}")`}
-/>
+    print(f"{name:22s} | Total={mem:.2f} GB | Mobile 4GB={m4} | Laptop 8GB={l8} | Colab T4 15GB={t15}")
+```
+
+**Expected Output:**
+
+```text
+Qwen2.5-0.5B (INT4)    | Total=0.53 GB | Mobile 4GB=FIT | Laptop 8GB=FIT | Colab T4 15GB=FIT
+Gemma-3n-E2B (INT4)    | Total=1.65 GB | Mobile 4GB=FIT | Laptop 8GB=FIT | Colab T4 15GB=FIT
+Phi-4-mini-3.8B (INT4) | Total=2.52 GB | Mobile 4GB=FIT | Laptop 8GB=FIT | Colab T4 15GB=FIT
+Phi-4-mini-3.8B (FP16) | Total=7.83 GB | Mobile 4GB=OOM | Laptop 8GB=OOM | Colab T4 15GB=FIT
+```
 
 ---
 

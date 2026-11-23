@@ -9,7 +9,6 @@ description: "Master core NLP techniques—tokenization, embeddings, POS tagging
 topic: "Common NLP Tasks"
 prerequisites: ["ml-for-beginners/16-introduction-to-nlp-and-conversational-bots"]
 ---
-import PythonRunner from '../../../components/islands/PythonRunner';
 import QuizCard from '../../../components/islands/QuizCard';
 import ColabButton from '../../../components/static/ColabButton.astro';
 
@@ -18,6 +17,8 @@ Before a machine learning model can classify sentiment or translate a novel, raw
 ---
 
 ## The Nine Core Classical NLP Tasks
+
+Think of classical NLP like preparing vegetables before cooking: first you chop a sentence into bite-sized words (**tokenization**), label what role each word plays (**POS tagging**), group neighboring words (**N-grams** and **noun phrases**), and reduce word variations like *"running"* and *"ran"* back to their root (**lemmatization**). Here is how all nine tasks fit together:
 
 | NLP Task | What It Does | Concrete Example |
 | :--- | :--- | :--- |
@@ -49,16 +50,10 @@ Using `TextBlob` with `ConllExtractor` (a chunk parser trained on 211,727 Wall S
 
 Let's execute Kipling word/phrase counting, a 3-gram sliding window, and Marvin's 4-band sentiment + noun-phrase pluralizer in pure Python.
 
-<PythonRunner
-  client:visible
-  title="Try it Yourself: N-Grams, Frequencies & Sympathetic Marvin"
-  expectedOutput="Kipling 'the' count: 6 | 'travels' count: 2
-First 3 trigrams: ['the quick red', 'quick red fox', 'red fox jumped']
-> I went for a walk and saw a lovely cat
-Marvin: Well, that sounds positive. Can you tell me more about lovely cats?
-> I have an old hounddog but he is sick
-Marvin: Hmm, that's not great. Can you tell me more about old hounddogs?"
-  initialCode={`import re
+**N-Grams, Frequencies & Sympathetic Marvin**
+
+```python
+import re
 
 poem = """What the moral? Who rides may read.
 When the night is thick and the tracks are blind
@@ -94,8 +89,19 @@ def sympathetic_marvin(text):
 
 for line in ["I went for a walk and saw a lovely cat", "I have an old hounddog but he is sick"]:
     print(f"> {line}")
-    print(f"Marvin: {sympathetic_marvin(line)}")`}
-/>
+    print(f"Marvin: {sympathetic_marvin(line)}")
+```
+
+**Expected Output:**
+
+```text
+Kipling 'the' count: 6 | 'travels' count: 2
+First 3 trigrams: ['the quick red', 'quick red fox', 'red fox jumped']
+> I went for a walk and saw a lovely cat
+Marvin: Well, that sounds positive. Can you tell me more about lovely cats?
+> I have an old hounddog but he is sick
+Marvin: Hmm, that's not great. Can you tell me more about old hounddogs?
+```
 
 ---
 

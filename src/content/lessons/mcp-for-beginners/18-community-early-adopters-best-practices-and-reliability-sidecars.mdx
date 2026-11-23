@@ -9,7 +9,6 @@ description: "Contribute to MCP via SEPs, study early adopter enterprise archite
 topic: "Best Practices & Reliability Sidecars"
 prerequisites: ["mcp-for-beginners/17-routing-scaling-custom-transports-and-adversarial-agents"]
 ---
-import PythonRunner from '../../../components/islands/PythonRunner';
 import QuizCard from '../../../components/islands/QuizCard';
 import ColabButton from '../../../components/static/ColabButton.astro';
 
@@ -64,14 +63,10 @@ Launch the companion notebook to run the complete SQLite Reliability Sidecar wit
 
 Run this pure-Python `sqlite3` sandbox to simulate a lost network response after `T-0001` commits, prove that retrying `op-login-ticket-0001` recovers `T-0001` instead of creating `T-0002`, and reject a reused key with a mutated title.
 
-<PythonRunner
-  client:visible
-  title="Try it Yourself: SQLite Reliability Sidecar Idempotency"
-  expectedOutput="Attempt 1 (network dropped after commit): TimeoutError - outcome unknown
-Attempt 2 (retry op-login-ticket-0001): {'ticket_id': 'T-0001', 'status': 'verified'}
-Total tickets in DB: 1 (no duplicate T-0002)
-Mutated title with same key -> Rejected: Input hash mismatch"
-  initialCode={`import hashlib
+**SQLite Reliability Sidecar Idempotency**
+
+```python
+import hashlib
 import json
 import sqlite3
 
@@ -115,8 +110,17 @@ print("Total tickets in DB:", db.execute("SELECT COUNT(*) FROM tickets").fetchon
 try:
     create_ticket_safe("op-login-ticket-0001", "Different title")
 except ValueError as exc:
-    print("Mutated title with same key -> Rejected:", exc)`}
-/>
+    print("Mutated title with same key -> Rejected:", exc)
+```
+
+**Expected Output:**
+
+```text
+Attempt 1 (network dropped after commit): TimeoutError - outcome unknown
+Attempt 2 (retry op-login-ticket-0001): {'ticket_id': 'T-0001', 'status': 'verified'}
+Total tickets in DB: 1 (no duplicate T-0002)
+Mutated title with same key -> Rejected: Input hash mismatch
+```
 
 ---
 

@@ -9,7 +9,6 @@ description: "Fine-tune open-weight LLMs with SFT, DPO, RFT, and 4-bit QLoRA/LoR
 topic: "LoRA Fine-Tuning"
 prerequisites: ["generative-ai-for-beginners/18-ai-agents-and-multi-agent-workflows"]
 ---
-import PythonRunner from '../../../components/islands/PythonRunner';
 import QuizCard from '../../../components/islands/QuizCard';
 import ColabButton from '../../../components/static/ColabButton.astro';
 
@@ -29,11 +28,13 @@ When Prompt Engineering and RAG hit their ceiling—say, you need an LLM to inte
 
 ## The Mathematics of LoRA & 4-Bit QLoRA
 
-Full fine-tuning updates every weight matrix $W_0 \in \mathbb{R}^{d \times k}$. **LoRA** freezes $W_0$ and injects a trainable low-rank decomposition $\Delta W = \frac{\alpha}{r} B A$:
+Imagine editing a 4,000-page encyclopedia: instead of reprinting every page from scratch (**full fine-tuning**), you tape a few thin sticky-note corrections onto the margins and read the original page plus your sticky notes together.
+
+In math notation, full fine-tuning updates every number in a giant weight matrix $W_0$ (of size $d \times k$). **LoRA** freezes $W_0$ completely and trains only two skinny adapter matrices, $B$ (size $d \times r$) and $A$ (size $r \times k$), whose product forms a small correction $\Delta W = \frac{\alpha}{r} B A$:
 
 $$W = W_0 + \Delta W = W_0 + \frac{\alpha}{r} B A, \qquad B \in \mathbb{R}^{d \times r}, \; A \in \mathbb{R}^{r \times k}, \; r \ll \min(d, k)$$
 
-With rank $r = 8$ on a $4096 \times 4096$ projection matrix, trainable parameters drop from $16.77\text{M}$ down to $65,536$—a **$99.6\%$ reduction**! **QLoRA** takes this further by quantizing $W_0$ to 4-bit NormalFloat (`nf4`) via `bitsandbytes`, fitting 3B–7B models comfortably inside Colab's 15 GB T4 VRAM.
+In plain English: $r$ is the **rank** (a tiny bottleneck width like `4` or `8` that is much smaller than $d$ and $k$, written $r \ll \min(d, k)$), and $\alpha$ (`lora_alpha`) is a scaling constant that controls how strongly the adapter correction is weighted. With rank $r = 8$ on a $4096 \times 4096$ projection matrix, trainable parameters drop from $16.77\text{M}$ down to $65,536$—a **$99.6\%$ reduction**! **QLoRA** takes this further by compressing (quantizing) the frozen base weights $W_0$ to 4-bit NormalFloat (`nf4`) via `bitsandbytes`, fitting 3B–7B models comfortably inside Colab's 15 GB T4 VRAM.
 
 ---
 
@@ -60,18 +61,12 @@ Launch the notebook below on a **Colab Free Tier T4 GPU**—it embeds the comple
 
 ## Try It Yourself: LoRA Parameter-Savings & JSONL Validator
 
-Run this pure-Python sandbox to compute exact LoRA parameter reduction across ranks $r \in \{4, 8, 16\}$, validate the `"Elle"` JSONL schema, and detect the optimal checkpoint before overfitting.
+Run this pure-Python script (locally or in a Colab cell) to compute exact LoRA parameter reduction across ranks $r \in \{4, 8, 16\}$, validate the `"Elle"` JSONL schema, and detect the optimal checkpoint before overfitting.
 
-<PythonRunner
-  client:visible
-  title="Try it Yourself: LoRA Math, JSONL Validator & Checkpoint Selector"
-  expectedOutput="Matrix 4096x4096 = 16,777,216 params
-  Rank r=4 : 32,768 params (99.80% reduction)
-  Rank r=8 : 65,536 params (99.61% reduction)
-  Rank r=16: 131,072 params (99.22% reduction)
-JSONL Record Valid (roles=['system', 'user', 'assistant']): True
-Best Checkpoint (lowest valid_loss): Epoch 3 (train=0.41, valid=0.48)"
-  initialCode={`import json
+**LoRA Math, JSONL Validator & Checkpoint Selector**
+
+```python
+import json
 
 # 1. LoRA parameter savings calculator
 d, k = 4096, 4096
@@ -102,8 +97,19 @@ history = [
     {"epoch": 4, "train": 0.15, "valid": 0.63},  # overfitting!
 ]
 best = min(history, key=lambda h: h["valid"])
-print(f"Best Checkpoint (lowest valid_loss): Epoch {best['epoch']} (train={best['train']}, valid={best['valid']})")`}
-/>
+print(f"Best Checkpoint (lowest valid_loss): Epoch {best['epoch']} (train={best['train']}, valid={best['valid']})")
+```
+
+**Expected Output:**
+
+```text
+Matrix 4096x4096 = 16,777,216 params
+  Rank r=4 : 32,768 params (99.80% reduction)
+  Rank r=8 : 65,536 params (99.61% reduction)
+  Rank r=16: 131,072 params (99.22% reduction)
+JSONL Record Valid (roles=['system', 'user', 'assistant']): True
+Best Checkpoint (lowest valid_loss): Epoch 3 (train=0.41, valid=0.48)
+```
 
 ---
 

@@ -9,7 +9,6 @@ description: "Clean messy USDA pumpkin market CSV data in Pandas, normalize inco
 topic: "Data Preparation & Visualization"
 prerequisites: ["ml-for-beginners/05-regression-tools-and-scikit-learn"]
 ---
-import PythonRunner from '../../../components/islands/PythonRunner';
 import QuizCard from '../../../components/islands/QuizCard';
 import ColabButton from '../../../components/static/ColabButton.astro';
 
@@ -52,16 +51,10 @@ A raw `plt.scatter(price, month)` looks noisy and unhelpful, whereas a grouped b
 
 Let's run the exact USDA pumpkin bushel filter, `1 1/9` and `1/2` price normalization, and monthly average aggregation in pure Python.
 
-<PythonRunner
-  client:visible
-  title="Try it Yourself: USDA Pumpkin Bushel Price Normalizer"
-  expectedOutput="Filtered bushel rows: 6 of 7
-Mean Price by Month:
-  Month  8: $21.05
-  Month  9: $24.40
-  Month 10: $24.75
-  Month 11: $19.50"
-  initialCode={`from collections import defaultdict
+**USDA Pumpkin Bushel Price Normalizer**
+
+```python
+from collections import defaultdict
 
 raw_rows = [
     {"Date": "08/24/2016", "Package": "1 1/9 bushel cartons", "Low": 18.0, "High": 20.0},
@@ -91,8 +84,19 @@ for r in bushel_rows:
 print("Mean Price by Month:")
 for m in sorted(monthly_prices):
     vals = monthly_prices[m]
-    print(f"  Month {m:2d}: $" f"{sum(vals)/len(vals):.2f}")`}
-/>
+    print(f"  Month {m:2d}: $" f"{sum(vals)/len(vals):.2f}")
+```
+
+**Expected Output:**
+
+```text
+Filtered bushel rows: 6 of 7
+Mean Price by Month:
+  Month  8: $21.05
+  Month  9: $24.40
+  Month 10: $24.75
+  Month 11: $19.50
+```
 
 ---
 

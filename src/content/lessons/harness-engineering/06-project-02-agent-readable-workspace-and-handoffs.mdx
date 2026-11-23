@@ -9,7 +9,6 @@ description: "Upgrade the Python Knowledge Base with document import, detail vie
 topic: "Hands-On Project 02"
 prerequisites: ["harness-engineering/05-splitting-instructions-and-progressive-disclosure"]
 ---
-import PythonRunner from '../../../components/islands/PythonRunner';
 import QuizCard from '../../../components/islands/QuizCard';
 import ColabButton from '../../../components/static/ColabButton.astro';
 
@@ -67,14 +66,10 @@ Launch the companion notebook to run the full **SQLite Knowledge Base** (import,
 
 Execute this Python script to create an in-memory SQLite Knowledge Base, import two documents, fetch full detail view, and verify a structured `session-handoff.md` payload.
 
-<PythonRunner
-  client:visible
-  title="Try it Yourself: Project 02 SQLite KB & Handoff"
-  expectedOutput="Imported 2 docs into SQLite KB.
-Detail View [doc-1]: Harness Engineering -> The repo is the system of record.
-Restart Persistence Check: 2 docs survived.
-Handoff Next Action: Implement chunking in Project 03"
-  initialCode={`import sqlite3
+**Project 02 SQLite KB & Handoff**
+
+```python
+import sqlite3
 
 conn = sqlite3.connect(":memory:")
 conn.execute("CREATE TABLE docs (id TEXT PRIMARY KEY, title TEXT, body TEXT)")
@@ -96,8 +91,17 @@ print(f"Detail View [doc-1]: {title} -> {body}")
 print(f"Restart Persistence Check: {conn.execute('SELECT COUNT(*) FROM docs').fetchone()[0]} docs survived.")
 
 handoff = {"completed": ["import", "detail_view", "sqlite_persistence"], "next_action": "Implement chunking in Project 03"}
-print(f"Handoff Next Action: {handoff['next_action']}")`}
-/>
+print(f"Handoff Next Action: {handoff['next_action']}")
+```
+
+**Expected Output:**
+
+```text
+Imported 2 docs into SQLite KB.
+Detail View [doc-1]: Harness Engineering -> The repo is the system of record.
+Restart Persistence Check: 2 docs survived.
+Handoff Next Action: Implement chunking in Project 03
+```
 
 ---
 

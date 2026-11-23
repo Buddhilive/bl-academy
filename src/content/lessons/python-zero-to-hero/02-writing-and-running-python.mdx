@@ -41,11 +41,7 @@ Because the REPL evaluates code immediately after you press `Enter`, it provides
 
 To display text, numbers, or variable values explicitly on the screen, Python provides the built-in `print()` function. In computer programming, a **function** is a named, reusable block of code that accepts zero or more inputs (termed **arguments**), executes an operation, and returns a result.
 
-In pure mathematics, a function strictly maps input values from a domain $X$ to output values in a codomain $Y$:
-
-$$f: X \rightarrow Y$$
-
-A mathematical function produces no changes outside of returning its output. In programming, however, functions can produce **side effects**. A side effect is an operation that alters the state of the computer, runtime environment, or external display outside the function's internal scope. 
+Think of a function like a coffee machine: you give it inputs (beans and water), it does some work inside, and it produces a result (a cup of coffee). In Python, functions can also produce **side effects**—things that happen outside the function, like printing text onto your screen or saving a file.
 
 Calling `print("Hello, world")` writes characters to standard output (`stdout`), causing text to appear in your console:
 
@@ -135,10 +131,8 @@ In the assignment `phrase = "Hello, world"`, Python creates the string object `"
 
 Variables serve two primary software engineering purposes:
 
-1. **Accessibility**: Variables store intermediate computational results in memory. Instead of recomputing an expensive operation multiple times across $N$ lines of code, the program computes the value once and retrieves it in $O(1)$ constant time lookup.
-2. **Context**: Variables transform raw literal values into meaningful domain concepts. For example, assigning the number $3600$ to an identifier named `seconds_per_hour` communicates clear intent to anyone reading the code:
-
-$$\text{seconds\_per\_hour} = 60 \times 60 = 3600\text{ seconds}$$
+1. **Accessibility**: Variables store intermediate results in memory. Instead of repeating an expensive calculation over and over, your program computes the value once and looks it up instantly whenever needed.
+2. **Context**: Variables turn raw numbers into meaningful names. For example, assigning `3600` to a variable named `seconds_per_hour` makes your intent immediately clear to anyone reading the code:
 
 ```python
 # Context makes literal values self-explanatory

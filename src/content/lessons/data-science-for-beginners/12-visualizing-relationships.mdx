@@ -9,7 +9,6 @@ description: "Visualize multivariable relationships on USDA honey production dat
 topic: "Visualizing Relationships"
 prerequisites: ["data-science-for-beginners/11-visualizing-proportions"]
 ---
-import PythonRunner from '../../../components/islands/PythonRunner';
 import QuizCard from '../../../components/islands/QuizCard';
 import ColabButton from '../../../components/static/ColabButton.astro';
 
@@ -48,14 +47,10 @@ Using `sns.relplot(x="priceperlb", y="state", data=honey, height=15, aspect=.5)`
 
 Run this pure-Python analyzer on the Arizona honey production time series (1998–2012) to compare pre-CCD (`1998–2005`) vs post-CCD (`2006–2012`) prices and colony counts.
 
-<PythonRunner
-  client:visible
-  title="Try it Yourself: Arizona Honey Price & Colony Collapse Trend"
-  expectedOutput="=== Arizona Honey Production (1998-2012) ===
-Pre-CCD (1998-2005) Avg Price: $0.91/lb | Avg Colonies: 41,375
-Post-CCD (2006-2012) Avg Price: $1.39/lb | Avg Colonies: 24,857
-Price Change: +52.9% | Colony Change: -39.9%"
-  initialCode={`az_honey = [
+**Arizona Honey Price & Colony Collapse Trend**
+
+```python
+az_honey = [
     (1998, 55000, 0.64), (1999, 52000, 0.62), (2000, 40000, 0.73), (2001, 43000, 0.72),
     (2002, 38000, 1.08), (2003, 35000, 1.34), (2004, 32000, 1.11), (2005, 36000, 1.04),
     (2006, 30000, 0.91), (2007, 30000, 1.26), (2008, 25000, 1.26), (2009, 20000, 1.45),
@@ -71,10 +66,19 @@ pre_c = sum(r[1] for r in pre) / len(pre)
 post_c = sum(r[1] for r in post) / len(post)
 
 print("=== Arizona Honey Production (1998-2012) ===")
-print(f"Pre-CCD (1998-2005) Avg Price: \${pre_p:.2f}/lb | Avg Colonies: {pre_c:,.0f}")
-print(f"Post-CCD (2006-2012) Avg Price: \${post_p:.2f}/lb | Avg Colonies: {post_c:,.0f}")
-print(f"Price Change: {(post_p - pre_p)/pre_p*100:+.1f}% | Colony Change: {(post_c - pre_c)/pre_c*100:+.1f}%")`}
-/>
+print(f"Pre-CCD (1998-2005) Avg Price: ${pre_p:.2f}/lb | Avg Colonies: {pre_c:,.0f}")
+print(f"Post-CCD (2006-2012) Avg Price: ${post_p:.2f}/lb | Avg Colonies: {post_c:,.0f}")
+print(f"Price Change: {(post_p - pre_p)/pre_p*100:+.1f}% | Colony Change: {(post_c - pre_c)/pre_c*100:+.1f}%")
+```
+
+**Expected Output:**
+
+```text
+=== Arizona Honey Production (1998-2012) ===
+Pre-CCD (1998-2005) Avg Price: $0.91/lb | Avg Colonies: 41,375
+Post-CCD (2006-2012) Avg Price: $1.39/lb | Avg Colonies: 24,857
+Price Change: +52.9% | Colony Change: -39.9%
+```
 
 ---
 

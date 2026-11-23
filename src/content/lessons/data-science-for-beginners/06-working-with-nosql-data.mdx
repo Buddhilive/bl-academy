@@ -9,7 +9,6 @@ description: "Explore spreadsheet formulas and functions, the four NoSQL databas
 topic: "Non-Relational & NoSQL Data"
 prerequisites: ["data-science-for-beginners/05-working-with-relational-data"]
 ---
-import PythonRunner from '../../../components/islands/PythonRunner';
 import QuizCard from '../../../components/islands/QuizCard';
 import ColabButton from '../../../components/static/ColabButton.astro';
 
@@ -55,20 +54,12 @@ A document database stores collections of JSON objects—for instance, user prof
 
 ## Try It Yourself: Inventory Formulas & JSON Document Queries
 
-Run this pure-Python sandbox to compute spreadsheet inventory totals (`QTY * COST` and `SUM`) and execute document queries filtering `PersonsData` (`age < 40`) and `TwitterData` (`text` keyword search).
+Run this pure-Python example in Google Colab or locally to compute spreadsheet inventory totals (`QTY * COST` and `SUM`) and execute document queries filtering `PersonsData` (`age < 40`) and `TwitterData` (`text` keyword search).
 
-<PythonRunner
-  client:visible
-  title="Try it Yourself: Spreadsheet Functions & JSON Document Queries"
-  expectedOutput="=== Inventory Workbook Summary ===
-Total Inventory Value: $1,285.00
+**Spreadsheet Functions & JSON Document Queries**
 
-=== Document Query: age < 40 ===
-['Liam (age 28)', 'Maya (age 34)']
-
-=== Document Query: text contains 'data' ===
-['143278: Exploring open-source data tools in Python!']"
-  initialCode={`# 1. Spreadsheet Formula (QTY * COST) and SUM Function
+```python
+# 1. Spreadsheet Formula (QTY * COST) and SUM Function
 inventory = [
     {"item": "Cola", "qty": 120, "cost": 1.25},
     {"item": "Lemon-Lime", "qty": 200, "cost": 1.10},
@@ -76,7 +67,7 @@ inventory = [
 ]
 total_value = sum(row["qty"] * row["cost"] for row in inventory)
 print("=== Inventory Workbook Summary ===")
-print(f"Total Inventory Value: \${total_value:,.2f}")
+print(f"Total Inventory Value: ${total_value:,.2f}")
 
 # 2. Document Store Queries (PersonsData & TwitterData)
 persons = [
@@ -94,8 +85,21 @@ posts = [
 ]
 matches = [f"{d['id']}: {d['text']}" for d in posts if "data" in d["text"].lower()]
 print("\n=== Document Query: text contains 'data' ===")
-print(matches)`}
-/>
+print(matches)
+```
+
+**Expected Output:**
+
+```text
+=== Inventory Workbook Summary ===
+Total Inventory Value: $1,285.00
+
+=== Document Query: age < 40 ===
+['Liam (age 28)', 'Maya (age 34)']
+
+=== Document Query: text contains 'data' ===
+['143278: Exploring open-source data tools in Python!']
+```
 
 ---
 

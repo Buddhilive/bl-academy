@@ -5,15 +5,14 @@ category: "Module 1: Symbolic AI & Foundations"
 order: 1
 difficulty: "beginner"
 xp: 40
-description: "Set up your zero-cost AI engineering workspace using in-browser Pyodide, Google Colab Free Tier GPUs, and a Google AI Studio Gemini API key."
+description: "Set up your zero-cost AI engineering workspace using Google Colab Free Tier GPUs and a Google AI Studio Gemini API key."
 topic: "AI Environment Setup"
 prerequisites: ["python-zero-to-hero/12-installing-third-party-packages-with-pip"]
 ---
-import PythonRunner from '../../../components/islands/PythonRunner';
 import QuizCard from '../../../components/islands/QuizCard';
 import ColabButton from '../../../components/static/ColabButton.astro';
 
-Welcome to **AI for Beginners**—your bridge from core Python programming into neural networks, computer vision, natural language processing, and modern AI systems. You don't need an expensive workstation or paid cloud credits to build real models here. Everything in this 26-lesson course runs on two zero-cost environments: our instant **In-Browser Python Sandbox** for math and core algorithms, and **Google Colab Free Tier** for GPU-accelerated PyTorch and Transformer notebooks.
+Welcome to **AI for Beginners**—your bridge from core Python programming into neural networks, computer vision, natural language processing, and modern AI systems. You don't need an expensive workstation or paid cloud credits to build real models here. Everything in this 26-lesson course runs on **Google Colab Free Tier** (CPU and T4 GPU runtimes) and **Google AI Studio Free Tier**, paired with readable pure-Python code walkthroughs in every lesson that you can copy into Colab or run locally.
 
 Before we write our first perceptron or train a convolutional network, let's get your workspace wired up cleanly so every notebook and API call works on the first try.
 
@@ -21,14 +20,14 @@ Before we write our first perceptron or train a convolutional network, let's get
 
 ## How This Course Runs Your Code
 
-Every lesson combines two complementary execution layers so you learn both the mathematical mechanics and real-world engineering workflows:
+Every lesson combines two complementary learning layers so you understand both the underlying math and real-world engineering workflows:
 
-1. **In-Browser Pyodide Sandbox**: Runs pure Python directly inside your browser via WebAssembly with a strict 5-second timeout. We use this to step through core algorithms—gradient updates, 2D convolutions, attention matrices, and Q-learning tables—without hiding behind heavy framework abstractions.
+1. **Pure-Python Lesson Walkthroughs**: Short, self-contained Python examples right inside each lesson that step through core algorithms—gradient updates, 2D convolutions, attention matrices, and Q-learning tables—using only Python's standard library. You can read them inline, copy them into a Colab cell, or run them locally.
 2. **Google Colab Free Tier Notebooks**: Gives you a free cloud Jupyter runtime with pre-installed `PyTorch`, `NumPy`, `OpenCV`, and optional **NVIDIA T4 GPUs (16 GB VRAM)** for training deep learning models on real datasets.
 
 | Environment | Best Used For | Hardware Tier | Setup Required |
 | :--- | :--- | :--- | :--- |
-| **In-Browser Pyodide** | Algorithm math, logic engines, quick experiments | Local Browser (WASM) | None — runs inline |
+| **Pure-Python Snippets** | Algorithm math, logic engines, quick experiments | Colab CPU or Local Python | None — copy & run anywhere |
 | **Google Colab (CPU)** | Symbolic AI, tabular ML, genetic algorithms, ethics audits | Free Cloud CPU (~12 GB RAM) | Google Account |
 | **Google Colab (T4 GPU)** | CNNs, Autoencoders, GANs, BERT, CLIP | Free NVIDIA T4 (16 GB VRAM) | Select **Runtime → Change runtime type → T4 GPU** |
 | **Google AI Studio** | Cloud LLM prompting and multimodal inference (`google-genai`) | Free Tier API (`GEMINI_API_KEY`) | Free API key stored in Colab Secrets |
@@ -91,21 +90,16 @@ print(response.text)
 
 ## Understanding Model Memory & Precision
 
-Why do we care about CPU RAM vs. T4 GPU VRAM? Every neural network parameter is stored as a floating-point number. In standard 32-bit floating point (`FP32`), each parameter consumes $4$ bytes. In half precision (`FP16`), it consumes $2$ bytes, and in 8-bit integer quantization (`INT8`), it consumes $1$ byte:
+Why do we care about CPU RAM vs. T4 GPU VRAM? Think of a neural network's parameters (its learned weights) like numbers stored in a spreadsheet: the more numbers you have and the more decimal precision each number uses, the more memory the spreadsheet takes. In standard 32-bit floating point (`FP32`), each parameter consumes $4$ bytes. In half precision (`FP16`), it consumes $2$ bytes, and in 8-bit integer quantization (`INT8`), it consumes $1$ byte:
 
 $$\text{Memory (GB)} = \frac{N_{\text{params}} \times B_{\text{bytes/param}}}{1024^3}$$
 
-Let's run a quick pure-Python memory estimator right here in the browser to see which models fit comfortably inside a free 16 GB T4 GPU.
+Here, $N_{\text{params}}$ is the total number of parameters in the model, $B_{\text{bytes/param}}$ is how many bytes each number takes (`4` for FP32, `2` for FP16), and dividing by $1024^3$ converts bytes into gigabytes (GB). Let's run a quick pure-Python memory estimator (in Colab or your local Python environment) to see which models fit comfortably inside a free 16 GB T4 GPU.
 
-<PythonRunner
-  client:visible
-  title="Try it Yourself: Model VRAM Footprint Estimator"
-  expectedOutput="=== Colab Free T4 GPU (16.0 GB VRAM) Capacity Check ===
-ResNet-50 (25.6M params): FP32=0.10 GB | FP16=0.05 GB | Fits T4=True
-BERT-Base (110.0M params): FP32=0.41 GB | FP16=0.20 GB | Fits T4=True
-GPT-2 Large (774.0M params): FP32=2.88 GB | FP16=1.44 GB | Fits T4=True
-7B Open LLM (7000.0M params): FP32=26.08 GB | FP16=13.04 GB | Fits T4=True"
-  initialCode={`T4_VRAM_GB = 16.0
+**Model VRAM Footprint Estimator**
+
+```python
+T4_VRAM_GB = 16.0
 BYTES_PER_GB = 1024 ** 3
 
 models = [
@@ -120,8 +114,18 @@ for name, params in models:
     fp32_gb = (params * 4) / BYTES_PER_GB
     fp16_gb = (params * 2) / BYTES_PER_GB
     fits_fp16 = fp16_gb <= T4_VRAM_GB
-    print(f"{name} ({params/1e6:.1f}M params): FP32={fp32_gb:.2f} GB | FP16={fp16_gb:.2f} GB | Fits T4={fits_fp16}")`}
-/>
+    print(f"{name} ({params/1e6:.1f}M params): FP32={fp32_gb:.2f} GB | FP16={fp16_gb:.2f} GB | Fits T4={fits_fp16}")
+```
+
+**Expected Output:**
+
+```text
+=== Colab Free T4 GPU (16.0 GB VRAM) Capacity Check ===
+ResNet-50 (25.6M params): FP32=0.10 GB | FP16=0.05 GB | Fits T4=True
+BERT-Base (110.0M params): FP32=0.41 GB | FP16=0.20 GB | Fits T4=True
+GPT-2 Large (774.0M params): FP32=2.88 GB | FP16=1.44 GB | Fits T4=True
+7B Open LLM (7000.0M params): FP32=26.08 GB | FP16=13.04 GB | Fits T4=True
+```
 
 ---
 

@@ -9,7 +9,6 @@ description: "Explore Alibaba's Qwen SLM family from 0.5B micro models to Qwen3 
 topic: "Qwen SLM Family"
 prerequisites: ["edge-ai-for-beginners/05-phi-model-family-textbook-training-and-reasoning"]
 ---
-import PythonRunner from '../../../components/islands/PythonRunner';
 import QuizCard from '../../../components/islands/QuizCard';
 import ColabButton from '../../../components/static/ColabButton.astro';
 
@@ -63,13 +62,10 @@ Launch the companion notebook to run `Qwen/Qwen2.5-0.5B-Instruct` on Colab and b
 
 Run this Python simulator to route queries dynamically between `/no_think` and `/think` modes and compute active FLOPs for a Top-2 Sparse MoE layer.
 
-<PythonRunner
-  client:visible
-  title="Try it Yourself: Qwen Dual-Mode & Sparse MoE Gating Simulator"
-  expectedOutput="Query: 'Translate hello to Japanese' -> Mode=/no_think | Latency=115.0ms
-Query: 'Prove why INT4 reduces DRAM traffic' -> Mode=/think | Latency=475.0ms
-Sparse MoE Active Experts: [2, 5] | Active Ratio: 25.0% (2 of 8 experts)"
-  initialCode={`def route_qwen_mode(query):
+**Qwen Dual-Mode & Sparse MoE Gating Simulator**
+
+```python
+def route_qwen_mode(query):
     reasoning_triggers = ("prove", "derive", "debug", "calculate", "why")
     is_complex = any(t in query.lower() for t in reasoning_triggers)
     mode = "/think" if is_complex else "/no_think"
@@ -91,8 +87,16 @@ for q in [
 router_logits = [0.12, 0.05, 0.88, 0.31, 0.19, 0.74, 0.08, 0.22]
 top_k = sorted(range(len(router_logits)), key=lambda i: router_logits[i], reverse=True)[:2]
 active_pct = (len(top_k) / len(router_logits)) * 100.0
-print(f"Sparse MoE Active Experts: {top_k} | Active Ratio: {active_pct:.1f}% (2 of {len(router_logits)} experts)")`}
-/>
+print(f"Sparse MoE Active Experts: {top_k} | Active Ratio: {active_pct:.1f}% (2 of {len(router_logits)} experts)")
+```
+
+**Expected Output:**
+
+```text
+Query: 'Translate hello to Japanese' -> Mode=/no_think | Latency=115.0ms
+Query: 'Prove why INT4 reduces DRAM traffic' -> Mode=/think | Latency=475.0ms
+Sparse MoE Active Experts: [2, 5] | Active Ratio: 25.0% (2 of 8 experts)
+```
 
 ---
 

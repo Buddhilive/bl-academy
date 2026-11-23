@@ -9,7 +9,6 @@ description: "Compare edge AI silicon across Intel NUC/Movidius VPU, Qualcomm He
 topic: "Edge AI Hardware"
 prerequisites: ["edge-ai-for-beginners/03-edge-ai-development-stack-colab-and-gemini-setup"]
 ---
-import PythonRunner from '../../../components/islands/PythonRunner';
 import QuizCard from '../../../components/islands/QuizCard';
 
 You may know that an AI model optimized for a cloud H100 can crawl on a Raspberry Pi or drain a phone battery in twenty minutes. Edge AI performance is fundamentally hardware-bound: choosing between a CPU, GPU, VPU, or Neural Processing Unit (NPU) determines your latency, thermal envelope, and runtime execution provider.
@@ -51,13 +50,10 @@ During **prefill**, high batch/sequence parallelism yields high arithmetic inten
 
 Run this Python roofline analyzer to compare prefill (compute-bound) vs. decode (memory-bandwidth-bound) bottlenecks on a Jetson Orin Nano, a Mobile Hexagon NPU, and an Edge CPU.
 
-<PythonRunner
-  client:visible
-  title="Try it Yourself: Edge Roofline & Prefill vs. Decode Profiler"
-  expectedOutput="Device: NVIDIA Jetson Orin Nano  | Ridge=985.3 FLOP/B | Prefill=67000.0 GFLOP/s (Compute-Bound) | Decode=136.0 GFLOP/s (Memory-Bound)
-Device: Mobile Hexagon NPU       | Ridge=762.7 FLOP/B | Prefill=45000.0 GFLOP/s (Compute-Bound) | Decode=118.0 GFLOP/s (Memory-Bound)
-Device: Embedded Arm CPU         | Ridge=64.0 FLOP/B | Prefill=1600.0 GFLOP/s (Compute-Bound) | Decode=50.0 GFLOP/s (Memory-Bound)"
-  initialCode={`from dataclasses import dataclass
+**Edge Roofline & Prefill vs. Decode Profiler**
+
+```python
+from dataclasses import dataclass
 
 @dataclass
 class EdgeDevice:
@@ -88,8 +84,16 @@ for d in devices:
         f"Device: {d.name:24s} | Ridge={ridge:.1f} FLOP/B | "
         f"Prefill={p_perf:.1f} GFLOP/s ({p_regime}) | "
         f"Decode={d_perf:.1f} GFLOP/s ({d_regime})"
-    )`}
-/>
+    )
+```
+
+**Expected Output:**
+
+```text
+Device: NVIDIA Jetson Orin Nano  | Ridge=985.3 FLOP/B | Prefill=67000.0 GFLOP/s (Compute-Bound) | Decode=136.0 GFLOP/s (Memory-Bound)
+Device: Mobile Hexagon NPU       | Ridge=762.7 FLOP/B | Prefill=45000.0 GFLOP/s (Compute-Bound) | Decode=118.0 GFLOP/s (Memory-Bound)
+Device: Embedded Arm CPU         | Ridge=64.0 FLOP/B | Prefill=1600.0 GFLOP/s (Compute-Bound) | Decode=50.0 GFLOP/s (Memory-Bound)
+```
 
 ---
 

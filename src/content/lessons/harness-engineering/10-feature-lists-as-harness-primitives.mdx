@@ -9,7 +9,6 @@ description: "Turn feature_list.json into a machine-enforced harness primitive w
 topic: "Feature Lists"
 prerequisites: ["harness-engineering/09-task-boundaries-and-wip-limits"]
 ---
-import PythonRunner from '../../../components/islands/PythonRunner';
 import QuizCard from '../../../components/islands/QuizCard';
 import ColabButton from '../../../components/static/ColabButton.astro';
 
@@ -19,7 +18,7 @@ In harness engineering, a feature list is **not** a memo for humans. It is a **m
 1. **Scheduler**: Reads `not_started` items and picks the next $\text{WIP} = 1$ task.
 2. **Verifier**: Executes the item's verification command and controls state transitions.
 3. **Handoff Reporter**: Generates `session-handoff.md` directly from verified states.
-4. **Progress Tracker**: Computes remaining **Back-Pressure** ($B = N_{\text{total}} - N_{\text{passing}}$).
+4. **Progress Tracker**: Computes remaining **Back-Pressure** ($B = N_{\text{total}} - N_{\text{passing}}$)—think of it like water pressure behind a dam: the exact count of unfinished features still waiting to pass verification.
 
 ---
 
@@ -65,13 +64,10 @@ Launch the companion notebook to run a full `feature_list.json` **Pass-State Gat
 
 Run this Python state machine to see how Pass-State Gating blocks an unverified `passing` transition and promotes a feature only after its verification check succeeds.
 
-<PythonRunner
-  client:visible
-  title="Try it Yourself: Feature List Pass-State Gate"
-  expectedOutput="[Agent Self-Mark Attempt] F01 -> BLOCKED (requires verifier exit_code == 0)
-[Harness Verifier] F01 check passed -> Promoted to 'passing'
-Remaining Back-Pressure: 1/2 features left"
-  initialCode={`class FeatureGate:
+**Feature List Pass-State Gate**
+
+```python
+class FeatureGate:
     def __init__(self, features: list[dict]):
         self.features = {f["id"]: f for f in features}
 
@@ -99,8 +95,16 @@ gate = FeatureGate([
 print(gate.agent_attempt_pass("F01"))
 print(gate.verify_and_promote("F01", lambda: True))
 rem, tot = gate.back_pressure()
-print(f"Remaining Back-Pressure: {rem}/{tot} features left")`}
-/>
+print(f"Remaining Back-Pressure: {rem}/{tot} features left")
+```
+
+**Expected Output:**
+
+```text
+[Agent Self-Mark Attempt] F01 -> BLOCKED (requires verifier exit_code == 0)
+[Harness Verifier] F01 check passed -> Promoted to 'passing'
+Remaining Back-Pressure: 1/2 features left
+```
 
 ---
 

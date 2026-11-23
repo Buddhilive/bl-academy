@@ -9,7 +9,6 @@ description: "Master Multi-Agent Design Patterns including Group Chat, Handoff, 
 topic: "Planning & Multi-Agent"
 prerequisites: ["ai-agents-for-beginners/08-planning-design-pattern"]
 ---
-import PythonRunner from '../../../components/islands/PythonRunner';
 import QuizCard from '../../../components/islands/QuizCard';
 import ColabButton from '../../../components/static/ColabButton.astro';
 
@@ -59,14 +58,10 @@ Launch the companion notebook to run Group Chat, Handoff, Collaborative Filterin
 
 Run this pure-Python sandbox to execute a Flight $\rightarrow$ Hotel $\rightarrow$ Car Rental Handoff chain, a 3-Analyst Collaborative Filtering consensus scorer, and a logged 15-Agent Refund workflow.
 
-<PythonRunner
-  client:visible
-  title="Try it Yourself: Multi-Agent Handoff & Collaborative Filtering"
-  expectedOutput="[Handoff] FlightAgent -> Dates: 2026-06-10..2026-06-14 | Handed off to HotelAgent
-[Handoff] HotelAgent -> Airport Hotel booked for 2026-06-10..2026-06-14 | Handed off to CarRentalAgent
-[CollabFilter] Consensus score for ACME: 0.86 (Industry=0.90, Tech=0.80, Fundamental=0.88)
-[RefundMAS] Executed 5 refund-specific + 4 general audit/notify agents -> Status: APPROVED"
-  initialCode={`# 1. Handoff Pattern with shared date constraints
+**Multi-Agent Handoff & Collaborative Filtering**
+
+```python
+# 1. Handoff Pattern with shared date constraints
 state = {"dates": "2026-06-10..2026-06-14", "airport_only": True}
 print(f"[Handoff] FlightAgent -> Dates: {state['dates']} | Handed off to HotelAgent")
 print(f"[Handoff] HotelAgent -> Airport Hotel booked for {state['dates']} | Handed off to CarRentalAgent")
@@ -81,8 +76,17 @@ print(f"[CollabFilter] Consensus score for ACME: {consensus:.2f} (Industry={scor
 refund_specific = ["Customer", "Seller", "Payment", "Resolution", "Compliance"]
 general_agents = ["Shipping", "Audit", "Security", "Notification"]
 trace = [{"agent": a, "status": "OK"} for a in refund_specific + general_agents]
-print(f"[RefundMAS] Executed {len(refund_specific)} refund-specific + {len(general_agents)} general audit/notify agents -> Status: APPROVED")`}
-/>
+print(f"[RefundMAS] Executed {len(refund_specific)} refund-specific + {len(general_agents)} general audit/notify agents -> Status: APPROVED")
+```
+
+**Expected Output:**
+
+```text
+[Handoff] FlightAgent -> Dates: 2026-06-10..2026-06-14 | Handed off to HotelAgent
+[Handoff] HotelAgent -> Airport Hotel booked for 2026-06-10..2026-06-14 | Handed off to CarRentalAgent
+[CollabFilter] Consensus score for ACME: 0.86 (Industry=0.90, Tech=0.80, Fundamental=0.88)
+[RefundMAS] Executed 5 refund-specific + 4 general audit/notify agents -> Status: APPROVED
+```
 
 ---
 

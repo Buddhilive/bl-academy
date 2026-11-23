@@ -9,7 +9,6 @@ description: "Learn causal Large Language Models, Perplexity evaluation, Zero/Fe
 topic: "Large Language Models and Prompting"
 prerequisites: ["ai-for-beginners/19-named-entity-recognition"]
 ---
-import PythonRunner from '../../../components/islands/PythonRunner';
 import QuizCard from '../../../components/islands/QuizCard';
 import ColabButton from '../../../components/static/ColabButton.astro';
 
@@ -25,7 +24,7 @@ How do we measure the quality of a generative language model without a task-spec
 
 $$\text{Perplexity}(W) = \sqrt[N]{\frac{1}{P(W_1, \dots, W_N)}} = \exp\left(-\frac{1}{N}\sum_{i=1}^{N} \log P(w_i \mid w_{<i})\right)$$
 
-Lower perplexity means the model is less "surprised" by real human sentences. A model assigning $P = 0.5$ to every next token has $\text{PPL} = 2.0$, whereas a model assigning $P = 0.1$ has $\text{PPL} = 10.0$.
+In plain English: $N$ is the number of tokens in the test passage, and $P(w_i \mid w_{<i})$ is the probability the model assigned to the actual next word $w_i$ given the words before it ($w_{<i}$). You can think of Perplexity as *"how many equally likely options the model is effectively guessing between at each word."* Lower perplexity means the model is less "surprised" by real human sentences: a model assigning $P = 0.5$ to every next token has $\text{PPL} = 2.0$ (like choosing between 2 words), whereas a model assigning $P = 0.1$ has $\text{PPL} = 10.0$ (choosing among 10).
 
 ---
 
@@ -65,12 +64,10 @@ print(response.text)
 
 Let's calculate exact **Perplexity** for two candidate language models on a 4-token test sentence in pure Python. Notice how higher confidence on true tokens drives perplexity down sharply.
 
-<PythonRunner
-  client:visible
-  title="Try it Yourself: Perplexity Evaluation"
-  expectedOutput="Confident Model PPL: 1.49
-Uncertain Model PPL: 6.04"
-  initialCode={`import math
+**Perplexity Evaluation**
+
+```python
+import math
 
 def perplexity(token_probs: list[float]) -> float:
     avg_neg_log_prob = -sum(math.log(p) for p in token_probs) / len(token_probs)
@@ -80,8 +77,15 @@ confident_probs = [0.80, 0.70, 0.60, 0.60]
 uncertain_probs = [0.20, 0.15, 0.10, 0.25]
 
 print(f"Confident Model PPL: {perplexity(confident_probs):.2f}")
-print(f"Uncertain Model PPL: {perplexity(uncertain_probs):.2f}")`}
-/>
+print(f"Uncertain Model PPL: {perplexity(uncertain_probs):.2f}")
+```
+
+**Expected Output:**
+
+```text
+Confident Model PPL: 1.49
+Uncertain Model PPL: 6.04
+```
 
 ---
 

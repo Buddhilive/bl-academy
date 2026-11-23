@@ -9,7 +9,6 @@ description: "Synthesize cross-platform optimization across ONNX Runtime graph f
 topic: "Hardware-Aware Optimization"
 prerequisites: ["edge-ai-for-beginners/11-quantization-foundations-and-llamacpp-gguf-pipelines"]
 ---
-import PythonRunner from '../../../components/islands/PythonRunner';
 import QuizCard from '../../../components/islands/QuizCard';
 import ColabButton from '../../../components/static/ColabButton.astro';
 
@@ -21,6 +20,12 @@ Here is an overview of the four major optimization toolkits and a unified decisi
 
 ## Cross-Platform Optimization Toolkits
 
+Each hardware vendor provides a specialized toolkit to squeeze maximum speed out of its silicon:
+- **ONNX Runtime + Olive**: The universal Swiss-army knife—exports models into a standard graph and fuses operations across CPUs, GPUs, and NPUs.
+- **Intel OpenVINO + NNCF**: Compiles graphs into Intel's Intermediate Representation (`.xml`/`.bin`) tuned for Intel laptops, Core Ultra NPUs, and edge kiosks.
+- **Apple MLX (`mlx-lm`)**: Built specifically for Apple Silicon's unified memory, letting the CPU and GPU share the same RAM without copying tensors back and forth.
+- **Qualcomm QNN**: Splits model layers across Snapdragon's Hexagon NPU, Adreno GPU, and Kryo CPU for mobile efficiency.
+
 | Framework | Primary Silicon Target | Compression & Fusion Techniques | Typical Gains |
 | :--- | :--- | :--- | :--- |
 | **ONNX Runtime + Olive** | Cross-platform CPU, GPU, NPU | Graph operator fusion, dynamic/static INT4 & INT8 | 60–75% size cut, 2–6x speedup |
@@ -30,17 +35,21 @@ Here is an overview of the four major optimization toolkits and a unified decisi
 
 ### Why Operator Fusion Matters
 
-When $K$ sequential operators (for example, `MatMul` + `Add` + `RMSNorm`) execute unfused, each intermediate activation tensor $A_k$ is written to DRAM and read right back. Fusing those operators inside on-chip SRAM eliminates DRAM round-trips equal to:
+Think of **operator fusion** like cooking a stir-fry in one pan instead of plating the food, putting it in the fridge, and pulling it back out after every single ingredient. When $K$ sequential operators (for example, `MatMul` + `Add` + `RMSNorm`) execute unfused, each intermediate activation tensor $A_k$ is written to slow main DRAM and read right back. Fusing those operators inside fast on-chip SRAM eliminates DRAM round-trips equal to:
 
 $$
 \Delta B_{\text{DRAM}} = \sum_{k=1}^{K-1} 2 \cdot |A_k| \cdot \text{sizeof}(\text{dtype})
 $$
+
+Here $|A_k|$ is the number of elements in intermediate tensor $k$, $\text{sizeof}(\text{dtype})$ is the bytes per element (e.g., 2 bytes for FP16), and the factor of `2` counts both the write out to DRAM and the read back in.
 
 To rank candidate optimized builds objectively, we use a **Production Readiness Score** balancing latency, memory footprint, and perplexity drift $\Delta\text{PPL}$:
 
 $$
 S_{\text{hw}} = w_1 \frac{T_{\text{target}}}{T_{\text{meas}}} + w_2 \frac{M_{\text{budget}}}{M_{\text{meas}}} - w_3 \, \Delta\text{PPL}
 $$
+
+Higher $S_{\text{hw}}$ is better: beating your latency target ($T_{\text{target}} / T_{\text{meas}} > 1$) and staying under your memory budget ($M_{\text{budget}} / M_{\text{meas}} > 1$) push the score up, while accuracy degradation ($\Delta\text{PPL}$) subtracts a penalty.
 
 ```mermaid
 flowchart TD
@@ -69,13 +78,10 @@ Launch the companion notebook to export a PyTorch network to ONNX, apply dynamic
 
 Run this Python workflow synthesizer to select the optimal optimization framework for three edge targets and evaluate whether each candidate passes the latency, memory, and perplexity-drift production gate.
 
-<PythonRunner
-  client:visible
-  title="Try it Yourself: Edge Optimization Workflow Synthesizer"
-  expectedOutput="Target: Intel Edge Kiosk   -> Framework=OpenVINO + NNCF INT4 | Gate=PASS (score=1.41)
-Target: Apple M3 Laptop    -> Framework=Apple MLX 4-bit      | Gate=PASS (score=1.83)
-Target: Snapdragon Phone   -> Framework=Qualcomm QNN INT8/4  | Gate=PASS (score=1.72)"
-  initialCode={`def select_framework(silicon):
+**Edge Optimization Workflow Synthesizer**
+
+```python
+def select_framework(silicon):
     mapping = {
         "intel": "OpenVINO + NNCF INT4",
         "apple": "Apple MLX 4-bit",
@@ -93,8 +99,16 @@ for name, silicon, t_meas, t_tgt, m_bud, m_meas, dppl in targets:
     fw = select_framework(silicon)
     score = 0.5 * (t_tgt / t_meas) + 0.5 * (m_bud / m_meas) - 0.1 * dppl
     gate = "PASS" if (t_meas <= t_tgt and m_meas <= m_bud and dppl <= 0.5) else "FAIL"
-    print(f"Target: {name:18s} -> Framework={fw:20s} | Gate={gate} (score={score:.2f})")`}
-/>
+    print(f"Target: {name:18s} -> Framework={fw:20s} | Gate={gate} (score={score:.2f})")
+```
+
+**Expected Output:**
+
+```text
+Target: Intel Edge Kiosk   -> Framework=OpenVINO + NNCF INT4 | Gate=PASS (score=1.41)
+Target: Apple M3 Laptop    -> Framework=Apple MLX 4-bit      | Gate=PASS (score=1.83)
+Target: Snapdragon Phone   -> Framework=Qualcomm QNN INT8/4  | Gate=PASS (score=1.72)
+```
 
 ---
 

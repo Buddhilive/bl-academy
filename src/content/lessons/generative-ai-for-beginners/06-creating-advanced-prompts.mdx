@@ -9,7 +9,6 @@ description: "Apply advanced prompting patterns including Few-Shot, Chain-of-Tho
 topic: "Advanced Prompting"
 prerequisites: ["generative-ai-for-beginners/05-prompt-engineering-fundamentals"]
 ---
-import PythonRunner from '../../../components/islands/PythonRunner';
 import QuizCard from '../../../components/islands/QuizCard';
 import ColabButton from '../../../components/static/ColabButton.astro';
 
@@ -83,17 +82,12 @@ Launch the notebook below to run all seven advanced prompting techniques against
 
 ## Try It Yourself: CoT, Generated Knowledge & Self-Refine Auditor
 
-Run this pure-Python sandbox to verify the Chain-of-Thought apple arithmetic, resolve the `ACME Insurance` generated-knowledge budget constraint, and audit the vulnerable vs. Self-Refined Flask snippets.
+Run this pure-Python script (locally or in a Colab cell) to verify the Chain-of-Thought apple arithmetic, resolve the `ACME Insurance` generated-knowledge budget constraint, and audit the vulnerable vs. Self-Refined Flask snippets.
 
-<PythonRunner
-  client:visible
-  title="Try it Yourself: Advanced Prompting & Self-Refine Auditor"
-  expectedOutput="CoT Lisa: 7 - 1 - 4 + 1 = 3 apples
-CoT Alice: 5 - 3 - 2 + 1 = 1 apples
-ACME Recommendation within $1000: Umbrella Bundle ($950)
-Flask v1 Issues: ['Unescaped HTML/XSS risk', 'No input validation']
-Flask v2 Hardened: Clean (0 issues)"
-  initialCode={`# 1. Chain-of-Thought state tracker
+**Advanced Prompting & Self-Refine Auditor**
+
+```python
+# 1. Chain-of-Thought state tracker
 def solve_apples(name, start, thrown, given, returned):
     step1 = start - thrown
     step2 = step1 - given
@@ -110,7 +104,7 @@ products = [
 ]
 budget = 1000
 valid = [p for p in products if p[1] <= budget]
-print(f"ACME Recommendation within \${budget}: {valid[0][0]} (\${valid[0][1]})")
+print(f"ACME Recommendation within ${budget}: {valid[0][0]} (${valid[0][1]})")
 
 # 3. Self-Refine security audit on Flask code
 flask_v1 = 'return f"Hello, {request.args.get(\'name\')}!"'
@@ -126,8 +120,18 @@ def audit_flask(code):
 
 print(f"Flask v1 Issues: {audit_flask(flask_v1)}")
 v2_issues = audit_flask(flask_v2)
-print(f"Flask v2 Hardened: Clean ({len(v2_issues)} issues)")`}
-/>
+print(f"Flask v2 Hardened: Clean ({len(v2_issues)} issues)")
+```
+
+**Expected Output:**
+
+```text
+CoT Lisa: 7 - 1 - 4 + 1 = 3 apples
+CoT Alice: 5 - 3 - 2 + 1 = 1 apples
+ACME Recommendation within $1000: Umbrella Bundle ($950)
+Flask v1 Issues: ['Unescaped HTML/XSS risk', 'No input validation']
+Flask v2 Hardened: Clean (0 issues)
+```
 
 ---
 

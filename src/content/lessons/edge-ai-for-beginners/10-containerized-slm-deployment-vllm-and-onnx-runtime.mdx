@@ -9,7 +9,6 @@ description: "Deploy containerized SLMs like Phi-4-mini using vLLM with PagedAtt
 topic: "Containerized SLM Serving"
 prerequisites: ["edge-ai-for-beginners/09-slm-deployment-foundations-ollama-and-local-serving"]
 ---
-import PythonRunner from '../../../components/islands/PythonRunner';
 import QuizCard from '../../../components/islands/QuizCard';
 import ColabButton from '../../../components/static/ColabButton.astro';
 
@@ -68,14 +67,10 @@ Launch the companion notebook to export a compact transformer to ONNX and benchm
 
 Run this Python simulator to compare VRAM utilization when serving 4 concurrent requests of varying lengths under contiguous pre-allocation versus 16-token PagedAttention blocks.
 
-<PythonRunner
-  client:visible
-  title="Try it Yourself: PagedAttention vs. Contiguous KV-Cache Simulator"
-  expectedOutput="Active Tokens Across 4 Requests: 1150
-Contiguous Allocation (max_len=4096): 16384 slots | Utilization: 7.0%
-PagedAttention (block_size=16):       1168 slots | Utilization: 98.5%
-Memory Saved by PagedAttention: 92.9%"
-  initialCode={`import math
+**PagedAttention vs. Contiguous KV-Cache Simulator**
+
+```python
+import math
 
 request_lengths = [120, 480, 90, 460]
 max_model_len = 4096
@@ -92,8 +87,17 @@ saved_pct = (1.0 - paged_slots / contiguous_slots) * 100.0
 print(f"Active Tokens Across 4 Requests: {active_tokens}")
 print(f"Contiguous Allocation (max_len={max_model_len}): {contiguous_slots} slots | Utilization: {contig_util:.1f}%")
 print(f"PagedAttention (block_size={block_size}):       {paged_slots} slots | Utilization: {paged_util:.1f}%")
-print(f"Memory Saved by PagedAttention: {saved_pct:.1f}%")`}
-/>
+print(f"Memory Saved by PagedAttention: {saved_pct:.1f}%")
+```
+
+**Expected Output:**
+
+```text
+Active Tokens Across 4 Requests: 1150
+Contiguous Allocation (max_len=4096): 16384 slots | Utilization: 7.0%
+PagedAttention (block_size=16):       1168 slots | Utilization: 98.5%
+Memory Saved by PagedAttention: 92.9%
+```
 
 ---
 

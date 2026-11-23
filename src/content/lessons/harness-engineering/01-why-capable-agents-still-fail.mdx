@@ -9,7 +9,6 @@ description: "Understand why strong LLMs still fail on real engineering tasks, m
 topic: "Harness Foundations"
 prerequisites: ["ai-agents-for-beginners/19-securing-ai-agents-with-cryptographic-receipts"]
 ---
-import PythonRunner from '../../../components/islands/PythonRunner';
 import QuizCard from '../../../components/islands/QuizCard';
 import ColabButton from '../../../components/static/ColabButton.astro';
 
@@ -52,13 +51,13 @@ Rather than blaming the model, map every agent failure to one of five defense la
 | **No Verification (Context Anxiety)** | Verification Feedback | Agent senses low context and rushes a "looks fine" finish | Add runnable test/lint commands and `Stop` hooks |
 | **Cross-Session State Loss** | State Management | Every new session re-discovers the repo from scratch | Persist `PROGRESS.md` and `feature_list.json` |
 
-We can quantify the **Verification Gap** $G_{\text{verify}}$ across a batch of tasks as:
+We can quantify the **Verification Gap** $G_{\text{verify}}$ across a batch of tasks—in plain English, the gap between how often the agent *claims* it is done and how often automated checks actually *prove* it is done:
 
 $$
 G_{\text{verify}} = P(\text{agent claims done}) - P(\text{independent checks pass})
 $$
 
-If an agent claims completion on 90% of tasks while only 45% actually pass `pytest` and `mypy`, your harness has a $G_{\text{verify}} = 0.45$ reliability gap.
+Here, $P(\dots)$ simply means the fraction (or percentage) of runs. If an agent claims completion on 90% of tasks while only 45% actually pass `pytest` and `mypy`, your harness has a $G_{\text{verify}} = 0.45$ reliability gap.
 
 ---
 
@@ -86,18 +85,12 @@ Launch the companion notebook to run a live `google-genai` (`gemini-2.5-flash`) 
 
 ## Try It Yourself: Measure the Verification Gap & Attribute Failures
 
-Run this pure-Python diagnostic simulator in your browser to compute $G_{\text{verify}}$ across 5 agent runs and attribute every failure to its exact harness layer.
+Run this pure-Python diagnostic simulator locally or in the Colab notebook to compute $G_{\text{verify}}$ across 5 agent runs and attribute every failure to its exact harness layer.
 
-<PythonRunner
-  client:visible
-  title="Try it Yourself: 5-Layer Harness Diagnostic Loop"
-  expectedOutput="Baseline Verification Gap: 0.60 (claimed=0.80, verified=0.20)
-Attributed Layers:
-  - task-01: Task Specification (Vague search spec)
-  - task-02: Verification Feedback (Skipped pytest + mypy)
-  - task-03: Context Provision (Used SQLAlchemy 1.x instead of 2.0)
-Harness-Backed Verification Gap: 0.00 (claimed=1.00, verified=1.00)"
-  initialCode={`from dataclasses import dataclass
+**5-Layer Harness Diagnostic Loop**
+
+```python
+from dataclasses import dataclass
 
 @dataclass
 class AgentRun:
@@ -132,8 +125,19 @@ harness_runs = [
     for i in range(1, 6)
 ]
 hc, hv, hg = verification_gap(harness_runs)
-print(f"Harness-Backed Verification Gap: {hg:.2f} (claimed={hc:.2f}, verified={hv:.2f})")`}
-/>
+print(f"Harness-Backed Verification Gap: {hg:.2f} (claimed={hc:.2f}, verified={hv:.2f})")
+```
+
+**Expected Output:**
+
+```text
+Baseline Verification Gap: 0.60 (claimed=0.80, verified=0.20)
+Attributed Layers:
+  - task-01: Task Specification (Vague search spec)
+  - task-02: Verification Feedback (Skipped pytest + mypy)
+  - task-03: Context Provision (Used SQLAlchemy 1.x instead of 2.0)
+Harness-Backed Verification Gap: 0.00 (claimed=1.00, verified=1.00)
+```
 
 ---
 

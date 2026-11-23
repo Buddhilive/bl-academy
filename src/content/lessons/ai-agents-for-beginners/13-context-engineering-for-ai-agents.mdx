@@ -9,11 +9,10 @@ description: "Manage finite agent context windows with scratchpads, compression,
 topic: "Protocols, Context & Memory"
 prerequisites: ["ai-agents-for-beginners/12-agentic-protocols-mcp-a2a-and-nlweb"]
 ---
-import PythonRunner from '../../../components/islands/PythonRunner';
 import QuizCard from '../../../components/islands/QuizCard';
 import ColabButton from '../../../components/static/ColabButton.astro';
 
-Prompt engineering focuses on crafting a single static set of instructions. **Context Engineering** is the discipline of actively curating everything inside the model's finite context window—*Instructions*, *Knowledge*, *Tools*, *Conversation History*, and *User Preferences*—so the agent has the exact right signal at every step.
+Prompt engineering focuses on crafting a single static set of instructions. **Context Engineering** is like packing a small carry-on desk for an assistant: because the model's context window has a fixed size, you must actively curate *Instructions*, *Knowledge*, *Tools*, *Conversation History*, and *User Preferences*—keeping the right notes in front of the agent while clearing out stale clutter.
 
 Start with a three-step plan: **(1) Define Clear Results**, **(2) Map the Context**, and **(3) Create Context Pipelines**. Then apply six runtime strategies: **Agent Scratchpads**, **Cross-Session Memories**, **Context Compression**, **Multi-Agent Isolation**, **Sandbox Environments**, and **Runtime State Objects**.
 
@@ -52,15 +51,10 @@ Launch the companion notebook to implement all four failure mitigations, vector-
 
 Run this pure-Python sandbox to quarantine a poisoned flight route, compress a distracted history, filter 32 tools down to a focused top-3 loadout, prune a clashing cabin preference, and emit a redacted inspection record.
 
-<PythonRunner
-  client:visible
-  title="Try it Yourself: Context Failure Repair & Inspection"
-  expectedOutput="[Poisoning] Quarantined unverified route 'LOCAL->CDG' (API valid=False)
-[Distraction] Compressed 12 turns (1800 -> 240 tokens, 86.7% reduction)
-[Confusion] Filtered 32 tools -> top-3 loadout: ['public_transport_info', 'rent_car', 'city_map']
-[Clash] Pruned stale 'economy' -> Active cabin: 'business'
-[Inspect] {'selected_tools': 3, 'tokens_before': 1800, 'tokens_after': 240, 'pii_logged': False}"
-  initialCode={`# 1. Context Poisoning -> API Validation & Quarantine
+**Context Failure Repair & Inspection**
+
+```python
+# 1. Context Poisoning -> API Validation & Quarantine
 valid_routes = {"SFO->CDG", "JFK->CDG"}
 candidate_route = "LOCAL->CDG"
 if candidate_route not in valid_routes:
@@ -83,8 +77,18 @@ print(f"[Clash] Pruned stale 'economy' -> Active cabin: '{prefs['cabin']}'")
 
 # 5. Privacy-Safe Inspection Record
 record = {"selected_tools": len(loadout), "tokens_before": tokens_before, "tokens_after": tokens_after, "pii_logged": False}
-print(f"[Inspect] {record}")`}
-/>
+print(f"[Inspect] {record}")
+```
+
+**Expected Output:**
+
+```text
+[Poisoning] Quarantined unverified route 'LOCAL->CDG' (API valid=False)
+[Distraction] Compressed 12 turns (1800 -> 240 tokens, 86.7% reduction)
+[Confusion] Filtered 32 tools -> top-3 loadout: ['public_transport_info', 'rent_car', 'city_map']
+[Clash] Pruned stale 'economy' -> Active cabin: 'business'
+[Inspect] {'selected_tools': 3, 'tokens_before': 1800, 'tokens_after': 240, 'pii_logged': False}
+```
 
 ---
 

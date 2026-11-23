@@ -9,7 +9,6 @@ description: "Build self-reflective metacognitive agents that switch decision st
 topic: "Planning & Multi-Agent"
 prerequisites: ["ai-agents-for-beginners/09-multi-agent-design-patterns"]
 ---
-import PythonRunner from '../../../components/islands/PythonRunner';
 import QuizCard from '../../../components/islands/QuizCard';
 import ColabButton from '../../../components/static/ColabButton.astro';
 
@@ -53,15 +52,10 @@ Launch the companion notebook to run all four metacognition subsystems with `sql
 
 Run this pure-Python sandbox to watch `HotelRecommendationAgent` reflect and switch from `'cheapest'` to `'highest_quality'`, classify query intent, and execute a schema-aware SQLite RAG query.
 
-<PythonRunner
-  client:visible
-  title="Try it Yourself: Metacognitive Reflection & SQL RAG"
-  expectedOutput="[Step 1] Strategy 'cheapest' -> Budget Inn (price=$80, quality=6)
-[Reflect] Feedback='bad' -> Adjusting strategy to 'highest_quality'
-[Step 2] Strategy 'highest_quality' -> Luxury Stay (price=$200, quality=9)
-[Intent] 'best museums in Paris' -> informational
-[SQL-RAG] Querying SQLite hotels -> [('Comfort Suites', 120), ('Luxury Stay', 200)]"
-  initialCode={`import sqlite3
+**Metacognitive Reflection & SQL RAG**
+
+```python
+import sqlite3
 
 hotels = [
     {"name": "Budget Inn", "price": 80, "quality": 6},
@@ -72,7 +66,7 @@ hotels = [
 # 1. Metacognitive Strategy Reflection
 strategy = "cheapest"
 pick = min(hotels, key=lambda h: h["price"])
-print(f"[Step 1] Strategy '{strategy}' -> {pick['name']} (price=\${pick['price']}, quality={pick['quality']})")
+print(f"[Step 1] Strategy '{strategy}' -> {pick['name']} (price=${pick['price']}, quality={pick['quality']})")
 
 feedback = "bad" if (pick["price"] < 100 or pick["quality"] < 7) else "good"
 if feedback == "bad":
@@ -80,7 +74,7 @@ if feedback == "bad":
     print(f"[Reflect] Feedback='{feedback}' -> Adjusting strategy to '{strategy}'")
 
 pick2 = max(hotels, key=lambda h: h["quality"])
-print(f"[Step 2] Strategy '{strategy}' -> {pick2['name']} (price=\${pick2['price']}, quality={pick2['quality']})")
+print(f"[Step 2] Strategy '{strategy}' -> {pick2['name']} (price=${pick2['price']}, quality={pick2['quality']})")
 
 # 2. Search with Intent
 query = "best museums in Paris"
@@ -92,8 +86,18 @@ conn = sqlite3.connect(":memory:")
 conn.execute("CREATE TABLE hotels (name TEXT, price INT, quality INT)")
 conn.executemany("INSERT INTO hotels VALUES (?, ?, ?)", [(h["name"], h["price"], h["quality"]) for h in hotels])
 rows = conn.execute("SELECT name, price FROM hotels WHERE quality >= 8 ORDER BY price ASC").fetchall()
-print(f"[SQL-RAG] Querying SQLite hotels -> {rows}")`}
-/>
+print(f"[SQL-RAG] Querying SQLite hotels -> {rows}")
+```
+
+**Expected Output:**
+
+```text
+[Step 1] Strategy 'cheapest' -> Budget Inn (price=$80, quality=6)
+[Reflect] Feedback='bad' -> Adjusting strategy to 'highest_quality'
+[Step 2] Strategy 'highest_quality' -> Luxury Stay (price=$200, quality=9)
+[Intent] 'best museums in Paris' -> informational
+[SQL-RAG] Querying SQLite hotels -> [('Comfort Suites', 120), ('Luxury Stay', 200)]
+```
 
 ---
 

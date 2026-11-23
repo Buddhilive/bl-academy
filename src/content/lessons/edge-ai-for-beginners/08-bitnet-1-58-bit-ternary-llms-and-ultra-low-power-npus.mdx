@@ -9,7 +9,6 @@ description: "Understand 1.58-bit ternary BitNet LLMs ({-1, 0, +1}), BitLinear a
 topic: "1-Bit & NPU Micro-Models"
 prerequisites: ["edge-ai-for-beginners/07-gemma-model-family-matformer-ple-and-multimodal-edge"]
 ---
-import PythonRunner from '../../../components/islands/PythonRunner';
 import QuizCard from '../../../components/islands/QuizCard';
 
 You may know that post-training quantization below 4 bits usually causes steep perplexity collapse. **BitNet b1.58** flips that script by training the model from scratch with **ternary weights** constrained to $\{-1, 0, +1\}$ (which carries $\log_2 3 \approx 1.585$ bits of information per weight). When every weight is $-1$, $0$, or $+1$, expensive floating-point matrix multiplications vanish and are replaced by pure integer additions and subtractions.
@@ -28,11 +27,15 @@ $$
 \gamma = \frac{1}{nm} \sum_{i,j} |W_{ij}|, \qquad \tilde{W} = \text{RoundClip}\!\left(\frac{W}{\gamma + \epsilon},\; -1,\; 1\right)
 $$
 
+In plain English: first compute $\gamma$, the average magnitude of all weights in the matrix (and add a tiny $\epsilon$ to avoid dividing by zero). Then divide each weight by $\gamma$, round to the nearest integer, and clamp it to $\{-1, 0, +1\}$.
+
 Activations $x$ are simultaneously quantized per-token to 8-bit integers ($Q_b = 127$) using **absmax scaling**:
 
 $$
 \tilde{x} = \text{Clip}\!\left(x \cdot \frac{Q_b}{\|x\|_\infty + \epsilon},\; -Q_b,\; Q_b\right)
 $$
+
+Here $\|x\|_\infty$ is simply the largest absolute value in the activation vector $x$. Multiplying by $Q_b / \|x\|_\infty$ stretches $x$ to fit cleanly inside $[-127, 127]$ so it can be stored as an 8-bit integer $\tilde{x}$.
 
 Because $\tilde{W}_{ij} \in \{-1, 0, +1\}$, computing $\tilde{W}\tilde{x}$ requires **zero floating-point multiplications**, cutting arithmetic energy by **55 to 82 percent** and shrinking a 2B model from 4.0 GB (FP16) down to **0.4 GB**!
 
@@ -49,16 +52,10 @@ Because $\tilde{W}_{ij} \in \{-1, 0, +1\}$, computing $\tilde{W}\tilde{x}$ requi
 
 Run this pure-Python `BitLinear` implementation to quantize an FP32 weight matrix to $\{-1, 0, +1\}$, quantize activations to INT8, and verify that ternary addition-only accumulation closely tracks the full-precision dot product.
 
-<PythonRunner
-  client:visible
-  title="Try it Yourself: BitLinear Absmean/Absmax Ternary Forward Pass"
-  expectedOutput="Quantized Ternary Weights (W_tilde):
-  [1, 0, -1, 1]
-  [-1, 1, 0, -1]
-FP32 Output:    [1.7690, -2.3500]
-BitLinear Out:  [1.1552, -1.8871]
-BitNet 2B Memory: 0.40 GB vs FP16: 4.00 GB (90.0% reduction)"
-  initialCode={`def round_clip(val, low, high):
+**BitLinear Absmean/Absmax Ternary Forward Pass**
+
+```python
+def round_clip(val, low, high):
     return max(low, min(high, round(val)))
 
 def bitlinear_forward(x, W):
@@ -100,8 +97,19 @@ for row in W_tilde:
     print(f"  {row}")
 print(f"FP32 Output:    [{fp32_out[0]:.4f}, {fp32_out[1]:.4f}]")
 print(f"BitLinear Out:  [{bit_out[0]:.4f}, {bit_out[1]:.4f}]")
-print("BitNet 2B Memory: 0.40 GB vs FP16: 4.00 GB (90.0% reduction)")`}
-/>
+print("BitNet 2B Memory: 0.40 GB vs FP16: 4.00 GB (90.0% reduction)")
+```
+
+**Expected Output:**
+
+```text
+Quantized Ternary Weights (W_tilde):
+  [1, 0, -1, 1]
+  [-1, 1, 0, -1]
+FP32 Output:    [1.7690, -2.3500]
+BitLinear Out:  [1.1552, -1.8871]
+BitNet 2B Memory: 0.40 GB vs FP16: 4.00 GB (90.0% reduction)
+```
 
 ---
 

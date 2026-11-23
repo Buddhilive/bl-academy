@@ -9,7 +9,6 @@ description: "Connect LLMs to external APIs and databases using function calling
 topic: "Function Calling"
 prerequisites: ["generative-ai-for-beginners/09-building-semantic-search-applications"]
 ---
-import PythonRunner from '../../../components/islands/PythonRunner';
 import QuizCard from '../../../components/islands/QuizCard';
 import ColabButton from '../../../components/static/ColabButton.astro';
 
@@ -59,17 +58,12 @@ Launch the notebook below to run both **Pydantic `response_schema` extraction** 
 
 ## Try It Yourself: JSON Schema Extractor & Tool Dispatcher
 
-Run this pure-Python sandbox to compare uniform student schema extraction and trace the full 4-stage `search_courses` function-calling dispatch loop.
+Run this pure-Python script (locally or in a Colab cell) to compare uniform student schema extraction and trace the full 4-stage `search_courses` function-calling dispatch loop.
 
-<PythonRunner
-  client:visible
-  title="Try it Yourself: Function Calling Dispatcher & Schema Validator"
-  expectedOutput="Student 1: {'name': 'Emily Johnson', 'school': 'Duke University', 'gpa': 3.7, 'club': 'Chess Club'}
-Student 2: {'name': 'Michael Lee', 'school': 'Stanford University', 'gpa': 3.8, 'club': 'Robotics Team'}
-Model emitted function_call: search_courses({'role': 'student', 'product': 'python', 'level': 'beginner'})
-Tool returned 2 course(s): ['Python Zero to Hero', 'Intro to Python Data']
-Final Assistant Reply: I found 2 beginner Python courses for students: Python Zero to Hero, Intro to Python Data."
-  initialCode={`import json
+**Function Calling Dispatcher & Schema Validator**
+
+```python
+import json
 
 # 1. Uniform structured extraction for Emily Johnson & Michael Lee
 students = [
@@ -98,8 +92,18 @@ print(f"Model emitted function_call: {tool_call['name']}({tool_call['args']})")
 fn = available_functions[tool_call["name"]]
 results = fn(**tool_call["args"])
 print(f"Tool returned {len(results)} course(s): {results}")
-print(f"Final Assistant Reply: I found {len(results)} beginner {tool_call['args']['product'].title()} courses for {tool_call['args']['role']}s: {', '.join(results)}.")`}
-/>
+print(f"Final Assistant Reply: I found {len(results)} beginner {tool_call['args']['product'].title()} courses for {tool_call['args']['role']}s: {', '.join(results)}.")
+```
+
+**Expected Output:**
+
+```text
+Student 1: {'name': 'Emily Johnson', 'school': 'Duke University', 'gpa': 3.7, 'club': 'Chess Club'}
+Student 2: {'name': 'Michael Lee', 'school': 'Stanford University', 'gpa': 3.8, 'club': 'Robotics Team'}
+Model emitted function_call: search_courses({'role': 'student', 'product': 'python', 'level': 'beginner'})
+Tool returned 2 course(s): ['Python Zero to Hero', 'Intro to Python Data']
+Final Assistant Reply: I found 2 beginner Python courses for students: Python Zero to Hero, Intro to Python Data.
+```
 
 ---
 

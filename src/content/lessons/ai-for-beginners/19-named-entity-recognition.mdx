@@ -9,7 +9,6 @@ description: "Extract structured entities (people, locations, medical terms) usi
 topic: "Named Entity Recognition"
 prerequisites: ["ai-for-beginners/18-transformers-and-bert"]
 ---
-import PythonRunner from '../../../components/islands/PythonRunner';
 import QuizCard from '../../../components/islands/QuizCard';
 import ColabButton from '../../../components/static/ColabButton.astro';
 
@@ -53,13 +52,10 @@ Architecturally, NER is a **Many-to-Many** token classification task: every toke
 
 In NER, token accuracy can look misleadingly high because most tokens are `O`. Real NER benchmarks score **exact entity spans** using Precision, Recall, and $F_1$. Let's build a pure-Python BIO span decoder and evaluator.
 
-<PythonRunner
-  client:visible
-  title="Try it Yourself: BIO Tag Decoder & Entity F1 Evaluator"
-  expectedOutput="Gold Entities:      [('DIS', 'Tricuspid valve regurgitation'), ('CHEM', 'lithium carbonate'), ('DIS', 'toxicity')]
-Predicted Entities: [('DIS', 'Tricuspid valve regurgitation'), ('CHEM', 'lithium'), ('DIS', 'toxicity')]
-Exact Span Match -> Precision: 0.67 | Recall: 0.67 | F1: 0.67"
-  initialCode={`tokens = ["Tricuspid", "valve", "regurgitation", "and", "lithium", "carbonate", "toxicity"]
+**BIO Tag Decoder & Entity F1 Evaluator**
+
+```python
+tokens = ["Tricuspid", "valve", "regurgitation", "and", "lithium", "carbonate", "toxicity"]
 gold_tags = ["B-DIS", "I-DIS", "I-DIS", "O", "B-CHEM", "I-CHEM", "B-DIS"]
 pred_tags = ["B-DIS", "I-DIS", "I-DIS", "O", "B-CHEM", "O", "B-DIS"]
 
@@ -91,8 +87,16 @@ f1 = (2 * prec * rec) / (prec + rec)
 
 print(f"Gold Entities:      {g_spans}")
 print(f"Predicted Entities: {p_spans}")
-print(f"Exact Span Match -> Precision: {prec:.2f} | Recall: {rec:.2f} | F1: {f1:.2f}")`}
-/>
+print(f"Exact Span Match -> Precision: {prec:.2f} | Recall: {rec:.2f} | F1: {f1:.2f}")
+```
+
+**Expected Output:**
+
+```text
+Gold Entities:      [('DIS', 'Tricuspid valve regurgitation'), ('CHEM', 'lithium carbonate'), ('DIS', 'toxicity')]
+Predicted Entities: [('DIS', 'Tricuspid valve regurgitation'), ('CHEM', 'lithium'), ('DIS', 'toxicity')]
+Exact Span Match -> Precision: 0.67 | Recall: 0.67 | F1: 0.67
+```
 
 ---
 

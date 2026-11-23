@@ -9,7 +9,6 @@ description: "Master bounding box regression, Intersection over Union (IoU), Non
 topic: "Object Detection"
 prerequisites: ["ai-for-beginners/10-gans-and-artistic-style-transfer"]
 ---
-import PythonRunner from '../../../components/islands/PythonRunner';
 import QuizCard from '../../../components/islands/QuizCard';
 import ColabButton from '../../../components/static/ColabButton.astro';
 
@@ -21,7 +20,7 @@ Image classification tells you *what* is in a picture. **Object Detection** goes
 
 How do we score whether a predicted bounding box matches the ground truth—and how do we clean up duplicate overlapping predictions?
 
-1. **Intersection over Union (IoU)**: Measures the overlap ratio between predicted box $A$ and ground-truth box $B$:
+1. **Intersection over Union (IoU)**: Imagine two paper rectangles $A$ (predicted) and $B$ (ground truth) laid on a table. IoU divides their overlapping area ($A \cap B$) by their combined total area ($A \cup B$), giving a score from `0.0` (no overlap) to `1.0` (perfect match):
 
 $$\text{IoU}(A, B) = \frac{\text{Area}(A \cap B)}{\text{Area}(A \cup B)} \in [0, 1]$$
 
@@ -52,14 +51,10 @@ In practice, you rarely train an object detector from scratch on raw images—in
 
 Let's implement exact bounding box **IoU** and **NMS** in pure Python to see how duplicate detections around a single object get filtered down cleanly.
 
-<PythonRunner
-  client:visible
-  title="Try it Yourself: Bounding Box IoU & Non-Maximum Suppression"
-  expectedOutput="IoU(boxA, boxB): 0.6203
-NMS Kept Boxes (iou_thresh=0.5):
-  score=0.95 box=[10, 10, 50, 50]
-  score=0.88 box=[100, 100, 140, 140]"
-  initialCode={`def compute_iou(a: list[int], b: list[int]) -> float:
+**Bounding Box IoU & Non-Maximum Suppression**
+
+```python
+def compute_iou(a: list[int], b: list[int]) -> float:
     x1 = max(a[0], b[0])
     y1 = max(a[1], b[1])
     x2 = min(a[2], b[2])
@@ -88,8 +83,17 @@ raw_preds = [
 ]
 print("NMS Kept Boxes (iou_thresh=0.5):")
 for score, box in nms(raw_preds, 0.5):
-    print(f"  score={score} box={box}")`}
-/>
+    print(f"  score={score} box={box}")
+```
+
+**Expected Output:**
+
+```text
+IoU(boxA, boxB): 0.6203
+NMS Kept Boxes (iou_thresh=0.5):
+  score=0.95 box=[10, 10, 50, 50]
+  score=0.88 box=[100, 100, 140, 140]
+```
 
 ---
 

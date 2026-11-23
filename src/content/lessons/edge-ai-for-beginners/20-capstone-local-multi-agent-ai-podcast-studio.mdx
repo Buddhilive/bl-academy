@@ -9,7 +9,6 @@ description: "Build the 3-Act Future Bytes Local Multi-Agent AI Podcast Studio: 
 topic: "Edge AI Capstone Workshop"
 prerequisites: ["edge-ai-for-beginners/19-models-as-tools-intelligent-routing-and-multi-agent-edge"]
 ---
-import PythonRunner from '../../../components/islands/PythonRunner';
 import QuizCard from '../../../components/islands/QuizCard';
 import ColabButton from '../../../components/static/ColabButton.astro';
 
@@ -57,13 +56,10 @@ Launch the capstone notebook to run the complete 3-Act "Future Bytes" pipeline a
 
 Run this pure-Python orchestrator to execute Act 1 (Research Agent), Act 2 (Scriptwriter + HITL Approval Gate), and Act 3 (7.5 Hz Acoustic Frame Compression Calculator).
 
-<PythonRunner
-  client:visible
-  title="Try it Yourself: 3-Act Future Bytes Podcast Studio Orchestrator"
-  expectedOutput="Act 1 [Research Agent]: Collected 2 verified facts on Edge AI
-Act 2 [Workflow + HITL Gate]: Approved 4-line script (Speakers: Speaker 1, Speaker 2)
-Act 3 [Audio Synthesis @ 7.5 Hz]: 40,500 frames for 90 min (6.67x compression vs 50 Hz)"
-  initialCode={`def act1_research_agent(topic):
+**3-Act Future Bytes Podcast Studio Orchestrator**
+
+```python
+def act1_research_agent(topic):
     return [
         f"{topic} SLMs run locally at 50-500ms latency.",
         "Q4_K_M quantization cuts model memory by ~75%."
@@ -90,8 +86,16 @@ compression = frames_50hz / frames_7_5hz
 
 print(f"Act 1 [Research Agent]: Collected {len(facts)} verified facts on Edge AI")
 print(f"Act 2 [Workflow + HITL Gate]: Approved {len(script)}-line script (Speakers: {', '.join(speakers)})")
-print(f"Act 3 [Audio Synthesis @ 7.5 Hz]: {frames_7_5hz:,d} frames for 90 min ({compression:.2f}x compression vs 50 Hz)")`}
-/>
+print(f"Act 3 [Audio Synthesis @ 7.5 Hz]: {frames_7_5hz:,d} frames for 90 min ({compression:.2f}x compression vs 50 Hz)")
+```
+
+**Expected Output:**
+
+```text
+Act 1 [Research Agent]: Collected 2 verified facts on Edge AI
+Act 2 [Workflow + HITL Gate]: Approved 4-line script (Speakers: Speaker 1, Speaker 2)
+Act 3 [Audio Synthesis @ 7.5 Hz]: 40,500 frames for 90 min (6.67x compression vs 50 Hz)
+```
 
 ---
 

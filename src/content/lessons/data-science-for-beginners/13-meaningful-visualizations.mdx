@@ -9,7 +9,6 @@ description: "Avoid deceptive charts, apply colorblind-safe palettes and readabi
 topic: "Meaningful Visualizations"
 prerequisites: ["data-science-for-beginners/12-visualizing-relationships"]
 ---
-import PythonRunner from '../../../components/islands/PythonRunner';
 import QuizCard from '../../../components/islands/QuizCard';
 import ColabButton from '../../../components/static/ColabButton.astro';
 
@@ -55,16 +54,10 @@ Choderlos de Laclos's 1782 novel *Les Liaisons Dangereuses* unfolds entirely thr
 
 Run this pure-Python implementation of the `create_links()` algorithm to build the `sid`/`tid` edge list for *Les Liaisons Dangereuses*, rank the most connected correspondents, and audit a chart's x-axis for chronological deception.
 
-<PythonRunner
-  client:visible
-  title="Try it Yourself: Network Link Builder & Axis Deception Auditor"
-  expectedOutput="=== Les Liaisons Dangereuses Link Graph ===
-Built 6 directed edges across 4 characters
-Most active correspondent: Valmont (4 letters sent/received)
+**Network Link Builder & Axis Deception Auditor**
 
-=== Chart Chronology Audit ===
-DECEPTION ALERT: X-axis dates are not strictly increasing!"
-  initialCode={`characters = ["Valmont", "Merteuil", "Tourvel", "Cécile"]
+```python
+characters = ["Valmont", "Merteuil", "Tourvel", "Cécile"]
 letters = [
     {"from": "Valmont", "to": "Merteuil"},
     {"from": "Merteuil", "to": "Valmont"},
@@ -91,8 +84,19 @@ print(f"Most active correspondent: {top_char} ({top_deg} letters sent/received)"
 chart_dates = ["2020-04-28", "2020-04-27", "2020-04-29", "2020-04-26"]
 is_sorted = chart_dates == sorted(chart_dates)
 print("\n=== Chart Chronology Audit ===")
-print("OK" if is_sorted else "DECEPTION ALERT: X-axis dates are not strictly increasing!")`}
-/>
+print("OK" if is_sorted else "DECEPTION ALERT: X-axis dates are not strictly increasing!")
+```
+
+**Expected Output:**
+
+```text
+=== Les Liaisons Dangereuses Link Graph ===
+Built 6 directed edges across 4 characters
+Most active correspondent: Valmont (4 letters sent/received)
+
+=== Chart Chronology Audit ===
+DECEPTION ALERT: X-axis dates are not strictly increasing!
+```
 
 ---
 

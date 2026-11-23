@@ -9,7 +9,6 @@ description: "Design Models-as-Tools intelligent routers, hybrid edge-to-Gemini 
 topic: "Models-as-Tools & Edge Routing"
 prerequisites: ["edge-ai-for-beginners/18-multi-model-edge-benchmarking-and-slm-vs-llm-tradeoffs"]
 ---
-import PythonRunner from '../../../components/islands/PythonRunner';
 import QuizCard from '../../../components/islands/QuizCard';
 import ColabButton from '../../../components/static/ColabButton.astro';
 
@@ -68,14 +67,10 @@ Launch the companion notebook to run a Models-as-Tools task router with privacy-
 
 Run this Python orchestrator to route three queries across local specialist SLMs and hybrid Gemini fallback, then execute a 3-stage Coordinator-Specialist loop.
 
-<PythonRunner
-  client:visible
-  title="Try it Yourself: Models-as-Tools Router & Multi-Agent Coordinator"
-  expectedOutput="Route 1: 'Fix Python ONNX export' -> tool=code (qwen2.5-coder @ edge)
-Route 2: 'Audit private HIPAA patient chart' -> tool=general (phi-4-mini @ edge)
-Route 3: 'Synthesize 5-year market forecast' -> tool=cloud (gemini-2.5-flash @ cloud)
-Coordinator Pipeline: [Retrieval: 2 chunks] -> [Reasoning: plan_ok] -> [Execution: verified=True]"
-  initialCode={`def route_request(prompt, privacy_strict=False):
+**Models-as-Tools Router & Multi-Agent Coordinator**
+
+```python
+def route_request(prompt, privacy_strict=False):
     p = prompt.lower()
     if any(k in p for k in ("python", "sql", "onnx", "bug")):
         return "code", "qwen2.5-coder", "edge"
@@ -97,8 +92,17 @@ for idx, (q, priv) in enumerate(queries, 1):
 retrieved = ["doc_a", "doc_b"]
 plan_status = "plan_ok" if len(retrieved) >= 2 else "needs_more_context"
 exec_verified = (plan_status == "plan_ok")
-print(f"Coordinator Pipeline: [Retrieval: {len(retrieved)} chunks] -> [Reasoning: {plan_status}] -> [Execution: verified={exec_verified}]")`}
-/>
+print(f"Coordinator Pipeline: [Retrieval: {len(retrieved)} chunks] -> [Reasoning: {plan_status}] -> [Execution: verified={exec_verified}]")
+```
+
+**Expected Output:**
+
+```text
+Route 1: 'Fix Python ONNX export' -> tool=code (qwen2.5-coder @ edge)
+Route 2: 'Audit private HIPAA patient chart' -> tool=general (phi-4-mini @ edge)
+Route 3: 'Synthesize 5-year market forecast' -> tool=cloud (gemini-2.5-flash @ cloud)
+Coordinator Pipeline: [Retrieval: 2 chunks] -> [Reasoning: plan_ok] -> [Execution: verified=True]
+```
 
 ---
 

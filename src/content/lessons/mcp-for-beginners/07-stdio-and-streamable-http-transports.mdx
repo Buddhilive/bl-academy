@@ -9,7 +9,6 @@ description: "Compare MCP's two standard transports: local subprocess stdio with
 topic: "MCP Transports"
 prerequisites: ["mcp-for-beginners/06-building-mcp-clients-and-gemini-llm-hosts"]
 ---
-import PythonRunner from '../../../components/islands/PythonRunner';
 import QuizCard from '../../../components/islands/QuizCard';
 import ColabButton from '../../../components/static/ColabButton.astro';
 
@@ -70,16 +69,10 @@ Launch the companion notebook to run a `stdio` FastMCP server over subprocess pi
 
 Run this pure-Python sandbox to detect corrupted `stdout` logging on `stdio` frames and parse a multi-chunk `text/event-stream` Streamable HTTP response.
 
-<PythonRunner
-  client:visible
-  title="Try it Yourself: stdio Corruption Detector & Streamable HTTP SSE Parser"
-  expectedOutput="[stdio] Frame 1 valid JSON-RPC: id=1
-[stdio] Frame 2 CORRUPTED (non-JSON stdout leak): DEBUG: starting server...
-[HTTP POST /mcp] Validated headers: Mcp-Method=tools/call, Mcp-Name=batch_job
-[SSE Chunk 1] progress=50%
-[SSE Chunk 2] progress=100%
-[SSE Final Result] status=complete"
-  initialCode={`import json
+**stdio Corruption Detector & Streamable HTTP SSE Parser**
+
+```python
+import json
 
 # 1. Validate newline-delimited stdio stdout lines
 stdio_lines = [
@@ -115,8 +108,19 @@ for block in sse_blocks:
         chunk_num += 1
         print(f"[SSE Chunk {chunk_num}] progress={data['params']['progress']}%")
     else:
-        print(f"[SSE Final Result] status={data['result']['status']}")`}
-/>
+        print(f"[SSE Final Result] status={data['result']['status']}")
+```
+
+**Expected Output:**
+
+```text
+[stdio] Frame 1 valid JSON-RPC: id=1
+[stdio] Frame 2 CORRUPTED (non-JSON stdout leak): DEBUG: starting server...
+[HTTP POST /mcp] Validated headers: Mcp-Method=tools/call, Mcp-Name=batch_job
+[SSE Chunk 1] progress=50%
+[SSE Chunk 2] progress=100%
+[SSE Final Result] status=complete
+```
 
 ---
 

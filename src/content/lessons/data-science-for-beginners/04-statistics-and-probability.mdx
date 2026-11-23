@@ -9,7 +9,6 @@ description: "Master probability distributions, mean, variance, quartiles, IQR b
 topic: "Statistics & Probability"
 prerequisites: ["data-science-for-beginners/03-defining-data"]
 ---
-import PythonRunner from '../../../components/islands/PythonRunner';
 import QuizCard from '../../../components/islands/QuizCard';
 import ColabButton from '../../../components/static/ColabButton.astro';
 
@@ -21,37 +20,44 @@ In this lesson, we'll walk through probability distributions, descriptive statis
 
 ## Probability & Random Variables
 
-**Probability** is a number in $[0, 1]$ measuring how likely an event is—defined as favorable outcomes divided by total equally likely outcomes. A **random variable** $X$ maps outcomes from a **sample space** $S$ to numbers:
+**Probability** is simply a score between $0$ (impossible) and $1$ (guaranteed) that measures how likely an event is—calculated as the number of ways an event can happen divided by the total number of equally likely outcomes. A **random variable** $X$ is just a label for the numeric outcome of a random process (like the number you roll on a die):
 
-- **Discrete Random Variable**: Takes countable values (e.g., rolling a die, $P(X=3) = \frac{1}{6}$). Its **uniform distribution** assigns $\frac{1}{N}$ to each of $N$ elements.
-- **Continuous Random Variable**: Takes values across a real interval $[a, b]$ (e.g., bus arrival time). Because there are infinitely many exact instants, the probability at any exact point $t$ is $0$! Instead, we integrate a **probability density function** $p(x)$ over an interval:
+- **Discrete Random Variable**: Takes countable, separate values (e.g., rolling a 6-sided die, where $P(X=3) = \frac{1}{6}$). When every outcome is equally likely, it's called a **uniform distribution** (each of $N$ outcomes gets $\frac{1}{N}$).
+- **Continuous Random Variable**: Takes any value along a smooth range (e.g., the exact second a bus arrives between 8:00 and 8:15). Because there are infinitely many exact instants, the chance of hitting one *exact* instant to the nanosecond is $0$. Instead, we ask for the chance it arrives within a time window by measuring the area under its probability curve:
 
 $$P(t_1 \le X < t_2) = \int_{t_1}^{t_2} p(x)\,dx$$
+
+Here, $t_1$ and $t_2$ are the start and end of your window (say, 8:05 and 8:10), $p(x)$ is the **probability density function** (the height of the curve at point $x$), and the integral symbol $\int$ simply means "add up the total area under the curve between $t_1$ and $t_2$."
 
 ---
 
 ## Mean, Variance, Median & Box-Plot Outliers
 
-Given $n$ samples $x_1, \dots, x_n$, the **mean** $\mu$ (and distribution expectation $\mathbb{E}[X] = \sum x_i p_i$) measures the center, while **variance** $\sigma^2$ and **standard deviation** $\sigma$ measure spread:
+Imagine comparing two baseball teams that both average 195 lbs per player. On one team, everyone weighs between 185 and 205 lbs; on the other, half the roster is 160 lbs and half is 230 lbs. To capture both the "typical" value and how spread out the numbers are, we use the **mean** ($\mu$) for the center, and **variance** ($\sigma^2$) or **standard deviation** ($\sigma$) for the spread:
 
 $$\mu = \frac{1}{n}\sum_{i=1}^{n} x_i, \qquad \sigma^2 = \frac{1}{n}\sum_{i=1}^{n}(x_i - \mu)^2$$
 
-Because extreme values pull the mean, we also use the **median** (50th percentile), **mode** (most frequent category—helpful when distributions are *multimodal*), and **quartiles**:
-- **$Q_1$**: 25% of observations fall below this value.
-- **$Q_3$**: 75% of observations fall below this value.
-- **Inter-Quartile Range ($\text{IQR}$)**: $\text{IQR} = Q_3 - Q_1$. Values outside $[Q_1 - 1.5\,\text{IQR},\, Q_3 + 1.5\,\text{IQR}]$ are flagged as **outliers** on a box plot.
+In these formulas:
+- $n$ is the total number of data points (e.g., players), and $x_i$ is each individual value.
+- $\mu$ (pronounced "mu") is the **mean** (add all values together and divide by $n$). For a probability distribution, this average is also called the **expected value** $\mathbb{E}[X]$.
+- $\sigma^2$ ("sigma squared") is the **variance**—the average of the squared distances from the mean—and taking its square root gives the **standard deviation** $\sigma$, which brings the spread back into the original units (like pounds).
+
+Because a few extreme values can pull the mean upward or downward, we also rely on the **median** (the exact middle value when sorted), the **mode** (the most common value—useful when data has multiple peaks, or is *multimodal*), and **quartiles**:
+- **$Q_1$ (25th percentile)**: 25% of observations fall below this value.
+- **$Q_3$ (75th percentile)**: 75% of observations fall below this value.
+- **Inter-Quartile Range ($\text{IQR}$)**: $\text{IQR} = Q_3 - Q_1$, which measures the span of the middle 50% of the data. Values outside $[Q_1 - 1.5\,\text{IQR},\, Q_3 + 1.5\,\text{IQR}]$ are flagged as **outliers** on a box plot.
 
 ---
 
 ## Normal Distribution, Confidence Intervals & Hypothesis Testing
 
-Many real-world measurements—like baseball player weights—cluster around a mean in a bell-shaped **normal distribution** $\mathcal{N}(\mu, \sigma^2)$. Thanks to the **Central Limit Theorem**, the mean of sufficiently large independent samples from *any* distribution approaches a normal distribution, and by the **Law of Large Numbers**, the sample mean converges to the true population mean $\mu$ as $n \to \infty$.
+Many real-world measurements—like baseball player weights—cluster around an average in a symmetric bell-shaped **normal distribution** $\mathcal{N}(\mu, \sigma^2)$ (defined by its center $\mu$ and variance $\sigma^2$). Thanks to the **Central Limit Theorem**, if you take many random samples from *almost any* dataset and average each sample, those sample averages will form a bell curve—and by the **Law of Large Numbers**, the bigger your sample size $n$, the closer your sample average gets to the true population average $\mu$.
 
-When we only observe a sample of size $n$ with standard deviation $s$, we estimate the population mean $\mu$ using a **confidence interval** built from **Student's $t$-distribution** (published by William Sealy Gosset under the pseudonym "Student" while working at the Guinness brewery):
+Think of a **confidence interval** as a safety net around your sample average. Instead of claiming the entire league's average weight is *exactly* $201.73\text{ lbs}$ based on a sample, you give a range built from **Student's $t$-distribution** (published by William Sealy Gosset under the pseudonym "Student" while working at the Guinness brewery):
 
 $$\bar{X} \pm t_{(1-p)/2,\; n-1} \frac{s}{\sqrt{n}}$$
 
-Higher confidence ($p = 0.95$ vs $0.85$) produces a wider interval:
+Here, $\bar{X}$ is your sample mean, $s$ is your sample standard deviation, $n$ is the sample size, $p$ is your desired confidence level (such as $0.95$ for 95%), and $t_{(1-p)/2,\; n-1}$ is a multiplier from the $t$-distribution table that grows larger when you want higher confidence or have a smaller sample. Higher confidence ($p = 0.95$ vs $0.85$) produces a wider safety net:
 
 | Confidence Level ($p$) | Weight Mean ($\text{lbs}$) | Interval Width |
 | :--- | :--- | :--- |
@@ -59,15 +65,17 @@ Higher confidence ($p = 0.95$ vs $0.85$) produces a wider interval:
 | `0.90` | $201.73 \pm 1.08$ | Moderate |
 | `0.95` | $201.73 \pm 1.28$ | Widest |
 
-In the MLB dataset, First Basemen average $74.00\text{ in}$ tall while Second Basemen average $71.36\text{ in}$. To prove this difference isn't sampling noise, we run **Student's / Welch's $t$-test** (`scipy.stats.ttest_ind`), checking whether the resulting $p$-value is tiny (e.g., $p < 0.01$).
+In the MLB dataset, First Basemen average $74.00\text{ in}$ tall while Second Basemen average $71.36\text{ in}$. To check whether this difference is real or just random luck, we run **Student's / Welch's $t$-test** (`scipy.stats.ttest_ind`) and check if the **$p$-value** (the probability of seeing such a gap by pure chance) is tiny (e.g., $p < 0.01$).
 
 ---
 
 ## Covariance & Correlation
 
-To measure whether two variables $X$ and $Y$ move together, we compute **covariance** and normalize it by their standard deviations to get the **Pearson correlation coefficient** $r_{XY} \in [-1, 1]$:
+Do taller baseball players tend to weigh more? To check whether two variables $X$ (height) and $Y$ (weight) move together, we first measure **covariance**—whether above-average values of $X$ pair with above-average values of $Y$—and then scale it into the **Pearson correlation coefficient** $r_{XY}$ so it always sits neatly between $-1$ and $+1$:
 
 $$\text{Cov}(X, Y) = \mathbb{E}\big[(X - \mathbb{E}[X])(Y - \mathbb{E}[Y])\big], \qquad r_{XY} = \frac{\text{Cov}(X, Y)}{\sigma_X \sigma_Y}$$
+
+Here, $\mathbb{E}[X]$ and $\mathbb{E}[Y]$ are the averages of $X$ and $Y$, $\sigma_X$ and $\sigma_Y$ are their standard deviations, and $r_{XY}$ tells you the strength and direction of the linear relationship ($+1$ means a perfect upward line, $0$ means no linear link, and $-1$ means a perfect downward line).
 
 Remember: correlation ($r \approx 0.53$ between MLB height and weight) shows mathematical association, *not* causation.
 
@@ -83,15 +91,10 @@ Remember: correlation ($r \approx 0.53$ between MLB height and weight) shows mat
 
 Run this pure-Python statistical engine on the first 20 Major League Baseball player weights and heights to compute mean, standard deviation, IQR outlier bounds, 95% confidence interval, and Pearson correlation.
 
-<PythonRunner
-  client:visible
-  title="Try it Yourself: MLB Stats, IQR Outliers & Correlation"
-  expectedOutput="Weight Mean: 193.35 lbs | Std Dev: 17.49 lbs
-Q1: 180.0 | Median: 188.0 | Q3: 209.5 | IQR: 29.5
-Outlier Bounds: [135.75, 253.75]
-95% Confidence Interval: 193.35 ± 8.19 lbs
-Height-Weight Correlation r: 0.321"
-  initialCode={`import math
+**MLB Stats, IQR Outliers & Correlation**
+
+```python
+import math
 
 weights = [180.0, 215.0, 210.0, 210.0, 188.0, 176.0, 209.0, 200.0, 231.0, 180.0,
            188.0, 180.0, 185.0, 160.0, 180.0, 185.0, 197.0, 189.0, 185.0, 219.0]
@@ -120,8 +123,18 @@ print(f"Weight Mean: {mean_w:.2f} lbs | Std Dev: {std_w:.2f} lbs")
 print(f"Q1: {q1} | Median: {median} | Q3: {q3} | IQR: {iqr}")
 print(f"Outlier Bounds: [{q1 - 1.5*iqr:.2f}, {q3 + 1.5*iqr:.2f}]")
 print(f"95% Confidence Interval: {mean_w:.2f} ± {ci_margin:.2f} lbs")
-print(f"Height-Weight Correlation r: {r:.3f}")`}
-/>
+print(f"Height-Weight Correlation r: {r:.3f}")
+```
+
+**Expected Output:**
+
+```text
+Weight Mean: 193.35 lbs | Std Dev: 17.49 lbs
+Q1: 180.0 | Median: 188.0 | Q3: 209.5 | IQR: 29.5
+Outlier Bounds: [135.75, 253.75]
+95% Confidence Interval: 193.35 ± 8.19 lbs
+Height-Weight Correlation r: 0.321
+```
 
 ---
 

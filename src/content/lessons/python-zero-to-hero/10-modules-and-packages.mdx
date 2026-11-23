@@ -41,17 +41,9 @@ Python's modular system provides four primary engineering advantages:
 3. **Reusability**: Code defined in a single module can be imported and executed across dozens of disparate scripts without duplicating implementation logic.
 4. **Scoping**: Modules establish independent **namespaces**. A variable or function named `add` inside an arithmetic module will never accidentally overwrite an `add` function inside a database collection module.
 
-### Formalizing Namespace Complexity
+### Why Splitting Code Into Modules Matters
 
-Mathematically, consider a monolithic program with $V$ identifier symbols (variables, classes, functions). If all symbols share a single global namespace, the potential interaction and collision space scales quadratically:
-
-$$\mathcal{C}_{\text{monolith}} = \mathcal{O}(V^2)$$
-
-When we decompose the program into $m$ distinct modules, each containing $V_k$ symbols such that $\sum_{k=1}^m V_k = V$, the internal intra-module interaction space drops significantly:
-
-$$\mathcal{C}_{\text{modular}} = \sum_{k=1}^m \mathcal{O}(V_k^2) + \mathcal{O}(E_{\text{inter}})$$
-
-where $E_{\text{inter}}$ represents the explicit, well-defined import interfaces connecting the modules ($E_{\text{inter}} \ll V^2$). Modular decomposition reduces coupling and makes codebases easier to maintain.
+Imagine dumping 5,000 lines of code and hundreds of variables into a single file: every variable can accidentally bump into every other variable, and changing one function feels risky. Splitting your program into separate modules—each with its own small set of variables and clear imports—keeps each piece self-contained and easy to reason about.
 
 ---
 
@@ -96,11 +88,7 @@ When the calling module executes an `import` statement, Python executes several 
 
 ### Namespaces and Dot Notation
 
-A **namespace** is a dictionary-like symbol table mapping variable and function names directly to objects in memory:
-
-$$\mathcal{N}: \text{identifier} \longrightarrow \text{PyObject}$$
-
-Every module maintains its own isolated namespace. To access an attribute, function, or class defined inside an imported module, use **dot notation** (`<module>.<name>`):
+A **namespace** is like a labeled dictionary that maps variable and function names to the objects in memory they point to. Every module keeps its own private namespace. To access an attribute, function, or class defined inside an imported module, use **dot notation** (`<module>.<name>`):
 
 ```python
 import adder
@@ -195,11 +183,7 @@ from datetime import datetime
 current_date = datetime(2026, 11, 10)
 ```
 
-Without separate namespaces, two different modules defining common functions like `parse()`, `clean()`, or `calculate()` would collide. When importing $k$ un-namespaced symbols into a namespace with $N$ possible slots, the mathematical probability of a name collision follows the birthday paradox:
-
-$$\mathcal{P}(\text{collision}) = 1 - \prod_{i=1}^{k-1} \left(1 - \frac{i}{N}\right)$$
-
-Namespaces guarantee that collision risk remains strictly $\mathcal{P} = 0$.
+Without separate namespaces, two different modules that both define common functions like `parse()`, `clean()`, or `calculate()` would clash and overwrite each other. Keeping each module in its own namespace guarantees zero name collisions.
 
 ---
 
@@ -250,11 +234,7 @@ The presence of `__init__.py` inside a folder informs Python that the directory 
 
 ### Dotted Module Names
 
-Modules residing inside a package are accessed using **dotted module notation**:
-
-$$\langle\text{package\_name}\rangle.\langle\text{module\_name}\rangle$$
-
-For example, to access `module1` inside `mypackage`:
+Modules inside a package are accessed using **dotted module notation** (`<package_name>.<module_name>`). For example, to access `module1` inside `mypackage`:
 
 ```python
 import mypackage.module1

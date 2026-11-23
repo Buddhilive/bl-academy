@@ -9,7 +9,6 @@ description: "Avoid the giant AGENTS.md trap, beat the Lost in the Middle curve,
 topic: "Modular Instructions"
 prerequisites: ["harness-engineering/04-repository-as-system-of-record"]
 ---
-import PythonRunner from '../../../components/islands/PythonRunner';
 import QuizCard from '../../../components/islands/QuizCard';
 import ColabButton from '../../../components/static/ColabButton.astro';
 
@@ -17,11 +16,13 @@ Once teams embrace `AGENTS.md`, they often fall into the **"add a rule" vicious 
 
 Why? Because of three measurable phenomena:
 1. **Lost in the Middle (Liu et al., 2023)**: LLMs recall instructions at the beginning and end of a prompt far better than rules buried in the middle (like a security constraint at line 300).
-2. **Low Instruction Signal-to-Noise Ratio ($\text{SNR}$)**: Loading 50 lines of deployment rules during a CSS bug fix dilutes attention:
+2. **Low Instruction Signal-to-Noise Ratio ($\text{SNR}$)**: Think of this like trying to hear a friend in a noisy coffee shop—loading 50 lines of deployment rules during a CSS bug fix drowns out the instructions that actually matter for task $t$:
 
 $$
 \text{SNR}(t) = \frac{|I_{\text{relevant}}(t)|}{|I_{\text{loaded}}(t)|}
 $$
+
+Here, $|I_{\text{relevant}}(t)|$ is the number of loaded rules useful for the current task $t$, and $|I_{\text{loaded}}(t)|$ is the total volume of instructions stuffed into the context window.
 
 3. **Contradiction & Bloat**: An ETH Zurich study showed bloated repository context files can raise inference cost by over 20% without improving success, whereas Lulla et al.'s paired study of concise `AGENTS.md` files on 124 tasks saw median runtime drop **28.64%** (98.57 s → 70.34 s) and output tokens drop **16.58%** (2,925 → 2,440).
 
@@ -67,15 +68,10 @@ Launch the companion notebook to calculate Instruction $\text{SNR}$, simulate Go
 
 Run this Python simulator to compare a 600-line monolithic `AGENTS.md` against a modular 80-line router + on-demand `SKILL.md` setup.
 
-<PythonRunner
-  client:visible
-  title="Try it Yourself: Instruction SNR & Antigravity Budget Check"
-  expectedOutput="Monolithic AGENTS.md: 600 lines | Task SNR: 0.12 (12.0%)
-Modular Router + Skill: 130 lines | Task SNR: 0.69 (69.2%)
-Budget Check (24KB cap / 20k tokens):
-  - root AGENTS.md (3200 bytes): INLINE
-  - legacy-dump.md (26500 bytes): TRUNCATED (>24KB cap)"
-  initialCode={`def calc_snr(relevant_lines: int, loaded_lines: int) -> float:
+**Instruction SNR & Antigravity Budget Check**
+
+```python
+def calc_snr(relevant_lines: int, loaded_lines: int) -> float:
     return relevant_lines / loaded_lines
 
 mono_snr = calc_snr(relevant_lines=72, loaded_lines=600)
@@ -89,8 +85,18 @@ files = [("root AGENTS.md", 3200), ("legacy-dump.md", 26500)]
 print("Budget Check (24KB cap / 20k tokens):")
 for name, size in files:
     status = "INLINE" if size <= MAX_FILE_BYTES else "TRUNCATED (>24KB cap)"
-    print(f"  - {name} ({size} bytes): {status}")`}
-/>
+    print(f"  - {name} ({size} bytes): {status}")
+```
+
+**Expected Output:**
+
+```text
+Monolithic AGENTS.md: 600 lines | Task SNR: 0.12 (12.0%)
+Modular Router + Skill: 130 lines | Task SNR: 0.69 (69.2%)
+Budget Check (24KB cap / 20k tokens):
+  - root AGENTS.md (3200 bytes): INLINE
+  - legacy-dump.md (26500 bytes): TRUNCATED (>24KB cap)
+```
 
 ---
 

@@ -9,7 +9,6 @@ description: "Visualize categorical proportions on the Audubon mushrooms dataset
 topic: "Visualizing Proportions"
 prerequisites: ["data-science-for-beginners/10-visualizing-distributions"]
 ---
-import PythonRunner from '../../../components/islands/PythonRunner';
 import QuizCard from '../../../components/islands/QuizCard';
 import ColabButton from '../../../components/static/ColabButton.astro';
 
@@ -50,25 +49,10 @@ When exploring the seven mushroom habitats (`Grasses`, `Leaves`, `Meadows`, `Pat
 
 Run this pure-Python proportion calculator to verify the Edible vs Poisonous split, 7 mushroom habitat percentages, and render a 100-cell ASCII Waffle chart of cap colors.
 
-<PythonRunner
-  client:visible
-  title="Try it Yourself: Mushroom Proportions & 10x10 Waffle Grid"
-  expectedOutput="=== Edible vs Poisonous ===
-Edible: 4208 (51.8%)
-Poisonous: 3916 (48.2%)
+**Mushroom Proportions & 10x10 Waffle Grid**
 
-=== 10x10 Cap Color Waffle (B=Brown, G=Gray, R=Red, Y=Yellow, W=White) ===
-B B B B B B B B B B
-B B B B B B B B B B
-B B B B B B B B G G
-G G G G G G G G G G
-G G G G G G G G G G
-G R R R R R R R R R
-R R R R R R R R R R
-Y Y Y Y Y Y Y Y Y Y
-Y Y Y Y W W W W W W
-W W W W W W W W W W"
-  initialCode={`edible, poisonous = 4208, 3916
+```python
+edible, poisonous = 4208, 3916
 total = edible + poisonous
 print("=== Edible vs Poisonous ===")
 print(f"Edible: {edible} ({edible / total * 100:.1f}%)")
@@ -82,8 +66,28 @@ for code, count in cap_pcts:
 
 print("\n=== 10x10 Cap Color Waffle (B=Brown, G=Gray, R=Red, Y=Yellow, W=White) ===")
 for r in range(10):
-    print(" ".join(cells[r * 10 : (r + 1) * 10]))`}
-/>
+    print(" ".join(cells[r * 10 : (r + 1) * 10]))
+```
+
+**Expected Output:**
+
+```text
+=== Edible vs Poisonous ===
+Edible: 4208 (51.8%)
+Poisonous: 3916 (48.2%)
+
+=== 10x10 Cap Color Waffle (B=Brown, G=Gray, R=Red, Y=Yellow, W=White) ===
+B B B B B B B B B B
+B B B B B B B B B B
+B B B B B B B B G G
+G G G G G G G G G G
+G G G G G G G G G G
+G R R R R R R R R R
+R R R R R R R R R R
+Y Y Y Y Y Y Y Y Y Y
+Y Y Y Y W W W W W W
+W W W W W W W W W W
+```
 
 ---
 

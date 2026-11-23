@@ -9,7 +9,6 @@ description: "Separate initialization from feature implementation to eliminate u
 topic: "Initialization Phase"
 prerequisites: ["harness-engineering/07-multi-session-continuity-and-context-anxiety"]
 ---
-import PythonRunner from '../../../components/islands/PythonRunner';
 import QuizCard from '../../../components/islands/QuizCard';
 import ColabButton from '../../../components/static/ColabButton.astro';
 
@@ -73,12 +72,10 @@ Launch the companion notebook to run an automated **Initialization Acceptance Ch
 
 Execute this Python script to validate the 5 Initialization Acceptance conditions and emit a valid Google Antigravity `SessionStart` JSON payload.
 
-<PythonRunner
-  client:visible
-  title="Try it Yourself: Initialization Gate & SessionStart Hook"
-  expectedOutput="Initialization Acceptance: PASSED (5/5 checks)
-SessionStart Hook Output: {'injectSteps': [{'systemMessage': {'systemMessage': 'Init verified: 1/1 smoke test passing. Continue from F01.'}}]}"
-  initialCode={`import json
+**Initialization Gate & SessionStart Hook**
+
+```python
+import json
 
 init_checks = {
     "setup_succeeds": True,
@@ -101,8 +98,15 @@ hook_response = {
         }
     ]
 }
-print("SessionStart Hook Output:", hook_response)`}
-/>
+print("SessionStart Hook Output:", hook_response)
+```
+
+**Expected Output:**
+
+```text
+Initialization Acceptance: PASSED (5/5 checks)
+SessionStart Hook Output: {'injectSteps': [{'systemMessage': {'systemMessage': 'Init verified: 1/1 smoke test passing. Continue from F01.'}}]}
+```
 
 ---
 

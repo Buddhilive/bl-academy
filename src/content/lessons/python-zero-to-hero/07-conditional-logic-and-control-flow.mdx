@@ -102,16 +102,16 @@ The complete boolean truth table is defined as follows:
 
 ### Operator Precedence Hierarchy
 
-When multiple operators appear in a single unparenthesized line of code, Python resolves them according to a strict mathematical hierarchy of precedence (from highest precedence to lowest):
+When multiple operators appear on the same line without parentheses, Python evaluates them in this order (highest priority to lowest):
 
-$$\text{1. Relational Comparators } (<, \le, ==, \ge, >, \neq) \quad \succ \quad \text{2. } \mathbf{not} \quad \succ \quad \text{3. } \mathbf{and} \quad \succ \quad \text{4. } \mathbf{or}$$
+1. **Comparisons** (`<`, `<=`, `==`, `>=`, `>`, `!=`)
+2. **`not`**
+3. **`and`**
+4. **`or`**
 
 #### Step-by-Step Expression Evaluation:
 
-Consider the expression:
-$$\left(\text{"A"} \neq \text{"A"}\right) \lor \neg\left(2 \ge 3\right)$$
-
-In Python code:
+Consider this Python expression:
 ```python
 result = ("A" != "A") or not (2 >= 3)
 ```
@@ -223,22 +223,14 @@ A fundamental mathematical application of conditional logic in loops is calculat
 
 ### Mathematical Definition of a Divisor
 
-A positive integer $d$ is defined as a factor (or divisor) of a positive integer $n$ if and only if dividing $n$ by $d$ leaves a remainder of zero:
-
-$$n \equiv 0 \pmod d \iff n \pmod d = 0$$
-
-In Python, the remainder of integer division is calculated using the **modulus operator `%`**. If `n % d == 0`, then `d` evenly divides `n`.
+A positive whole number `d` is a factor (or divisor) of `n` if dividing `n` by `d` leaves a remainder of zero. In Python, the **modulus operator `%`** gives you that remainder—so if `n % d == 0`, then `d` divides `n` evenly.
 
 ### The Factor Finding Algorithm
 
-To determine all factors of an integer $n$:
-1. Iterate an integer counter $i$ across the closed interval $[1, n]$ using `range(1, n + 1)`.
-2. For each iteration, test whether `n % i == 0`.
-3. If the condition is met, output or collect $i$.
-
-The computational complexity of this linear search across all values up to $n$ is linear with respect to the input magnitude:
-
-$$T(n) = \mathcal{O}(n)$$
+To find all factors of a number `n`:
+1. Loop a counter `i` from `1` up to `n` (inclusive) using `range(1, n + 1)`.
+2. For each number, check whether `n % i == 0`.
+3. If it does, print or collect `i`.
 
 ---
 
@@ -383,13 +375,11 @@ print(safe_divide(10, "two"))  # Error: Both arguments must be numeric types (in
 
 Beyond deterministic decision trees, conditional logic empowers programs to model probabilistic systems. A **Monte Carlo experiment** is an algorithmic technique that uses repeated pseudorandom sampling to estimate the probability of complex mathematical, physical, or social outcomes.
 
-Under the **Law of Large Numbers**, as the number of independent simulation trials $N$ grows toward infinity, the empirical sample mean $\bar{X}_N$ converges almost surely to the true expected theoretical value $\mathbb{E}[X]$:
+By the **Law of Large Numbers**, the more times you repeat a random experiment (say, 10,000 coin flips instead of 10), the closer your average result gets to the true expected probability.
 
-$$\lim_{N \to \infty} P\left(\left|\frac{1}{N}\sum_{i=1}^N X_i - \mu\right| < \varepsilon\right) = 1 \quad (\forall \varepsilon > 0)$$
-
-Python's built-in `random` module provides two essential functions for generating pseudorandom numbers:
-* **`random.randint(a, b)`**: Generates a discrete uniform random integer $k \in [a, b]$ such that $a \le k \le b$.
-* **`random.random()`**: Generates a continuous uniform random float in the half-open interval $[0.0, 1.0)$.
+Python's built-in `random` module provides two essential functions for generating random numbers:
+* **`random.randint(a, b)`**: Picks a random whole number between `a` and `b` (including both `a` and `b`).
+* **`random.random()`**: Picks a random decimal number from `0.0` up to (but not including) `1.0`.
 
 ### Simulation 1: The Fair Coin Toss
 
@@ -424,11 +414,7 @@ Suppose Candidate A is running for office in a municipality divided into three v
 
 To win the election, Candidate A must carry a majority—winning **at least 2 of the 3 regions**. What is the overall probability that Candidate A wins the election?
 
-We model each district election as an independent Bernoulli trial:
-$$r_i = \begin{cases} 1 & \text{if } U[0, 1) < p_i \\ 0 & \text{otherwise} \end{cases}$$
-
-The election is won if:
-$$\sum_{i=1}^3 r_i \ge 2$$
+For each district, we generate a random decimal between `0.0` and `1.0`. If it falls below the candidate's win chance (for example, `< 0.87` in Region 1), we count that district as a win (`1`); otherwise it's a loss (`0`). If the candidate wins **2 or more** of the 3 regions, they win the election!
 
 ---
 

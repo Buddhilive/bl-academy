@@ -9,7 +9,6 @@ description: "Scale Q-Learning to continuous state spaces using Gymnasium CartPo
 topic: "Gymnasium CartPole"
 prerequisites: ["ml-for-beginners/24-reinforcement-learning-and-q-learning"]
 ---
-import PythonRunner from '../../../components/islands/PythonRunner';
 import QuizCard from '../../../components/islands/QuizCard';
 import ColabButton from '../../../components/static/ColabButton.astro';
 
@@ -21,7 +20,7 @@ Peter's $8 \times 8$ grid board had only $64$ discrete states, so a NumPy array 
 
 Every step in `CartPole-v1` returns a 4D continuous observation vector (`[cart_pos, cart_vel, pole_angle, pole_ang_vel]`), a binary action (`0: Left`, `1: Right`), and a `+1.0` survival reward. The problem is formally **solved** when the agent averages **$\ge 195$** cumulative reward over 100 consecutive trials.
 
-To build a Q-Table over continuous numbers, we **discretize** observations using one of two methods:
+To build a Q-Table over continuous numbers—like grouping exact temperatures into "cold," "warm," and "hot" buckets so a cheat sheet can still look them up—we **discretize** observations using one of two methods:
 
 | Discretization Method | Implementation | Trade-off |
 | :--- | :--- | :--- |
@@ -44,16 +43,12 @@ Because some velocities are unbounded, we store `Q[(state, action)]` in a Python
 
 ## Try It Yourself: CartPole State Discretizer & Kinematics Q-Solver
 
-Let's run a pure-Python CartPole physics simulator and discrete dictionary Q-Learner right in your browser to see discretized state tuples and survival step improvements.
+Let's walk through a pure-Python CartPole physics simulator and discrete dictionary Q-Learner (or run it in the Colab notebook above) to see discretized state tuples and survival step improvements.
 
-<PythonRunner
-  client:visible
-  title="Try it Yourself: CartPole Discretization & Dictionary Q-Learning"
-  expectedOutput="Sample Continuous Obs: [0.034, -0.243, 0.027, 0.29] -> Discrete State: (0, 0, 0, 0)
-Random Policy Avg Steps (20 trials): 18.7
-Trained Dict Q-Policy Avg Steps (20 trials): 132.3
-Unique Discretized States Learned: 479"
-  initialCode={`import math
+**CartPole Discretization & Dictionary Q-Learning**
+
+```python
+import math
 import random
 
 def discretize(obs):
@@ -108,8 +103,17 @@ for ep in range(1200):
 
 q_avg = sum(run_trial(lambda o: 1 if Q.get((discretize(o), 1), 0.0) > Q.get((discretize(o), 0), 0.0) else 0) for _ in range(20)) / 20.0
 print(f"Trained Dict Q-Policy Avg Steps (20 trials): {q_avg:.1f}")
-print(f"Unique Discretized States Learned: {len({s for s, _ in Q})}")`}
-/>
+print(f"Unique Discretized States Learned: {len({s for s, _ in Q})}")
+```
+
+**Expected Output:**
+
+```text
+Sample Continuous Obs: [0.034, -0.243, 0.027, 0.29] -> Discrete State: (0, 0, 0, 0)
+Random Policy Avg Steps (20 trials): 18.7
+Trained Dict Q-Policy Avg Steps (20 trials): 132.3
+Unique Discretized States Learned: 479
+```
 
 ---
 

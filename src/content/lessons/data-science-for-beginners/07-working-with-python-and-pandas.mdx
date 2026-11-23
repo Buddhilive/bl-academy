@@ -9,7 +9,6 @@ description: "Master Pandas Series index alignment, DataFrame filtering, apply, 
 topic: "Python & Pandas DataFrames"
 prerequisites: ["data-science-for-beginners/06-working-with-nosql-data"]
 ---
-import PythonRunner from '../../../components/islands/PythonRunner';
 import QuizCard from '../../../components/islands/QuizCard';
 import ColabButton from '../../../components/static/ColabButton.astro';
 
@@ -70,23 +69,12 @@ print(resp.text)
 
 ## Try It Yourself: Time-Series Resampling & GroupBy Aggregation
 
-Run this pure-Python implementation of Pandas-style index alignment, row-wise `.apply(len)`, `groupby` aggregation, and medical abstract keyword counting right in your browser.
+Run this pure-Python implementation of Pandas-style index alignment, row-wise `.apply(len)`, `groupby` aggregation, and medical abstract keyword counting in Google Colab or locally.
 
-<PythonRunner
-  client:visible
-  title="Try it Yourself: Index Alignment, GroupBy & Text Extraction"
-  expectedOutput="=== Index-Aligned Weekly + Daily Sales ===
-Day 1 (Sun): 35 + 10 = 45
-Day 2 (Mon): 42 + 0 = 42
+**Index Alignment, GroupBy & Text Extraction**
 
-=== GroupBy LenB Summary ===
-Len 1: count=1, mean_A=1.00
-Len 4: count=3, mean_A=6.33
-Len 6: count=2, mean_A=6.00
-
-=== Extracted Medical Treatments ===
-dexamethasone: 2 | remdesivir: 2 | oxygen: 1"
-  initialCode={`# 1. Index-aligned Series addition with fill_value=0
+```python
+# 1. Index-aligned Series addition with fill_value=0
 daily_sales = {"2020-01-05": 35, "2020-01-06": 42}
 weekly_party = {"2020-01-05": 10}
 total = {d: daily_sales[d] + weekly_party.get(d, 0) for d in daily_sales}
@@ -113,8 +101,24 @@ abstracts = [
 targets = ["dexamethasone", "remdesivir", "oxygen"]
 counts = {t: sum(t in ab.lower() for ab in abstracts) for t in targets}
 print("\n=== Extracted Medical Treatments ===")
-print(" | ".join(f"{k}: {v}" for k, v in counts.items()))`}
-/>
+print(" | ".join(f"{k}: {v}" for k, v in counts.items()))
+```
+
+**Expected Output:**
+
+```text
+=== Index-Aligned Weekly + Daily Sales ===
+Day 1 (Sun): 35 + 10 = 45
+Day 2 (Mon): 42 + 0 = 42
+
+=== GroupBy LenB Summary ===
+Len 1: count=1, mean_A=1.00
+Len 4: count=3, mean_A=6.33
+Len 6: count=2, mean_A=6.00
+
+=== Extracted Medical Treatments ===
+dexamethasone: 2 | remdesivir: 2 | oxygen: 1
+```
 
 ---
 

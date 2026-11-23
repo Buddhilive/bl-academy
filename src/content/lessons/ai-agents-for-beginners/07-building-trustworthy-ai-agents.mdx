@@ -9,7 +9,6 @@ description: "Scale safe system prompts using the 4-Step Meta System Message Fra
 topic: "Tool Use & Agentic RAG"
 prerequisites: ["ai-agents-for-beginners/06-agentic-rag"]
 ---
-import PythonRunner from '../../../components/islands/PythonRunner';
 import QuizCard from '../../../components/islands/QuizCard';
 import ColabButton from '../../../components/static/ColabButton.astro';
 
@@ -64,15 +63,10 @@ Open the companion notebook to run both the **Meta System Message Generator** an
 
 Run this pure-Python sandbox to compile a structured Contoso Travel system prompt, block an instruction-hijack and turn-overload attack, and enforce a risk-tiered Human-in-the-Loop approval gate.
 
-<PythonRunner
-  client:visible
-  title="Try it Yourself: Trustworthy Agent Firewall & HITL Gate"
-  expectedOutput="[MetaPrompt] Compiled 4-section system prompt for Contoso Travel (Travel Agent Assistant)
-[Firewall] BLOCKED prompt injection: 'ignore previous instructions'
-[Firewall] BLOCKED turn overload: turn 6 > max_turns 5
-[HITL:LOW] 'lookup_flights' -> AUTO-APPROVED
-[HITL:HIGH] 'cancel_booking' -> PAUSED -> Human decision: APPROVE -> EXECUTED"
-  initialCode={`def compile_system_prompt(company: str, role: str, tasks: list[str]) -> str:
+**Trustworthy Agent Firewall & HITL Gate**
+
+```python
+def compile_system_prompt(company: str, role: str, tasks: list[str]) -> str:
     return f"Company: {company} | Role: {role} | Responsibilities: {', '.join(tasks)}"
 
 prompt = compile_system_prompt("Contoso Travel", "Travel Agent Assistant", ["Lookup", "Booking", "Preferences", "Alerts"])
@@ -97,8 +91,18 @@ def execute_with_hitl(action: str, risk: str, human_decision: str = "APPROVE"):
         print(f"[HITL:{risk}] '{action}' -> PAUSED -> Human decision: {human_decision} -> EXECUTED")
 
 execute_with_hitl("lookup_flights", "LOW")
-execute_with_hitl("cancel_booking", "HIGH", "APPROVE")`}
-/>
+execute_with_hitl("cancel_booking", "HIGH", "APPROVE")
+```
+
+**Expected Output:**
+
+```text
+[MetaPrompt] Compiled 4-section system prompt for Contoso Travel (Travel Agent Assistant)
+[Firewall] BLOCKED prompt injection: 'ignore previous instructions'
+[Firewall] BLOCKED turn overload: turn 6 > max_turns 5
+[HITL:LOW] 'lookup_flights' -> AUTO-APPROVED
+[HITL:HIGH] 'cancel_booking' -> PAUSED -> Human decision: APPROVE -> EXECUTED
+```
 
 ---
 

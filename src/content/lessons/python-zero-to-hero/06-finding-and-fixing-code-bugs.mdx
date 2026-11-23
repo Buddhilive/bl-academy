@@ -75,9 +75,7 @@ Other frequent runtime exceptions include `NameError` (referencing an undefined 
 
 ### 3. Logic Errors (The Invisible Bugs)
 
-A **logic error** occurs when a program contains valid syntax and executes to completion without raising an exception, but yields incorrect, unintended, or nonsensical output:
-
-$$\text{Program}(x) \downarrow \quad \text{and} \quad \text{Output}(x) \neq \text{Expected}(x)$$
+A **logic error** happens when a program has valid syntax and runs to the end without crashing, yet prints the wrong or unexpected result.
 
 Because the Python interpreter cannot know your intended algorithmic goal, it executes every instruction faithfully. These unexpected flaws are formally known as **bugs**, and the structured practice of detecting and resolving them is known as **debugging**.
 
@@ -395,13 +393,9 @@ def add_underscores(word):
 
 In Python, strings are **immutable objects**. When you execute `new_word = new_word + char + "_"`, Python cannot modify the string in place. Instead, it allocates a completely new string in memory and copies over all characters from both operands.
 
-For a string containing $n$ characters, repeated concatenation in a loop copies an increasing number of characters at each step:
+For a string with `n` characters, gluing characters one by one in a loop creates a brand-new copy of the growing string on every step. For short words like `"hello"`, you won't notice—but for tens of thousands of characters, all that extra copying slows things down dramatically.
 
-$$T(n) = \sum_{k=1}^n k = \frac{n(n + 1)}{2} = \mathcal{O}(n^2)$$
-
-For short strings like `"hello"`, this quadratic overhead is negligible. However, for large texts containing tens of thousands of characters, repeated string concatenation can cause noticeable performance degradation.
-
-The high-performance idiom for joining strings in Python uses the built-in `str.join()` method with a generator or list comprehension, achieving linear $\mathcal{O}(n)$ time complexity:
+The fast, Pythonic way to join strings in one pass is `str.join()`:
 
 ```python
 # High-performance linear O(n) alternative using join()

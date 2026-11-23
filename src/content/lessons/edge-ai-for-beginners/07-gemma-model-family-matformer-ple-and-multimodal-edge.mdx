@@ -9,7 +9,6 @@ description: "Master Google's Gemma 3 and mobile-first Gemma 3n architectures, M
 topic: "Gemma SLM Family"
 prerequisites: ["edge-ai-for-beginners/06-qwen-model-family-multilingual-and-thinking-modes"]
 ---
-import PythonRunner from '../../../components/islands/PythonRunner';
 import QuizCard from '../../../components/islands/QuizCard';
 import ColabButton from '../../../components/static/ColabButton.astro';
 
@@ -28,11 +27,12 @@ Derived from Gemini research (using distillation, RLHF, RLMF for math, and RLEF 
    $$
    P_{\text{effective}} = P_{\text{backbone}} + \alpha_{\text{sub}} \, P_{\text{FFN}}
    $$
+   In plain English, $P_{\text{backbone}}$ is the shared core that stays intact, while $\alpha_{\text{sub}}$ acts like a dial (e.g., `0.35` for E2B vs. `1.0` for E4B) that decides how much of the feed-forward network ($P_{\text{FFN}}$) to keep active.
 3. **Per-Layer Embeddings (PLE)**: Standard transformer embedding tables sit in precious GPU/NPU memory. PLE moves per-layer token-level conditioning tables into fast CPU DRAM/flash storage, reducing accelerator SRAM consumption by:
    $$
    \Delta M_{\text{SRAM}} = L \cdot V \cdot d_{\text{ple}} \cdot \frac{b}{8}
    $$
-   This allows Gemma 3n E2B and E4B to run with **2 GB to 3 GB** active accelerator footprints while supporting interleaved text, vision, and automatic speech recognition/translation (ASR/AST).
+   Here $L$ is the number of layers, $V$ is vocabulary size, $d_{\text{ple}}$ is the embedding width, and $b/8$ converts bits to bytes. Offloading those tables allows Gemma 3n E2B and E4B to run with **2 GB to 3 GB** active accelerator footprints while supporting interleaved text, vision, and automatic speech recognition/translation (ASR/AST).
 
 | Gemma Variant | Effective Footprint | Context Window | Modalities | Best Edge Target |
 | :--- | :--- | :--- | :--- | :--- |
@@ -58,13 +58,10 @@ Launch the companion notebook to calculate 5:1 sliding-window KV-cache savings a
 
 Run this pure-Python simulator to measure how Gemma 3's 5:1 local-to-global attention ratio compresses KV-cache memory at 32K and 128K tokens, and how MatFormer slicing scales active FFN parameters.
 
-<PythonRunner
-  client:visible
-  title="Try it Yourself: Gemma 3n MatFormer & 5:1 Sliding-Window Simulator"
-  expectedOutput="Context=32768 | Full Global KV=100.0% | Gemma 5:1 Hybrid KV=19.3%
-Context=131072 | Full Global KV=100.0% | Gemma 5:1 Hybrid KV=17.3%
-MatFormer E4B (alpha=1.00): 4.00B active | MatFormer E2B (alpha=0.35): 2.05B active"
-  initialCode={`def hybrid_kv_pct(num_layers, ctx_len, window=1024):
+**Gemma 3n MatFormer & 5:1 Sliding-Window Simulator**
+
+```python
+def hybrid_kv_pct(num_layers, ctx_len, window=1024):
     global_layers = num_layers // 6
     local_layers = num_layers - global_layers
     full_tokens = num_layers * ctx_len
@@ -79,8 +76,16 @@ backbone_b = 1.0
 ffn_b = 3.0
 e4b = backbone_b + 1.0 * ffn_b
 e2b = backbone_b + 0.35 * ffn_b
-print(f"MatFormer E4B (alpha=1.00): {e4b:.2f}B active | MatFormer E2B (alpha=0.35): {e2b:.2f}B active")`}
-/>
+print(f"MatFormer E4B (alpha=1.00): {e4b:.2f}B active | MatFormer E2B (alpha=0.35): {e2b:.2f}B active")
+```
+
+**Expected Output:**
+
+```text
+Context=32768 | Full Global KV=100.0% | Gemma 5:1 Hybrid KV=19.3%
+Context=131072 | Full Global KV=100.0% | Gemma 5:1 Hybrid KV=17.3%
+MatFormer E4B (alpha=1.00): 4.00B active | MatFormer E2B (alpha=0.35): 2.05B active
+```
 
 ---
 

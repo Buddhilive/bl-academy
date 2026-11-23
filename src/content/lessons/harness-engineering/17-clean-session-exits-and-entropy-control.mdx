@@ -9,7 +9,6 @@ description: "Prevent codebase entropy and AI slop with 5-dimension clean exits,
 topic: "Clean State & Entropy"
 prerequisites: ["harness-engineering/16-runtime-and-process-observability"]
 ---
-import PythonRunner from '../../../components/islands/PythonRunner';
 import QuizCard from '../../../components/islands/QuizCard';
 import ColabButton from '../../../components/static/ColabButton.astro';
 
@@ -38,7 +37,7 @@ In a 12-week agent project comparison, teams without cleanup saw build pass rate
 | **Idempotent Cleanup** | `rm -f /tmp/debug-*.log && pytest -q` | Safe to re-run on retries without side effects |
 | **Quality Document (`QUALITY.md`)** | Grade each module (`A`–`D`) across 5 health axes | Next session prioritizes lowest-graded module first |
 | **Monthly Harness Simplification** | Disable 1 harness rule/component and benchmark | Removes scaffolding absorbed by newer models |
-| **High-Throughput Merge** | Fast short-lived PRs when $C_{\text{fix}} < C_{\text{wait}}$ | Avoids human review bottlenecks on high-velocity repos |
+| **High-Throughput Merge** | Fast short-lived PRs when $C_{\text{fix}} < C_{\text{wait}}$ (fixing a rare bug later costs less than waiting on slow manual reviews) | Avoids human review bottlenecks on high-velocity repos |
 
 Remember the golden rule: **"clean up later" means never cleaning up.** When a session exits with red tests or stray temporary files, the next session spends its first thirty minutes fighting fires instead of shipping features. Enforcing clean state as part of your Definition of Done keeps your baseline trustworthy week after week.
 
@@ -60,14 +59,10 @@ Launch the companion notebook to run a **5-Dimension Clean State Gate**, score m
 
 Run this Python script to evaluate all five clean-state dimensions and rank modules in `QUALITY.md` so the next session fixes the weakest area first.
 
-<PythonRunner
-  client:visible
-  title="Try it Yourself: Clean State Gate & Quality Grader"
-  expectedOutput="Clean Exit Gate: BLOCKED (failed: no_debug_artifacts)
-Module Priority Queue (lowest grade first):
-  1. Payment Module: Grade C (score 2/5)
-  2. Auth Module: Grade A (score 5/5)"
-  initialCode={`clean_checks = {
+**Clean State Gate & Quality Grader**
+
+```python
+clean_checks = {
     "build_passes": True,
     "tests_pass": True,
     "progress_updated": True,
@@ -83,8 +78,17 @@ modules = [
 ]
 print("Module Priority Queue (lowest grade first):")
 for idx, (name, grade, score) in enumerate(sorted(modules, key=lambda x: x[2]), 1):
-    print(f"  {idx}. {name}: Grade {grade} (score {score}/5)")`}
-/>
+    print(f"  {idx}. {name}: Grade {grade} (score {score}/5)")
+```
+
+**Expected Output:**
+
+```text
+Clean Exit Gate: BLOCKED (failed: no_debug_artifacts)
+Module Priority Queue (lowest grade first):
+  1. Payment Module: Grade C (score 2/5)
+  2. Auth Module: Grade A (score 5/5)
+```
 
 ---
 

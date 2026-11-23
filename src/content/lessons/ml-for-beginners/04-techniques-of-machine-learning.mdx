@@ -9,7 +9,6 @@ description: "Master the 7-step classical ML engineering workflow: feature selec
 topic: "ML Techniques"
 prerequisites: ["ml-for-beginners/03-fairness-and-responsible-ml"]
 ---
-import PythonRunner from '../../../components/islands/PythonRunner';
 import QuizCard from '../../../components/islands/QuizCard';
 import ColabButton from '../../../components/static/ColabButton.astro';
 
@@ -73,14 +72,10 @@ Our goal is the sweet spot in between—low error on both training and unseen te
 
 Let's run a pure-Python experiment fitting three different polynomial complexity levels (Degree 1, Degree 2, and Degree 6) to noisy parabolic data, and compare their **Training RMSE** vs. **Testing RMSE** to spot underfitting and overfitting immediately.
 
-<PythonRunner
-  client:visible
-  title="Try it Yourself: Train/Test Split & Underfit vs. Overfit RMSE"
-  expectedOutput="Split -> Train: 6 samples, Test: 4 samples
-Degree 1 (Underfit)  -> Train RMSE: 1.79, Test RMSE: 1.58
-Degree 2 (Balanced)  -> Train RMSE: 0.15, Test RMSE: 0.13
-Degree 5 (Overfit)   -> Train RMSE: 0.00, Test RMSE: 4.33"
-  initialCode={`import math
+**Train/Test Split & Underfit vs. Overfit RMSE**
+
+```python
+import math
 
 # True underlying curve: y = 0.5*x^2 + 1.0 + small noise
 train_data = [(-3.0, 5.6), (-2.0, 2.8), (-1.0, 1.7), (0.0, 0.9), (1.5, 2.2), (3.0, 5.4)]
@@ -114,8 +109,17 @@ y_te = [y for _, y in test_data]
 
 print(f"Degree 1 (Underfit)  -> Train RMSE: {rmse(m1_train, y_tr):.2f}, Test RMSE: {rmse(m1_test, y_te):.2f}")
 print(f"Degree 2 (Balanced)  -> Train RMSE: {rmse(m2_train, y_tr):.2f}, Test RMSE: {rmse(m2_test, y_te):.2f}")
-print(f"Degree 5 (Overfit)   -> Train RMSE: {rmse(m5_train, y_tr):.2f}, Test RMSE: {rmse(m5_test, y_te):.2f}")`}
-/>
+print(f"Degree 5 (Overfit)   -> Train RMSE: {rmse(m5_train, y_tr):.2f}, Test RMSE: {rmse(m5_test, y_te):.2f}")
+```
+
+**Expected Output:**
+
+```text
+Split -> Train: 6 samples, Test: 4 samples
+Degree 1 (Underfit)  -> Train RMSE: 1.79, Test RMSE: 1.58
+Degree 2 (Balanced)  -> Train RMSE: 0.15, Test RMSE: 0.13
+Degree 5 (Overfit)   -> Train RMSE: 0.00, Test RMSE: 4.33
+```
 
 ---
 

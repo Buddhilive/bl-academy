@@ -9,7 +9,6 @@ description: "Bridge vision and language with Contrastive Language-Image Pre-Tra
 topic: "Multimodal AI and CLIP"
 prerequisites: ["ai-for-beginners/24-ai-ethics-and-responsible-ai"]
 ---
-import PythonRunner from '../../../components/islands/PythonRunner';
 import QuizCard from '../../../components/islands/QuizCard';
 import ColabButton from '../../../components/static/ColabButton.astro';
 
@@ -28,6 +27,8 @@ Throughout this course, we studied Computer Vision (Module 3) and Natural Langua
 For a batch of $N$ `(image, text)` pairs, CLIP computes an $N \times N$ matrix of scaled **Cosine Similarities** and optimizes a symmetric **contrastive loss** (InfoNCE) that pulls matching pairs $(\mathbf{I}_i, \mathbf{T}_i)$ together along the diagonal while pushing all mismatched pairs $(\mathbf{I}_i, \mathbf{T}_j)_{i \neq j}$ apart:
 
 $$\text{sim}(\mathbf{I}_i, \mathbf{T}_j) = \frac{\mathbf{I}_i \cdot \mathbf{T}_j}{\|\mathbf{I}_i\|_2 \, \|\mathbf{T}_j\|_2} \cdot e^{\tau}$$
+
+In plain English: the fraction measures the **Cosine Similarity** (directional alignment) between image vector $\mathbf{I}_i$ and caption vector $\mathbf{T}_j$, and multiplying by $e^{\tau}$ is a learned **temperature scaling** factor that sharpens how strongly matching pairs stand out from mismatches.
 
 | Multimodal Capability | How CLIP Solves It |
 | :--- | :--- |
@@ -49,15 +50,10 @@ Unlike standard GANs that sample a single global vector, **VQGAN** (Vector-Quant
 
 Let's simulate a 2-image, 3-prompt CLIP embedding space in pure Python, compute the cosine similarity logits, and classify an image zero-shot with Softmax!
 
-<PythonRunner
-  client:visible
-  title="Try it Yourself: CLIP Zero-Shot Image Classification"
-  expectedOutput="Zero-Shot Prompt Probabilities for Image 0:
-  'a photo of a cat': 0.9948
-  'a photo of a dog': 0.0047
-  'a photo of a car': 0.0005
-Predicted Class: 'a photo of a cat'"
-  initialCode={`import math
+**CLIP Zero-Shot Image Classification**
+
+```python
+import math
 
 # Normalized 3D shared multimodal embeddings: [feline, canine, vehicle]
 img_0 = [0.98, 0.18, 0.05]
@@ -84,8 +80,18 @@ print("Zero-Shot Prompt Probabilities for Image 0:")
 for label, p in probs.items():
     print(f"  '{label}': {p:.4f}")
 best_label = max(probs, key=probs.get)
-print(f"Predicted Class: '{best_label}'")`}
-/>
+print(f"Predicted Class: '{best_label}'")
+```
+
+**Expected Output:**
+
+```text
+Zero-Shot Prompt Probabilities for Image 0:
+  'a photo of a cat': 0.9948
+  'a photo of a dog': 0.0047
+  'a photo of a car': 0.0005
+Predicted Class: 'a photo of a cat'
+```
 
 ---
 

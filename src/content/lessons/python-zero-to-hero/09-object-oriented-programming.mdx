@@ -22,20 +22,10 @@ While procedural paradigms work well for simple scripts, data processing pipelin
 
 **Object-Oriented Programming (OOP)** solves this by bundling related **properties (state/data)** and **behaviors (methods/actions)** into cohesive, self-contained computational units called **objects**.
 
-Conceptually, an object-oriented program operates like an **assembly line**:
-* Each component on the line is an **object**.
-* Each object holds specific materials (**attributes**).
-* Each object carries out dedicated operations (**methods**) to transform inputs, manage its own internal state, and communicate with other objects.
-
-Mathematically, an object instance can be formalized as an encapsulated state machine:
-
-$$\mathcal{O} = \langle S, \mathcal{A}, \mathcal{M}, s_0 \rangle$$
-
-where:
-* $S$ denotes the internal state space defined by instance attributes,
-* $\mathcal{A}$ represents the visible attribute interfaces,
-* $\mathcal{M}$ represents state-transition operators (methods), and
-* $s_0 \in S$ denotes the initial state constructed upon instantiation.
+Conceptually, an object-oriented program works like an **assembly line**:
+* Each unit on the line is an **object**.
+* Each object holds its own data (**attributes**, like color or mileage).
+* Each object has built-in actions (**methods**, like drive or honk) to update its own state and interact with other objects.
 
 ---
 
@@ -327,11 +317,9 @@ print(isinstance(miles, Bulldog))            # Output: False (Separate sibling b
 
 ### Geometric Hierarchy: `Rectangle` and `Square`
 
-In geometry, a square is a special case of a rectangle where both dimensions are equal:
+In geometry, a square is simply a special kind of rectangle where the length and width are equal (`length = width = side_length`).
 
-$$\text{length} = \text{width} = s$$
-
-By leveraging `super().__init__()`, the `Square` subclass forwards its single side length to both dimensions of the parent `Rectangle`:
+By calling `super().__init__()`, the `Square` subclass passes its single `side_length` to both dimensions of the parent `Rectangle`:
 
 ```python
 class Rectangle:
@@ -355,11 +343,7 @@ print(f"Square area: {sq.area()}")           # Output: Square area: 16
 print(f"Square perimeter: {sq.perimeter()}") # Output: Square perimeter: 16
 ```
 
-Mathematically, the area and perimeter formulas seamlessly hold without rewriting any arithmetic:
-
-$$A_{\text{rect}} = l \cdot w \implies A_{\text{sq}}(s) = s \cdot s = s^2$$
-
-$$\mathcal{P}_{\text{rect}} = 2(l + w) \implies \mathcal{P}_{\text{sq}}(s) = 2(s + s) = 4s$$
+Because a square's sides are equal, both `.area()` (`side * side`) and `.perimeter()` (`2 * (side + side) = 4 * side`) automatically work without rewriting any math!
 
 ---
 

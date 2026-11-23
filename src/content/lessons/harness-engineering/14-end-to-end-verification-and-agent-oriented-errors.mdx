@@ -9,13 +9,12 @@ description: "Catch cross-component defects with E2E verification, enforce OpenA
 topic: "E2E Verification"
 prerequisites: ["harness-engineering/13-preventing-premature-victory-and-confidence-calibration"]
 ---
-import PythonRunner from '../../../components/islands/PythonRunner';
 import QuizCard from '../../../components/islands/QuizCard';
 import ColabButton from '../../../components/static/ColabButton.astro';
 
 Imagine an app where the UI layer, the service layer, and the database layer each pass 100% of their mocked unit tests—yet clicking **Export** fails because of a relative vs. absolute path mismatch, a missing progress event, and an unclosed file handle. Unit tests are systematically blind to **component boundary defects**.
 
-The **Testing Adequacy Gradient** states that $\text{Defects}_{\text{Unit}} \subseteq \text{Defects}_{\text{Integration}} \subseteq \text{Defects}_{\text{E2E}}$. Even better: when an agent knows end-to-end verification will run, its coding behavior shifts—it designs cleaner interfaces, respects layer boundaries, and handles error paths upfront.
+The **Testing Adequacy Gradient** states that $\text{Defects}_{\text{Unit}} \subseteq \text{Defects}_{\text{Integration}} \subseteq \text{Defects}_{\text{E2E}}$. In plain English, unit tests only catch a subset of the bugs that integration tests catch, and integration tests only catch a subset of what real end-to-end tests catch—just like bench-testing a car's engine and wheels separately cannot prove the car drives safely down the road. Even better: when an agent knows end-to-end verification will run, its coding behavior shifts—it designs cleaner interfaces, respects layer boundaries, and handles error paths upfront.
 
 ---
 
@@ -64,13 +63,10 @@ Launch the companion notebook to run an AST **Layered Domain Architecture** lint
 
 Run this Python AST checker to enforce `Types -> Repo -> Service -> UI` import direction and emit actionable agent-oriented fix instructions.
 
-<PythonRunner
-  client:visible
-  title="Try it Yourself: Agent-Oriented Layer Linter"
-  expectedOutput="ERROR: src/repo/store.py imports 'services.auth' (upward dependency)
-WHY: Layered Domain Architecture enforces Types -> Config -> Repo -> Service -> Runtime -> UI.
-FIX: Inject an AuthProvider interface into Repo instead of importing Service directly."
-  initialCode={`import ast
+**Agent-Oriented Layer Linter**
+
+```python
+import ast
 
 LAYER_ORDER = {"types": 0, "config": 1, "repo": 2, "services": 3, "runtime": 4, "ui": 5}
 
@@ -90,8 +86,16 @@ def check_layer_imports(file_layer: str, source_code: str) -> list[str]:
 
 bad_repo_code = "from services.auth import get_current_user"
 for msg in check_layer_imports("repo", bad_repo_code):
-    print(msg)`}
-/>
+    print(msg)
+```
+
+**Expected Output:**
+
+```text
+ERROR: src/repo/store.py imports 'services.auth' (upward dependency)
+WHY: Layered Domain Architecture enforces Types -> Config -> Repo -> Service -> Runtime -> UI.
+FIX: Inject an AuthProvider interface into Repo instead of importing Service directly.
+```
 
 ---
 

@@ -9,7 +9,6 @@ description: "Learn what classical machine learning is, how AI, ML, Deep Learnin
 topic: "ML Foundations"
 prerequisites: ["data-science-for-beginners/20-data-science-in-the-wild"]
 ---
-import PythonRunner from '../../../components/islands/PythonRunner';
 import QuizCard from '../../../components/islands/QuizCard';
 import ColabButton from '../../../components/static/ColabButton.astro';
 
@@ -42,6 +41,11 @@ Machine learning systems mirror that same loop mathematically. Given input featu
 
 $$\hat{y} = f_\theta(X), \qquad \min_\theta \frac{1}{n} \sum_{i=1}^{n} \mathcal{L}\big(y_i, f_\theta(x_i)\big)$$
 
+In plain English, think of this like tuning a recipe:
+- **$X$ and $y_i$**: The input clues (like temperature and humidity) and the real historical answer for example $i$.
+- **$f_\theta(X)$ and $\hat{y}$**: Your model's rulebook (shaped by adjustable knobs $\theta$) and its predicted guess $\hat{y}$ ("y-hat").
+- **$\mathcal{L}(\cdot)$ (Loss)**: A penalty scorecard that measures how far the guess $f_\theta(x_i)$ landed from the true answer $y_i$. Averaging that penalty across all $n$ examples and minimizing it ($\min_\theta$) is how the model "learns."
+
 Why would a business choose this over a hand-coded rules engine? Imagine building a fraud detector or medical triage tool. A rules engine breaks the moment a new variable interacts with five existing thresholds. A learned model adapts automatically whenever you feed it fresh, representative data.
 
 ---
@@ -61,7 +65,7 @@ Today, classical ML powers critical workflows across nearly every domain:
 
 ## Setting Up Your Google Colab & Scikit-Learn Workspace
 
-Every lesson in this course pairs our instant **In-Browser Python Sandbox** with a self-contained **Google Colab** notebook so you never have to fight local Python version conflicts.
+Every lesson in this course includes runnable Python examples alongside a self-contained **Google Colab** notebook so you never have to fight local Python version conflicts.
 
 <ColabButton
   course="ml-for-beginners"
@@ -75,16 +79,12 @@ To verify your Colab environment, open the notebook above and run the first cell
 
 ## Try It Yourself: Hardcoded Rules vs. Learned Thresholds
 
-Let's run a quick experiment right in your browser. Suppose we want to classify whether a day is a high-risk wildfire day based on temperature ($^\circ\text{C}$) and relative humidity ($\%$). Watch how a rigid hardcoded rule misses diagonal interactions, while a simple data-driven linear boundary learns the true relationship from labeled examples.
+Let's walk through a quick experiment (you can copy this into Python or run it in the Colab notebook above). Suppose we want to classify whether a day is a high-risk wildfire day based on temperature ($^\circ\text{C}$) and relative humidity ($\%$). Watch how a rigid hardcoded rule misses diagonal interactions, while a simple data-driven linear boundary learns the true relationship from labeled examples.
 
-<PythonRunner
-  client:visible
-  title="Try it Yourself: Rules Engine vs. Learned ML Boundary"
-  expectedOutput="Hardcoded Rule Accuracy: 66.7% (4/6)
-Learned ML Boundary: w_temp=0.12, w_humid=-0.08, bias=-1.20
-Learned ML Accuracy: 100.0% (6/6)
-New Day (Temp=33C, Humid=22%): Risk=HIGH (score=1.00)"
-  initialCode={`# Labeled observations: (temp_c, humidity_pct, is_high_risk)
+**Rules Engine vs. Learned ML Boundary**
+
+```python
+# Labeled observations: (temp_c, humidity_pct, is_high_risk)
 dataset = [
     (36, 18, 1),
     (34, 25, 1),
@@ -111,8 +111,17 @@ print(f"Learned ML Accuracy: {ml_correct / len(dataset) * 100:.1f}% ({ml_correct
 new_t, new_h = 33, 22
 score = w_temp * new_t + w_humid * new_h + bias
 label = "HIGH" if score > 0 else "LOW"
-print(f"New Day (Temp={new_t}C, Humid={new_h}%): Risk={label} (score={score:.2f})")`}
-/>
+print(f"New Day (Temp={new_t}C, Humid={new_h}%): Risk={label} (score={score:.2f})")
+```
+
+**Expected Output:**
+
+```text
+Hardcoded Rule Accuracy: 66.7% (4/6)
+Learned ML Boundary: w_temp=0.12, w_humid=-0.08, bias=-1.20
+Learned ML Accuracy: 100.0% (6/6)
+New Day (Temp=33C, Humid=22%): Risk=HIGH (score=1.00)
+```
 
 ---
 

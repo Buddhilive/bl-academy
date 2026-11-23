@@ -9,7 +9,6 @@ description: "Eliminate premature completion declarations using 3-layer terminat
 topic: "Verification Gates"
 prerequisites: ["harness-engineering/12-project-04-runtime-feedback-and-architecture-guards"]
 ---
-import PythonRunner from '../../../components/islands/PythonRunner';
 import QuizCard from '../../../components/islands/QuizCard';
 import ColabButton from '../../../components/static/ColabButton.astro';
 
@@ -59,12 +58,10 @@ Launch the companion notebook to run a **3-Layer Termination Gate** and a **Goog
 
 Execute this Python script to see how a Google Antigravity `Stop` hook blocks a premature exit when Layer 3 (E2E) fails and allows exit only when all three layers pass.
 
-<PythonRunner
-  client:visible
-  title="Try it Yourself: 3-Layer Gate & Antigravity Stop Hook"
-  expectedOutput="Run 1 (E2E failed): {'decision': 'continue', 'reason': 'Layer 3 E2E failed: POST /reset returned 500'}
-Run 2 (All 3 layers pass): {'decision': 'allow'}"
-  initialCode={`def stop_hook(layers: dict[str, bool], continuation_active: bool) -> dict:
+**3-Layer Gate & Antigravity Stop Hook**
+
+```python
+def stop_hook(layers: dict[str, bool], continuation_active: bool) -> dict:
     if not layers["L1_static"]:
         return {"decision": "continue", "reason": "Layer 1 static check failed"}
     if not layers["L2_runtime"]:
@@ -74,8 +71,15 @@ Run 2 (All 3 layers pass): {'decision': 'allow'}"
     return {"decision": "allow"}
 
 print("Run 1 (E2E failed):", stop_hook({"L1_static": True, "L2_runtime": True, "L3_e2e": False}, False))
-print("Run 2 (All 3 layers pass):", stop_hook({"L1_static": True, "L2_runtime": True, "L3_e2e": True}, False))`}
-/>
+print("Run 2 (All 3 layers pass):", stop_hook({"L1_static": True, "L2_runtime": True, "L3_e2e": True}, False))
+```
+
+**Expected Output:**
+
+```text
+Run 1 (E2E failed): {'decision': 'continue', 'reason': 'Layer 3 E2E failed: POST /reset returned 500'}
+Run 2 (All 3 layers pass): {'decision': 'allow'}
+```
 
 ---
 

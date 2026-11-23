@@ -9,7 +9,6 @@ description: "Unfold your Project 07 loop into an explicit execution graph with 
 topic: "Hands-On Project 08"
 prerequisites: ["harness-engineering/21-graph-engineering-nodes-edges-shared-state-and-routing"]
 ---
-import PythonRunner from '../../../components/islands/PythonRunner';
 import QuizCard from '../../../components/islands/QuizCard';
 import ColabButton from '../../../components/static/ColabButton.astro';
 
@@ -61,12 +60,10 @@ Launch the companion notebook to run the complete **Project 08 Parallel Fan-Out/
 
 Execute this Python script to simulate parallel verification fan-in, layer-targeted rollback (`research` vs. `implement`), and a Human-in-the-Loop approval gate.
 
-<PythonRunner
-  client:visible
-  title="Try it Yourself: Project 08 Fan-In & HITL Router"
-  expectedOutput="Fan-In [tests=True, review=False, defect_layer='research'] -> Rollback to: research
-Fan-In [tests=True, review=True, defect_layer='none'] -> Paused at HITL -> Approved -> Merge Complete"
-  initialCode={`def route_after_fan_in(tests_ok: bool, review_ok: bool, defect_layer: str) -> str:
+**Project 08 Fan-In & HITL Router**
+
+```python
+def route_after_fan_in(tests_ok: bool, review_ok: bool, defect_layer: str) -> str:
     if tests_ok and review_ok:
         return "hitl_approval"
     return "research" if defect_layer == "research" else "implement"
@@ -76,8 +73,15 @@ print(f"Fan-In [tests=True, review=False, defect_layer='research'] -> Rollback t
 
 r2 = route_after_fan_in(True, True, "none")
 human_decision = "Approved"
-print(f"Fan-In [tests=True, review=True, defect_layer='none'] -> Paused at HITL -> {human_decision} -> Merge Complete")`}
-/>
+print(f"Fan-In [tests=True, review=True, defect_layer='none'] -> Paused at HITL -> {human_decision} -> Merge Complete")
+```
+
+**Expected Output:**
+
+```text
+Fan-In [tests=True, review=False, defect_layer='research'] -> Rollback to: research
+Fan-In [tests=True, review=True, defect_layer='none'] -> Paused at HITL -> Approved -> Merge Complete
+```
 
 ---
 

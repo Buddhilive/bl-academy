@@ -9,7 +9,6 @@ description: "Master core data ethics principles, 10 real-world ethical challeng
 topic: "Data Ethics & Governance"
 prerequisites: ["data-science-for-beginners/01-defining-data-science"]
 ---
-import PythonRunner from '../../../components/islands/PythonRunner';
 import QuizCard from '../../../components/islands/QuizCard';
 import ColabButton from '../../../components/static/ColabButton.astro';
 
@@ -82,18 +81,10 @@ On the legal side, governance teams must comply with regional data protection la
 
 Before shipping a dataset or model, you should check both re-identification risk and subgroup error parity. Run the pure-Python auditor below to detect a $k=1$ unique quasi-identifier (the exact flaw behind the Netflix/IMDb linkage) and compute subgroup error disparity.
 
-<PythonRunner
-  client:visible
-  title="Try it Yourself: k-Anonymity & Subgroup Fairness Auditor"
-  expectedOutput="=== k-Anonymity Privacy Check ===
-Equivalence class counts: {('94107', 29): 2, ('10001', 42): 1}
-Privacy Alert: 1 record(s) fail k>=2 anonymity!
+**k-Anonymity & Subgroup Fairness Auditor**
 
-=== Subgroup Error Rate Audit ===
-Group A False Negative Rate: 10.0%
-Group B False Negative Rate: 35.0%
-Disparity Gap: 25.0% (Action Required: > 10% threshold)"
-  initialCode={`from collections import Counter
+```python
+from collections import Counter
 
 records = [
     {"zip": "94107", "age": 29, "diagnosis": "Flu"},
@@ -124,8 +115,21 @@ gap = abs(fnr_b - fnr_a)
 print("\n=== Subgroup Error Rate Audit ===")
 print(f"Group A False Negative Rate: {fnr_a:.1f}%")
 print(f"Group B False Negative Rate: {fnr_b:.1f}%")
-print(f"Disparity Gap: {gap:.1f}% (Action Required: > 10% threshold)")`}
-/>
+print(f"Disparity Gap: {gap:.1f}% (Action Required: > 10% threshold)")
+```
+
+**Expected Output:**
+
+```text
+=== k-Anonymity Privacy Check ===
+Equivalence class counts: {('94107', 29): 2, ('10001', 42): 1}
+Privacy Alert: 1 record(s) fail k>=2 anonymity!
+
+=== Subgroup Error Rate Audit ===
+Group A False Negative Rate: 10.0%
+Group B False Negative Rate: 35.0%
+Disparity Gap: 25.0% (Action Required: > 10% threshold)
+```
 
 ---
 
