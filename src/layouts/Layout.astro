@@ -4,26 +4,70 @@ import 'katex/dist/katex.min.css';
 interface Props {
 	title?: string;
 	description?: string;
+	canonicalUrl?: string;
+	ogType?: 'website' | 'article';
+	ogImage?: string;
+	noindex?: boolean;
 }
 
 const {
-	title = 'BuddhiLive Academy',
+	title = 'BuddhiAI Academy',
 	description = 'Interactive zero-backend programming academy with live client-side Python execution.',
+	canonicalUrl,
+	ogType = 'website',
+	ogImage,
+	noindex = false,
 } = Astro.props;
+
+const siteBase = Astro.site ?? new URL('https://academy.buddhilive.com');
+const resolvedCanonical = canonicalUrl ?? new URL(Astro.url.pathname, siteBase).toString();
+const resolvedOgImage = ogImage ? new URL(ogImage, siteBase).toString() : undefined;
+const adsenseClient =
+	import.meta.env.PUBLIC_ADSENSE_CLIENT_ID ||
+	import.meta.env.PUBLIC_ADSENSE_CLIENT ||
+	'ca-pub-9435032914308988';
 ---
 <!doctype html>
 <html lang="en" class="dark">
 	<head>
 		<meta charset="utf-8" />
-		<meta name="viewport" content="width=device-width" />
-		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+		<meta name="viewport" content="width=device-width, initial-scale=1" />
 		<link rel="icon" href="/favicon.ico" />
 		<meta name="generator" content={Astro.generator} />
 		<title>{title}</title>
 		<meta name="description" content={description} />
+		<link rel="canonical" href={resolvedCanonical} />
+		{noindex && <meta name="robots" content="noindex, nofollow" />}
+
+		<meta property="og:site_name" content="BuddhiAI Academy" />
+		<meta property="og:type" content={ogType} />
+		<meta property="og:title" content={title} />
+		<meta property="og:description" content={description} />
+		<meta property="og:url" content={resolvedCanonical} />
+		{resolvedOgImage && <meta property="og:image" content={resolvedOgImage} />}
+
+		<meta name="twitter:card" content={resolvedOgImage ? 'summary_large_image' : 'summary'} />
+		<meta name="twitter:title" content={title} />
+		<meta name="twitter:description" content={description} />
+		{resolvedOgImage && <meta name="twitter:image" content={resolvedOgImage} />}
+
+		{adsenseClient && !noindex && (
+			<script
+				async
+				src={`https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${adsenseClient}`}
+				crossorigin="anonymous"
+			/>
+		)}
+
 		<slot name="head" />
 	</head>
-	<body class="bg-neutral-950 text-neutral-100 min-h-screen antialiased">
+	<body class="bg-neutral-950 text-neutral-100 min-h-screen antialiased overflow-x-clip">
+		<a
+			href="#main-content"
+			class="sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-50 focus:px-4 focus:py-2.5 focus:rounded-md focus:bg-[#A7452A] focus:text-white focus:text-sm focus:font-semibold focus:shadow-lg focus:outline-none focus:ring-2 focus:ring-[#E07A5F]"
+		>
+			Skip to main content
+		</a>
 		<slot />
 	</body>
 </html>

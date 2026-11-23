@@ -1,0 +1,131 @@
+---
+title: "Building Generative AI Chat Applications: System Message Framework, Domain Guardrails & Perplexity/Cosine Metrics"
+track: "generative-ai-for-beginners"
+category: "Module 2: Prompt Engineering & Text/Chat Applications"
+order: 8
+difficulty: "intermediate"
+xp: 80
+description: "Build stateful GenAI chat applications with the 4-part System Message Framework, 4-dimension accessibility, Perplexity and F1 metrics, and embedding cosine similarity."
+topic: "Chat Applications"
+prerequisites: ["generative-ai-for-beginners/07-building-text-generation-applications"]
+---
+import PythonRunner from '../../../components/islands/PythonRunner';
+import QuizCard from '../../../components/islands/QuizCard';
+import ColabButton from '../../../components/static/ColabButton.astro';
+
+Unlike single-shot text generation, a **chat application** maintains multi-turn state across `system`, `user`, and `model` messages so learners or customers can ask follow-up questions naturally. Earlier rule-based chatbots could only follow rigid decision trees; modern GenAI chat apps combine stateful memory with a well-crafted **System Message**, accessible UX, and continuous quantitative monitoring. In this lesson, we'll design production system messages, measure chat quality with **Perplexity** and **$F_1$**, and compute **Cosine Similarity** across word and news-article embeddings.
+
+---
+
+## The 4-Part System Message Design Framework
+
+Every reliable chat assistant starts with a structured `system_instruction` built from four pillars:
+
+1. **Profile & Boundaries**: Define the target audience, core capabilities, and explicit limitations (e.g., *"You are a medical triage assistant; never prescribe medication and always advise consulting a clinician"*).
+2. **Output Format**: Lock structure (Markdown tables, 3-bullet summaries, JSON schemas).
+3. **Few-Shot Conversational Examples**: Show 1–2 ideal user/assistant exchanges.
+4. **Behavioral Guardrails**: Enforce tone, citation rules, and **4-Dimension Accessibility** (Visual screen-reader clarity, Auditory captions, Motor keyboard navigation, Cognitive plain-language pacing).
+
+---
+
+## Operational & ML Evaluation Metrics for Chat Apps
+
+Shipping a chat app requires tracking both infrastructure health and model quality:
+
+| Metric | Formula / Definition | What It Catches |
+| :--- | :--- | :--- |
+| **Precision & Recall** | $P = \frac{\text{TP}}{\text{TP}+\text{FP}}, \quad R = \frac{\text{TP}}{\text{TP}+\text{FN}}$ | False alarms vs. missed intents in ticket routing |
+| **$F_1$ Score** | $F_1 = \frac{2 \cdot P \cdot R}{P + R}$ | Balanced intent classification accuracy |
+| **Perplexity (PPL)** | $\text{PPL}(W) = \exp\!\left(-\frac{1}{N}\sum_{i=1}^{N} \log P(w_i \mid w_{<i})\right)$ | Model uncertainty on domain language (lower is better) |
+| **Uptime & Latency** | Availability % and Time-to-First-Token (ms) | Infrastructure degradation and cold starts |
+| **CSAT & Anomaly Rate** | Thumbs-up/down ratio and error-rate spikes | Silent quality drift after prompt or model updates |
+
+---
+
+## Multi-Task Chat & Embeddings in Action
+
+A single chat/embedding SDK (`google-genai`) handles four classic enterprise tasks cleanly:
+- **Summarization (`tl;dr`)**: Condensing dense NLP abstracts into one crisp sentence.
+- **Zero-Shot Classification**: Routing `"one of the keys on my laptop keyboard broke"` directly to `Hardware Support` among `[Pricing, Hardware Support, Software Support]`.
+- **Few-Shot Product Naming**: Generating brand names from seed pairs (`HomeShaker, Fit Shaker` $\rightarrow$ omni-fit adaptable shoes).
+- **Semantic Embeddings & Cosine Similarity**: Measuring semantic closeness between words (`automobile` vs. `vehicle` vs. `dinosaur`) and news articles (comparing two soccer transfer stories—Carlos Alberto's move to Werder Bremen and David Beckham's LA Galaxy transfer—against an unrelated human-interest story about Youssif meeting Spider-Man).
+
+---
+
+## Open the Companion Colab Notebook
+
+Launch the notebook below to run multi-turn `client.chats.create()` conversations and compute real `gemini-embedding-001` cosine similarities across words and news articles.
+
+<ColabButton
+  course="generative-ai-for-beginners"
+  notebook="08-building-chat-applications.ipynb"
+  runtime="Free Tier CPU + Gemini API"
+/>
+
+---
+
+## Try It Yourself: Perplexity, $F_1$ & Embedding Cosine Similarity
+
+Execute this pure-Python sandbox to compute $F_1$, Perplexity, and the exact cosine similarity matrix across `automobile`/`vehicle`/`dinosaur` and the three news articles.
+
+<PythonRunner
+  client:visible
+  title="Try it Yourself: Chat Metrics (F1, Perplexity) & Cosine Similarity"
+  expectedOutput="Precision: 0.857 | Recall: 0.750 | F1: 0.800
+Perplexity (Confident Model): 1.25 | Perplexity (Uncertain Model): 4.50
+Word Sim(automobile, vehicle): 0.997 | Sim(automobile, dinosaur): 0.103
+Article Sim(Carlos Alberto, Beckham): 0.997 | Sim(Carlos Alberto, Spider-Man): 0.208"
+  initialCode={`import math
+
+# 1. Precision, Recall, F1
+tp, fp, fn = 12, 2, 4
+precision = tp / (tp + fp)
+recall = tp / (tp + fn)
+f1 = 2 * precision * recall / (precision + recall)
+print(f"Precision: {precision:.3f} | Recall: {recall:.3f} | F1: {f1:.3f}")
+
+# 2. Perplexity comparison
+def perplexity(probs):
+    avg_neg_log = -sum(math.log(p) for p in probs) / len(probs)
+    return math.exp(avg_neg_log)
+
+print(f"Perplexity (Confident Model): {perplexity([0.85, 0.80, 0.75]):.2f} | Perplexity (Uncertain Model): {perplexity([0.25, 0.20, 0.22]):.2f}")
+
+# 3. Cosine Similarity on semantic feature vectors
+def cosine_sim(a, b):
+    dot = sum(x * y for x, y in zip(a, b))
+    na = math.sqrt(sum(x * x for x in a))
+    nb = math.sqrt(sum(y * y for y in b))
+    return dot / (na * nb)
+
+words = {
+    "automobile": [0.92, 0.88, 0.05],
+    "vehicle":    [0.90, 0.85, 0.15],
+    "dinosaur":   [0.05, 0.04, 0.99],
+}
+print(f"Word Sim(automobile, vehicle): {cosine_sim(words['automobile'], words['vehicle']):.3f} | Sim(automobile, dinosaur): {cosine_sim(words['automobile'], words['dinosaur']):.3f}")
+
+articles = {
+    "carlos_alberto": [0.91, 0.86, 0.10],
+    "beckham":        [0.88, 0.92, 0.18],
+    "spiderman":      [0.10, 0.08, 0.98],
+}
+print(f"Article Sim(Carlos Alberto, Beckham): {cosine_sim(articles['carlos_alberto'], articles['beckham']):.3f} | Sim(Carlos Alberto, Spider-Man): {cosine_sim(articles['carlos_alberto'], articles['spiderman']):.3f}")`}
+/>
+
+---
+
+## Check Your Understanding
+
+<QuizCard
+  client:visible
+  question="You are comparing three news articles using dense embeddings: Article A (Carlos Alberto soccer transfer), Article B (David Beckham soccer transfer), and Article C (Youssif meeting Spider-Man). Which pair will have the highest cosine similarity?"
+  options={[
+    "Article A and Article C, because both mention a person's name.",
+    "Article A and Article B, because both share the semantic domain of professional soccer transfers.",
+    "Article B and Article C, because both take place in California.",
+    "All three pairs will have a cosine similarity of exactly 0.0."
+  ]}
+  correctAnswer={1}
+  explanation="Dense embeddings map semantically related topics (professional soccer, player transfers, club contracts) into nearby regions of vector space, yielding high cosine similarity between Articles A and B."
+/>

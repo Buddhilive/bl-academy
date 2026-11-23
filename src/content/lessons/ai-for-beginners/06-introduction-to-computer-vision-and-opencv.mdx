@@ -1,0 +1,115 @@
+---
+title: "Introduction to Computer Vision & Image Processing with OpenCV"
+track: "ai-for-beginners"
+category: "Module 3: Computer Vision"
+order: 7
+difficulty: "beginner"
+xp: 65
+description: "Master digital image tensors, RGB/BGR/HSV color spaces, OpenCV thresholding and geometric transforms, Braille extraction, and motion detection."
+topic: "Computer Vision and OpenCV"
+prerequisites: ["ai-for-beginners/05-deep-learning-frameworks-and-overfitting"]
+---
+import PythonRunner from '../../../components/islands/PythonRunner';
+import QuizCard from '../../../components/islands/QuizCard';
+import ColabButton from '../../../components/static/ColabButton.astro';
+
+**Computer Vision** teaches machines to extract high-level meaning from digital images and video—whether classifying objects, tracking motion, reading Braille pages, or reconstructing 3D scenes. Before we pass pixels into deep Convolutional Neural Networks, classical computer vision libraries like **OpenCV** (`cv2`) give us fast, deterministic tools to clean, normalize, and analyze images.
+
+---
+
+## Digital Images as Tensors & Color Spaces
+
+To a computer, an image is simply a multi-dimensional array of pixel intensities in `[0, 255]` (for 8-bit images) or `[0.0, 1.0]` (normalized floats):
+
+- **Grayscale image**: A 2D matrix of shape $(H, W)$.
+- **Color image**: A 3D tensor of shape $(H, W, 3)$ with Red, Green, and Blue channels.
+
+> **OpenCV Gotcha:** `cv2.imread()` loads color images in **BGR** (Blue-Green-Red) channel order instead of standard **RGB**. Always convert with `cv2.cvtColor(img, cv2.COLOR_BGR2RGB)` before displaying images in Matplotlib or feeding them to PyTorch models.
+
+---
+
+## Essential OpenCV Operations
+
+| Operation | OpenCV Function | Purpose |
+| :--- | :--- | :--- |
+| **Color Conversion** | `cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)` | Convert BGR to RGB, Grayscale, or HSV (Hue-Saturation-Value). |
+| **Resizing** | `cv2.resize(img, (W, H), interpolation=cv2.INTER_LANCZOS4)` | Standardize input dimensions before neural network inference. |
+| **Blurring / Denoising** | `cv2.GaussianBlur(img, (3, 3), 0)` | Smooth sensor noise before edge or threshold detection. |
+| **Thresholding** | `cv2.threshold` / `cv2.adaptiveThreshold` | Convert lighting-uneven photos (like Braille pages) into crisp binary masks. |
+| **Geometric Warping** | `cv2.warpAffine` / `cv2.warpPerspective` | Correct rotation, skew, or 4-point camera perspective distortion. |
+
+---
+
+## Classical Applications: Braille & Motion Detection
+
+1. **Pre-Processing Braille Pages**: By combining adaptive thresholding, Gaussian blur, and morphological erosion/dilation, you can isolate raised Braille dots into clean binary grids ready for character classification.
+2. **Video Motion Detection via Frame Differencing**: If a camera is stationary, subtracting consecutive grayscale frames $|I_t - I_{t-1}|$ highlights moving objects while canceling static backgrounds.
+3. **Optical Flow**: Estimates per-pixel velocity vectors $(u, v)$ across frames—either **Sparse Optical Flow** (Lucas–Kanade tracking corners/edges) or **Dense Optical Flow** (Farnebäck computing a full 2D motion field). Notice how even without deep neural networks, classical computer vision can solve real-time gesture and movement tracking with minimal compute.
+
+<ColabButton
+  course="ai-for-beginners"
+  notebook="06-introduction-to-computer-vision-and-opencv.ipynb"
+  runtime="Free Tier CPU"
+/>
+
+---
+
+## Hands-On: Grayscale & Frame-Difference Motion Detector
+
+Let's implement RGB-to-Grayscale luminance conversion ($Y = 0.299R + 0.587G + 0.114B$) and frame-difference motion detection in pure Python on two synthetic $3 \times 3$ video frames.
+
+<PythonRunner
+  client:visible
+  title="Try it Yourself: Luminance Conversion & Motion Detection"
+  expectedOutput="Frame 1 Grayscale: [[0, 0, 0], [0, 200, 0], [0, 0, 0]]
+Frame 2 Grayscale: [[0, 0, 0], [0, 0, 200], [0, 0, 0]]
+Motion Pixels Changed (>50): 2
+Motion Detected: True"
+  initialCode={`def to_gray(rgb_grid):
+    return [
+        [round(0.299 * r + 0.587 * g + 0.114 * b) for (r, g, b) in row]
+        for row in rgb_grid
+    ]
+
+# Synthetic 3x3 RGB video frames: a bright white object moves right by 1 pixel
+frame1_rgb = [
+    [(0, 0, 0), (0, 0, 0), (0, 0, 0)],
+    [(0, 0, 0), (200, 200, 200), (0, 0, 0)],
+    [(0, 0, 0), (0, 0, 0), (0, 0, 0)],
+]
+frame2_rgb = [
+    [(0, 0, 0), (0, 0, 0), (0, 0, 0)],
+    [(0, 0, 0), (0, 0, 0), (200, 200, 200)],
+    [(0, 0, 0), (0, 0, 0), (0, 0, 0)],
+]
+
+g1 = to_gray(frame1_rgb)
+g2 = to_gray(frame2_rgb)
+diff_count = sum(
+    1 for r in range(3) for c in range(3) if abs(g2[r][c] - g1[r][c]) > 50
+)
+
+print(f"Frame 1 Grayscale: {g1}")
+print(f"Frame 2 Grayscale: {g2}")
+print(f"Motion Pixels Changed (>50): {diff_count}")
+print(f"Motion Detected: {diff_count > 0}")`}
+/>
+
+---
+
+## Check Your Understanding
+
+<QuizCard
+  client:visible
+  question="You load an image in Python using cv2.imread('cat.jpg') and plot it directly with matplotlib.pyplot.imshow(), but the cat's blue eyes look orange. Why?"
+  options={[
+    "Matplotlib only supports 8-bit grayscale images.",
+    "OpenCV loads color channels in BGR order by default, whereas Matplotlib expects RGB order.",
+    "Gaussian blur inverted the pixel values.",
+    "JPEG compression removes the green channel."
+  ]}
+  correctAnswer={1}
+  explanation="OpenCV stores images in Blue-Green-Red (BGR) order, swapping the Red and Blue channels when plotted by RGB tools like Matplotlib or PIL unless converted via cv2.COLOR_BGR2RGB."
+/>
+
+Next, let's see how neural networks learn visual filters automatically in **Lesson 07: Convolutional Neural Networks (CNNs)**.

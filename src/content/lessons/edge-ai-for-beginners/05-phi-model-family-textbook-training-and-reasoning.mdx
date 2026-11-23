@@ -1,0 +1,116 @@
+---
+title: "The Phi SLM Family: Textbook-Quality Data, Dense Reasoning & Edge Variants"
+track: "edge-ai-for-beginners"
+category: "Module 2: Small Language Model (SLM) Families & Architectures"
+order: 5
+difficulty: "intermediate"
+xp: 65
+description: "Explore Microsoft's Phi SLM family from Phi-1 to Phi-4-mini, textbook-quality synthetic training data, Grouped-Query Attention (GQA), and edge reasoning variants."
+topic: "Phi SLM Family"
+prerequisites: ["edge-ai-for-beginners/04-edge-deployment-hardware-npus-gpus-and-jetson"]
+---
+import PythonRunner from '../../../components/islands/PythonRunner';
+import QuizCard from '../../../components/islands/QuizCard';
+import ColabButton from '../../../components/static/ColabButton.astro';
+
+You may know that for years, the dominant rule in language modeling was brute scale: scrape more terabytes of raw web pages and train larger parameter counts. The **Phi model family** proved a very different point. A compact 3.8B or 14B model trained on curated, textbook-quality synthetic data can match or outperform models ten times its size on coding, mathematics, and logical reasoning.
+
+Here is an overview of how the Phi family evolved, why its training philosophy works, and how to pick the right variant for edge deployment.
+
+---
+
+## Evolution of the Phi Family
+
+Every generation of Phi pushed higher reasoning density per parameter:
+
+| Model Variant | Parameters | Context Window | Primary Edge Strength |
+| :--- | :--- | :--- | :--- |
+| **Phi-1 / Phi-1.5** | 1.3B | 2K tokens | Python coding and textbook-quality synthetic pretraining |
+| **Phi-2** | 2.7B | 2K tokens | Commonsense reasoning and lightweight local prototyping |
+| **Phi-3.5-mini** | 3.8B | 128K tokens | Long-context edge RAG and multilingual tasks |
+| **Phi-4-mini-instruct** | 3.8B | 128K tokens | Math, code, function calling, and Grouped-Query Attention |
+| **Phi-4-mini-reasoning** | 3.8B | 128K tokens | Multi-step chain-of-thought and inference-time scaling |
+| **Phi-4-multimodal** | 5.6B | 128K tokens | Unified text, vision, and speech processing on-device |
+
+---
+
+## Core Design Principles: Why Data Quality Beats Raw Volume
+
+Three engineering choices separate Phi from traditional web-trained models:
+
+1. **Textbook-Quality Synthetic Data**: Instead of ingesting noisy HTML dumps, Phi pretraining synthesizes structured exercises, step-by-step derivations, and annotated code explanations that mirror university textbooks.
+2. **Edge-of-Capability Curriculum**: Training samples are filtered to challenge the model right at the boundary of its current reasoning skill, maximizing gradient signal per token.
+3. **Grouped-Query Attention (GQA) & 200K Vocabulary**: `Phi-4-mini-instruct` pairs a 200K multilingual tokenizer with GQA (sharing 8 key-value heads across 24 query heads), slashing KV-cache memory by 3x compared to standard Multi-Head Attention (MHA):
+
+$$
+\text{KV Cache Ratio} = \frac{n_{\text{kv}}}{n_{\text{query}}} = \frac{8}{24} = \frac{1}{3}
+$$
+
+And because reasoning chains consume extra decode tokens, **inference-time scaling** lets a 3.8B model trade a few hundred extra local decode milliseconds for dramatic accuracy gains on math and logic benchmarks.
+
+---
+
+## Open the Companion Colab Notebook
+
+Launch the companion notebook to compute exact GQA KV-cache savings and run 4-bit quantized `Phi-4-mini-instruct` reasoning on a free Google Colab T4 GPU.
+
+<ColabButton
+  course="edge-ai-for-beginners"
+  notebook="05-phi-model-family-textbook-training-and-reasoning.ipynb"
+  runtime="Colab Free T4 GPU"
+/>
+
+---
+
+## Try It Yourself: Textbook Curriculum Filter & GQA KV-Cache Profiler
+
+Run this pure-Python simulator to score candidate training samples for "textbook-quality" density and calculate the GQA memory savings at a 32K context length.
+
+<PythonRunner
+  client:visible
+  title="Try it Yourself: Phi Curriculum Scorer & GQA KV-Cache Profiler"
+  expectedOutput="Selected Samples (score >= 0.75):
+  - [0.92] Step-by-step matrix factorization proof with Python check
+  - [0.85] Edge quantization derivation with edge-case unit tests
+Rejected Samples: 1
+MHA KV Cache (32K ctx): 12288.0 MB | Phi-4-mini GQA (32K ctx): 4096.0 MB | Savings: 66.7%"
+  initialCode={`samples = [
+    ("Step-by-step matrix factorization proof with Python check", 0.92),
+    ("Unfiltered forum thread with broken HTML tags", 0.28),
+    ("Edge quantization derivation with edge-case unit tests", 0.85),
+]
+
+print("Selected Samples (score >= 0.75):")
+rejected = 0
+for text, score in samples:
+    if score >= 0.75:
+        print(f"  - [{score:.2f}] {text}")
+    else:
+        rejected += 1
+print(f"Rejected Samples: {rejected}")
+
+def kv_cache_mb(layers, kv_heads, head_dim, seq_len, bytes_per_elem=2):
+    return (2 * layers * kv_heads * head_dim * seq_len * bytes_per_elem) / (1024 ** 2)
+
+mha = kv_cache_mb(32, 24, 128, 32768)
+gqa = kv_cache_mb(32, 8, 128, 32768)
+savings = (1.0 - gqa / mha) * 100.0
+print(f"MHA KV Cache (32K ctx): {mha:.1f} MB | Phi-4-mini GQA (32K ctx): {gqa:.1f} MB | Savings: {savings:.1f}%")`}
+/>
+
+---
+
+## Check Your Understanding
+
+<QuizCard
+  client:visible
+  question="How does Grouped-Query Attention (GQA) in Phi-4-mini-instruct improve long-context edge deployment?"
+  options={[
+    "It removes positional embeddings so context length becomes infinite.",
+    "It shares fewer key-value heads across multiple query heads, reducing KV-cache memory by 3x without sacrificing reasoning quality.",
+    "It forces all weights into 32-bit floating-point precision.",
+    "It offloads every attention layer to a remote cloud server."
+  ]}
+  correctAnswer={1}
+  explanation="Sharing 8 KV heads across 24 query heads shrinks the KV cache to one-third of standard Multi-Head Attention, enabling 32K-128K context windows on memory-constrained edge devices."
+/>

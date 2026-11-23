@@ -1,0 +1,113 @@
+---
+title: "Containerized SLM Serving: High-Throughput vLLM, PagedAttention & ONNX Runtime GenAI"
+track: "edge-ai-for-beginners"
+category: "Module 3: Local & Containerized SLM Deployment, Quantization & Runtimes"
+order: 10
+difficulty: "intermediate"
+xp: 70
+description: "Deploy containerized SLMs like Phi-4-mini using vLLM with PagedAttention, Ollama Docker Compose, and ONNX Runtime GenAI with Prometheus observability."
+topic: "Containerized SLM Serving"
+prerequisites: ["edge-ai-for-beginners/09-slm-deployment-foundations-ollama-and-local-serving"]
+---
+import PythonRunner from '../../../components/islands/PythonRunner';
+import QuizCard from '../../../components/islands/QuizCard';
+import ColabButton from '../../../components/static/ColabButton.astro';
+
+You may know that running a single chat session on your laptop is easy, yet serving twenty concurrent users on an edge server quickly stalls if every request pre-allocates a 32K contiguous KV cache. Containerized SLM serving solves this with **PagedAttention** in **vLLM**, declarative **Ollama** containers, and lightweight **ONNX Runtime GenAI** pipelines.
+
+Here is an overview of how these three containerized architectures compare when deploying a 3.8B reasoning model such as `Phi-4-mini-instruct`.
+
+---
+
+## Comparing Three Containerized SLM Runtimes
+
+| Runtime | Core Mechanism | Memory Efficiency | Best Deployment Scenario |
+| :--- | :--- | :--- | :--- |
+| **vLLM** | PagedAttention + continuous batching | Near-zero internal KV fragmentation (< 4%) | High-throughput multi-user GPU edge servers |
+| **Ollama (Docker)** | `llama.cpp` GGUF + REST wrapper | Low idle footprint, single-command pull | Rapid edge prototyping and single-tenant services |
+| **ONNX Runtime GenAI** | Compiled ONNX graph + EP abstraction | Minimal C++/Python runtime overhead | Cross-platform CPU, NPU, and embedded Linux/Windows |
+
+---
+
+## How PagedAttention Eliminates KV-Cache Waste
+
+In naive serving, each request reserves a contiguous memory slab for its maximum possible `max_model_len` (for example, 4,096 tokens), even if the prompt and reply only use 350 tokens. Over 60 to 80 percent of GPU VRAM sits idle due to internal fragmentation.
+
+**vLLM** borrows virtual memory paging from operating systems: it divides the KV cache into fixed-size **blocks** (for example, 16 tokens per block) allocated on demand. Memory utilization efficiency improves to:
+
+$$
+\eta_{\text{paged}} = \frac{M_{\text{active\_tokens}}}{M_{\text{allocated\_blocks}}}
+$$
+
+reducing fragmentation from ~60 percent down to **under 4 percent** and allowing higher batch concurrency on a single T4 or L4 GPU:
+
+```bash
+docker run --runtime nvidia --gpus all -p 8000:8000 \
+  vllm/vllm-openai:latest \
+  --model microsoft/Phi-4-mini-instruct \
+  --max-model-len 4096 --gpu-memory-utilization 0.85
+```
+
+For production hardening, always run containers with `--read-only`, drop Linux capabilities (`--cap-drop=ALL`), and scrape `/metrics` with Prometheus to alert on `vllm:num_requests_waiting` and `vllm:gpu_cache_usage_perc`.
+
+---
+
+## Open the Companion Colab Notebook
+
+Launch the companion notebook to export a compact transformer to ONNX and benchmark `onnxruntime.InferenceSession` directly inside Google Colab.
+
+<ColabButton
+  course="edge-ai-for-beginners"
+  notebook="10-containerized-slm-deployment-vllm-and-onnx-runtime.ipynb"
+  runtime="Colab Free T4 GPU"
+/>
+
+---
+
+## Try It Yourself: PagedAttention vs. Contiguous KV-Cache Simulator
+
+Run this Python simulator to compare VRAM utilization when serving 4 concurrent requests of varying lengths under contiguous pre-allocation versus 16-token PagedAttention blocks.
+
+<PythonRunner
+  client:visible
+  title="Try it Yourself: PagedAttention vs. Contiguous KV-Cache Simulator"
+  expectedOutput="Active Tokens Across 4 Requests: 1150
+Contiguous Allocation (max_len=4096): 16384 slots | Utilization: 7.0%
+PagedAttention (block_size=16):       1168 slots | Utilization: 98.5%
+Memory Saved by PagedAttention: 92.9%"
+  initialCode={`import math
+
+request_lengths = [120, 480, 90, 460]
+max_model_len = 4096
+block_size = 16
+
+active_tokens = sum(request_lengths)
+contiguous_slots = len(request_lengths) * max_model_len
+paged_slots = sum(math.ceil(toks / block_size) * block_size for toks in request_lengths)
+
+contig_util = (active_tokens / contiguous_slots) * 100.0
+paged_util = (active_tokens / paged_slots) * 100.0
+saved_pct = (1.0 - paged_slots / contiguous_slots) * 100.0
+
+print(f"Active Tokens Across 4 Requests: {active_tokens}")
+print(f"Contiguous Allocation (max_len={max_model_len}): {contiguous_slots} slots | Utilization: {contig_util:.1f}%")
+print(f"PagedAttention (block_size={block_size}):       {paged_slots} slots | Utilization: {paged_util:.1f}%")
+print(f"Memory Saved by PagedAttention: {saved_pct:.1f}%")`}
+/>
+
+---
+
+## Check Your Understanding
+
+<QuizCard
+  client:visible
+  question="What problem does PagedAttention in vLLM solve for containerized SLM deployments?"
+  options={[
+    "It removes the need for Docker containers.",
+    "It partitions the KV cache into fixed-size non-contiguous blocks allocated on demand, eliminating internal fragmentation and enabling larger concurrent batches.",
+    "It converts GGUF files into PNG images.",
+    "It forces all concurrent requests to use the exact same prompt."
+  ]}
+  correctAnswer={1}
+  explanation="By allocating fixed-size KV-cache blocks only as tokens are generated rather than pre-allocating max_model_len per request, PagedAttention eliminates >90% of wasted KV memory."
+/>

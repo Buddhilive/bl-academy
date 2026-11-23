@@ -1,4 +1,4 @@
-# Buddhilive Academy
+# BuddhiAI Academy
 
 > Free, high-performance, bite-sized interactive STEM learning platform covering Python, Data Science, AI, Mathematics, and Computer Science (inspired by Brilliant.org).
 
@@ -6,7 +6,7 @@
 
 ## 1. Executive Summary & Vision
 
-Buddhilive Academy empowers learners with intuitive, active STEM education. Lessons combine concise conceptual storytelling, rigorous mathematical foundations, and immediate hands-on code execution directly within the browser.
+BuddhiAI Academy empowers learners with intuitive, active STEM education. Lessons combine concise conceptual storytelling, rigorous mathematical foundations, and immediate hands-on code execution directly within the browser.
 
 ### Key Architectural Constraints
 - **Zero-Backend / 100% Client-Side Execution**: All dynamic code runs client-side via **Pyodide (WebAssembly)** inside an isolated Web Worker (`/src/workers/pyodide.worker.ts`). There is zero remote code execution server to manage, scale, or secure.

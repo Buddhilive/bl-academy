@@ -1,0 +1,154 @@
+---
+title: "What's Changed in MCP 2026-07-28: Stateless Protocol, Multi-Round-Trip Elicitation & Extensions"
+track: "mcp-for-beginners"
+category: "Module 1: MCP Foundations, Specification 2026-07-28 & Security"
+order: 3
+difficulty: "intermediate"
+xp: 70
+description: "Learn the MCP 2026-07-28 stateless protocol core, _meta capability propagation, Mcp-Method headers, ttlMs caching, InputRequiredResult elicitation, and Extensions."
+topic: "MCP 2026-07-28 Spec"
+prerequisites: ["mcp-for-beginners/02-core-concepts-primitives-and-json-rpc"]
+---
+import PythonRunner from '../../../components/islands/PythonRunner';
+import QuizCard from '../../../components/islands/QuizCard';
+import ColabButton from '../../../components/static/ColabButton.astro';
+
+The **MCP `2026-07-28` specification** is the biggest architectural shift since the protocol launched. Earlier revisions (`2025-11-25`) required a stateful `initialize` / `initialized` handshake and an `Mcp-Session-Id` header that pinned every client to a single server instance. That forced horizontal deployments to maintain sticky load-balancer routing and shared session stores.
+
+MCP `2026-07-28` fixes this by making the protocol **stateless at the transport layer**, formalizing a versioned **Extensions framework**, and introducing a clear 12-month deprecation lifecycle for legacy features.
+
+---
+
+## Stateless Protocol Core (`2025-11-25` vs. `2026-07-28`)
+
+In `2026-07-28`, every HTTP request is completely self-contained. Any backend replica behind a load balancer can serve any request.
+
+| Capability | Legacy (`2025-11-25`) | Current (`2026-07-28`) |
+| :--- | :--- | :--- |
+| **Session Startup** | Mandatory `initialize` / `initialized` handshake | Removed (`server/discover` optional up front) |
+| **Session Pinning** | `Mcp-Session-Id` header on every call | Removed; protocol layer is 100% stateless |
+| **Client Metadata** | Sent once during `initialize` | Sent per request inside `params._meta` |
+| **Application State** | Hidden in transport session store | Explicit domain handles (`basket_id`, `job_id`) |
+| **HTTP Routing** | Inspect JSON body to route | Required `Mcp-Method` and `Mcp-Name` headers |
+| **Missing Resource** | Custom `-32002` error code | Standard JSON-RPC `-32602` (Invalid Params) |
+
+### Explicit State Handles & Multi-Round-Trip Elicitation
+
+Removing protocol sessions does not mean your application cannot be stateful. Instead of hiding state in an `Mcp-Session-Id` header, a tool mints an explicit handle (like `basket_id: "b_123"`), and the model passes that handle back as a normal argument on subsequent `tools/call` requests.
+
+Similarly, when a server needs user confirmation mid-call without holding an SSE stream open, it returns an `InputRequiredResult` containing `inputRequests` and an encoded `requestState` payload:
+
+$$\text{requestState} = \text{BASE64}\left(\text{JSON}(\{\text{step}, \text{pending\_action}\})\right)$$
+
+The client gathers the user's answer and retries the call with `inputResponses` plus the echoed `requestState`, allowing any stateless server replica to resume seamlessly.
+
+---
+
+## Routable, Cacheable, Traceable & Extensible
+
+Three HTTP metadata additions make stateless MCP traffic easy to operate at scale:
+
+1. **Routing Headers**: `Mcp-Method` (e.g., `tools/call`) and `Mcp-Name` (e.g., `search`) are required on Streamable HTTP requests so API gateways can route and rate-limit without parsing JSON bodies. Servers reject requests where headers and body disagree.
+2. **List Caching**: `tools/list` and `resources/read` results include `ttlMs` and `cacheScope` (`"private"` or `"public"`) modeled on HTTP `Cache-Control`.
+3. **W3C Trace Context**: `_meta` carries `traceparent`, `tracestate`, and `baggage` for end-to-end OpenTelemetry tracing.
+
+### First-Class Extensions & Feature Deprecations
+
+Extensions now use reverse-DNS IDs negotiated via an `extensions` capability map. Two official extensions ship with `2026-07-28`: **MCP Apps** (sandboxed `ui://` interactive HTML interfaces) and **Tasks** (`tasks/get`, `tasks/update`, `tasks/cancel`, removing session-bound `tasks/list`).
+
+Meanwhile, four older features are marked **Deprecated** with at least 12 months before removal:
+
+| Deprecated Feature | Modern `2026-07-28` Replacement |
+| :--- | :--- |
+| **Roots** | Explicit tool parameters, resource URIs, or server configuration |
+| **Sampling** | Direct integration with LLM provider APIs (`google-genai`) |
+| **Logging** | `stderr` for `stdio` transports; OpenTelemetry for structured observability |
+| **Dynamic Client Registration (DCR)** | Client ID Metadata Documents (CIMD) |
+
+---
+
+## Open the Companion Colab Notebook
+
+Launch the companion notebook to test `2026-07-28` stateless `_meta` envelopes, header-body mismatch rejection, `ttlMs` cache evaluation, and multi-round-trip `InputRequiredResult` elicitation.
+
+<ColabButton
+  course="mcp-for-beginners"
+  notebook="03-mcp-2026-07-28-stateless-protocol-and-extensions.ipynb"
+  runtime="Free Tier CPU"
+/>
+
+---
+
+## Try It Yourself: Stateless `2026-07-28` Router & Elicitation Engine
+
+Run this pure-Python sandbox to simulate two stateless worker replicas handling an `Mcp-Method`/`Mcp-Name` validated request, a `ttlMs` cache check, and a 2-round `InputRequiredResult` confirmation flow.
+
+<PythonRunner
+  client:visible
+  title="Try it Yourself: 2026-07-28 Stateless Router & Multi-Round-Trip Elicitation"
+  expectedOutput="Header mismatch rejected: -32602 Header Mcp-Name='other' != body 'delete_files'
+Replica-1 -> InputRequiredResult: Delete 3 files? (state_len=40)
+Replica-2 -> Resumed & executed: Deleted 3 files (confirmed=True)
+Cache hit valid (ttlMs=60000, scope=public)"
+  initialCode={`import base64
+import json
+
+def validate_headers(headers: dict, rpc: dict):
+    method = rpc.get("method")
+    name = rpc.get("params", {}).get("name", "")
+    if headers.get("Mcp-Method") != method or headers.get("Mcp-Name") != name:
+        return f"-32602 Header Mcp-Name='{headers.get('Mcp-Name')}' != body '{name}'"
+    return None
+
+def replica_handle_delete(rpc: dict) -> dict:
+    params = rpc["params"]
+    if "inputResponses" not in params:
+        state = base64.b64encode(json.dumps({"files": ["a.txt", "b.txt", "c.txt"]}).encode()).decode()
+        return {
+            "resultType": "input_required",
+            "inputRequests": {"confirm": {"type": "elicitation", "message": "Delete 3 files?"}},
+            "requestState": state,
+        }
+    restored = json.loads(base64.b64decode(params["requestState"]).decode())
+    confirmed = params["inputResponses"]["confirm"]
+    return {"deleted": len(restored["files"]) if confirmed else 0, "confirmed": confirmed}
+
+# 1. Header/body mismatch guard
+bad_headers = {"Mcp-Method": "tools/call", "Mcp-Name": "other"}
+rpc_call = {"jsonrpc": "2.0", "id": 1, "method": "tools/call", "params": {"name": "delete_files", "arguments": {}}}
+print("Header mismatch rejected:", validate_headers(bad_headers, rpc_call))
+
+# 2. Multi-round-trip elicitation across two different stateless replicas
+r1 = replica_handle_delete(rpc_call)
+print(f"Replica-1 -> InputRequiredResult: {r1['inputRequests']['confirm']['message']} (state_len={len(r1['requestState'])})")
+
+retry_call = {
+    "jsonrpc": "2.0",
+    "id": 2,
+    "method": "tools/call",
+    "params": {"name": "delete_files", "requestState": r1["requestState"], "inputResponses": {"confirm": True}},
+}
+r2 = replica_handle_delete(retry_call)
+print(f"Replica-2 -> Resumed & executed: Deleted {r2['deleted']} files (confirmed={r2['confirmed']})")
+
+# 3. Cache metadata check
+cache_meta = {"ttlMs": 60000, "cacheScope": "public"}
+print(f"Cache hit valid (ttlMs={cache_meta['ttlMs']}, scope={cache_meta['cacheScope']})")`}
+/>
+
+---
+
+## Check Your Understanding
+
+<QuizCard
+  client:visible
+  question="How does MCP 2026-07-28 handle multi-step workflows (like a shopping cart or user confirmation) without protocol-level sessions or Mcp-Session-Id?"
+  options={[
+    "It forces clients to open a dedicated WebSocket connection per user.",
+    "It uses explicit domain handles (like basket_id) in tool arguments and opaque requestState tokens in InputRequiredResult retries.",
+    "It stores all conversation history inside HTTP cookies.",
+    "It requires sticky load balancing based on client IP address."
+  ]}
+  correctAnswer={1}
+  explanation="MCP 2026-07-28 removes transport-level sessions so any server replica can handle any request. Stateful workflows pass explicit handles as tool arguments or echo requestState in multi-round-trip elicitation."
+/>

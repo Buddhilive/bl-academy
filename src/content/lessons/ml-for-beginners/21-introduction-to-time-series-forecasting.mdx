@@ -1,0 +1,89 @@
+---
+title: "Introduction to Time Series Forecasting: Trends, Seasonality & World Power Usage Data"
+track: "ml-for-beginners"
+category: "Module 4: Classical NLP & Time Series Forecasting"
+order: 21
+difficulty: "intermediate"
+xp: 70
+description: "Understand time series definitions, trends, seasonality, cycles, outliers, and abrupt changes using the GEFCom2014 hourly electricity load dataset."
+topic: "Time Series Foundations"
+prerequisites: ["ml-for-beginners/20-hotel-reviews-vader-sentiment"]
+---
+import PythonRunner from '../../../components/islands/PythonRunner';
+import QuizCard from '../../../components/islands/QuizCard';
+import ColabButton from '../../../components/static/ColabButton.astro';
+
+Unlike unordered tabular rows, **time series** data is strictly indexed in chronological order—every observation depends on what happened just before it. Whether you are pricing smart parking meters dynamically or forecasting regional grid demand, **time series forecasting** acts as a statistical crystal ball. In this lesson, we unpack the six core characteristics of time-series signals using the **GEFCom2014** hourly electricity load dataset (`2012–2014`).
+
+---
+
+## Time Series Definitions & Six Core Characteristics
+
+First, distinguish three related terms:
+- **Time Series**: Observations recorded at successive, equally spaced points in time (e.g., Mauna Loa monthly $\text{CO}_2$ concentrations or hourly megawatt load).
+- **Time Series Analysis**: Inspecting frequency-domain or time-domain patterns, including *interrupted time series* before and after major shocks.
+- **Time Series Forecasting**: Predicting future values $y_{t+h}$ from historical patterns using specialized models like **ARIMA** rather than naive linear regression.
+
+| Characteristic | What It Represents | Power Grid / Real-World Example |
+| :--- | :--- | :--- |
+| **1. Trends** | Sustained upward or downward drift over time | Rising annual summer peak electricity demand |
+| **2. Seasonality** | Fixed-period, repeating calendar or daily cycles | 24-hour diurnal load curves & July air-conditioning peaks |
+| **3. Outliers** | Extreme spikes far outside normal variance | Sudden heatwave or grid sensor glitch |
+| **4. Long-Run Cycle** | Multi-year fluctuations not tied to a fixed calendar | Economic recessions or multi-year industrial shifts |
+| **5. Constant Variance** | Predictable amplitude of day/night oscillations | Regular daytime-high vs. 3 AM-low load swings |
+| **6. Abrupt Changes** | Structural level shifts after external events | Sudden commercial load drop during pandemic lockdowns |
+
+Zooming into the first week of July 2014 (`energy['2014-07-01':'2014-07-07']`) reveals crisp 24-hour diurnal waves peaking every afternoon and dipping overnight. The GEFCom2014 competition dataset spans three full years (2012–2014) of hourly electricity load and temperature readings, making it ideal for practicing one-step-ahead and multi-horizon forecasting before moving to ARIMA and SVR.
+
+<ColabButton
+  course="ml-for-beginners"
+  notebook="21-introduction-to-time-series-forecasting.ipynb"
+  runtime="Free Tier CPU"
+/>
+
+---
+
+## Try It Yourself: Diurnal Power Load & Moving-Average Trend
+
+Let's analyze a 48-hour slice of July 2014 electricity load in pure Python—computing the 24-hour moving-average trend, peak-to-trough amplitude, and outlier z-score detection.
+
+<PythonRunner
+  client:visible
+  title="Try it Yourself: Time Series Trend & Diurnal Cycle Analyzer"
+  expectedOutput="48h Mean Load: 3318.5 MW | Peak: 4100.0 MW | Trough: 2450.0 MW
+Day 1 (24h) Avg: 3293.7 MW -> Day 2 (24h) Avg: 3343.3 MW (+49.7 MW trend)
+Diurnal Peak Hour Index: 15:00 (4100.0 MW)"
+  initialCode={`# Simulated 48 hourly electricity load readings (MW) for 2014-07-01 to 2014-07-02
+day1 = [2698, 2558, 2450, 2460, 2520, 2700, 2950, 3200, 3420, 3580, 3700, 3810,
+        3900, 3960, 4010, 4050, 3980, 3850, 3690, 3510, 3320, 3100, 2890, 2742]
+day2 = [2710, 2590, 2490, 2500, 2570, 2750, 3010, 3260, 3480, 3640, 3760, 3860,
+        3950, 4020, 4070, 4100, 4030, 3900, 3740, 3560, 3370, 3150, 2940, 2790]
+load = day1 + day2
+
+mean_all = sum(load) / len(load)
+print(f"48h Mean Load: {mean_all:.1f} MW | Peak: {max(load):.1f} MW | Trough: {min(load):.1f} MW")
+
+avg1 = sum(day1) / len(day1)
+avg2 = sum(day2) / len(day2)
+print(f"Day 1 (24h) Avg: {avg1:.1f} MW -> Day 2 (24h) Avg: {avg2:.1f} MW ({avg2 - avg1:+.1f} MW trend)")
+
+peak_hr = load.index(max(load)) % 24
+print(f"Diurnal Peak Hour Index: {peak_hr:02d}:00 ({max(load):.1f} MW)")`}
+/>
+
+---
+
+## Check Your Understanding
+
+<QuizCard
+  client:visible
+  question="Which time-series characteristic describes periodic, fixed-calendar fluctuations such as daily afternoon electricity peaks or holiday retail surges?"
+  options={[
+    "Abrupt change",
+    "Seasonality",
+    "Long-run cycle",
+    "White noise"
+  ]}
+  correctAnswer={1}
+  explanation="Seasonality refers to repeating, fixed-period patterns tied to hours of the day, days of the week, or months of the year, whereas long-run cycles span irregular multi-year periods."
+/>

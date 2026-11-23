@@ -1,0 +1,150 @@
+---
+title: "Building Your First MCP Server with FastMCP: Tools, Resources, Prompts & Polyglot SDKs"
+track: "mcp-for-beginners"
+category: "Module 2: Building MCP Servers, Clients, Gemini Hosts & Transports"
+order: 5
+difficulty: "beginner"
+xp: 75
+description: "Build a complete Python MCP Scientific Calculator and Engineering Reference server with FastMCP, type-safe schemas, resources, prompts, and polyglot SDK comparisons."
+topic: "FastMCP Servers"
+prerequisites: ["mcp-for-beginners/04-mcp-security-owasp-top-10-and-cimd-auth"]
+---
+import PythonRunner from '../../../components/islands/PythonRunner';
+import QuizCard from '../../../components/islands/QuizCard';
+import ColabButton from '../../../components/static/ColabButton.astro';
+
+Reading about JSON-RPC frames only gets you so far. The fastest way to internalize MCP is to build a working server yourself. In Python, the official `mcp` SDK includes **`FastMCP`**, a declarative framework that inspects your function type hints and docstrings to generate full JSON Schema tool definitions automatically.
+
+When I built my first FastMCP calculator server, what stood out was how little boilerplate it needed: write a clean Python function with `float` or `int` annotations, add `@mcp.tool()`, and any MCP host can immediately discover and invoke it.
+
+---
+
+## Anatomy of a FastMCP Server
+
+A production-ready MCP server typically exposes all three primitives together:
+
+1. **Tools (`@mcp.tool()`)**: Executable operations like `add`, `divide`, `power`, `sqrt`, and `factorial`, with explicit guardrails for invalid inputs (such as division by zero or negative square roots).
+2. **Resources (`@mcp.resource("calc://constants/{name}")`)**: Read-only contextual data such as mathematical constants ($\pi$, $e$, $\phi$) or calculation history.
+3. **Prompts (`@mcp.prompt()`)**: Reusable workflow templates like `step_by_step_math_tutor` that guide the model on how to present calculations.
+
+### Polyglot SDK Idioms
+
+Even though our interactive labs use Python `FastMCP`, the exact same server structure translates directly across the other official MCP SDKs:
+
+| SDK Language | Server Constructor | Tool Registration | Transport Startup |
+| :--- | :--- | :--- | :--- |
+| **Python (`mcp`)** | `mcp = FastMCP("Calc")` | `@mcp.tool()` decorator | `mcp.run(transport="stdio")` |
+| **TypeScript** | `new McpServer({ name, version })` | `server.tool(name, zodSchema, fn)` | `server.connect(new StdioServerTransport())` |
+| **C# (.NET)** | `builder.Services.AddMcpServer()` | `[McpServerTool]` attribute | `.WithStdioServerTransport()` |
+| **Java (Spring)** | `@Service` Spring bean | `@Tool` / `@McpMethod` | Spring Boot MCP starter |
+| **Rust (`rmcp`)** | `#[tool_router]` struct | `#[tool]` macro | `serve_stdio().await` |
+
+---
+
+## Guarding Mathematical Edge Cases in Tools
+
+AI models will occasionally pass edge-case inputs like `b = 0` to `divide(a, b)` or negative numbers to `sqrt(x)`. Always raise descriptive `ValueError` exceptions or return clear error strings so the model can self-correct on the next turn instead of crashing the server process.
+
+For example, computing compound growth or statistical variance in a scientific tool:
+
+$$\text{factorial}(n) = \prod_{k=1}^{n} k \quad (n \ge 0), \qquad \sigma = \sqrt{\frac{1}{N}\sum_{i=1}^{N}(x_i - \mu)^2}$$
+
+---
+
+## Open the Companion Colab Notebook
+
+Launch the companion notebook to run a full `FastMCP` Scientific Calculator server in Python, inspect its auto-generated JSON Schemas, and invoke every tool, resource, and prompt.
+
+<ColabButton
+  course="mcp-for-beginners"
+  notebook="05-building-your-first-mcp-server-with-fastmcp.ipynb"
+  runtime="Free Tier CPU"
+/>
+
+---
+
+## Try It Yourself: FastMCP-Style Decorator Registry & Scientific Calculator
+
+Run this pure-Python sandbox to see how `@tool`, `@resource`, and `@prompt` decorators automatically build a JSON Schema registry from Python type hints and handle mathematical edge cases safely.
+
+<PythonRunner
+  client:visible
+  title="Try it Yourself: FastMCP Decorator Registry & Calculator"
+  expectedOutput="Registered tools: ['divide', 'power', 'summary_stats']
+Schema for 'divide': {'a': 'float', 'b': 'float'}
+divide(22, 7) -> 3.1429
+divide(10, 0) -> Error: Division by zero is not allowed.
+summary_stats([10, 20, 30]) -> {'mean': 20.0, 'stdev': 8.165}
+Resource calc://constants/pi -> 3.141592653589793"
+  initialCode={`import inspect
+import math
+
+class MiniFastMCP:
+    def __init__(self, name: str):
+        self.name = name
+        self.tools = {}
+        self.resources = {}
+
+    def tool(self):
+        def decorator(fn):
+            sig = inspect.signature(fn)
+            schema = {k: v.annotation.__name__ for k, v in sig.parameters.items()}
+            self.tools[fn.__name__] = {"fn": fn, "schema": schema}
+            return fn
+        return decorator
+
+    def resource(self, uri: str):
+        def decorator(fn):
+            self.resources[uri] = fn
+            return fn
+        return decorator
+
+mcp = MiniFastMCP("ScientificCalc")
+
+@mcp.tool()
+def divide(a: float, b: float) -> float:
+    if b == 0:
+        raise ValueError("Division by zero is not allowed.")
+    return round(a / b, 4)
+
+@mcp.tool()
+def power(base: float, exp: float) -> float:
+    return round(base ** exp, 4)
+
+@mcp.tool()
+def summary_stats(values: list) -> dict:
+    mean = sum(values) / len(values)
+    var = sum((x - mean) ** 2 for x in values) / len(values)
+    return {"mean": round(mean, 3), "stdev": round(math.sqrt(var), 3)}
+
+@mcp.resource("calc://constants/pi")
+def get_pi() -> str:
+    return str(math.pi)
+
+print("Registered tools:", sorted(mcp.tools.keys()))
+print("Schema for 'divide':", mcp.tools["divide"]["schema"])
+print("divide(22, 7) ->", mcp.tools["divide"]["fn"](22, 7))
+try:
+    mcp.tools["divide"]["fn"](10, 0)
+except ValueError as exc:
+    print("divide(10, 0) -> Error:", exc)
+print("summary_stats([10, 20, 30]) ->", mcp.tools["summary_stats"]["fn"]([10, 20, 30]))
+print("Resource calc://constants/pi ->", mcp.resources["calc://constants/pi"]())`}
+/>
+
+---
+
+## Check Your Understanding
+
+<QuizCard
+  client:visible
+  question="How does Python's FastMCP generate JSON Schema parameter definitions for an @mcp.tool() function?"
+  options={[
+    "You must manually write a separate XML schema file for every tool.",
+    "FastMCP inspects the function's Python type annotations and docstring automatically.",
+    "The LLM guesses the parameter types at runtime.",
+    "Only string parameters are supported in FastMCP."
+  ]}
+  correctAnswer={1}
+  explanation="FastMCP uses Python type hints (and Pydantic models where needed) together with function docstrings to automatically generate the tool's JSON Schema inputSchema."
+/>

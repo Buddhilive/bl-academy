@@ -1,0 +1,136 @@
+---
+title: "Community SEPs, Early Adopter Architectures & Safe-Retry Reliability Sidecars"
+track: "mcp-for-beginners"
+category: "Module 5: Best Practices, Case Studies & Zava Retail Database Capstone Labs"
+order: 18
+difficulty: "advanced"
+xp: 90
+description: "Contribute to MCP via SEPs, study early adopter enterprise architectures, and build a SQLite Reliability Sidecar for idempotent, crash-safe MCP tool retries."
+topic: "Best Practices & Reliability Sidecars"
+prerequisites: ["mcp-for-beginners/17-routing-scaling-custom-transports-and-adversarial-agents"]
+---
+import PythonRunner from '../../../components/islands/PythonRunner';
+import QuizCard from '../../../components/islands/QuizCard';
+import ColabButton from '../../../components/static/ColabButton.astro';
+
+When a read-only search tool times out, retrying is harmless. When a write tool like `create_support_ticket` or `charge_invoice` times out, a blind retry is dangerous: the downstream ticket `T-0001` may have already committed before the network dropped, so retrying blindly creates duplicate ticket `T-0002`.
+
+In this lesson, we pair **MCP ecosystem best practices** (how SEPs evolve the protocol and how early adopters structure production servers) with the **Reliability Sidecar Pattern**, a SQLite-backed idempotency and reconciliation guard for side-effecting MCP tools.
+
+---
+
+## Contributing via SEPs & Early Adopter Patterns
+
+MCP evolves through **Specification Enhancement Proposals (SEPs)** following a strict *Define -> Prototype -> Write -> Conformance Suite (`SEP-2484`)* pipeline. Early adopters across customer support, healthcare diagnostics, and financial risk converge on four production habits: single-responsibility tools, strict schema validation, explicit state handles, and circuit breakers.
+
+---
+
+## Safe Retries: The Reliability Sidecar Pattern
+
+A missing response does not mean the action is missing. It means **outcome unknown**. A **Reliability Sidecar** wraps side-effecting tools with durable recovery state using four distinct identifiers:
+
+| Identifier | Scope | Survives a Retry? |
+| :--- | :--- | :--- |
+| **JSON-RPC ID** | One wire request/response pair | No (mint a fresh ID per attempt) |
+| **MCP Task ID** | One long-running async task | Yes (used for `tasks/get` polling) |
+| **Operation Key** | One intended domain action (`op-login-ticket-0001`) | Yes (reused across retries of the same action) |
+| **Ticket ID** | The committed external record (`T-0001`) | Yes (returned after reconciliation) |
+
+### Atomic Claim & Input-Hash Reconciliation
+
+Before calling the external ticket API, the sidecar hashes the normalized inputs:
+
+$$h_{\text{input}} = \text{SHA256}\Big(\text{canonical\_json}(\text{normalized\_inputs})\Big)$$
+
+It atomically inserts `(caller_id, tool_name, operation_key, input_hash, state='claimed')` into SQLite. If the network drops after `T-0001` commits and the client retries with `op-login-ticket-0001`:
+1. If `input_hash` differs (e.g., the caller changed `title`), the sidecar **rejects the call** (`contract error`).
+2. If `input_hash` matches and the claim is non-terminal (`claimed`), the sidecar reconciles against the ticket system, finds `T-0001`, marks the claim `verified`, and returns `T-0001` without creating `T-0002`.
+
+---
+
+## Open the Companion Colab Notebook
+
+Launch the companion notebook to run the complete SQLite Reliability Sidecar with fault injection (lost reply after commit, mutated-input rejection, and fail-closed reconciliation).
+
+<ColabButton
+  course="mcp-for-beginners"
+  notebook="18-community-early-adopters-best-practices-and-reliability-sidecars.ipynb"
+  runtime="Free Tier CPU"
+/>
+
+---
+
+## Try It Yourself: SQLite Reliability Sidecar & Crash Recovery
+
+Run this pure-Python `sqlite3` sandbox to simulate a lost network response after `T-0001` commits, prove that retrying `op-login-ticket-0001` recovers `T-0001` instead of creating `T-0002`, and reject a reused key with a mutated title.
+
+<PythonRunner
+  client:visible
+  title="Try it Yourself: SQLite Reliability Sidecar Idempotency"
+  expectedOutput="Attempt 1 (network dropped after commit): TimeoutError - outcome unknown
+Attempt 2 (retry op-login-ticket-0001): {'ticket_id': 'T-0001', 'status': 'verified'}
+Total tickets in DB: 1 (no duplicate T-0002)
+Mutated title with same key -> Rejected: Input hash mismatch"
+  initialCode={`import hashlib
+import json
+import sqlite3
+
+db = sqlite3.connect(":memory:")
+db.execute("CREATE TABLE ops (op_key TEXT PRIMARY KEY, input_hash TEXT, state TEXT, ticket_id TEXT)")
+db.execute("CREATE TABLE tickets (ticket_id TEXT PRIMARY KEY, op_key TEXT UNIQUE, title TEXT)")
+
+def norm_hash(title: str) -> str:
+    return hashlib.sha256(json.dumps({"title": title}, sort_keys=True).encode()).hexdigest()
+
+def create_ticket_safe(op_key: str, title: str, drop_reply: bool = False) -> dict:
+    h = norm_hash(title)
+    row = db.execute("SELECT input_hash, state, ticket_id FROM ops WHERE op_key = ?", (op_key,)).fetchone()
+    if row:
+        if row[0] != h:
+            raise ValueError("Input hash mismatch")
+        if row[2]:
+            return {"ticket_id": row[2], "status": "verified"}
+        # Reconcile with authoritative ticket table
+        found = db.execute("SELECT ticket_id FROM tickets WHERE op_key = ?", (op_key,)).fetchone()
+        if found:
+            db.execute("UPDATE ops SET state='verified', ticket_id=? WHERE op_key=?", (found[0], op_key))
+            return {"ticket_id": found[0], "status": "verified"}
+
+    db.execute("INSERT INTO ops VALUES (?, ?, 'claimed', NULL)", (op_key, h))
+    tid = f"T-{db.execute('SELECT COUNT(*) FROM tickets').fetchone()[0] + 1:04d}"
+    db.execute("INSERT INTO tickets VALUES (?, ?, ?)", (tid, op_key, title))
+    if drop_reply:
+        raise TimeoutError("TimeoutError - outcome unknown")
+    db.execute("UPDATE ops SET state='verified', ticket_id=? WHERE op_key=?", (tid, op_key))
+    return {"ticket_id": tid, "status": "verified"}
+
+try:
+    create_ticket_safe("op-login-ticket-0001", "Cannot sign in", drop_reply=True)
+except TimeoutError as exc:
+    print("Attempt 1 (network dropped after commit):", exc)
+
+print("Attempt 2 (retry op-login-ticket-0001):", create_ticket_safe("op-login-ticket-0001", "Cannot sign in"))
+print("Total tickets in DB:", db.execute("SELECT COUNT(*) FROM tickets").fetchone()[0], "(no duplicate T-0002)")
+
+try:
+    create_ticket_safe("op-login-ticket-0001", "Different title")
+except ValueError as exc:
+    print("Mutated title with same key -> Rejected:", exc)`}
+/>
+
+---
+
+## Check Your Understanding
+
+<QuizCard
+  client:visible
+  question="In the Reliability Sidecar pattern, what should happen if a client retries an existing operation_key with a different title parameter?"
+  options={[
+    "Silently return the old ticket from the previous title.",
+    "Reject the call because the normalized input hash does not match the stored claim.",
+    "Create a second ticket with the same operation_key.",
+    "Delete the first ticket automatically."
+  ]}
+  correctAnswer={1}
+  explanation="Scoping each operation_key to a SHA-256 hash of normalized inputs catches contract errors: reusing an operation key for a different intended action must be rejected."
+/>

@@ -1,0 +1,102 @@
+---
+title: "Logistic Regression: Binary Classification, Confusion Matrices & ROC-AUC"
+track: "ml-for-beginners"
+category: "Module 2: Regression Models & Web App Deployment"
+order: 8
+difficulty: "intermediate"
+xp: 85
+description: "Build a binary Logistic Regression classifier to predict orange vs. white pumpkins using ColumnTransformer, Confusion Matrices, Precision, Recall, F1-score, and ROC-AUC."
+topic: "Logistic Regression"
+prerequisites: ["ml-for-beginners/07-linear-and-polynomial-regression"]
+---
+import PythonRunner from '../../../components/islands/PythonRunner';
+import QuizCard from '../../../components/islands/QuizCard';
+import ColabButton from '../../../components/static/ColabButton.astro';
+
+Despite its name, **Logistic Regression** is a linear *classification* algorithm. Instead of predicting a continuous dollar price, it predicts the probability of a binary category—such as whether a pumpkin is `ORANGE` ($0$) or `WHITE` ("Ghost", $1$). Even better, unlike linear regression, logistic regression does not require input features to correlate linearly with each other.
+
+---
+
+## Encoding Mixed Categorical Features with `ColumnTransformer`
+
+Our pumpkin dataset contains two distinct kinds of categorical text columns, so we pair two Scikit-Learn encoders inside a single `ColumnTransformer`:
+
+1. **`OrdinalEncoder`**: Used when categories follow a natural order—like `Item Size` (`['sml', 'med', 'med-lge', 'lge', 'xlge', 'jbo', 'exjbo']` mapped to `0..6`).
+2. **`OneHotEncoder(sparse_output=False)`**: Used for unordered nominal columns (`City Name`, `Package`, `Variety`, `Origin`).
+3. **`LabelEncoder`**: Converts the target `Color` column into `0` and `1`.
+
+---
+
+## The Sigmoid Function, Confusion Matrix & ROC-AUC
+
+Logistic regression passes a linear score $z$ through the **Sigmoid (Logistic) Function** to squash outputs into $(0, 1)$:
+
+$$\sigma(z) = \frac{1}{1 + e^{-z}}$$
+
+If $\sigma(z) \ge 0.5$, the model predicts class `1`; otherwise `0`. To evaluate performance beyond raw accuracy, we inspect a **$2 \times 2$ Confusion Matrix** (where rows are actual labels and columns are predicted labels):
+
+| Metric | Formula | Pumpkin Model Benchmark |
+| :--- | :--- | :--- |
+| **Precision** | $\frac{\text{TP}}{\text{TP} + \text{FP}}$ | $22 / (22 + 4) = 0.85$ |
+| **Recall** | $\frac{\text{TP}}{\text{TP} + \text{FN}}$ | $22 / (22 + 11) = 0.67$ |
+| **$F_1$-Score** | $\frac{2 \cdot \text{Precision} \cdot \text{Recall}}{\text{Precision} + \text{Recall}}$ | $0.75$ |
+| **Accuracy** | $\frac{\text{TP} + \text{TN}}{\text{TP} + \text{TN} + \text{FP} + \text{FN}}$ | $(22 + 162) / 199 = 0.92$ |
+
+Alongside those four core metrics, Scikit-Learn's `classification_report()` prints **Support** (the number of true instances per class), **Macro Avg** (the unweighted mean across classes, treating minority and majority classes equally), and **Weighted Avg** (the mean weighted by each class's support). Plotting the True Positive Rate against the False Positive Rate across every probability threshold yields the **ROC Curve**, summarized by the Area Under the Curve (`roc_auc_score` $\approx 0.975$ on the pumpkin test fold). Visually, you want that curve to shoot steeply toward the top-left corner—far above the diagonal random-guess baseline.
+
+<ColabButton
+  course="ml-for-beginners"
+  notebook="08-logistic-regression-and-roc-curves.ipynb"
+  runtime="Free Tier CPU"
+/>
+
+---
+
+## Try It Yourself: Sigmoid, Confusion Matrix & Metrics Evaluator
+
+Let's compute the exact Sigmoid probabilities, $2 \times 2$ Confusion Matrix (`TN=162, FP=4, FN=11, TP=22`), Precision, Recall, and $F_1$-score in pure Python.
+
+<PythonRunner
+  client:visible
+  title="Try it Yourself: Sigmoid Classifier & Confusion Matrix Metrics"
+  expectedOutput="Sigmoid(z=2.0): 0.8808 -> Class 1 (WHITE)
+Sigmoid(z=-1.5): 0.1824 -> Class 0 (ORANGE)
+Confusion Matrix: [[162, 4], [11, 22]]
+Precision: 0.846 | Recall: 0.667 | F1: 0.746 | Accuracy: 0.925"
+  initialCode={`import math
+
+def sigmoid(z):
+    return 1.0 / (1.0 + math.exp(-z))
+
+for z in [2.0, -1.5]:
+    p = sigmoid(z)
+    cls = "1 (WHITE)" if p >= 0.5 else "0 (ORANGE)"
+    print(f"Sigmoid(z={z}): {p:.4f} -> Class {cls}")
+
+# Confusion matrix counts from pumpkin Color test fold (N=199)
+tn, fp, fn, tp = 162, 4, 11, 22
+precision = tp / (tp + fp)
+recall = tp / (tp + fn)
+f1 = 2 * precision * recall / (precision + recall)
+accuracy = (tp + tn) / (tp + tn + fp + fn)
+
+print(f"Confusion Matrix: [[{tn}, {fp}], [{fn}, {tp}]]")
+print(f"Precision: {precision:.3f} | Recall: {recall:.3f} | F1: {f1:.3f} | Accuracy: {accuracy:.3f}")`}
+/>
+
+---
+
+## Check Your Understanding
+
+<QuizCard
+  client:visible
+  question="In a medical screening classifier where missing a positive case (False Negative) is dangerous, which metric should you monitor most closely?"
+  options={[
+    "Recall: TP / (TP + FN)",
+    "True Negative count only",
+    "Support",
+    "Mean Squared Error"
+  ]}
+  correctAnswer={0}
+  explanation="Recall measures the fraction of actual positive cases that your model successfully caught: TP / (TP + FN). Maximizing recall directly reduces False Negatives."
+/>

@@ -1,0 +1,96 @@
+---
+title: "Visualizing Relationships: Scatter Palettes, Facet Grids & Dual-Axis Lines"
+track: "data-science-for-beginners"
+category: "Module 3: Data Visualization"
+order: 12
+difficulty: "intermediate"
+xp: 75
+description: "Visualize multivariable relationships on USDA honey production data (1998-2012) using Seaborn relplot, size encoding, FacetGrid, and dual-axis twinx plots."
+topic: "Visualizing Relationships"
+prerequisites: ["data-science-for-beginners/11-visualizing-proportions"]
+---
+import PythonRunner from '../../../components/islands/PythonRunner';
+import QuizCard from '../../../components/islands/QuizCard';
+import ColabButton from '../../../components/static/ColabButton.astro';
+
+Real-world datasets rarely have just one interesting column. Usually you want to know how two or three variables move *together* over time. In this lesson, we'll use **Seaborn**'s relational plotting toolkit (`relplot`, `FacetGrid`, and `lineplot`) on a poignant USDA dataset tracking U.S. **honey production from 1998 to 2012**—spanning the 2006 onset of **Colony Collapse Disorder (CCD)**.
+
+Each row records a state's colony count (`numcol`), yield per colony (`yieldpercol`), total production (`totalprod`), stocks, price per pound (`priceperlb`), and production value (`prodvalue`) for a single year. Putting these columns side by side lets us test supply-and-demand hypotheses visually before writing a single regression equation.
+
+---
+
+## Scatterplots with Color Palettes & Accessible Size Encoding
+
+Using `sns.relplot(x="priceperlb", y="state", data=honey, height=15, aspect=.5)` plots honey prices across every U.S. state. To reveal *how* prices evolved over time, we add a third dimension:
+
+- **Color (`hue="year", palette="YlOrBr"`)**: Uses a warm honey-toned sequential palette showing prices climbing steadily from 1998 (`$0.64/lb` in Arizona) to 2012 (`$1.79/lb`).
+- **Size (`size="year"`)**: Maps later years to larger dot circumferences—a great **colorblind-accessible** alternative (or complement) to color alone.
+
+---
+
+## Line Charts, Confidence Bands, Facet Grids & Dual-Axis Plots
+
+| Seaborn / Matplotlib Tool | What It Reveals in `honey.csv` |
+| :--- | :--- |
+| `sns.relplot(x="year", y="priceperlb", kind="line")` | Plots mean price per pound with a **95% confidence interval** band (disable with `errorbar=None`), spotlighting a price spike around 2003 |
+| **Facet Grid** (`col="year", col_wrap=3`) | Draws 15 side-by-side small multiples comparing `yieldpercol` vs `numcol` for every year |
+| **Dual-Axis Plot** (`ax2 = ax.twinx()` + `sns.despine()`) | Shares the `year` x-axis while plotting `# colonies` on the left y-axis and `colony yield` on the right y-axis, showing colony counts stabilizing even as yield per colony declines |
+
+<ColabButton
+  course="data-science-for-beginners"
+  notebook="12-visualizing-relationships.ipynb"
+  runtime="Free Tier CPU"
+/>
+
+---
+
+## Try It Yourself: USDA Honey Price & Colony Trend Analyzer
+
+Run this pure-Python analyzer on the Arizona honey production time series (1998–2012) to compare pre-CCD (`1998–2005`) vs post-CCD (`2006–2012`) prices and colony counts.
+
+<PythonRunner
+  client:visible
+  title="Try it Yourself: Arizona Honey Price & Colony Collapse Trend"
+  expectedOutput="=== Arizona Honey Production (1998-2012) ===
+Pre-CCD (1998-2005) Avg Price: $0.91/lb | Avg Colonies: 41,375
+Post-CCD (2006-2012) Avg Price: $1.39/lb | Avg Colonies: 24,857
+Price Change: +52.9% | Colony Change: -39.9%"
+  initialCode={`az_honey = [
+    (1998, 55000, 0.64), (1999, 52000, 0.62), (2000, 40000, 0.73), (2001, 43000, 0.72),
+    (2002, 38000, 1.08), (2003, 35000, 1.34), (2004, 32000, 1.11), (2005, 36000, 1.04),
+    (2006, 30000, 0.91), (2007, 30000, 1.26), (2008, 25000, 1.26), (2009, 20000, 1.45),
+    (2010, 24000, 1.52), (2011, 23000, 1.55), (2012, 22000, 1.79),
+]
+
+pre = [r for r in az_honey if r[0] < 2006]
+post = [r for r in az_honey if r[0] >= 2006]
+
+pre_p = sum(r[2] for r in pre) / len(pre)
+post_p = sum(r[2] for r in post) / len(post)
+pre_c = sum(r[1] for r in pre) / len(pre)
+post_c = sum(r[1] for r in post) / len(post)
+
+print("=== Arizona Honey Production (1998-2012) ===")
+print(f"Pre-CCD (1998-2005) Avg Price: \${pre_p:.2f}/lb | Avg Colonies: {pre_c:,.0f}")
+print(f"Post-CCD (2006-2012) Avg Price: \${post_p:.2f}/lb | Avg Colonies: {post_c:,.0f}")
+print(f"Price Change: {(post_p - pre_p)/pre_p*100:+.1f}% | Colony Change: {(post_c - pre_c)/pre_c*100:+.1f}%")`}
+/>
+
+---
+
+## Check Your Understanding
+
+<QuizCard
+  client:visible
+  question="Why does `sns.relplot(..., size='year')` make a scatterplot more accessible than relying solely on `hue='year'`?"
+  options={[
+    "It removes all overlapping data points automatically.",
+    "Encoding progression with dot size ensures colorblind users can still perceive the trend without relying on hue distinctions.",
+    "It automatically converts the chart to a 3D surface.",
+    "It disables Seaborn's confidence interval calculation."
+  ]}
+  correctAnswer={1}
+  explanation="Colorblind readers may struggle to distinguish subtle hue gradients; pairing or replacing hue with dot size ensures the progression remains legible."
+/>
+
+Next, we'll wrap up Module 3 by learning how to spot deceptive charts and build an interactive literary network graph in **Making Meaningful Visualizations**.

@@ -3,32 +3,50 @@ interface Props {
   slotId?: string;
   className?: string;
   client?: string;
+  format?: 'auto' | 'horizontal' | 'rectangle' | 'vertical';
+  fullWidthResponsive?: boolean;
 }
 
 const {
-  slotId = 'default-slot',
+  slotId = import.meta.env.PUBLIC_ADSENSE_TOP_SLOT_ID || '9280073752',
   className = '',
-  client = import.meta.env.PUBLIC_ADSENSE_CLIENT,
+  client = import.meta.env.PUBLIC_ADSENSE_CLIENT_ID ||
+    import.meta.env.PUBLIC_ADSENSE_CLIENT ||
+    'ca-pub-9435032914308988',
+  format = 'auto',
+  fullWidthResponsive = true,
 } = Astro.props;
+
+const hasValidClient = typeof client === 'string' && /^ca-pub-\d+$/.test(client.trim());
+const hasValidSlot = typeof slotId === 'string' && /^\d+$/.test(slotId.trim());
+const canRenderAd = hasValidClient && hasValidSlot;
 ---
 
 <div
   class:list={[
-    "w-full min-h-[90px] bg-neutral-900/50 border border-neutral-850 border-dashed rounded-lg flex flex-col items-center justify-center p-2 text-center overflow-hidden my-4",
+    "w-full max-w-full min-h-[100px] sm:min-h-[90px] bg-neutral-900/50 border border-neutral-800 rounded-lg flex flex-col items-center justify-center px-2 py-1.5 text-center overflow-hidden my-4",
     className
   ]}
   role="region"
   aria-label="Advertisement"
 >
-  {client ? (
-    <ins
-      class="adsbygoogle"
-      style="display:block; min-height: 90px; width: 100%;"
-      data-ad-client={client}
-      data-ad-slot={slotId}
-      data-ad-format="auto"
-      data-full-width-responsive="true"
-    />
+  {canRenderAd ? (
+    <>
+      <span class="text-[10px] uppercase tracking-widest text-neutral-500 font-mono mb-1 select-none">
+        Advertisement
+      </span>
+      <ins
+        class="adsbygoogle block w-full min-h-[50px] sm:min-h-[90px]"
+        style="display:block;"
+        data-ad-client={client.trim()}
+        data-ad-slot={slotId.trim()}
+        data-ad-format={format}
+        data-full-width-responsive={fullWidthResponsive ? 'true' : 'false'}
+      />
+      <script is:inline>
+        (window.adsbygoogle = window.adsbygoogle || []).push({});
+      </script>
+    </>
   ) : (
     <div class="flex items-center gap-2 text-xs text-neutral-500 font-mono select-none">
       <span class="w-2 h-2 rounded-full bg-neutral-700" aria-hidden="true" />
@@ -36,4 +54,3 @@ const {
     </div>
   )}
 </div>
-

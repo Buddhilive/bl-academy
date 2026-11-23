@@ -1,0 +1,104 @@
+---
+title: "Zava Retail Database Capstone (Part 3): Security Testing, OpenTelemetry & Optimization"
+track: "mcp-for-beginners"
+category: "Module 5: Best Practices, Case Studies & Zava Retail Database Capstone Labs"
+order: 22
+difficulty: "advanced"
+xp: 100
+description: "Verify Zava Retail with automated RLS and SQLi tests, W3C traceparent OpenTelemetry observability, P95 latency profiling, and transition to Course 06 AI Agents."
+topic: "Testing, Observability & Optimization"
+prerequisites: ["mcp-for-beginners/21-zava-retail-fastmcp-tools-and-semantic-vector-search"]
+---
+import PythonRunner from '../../../components/islands/PythonRunner';
+import QuizCard from '../../../components/islands/QuizCard';
+import ColabButton from '../../../components/static/ColabButton.astro';
+
+Before shipping the Zava Retail MCP Server to production, we need three final engineering guarantees: an automated **RLS & SQL-injection test suite**, distributed **OpenTelemetry observability** (`traceparent` per `SEP-414`), and **query/cache optimization**. Once those pass, you will have a production-grade MCP server ready to power autonomous multi-agent workflows in **Course 06: AI Agents for Beginners**.
+
+---
+
+## Automated Security Verification, Observability & Tuning
+
+| Production Pillar | What We Measure & Enforce | Target Standard |
+| :--- | :--- | :--- |
+| **Security & RLS Tests** | Zero cross-store leakage (`seattle` != `redmond`), DDL/DML blocking | 100% pass rate on every CI run |
+| **OpenTelemetry (`SEP-414`)** | Propagate W3C `traceparent` across `Host -> FastMCP -> RLS_DB -> VectorIndex` | End-to-end span correlation |
+| **Latency & Cache Tuning** | Track $P_{50}, P_{95}, P_{99}$ latencies and embedding cache hit ratio | $\text{Hit Ratio} = \frac{H}{H + M} \ge 0.70$ |
+| **Connection Pooling** | Size pools cleanly: $N_{\text{conn}} = (2 \times N_{\text{cores}}) + N_{\text{spindles}}$ | Zero pool exhaustion under load |
+
+### Connecting Zava Retail to VS Code AI Chat
+
+With `.vscode/mcp.json`, analysts can query Zava Retail directly from VS Code AI Chat while passing their store-scoped `RLS_USER_ID` and `GEMINI_API_KEY` securely through runtime inputs.
+
+---
+
+## Open the Companion Colab Notebook
+
+Launch the final capstone notebook to run the automated RLS & SQLi test suite, emit OpenTelemetry trace spans, compute $P_{95}$ latency and cache hit ratios, and run a `gemini-2.5-flash` retail analyst over the finished Zava Retail MCP Server.
+
+<ColabButton
+  course="mcp-for-beginners"
+  notebook="22-zava-retail-testing-observability-and-production-optimization.ipynb"
+  runtime="Free Tier CPU + Gemini API"
+/>
+
+---
+
+## Try It Yourself: Zava Retail Security Audit & OpenTelemetry Profiler
+
+Run this pure-Python sandbox to execute a 4-check RLS/SQLi security audit, propagate a W3C `traceparent` span, and calculate $P_{50}$/$P_{95}$ query latencies and embedding cache hit ratio.
+
+<PythonRunner
+  client:visible
+  title="Try it Yourself: Zava Retail Security Audit & P95 Observability"
+  expectedOutput="[Audit] 4/4 RLS & SQLi checks passed
+[OTel Span] traceparent=00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01 | span=zava.hybrid_search
+[Latency] P50=14.0ms, P95=42.0ms
+[Cache] hits=8, misses=2 -> hit_ratio=80.0%"
+  initialCode={`# 1. Automated RLS & SQLi security checks
+checks = [
+    ("seattle_cannot_read_redmond", True),
+    ("redmond_cannot_read_seattle", True),
+    ("drop_table_blocked", True),
+    ("stacked_semicolon_blocked", True),
+]
+passed = sum(1 for _, ok in checks if ok)
+print(f"[Audit] {passed}/{len(checks)} RLS & SQLi checks passed")
+
+# 2. W3C traceparent propagation (SEP-414)
+traceparent = "00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01"
+print(f"[OTel Span] traceparent={traceparent} | span=zava.hybrid_search")
+
+# 3. Latency percentiles (P50, P95) & Cache Hit Ratio
+latencies_ms = sorted([8.0, 10.0, 11.0, 12.0, 14.0, 15.0, 18.0, 21.0, 29.0, 42.0])
+p50 = latencies_ms[int(0.50 * (len(latencies_ms) - 1))]
+p95 = latencies_ms[int(0.95 * (len(latencies_ms) - 1))]
+print(f"[Latency] P50={p50:.1f}ms, P95={p95:.1f}ms")
+
+hits, misses = 8, 2
+hit_ratio = hits / (hits + misses) * 100
+print(f"[Cache] hits={hits}, misses={misses} -> hit_ratio={hit_ratio:.1f}%")`}
+/>
+
+---
+
+## Check Your Understanding
+
+<QuizCard
+  client:visible
+  question="In MCP 2026-07-28, how should distributed tracing context be propagated across an MCP client, MCP server, and downstream database?"
+  options={[
+    "By appending trace IDs to every tool's human-readable description string.",
+    "By propagating W3C Trace Context keys (traceparent, tracestate, baggage) inside _meta for OpenTelemetry.",
+    "By writing raw print() statements to stdout on stdio servers.",
+    "By using the deprecated MCP Logging protocol method."
+  ]}
+  correctAnswer={1}
+  explanation="SEP-414 documents propagating W3C Trace Context (traceparent, tracestate, baggage) in _meta so OpenTelemetry backends can correlate spans end-to-end across clients, servers, and databases."
+/>
+
+---
+
+## What's Next: Course 06 — AI Agents for Beginners
+
+You have completed **MCP for Beginners**! Now that you know how to build, secure, test, and scale standardized MCP servers and Gemini LLM Hosts, head into **Course 06: AI Agents for Beginners** (`/learn/ai-agents-for-beginners`) to orchestrate autonomous planning, memory, and multi-agent systems on top of MCP.

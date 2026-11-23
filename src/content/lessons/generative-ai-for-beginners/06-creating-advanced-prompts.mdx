@@ -1,0 +1,147 @@
+---
+title: "Creating Advanced Prompts: Few-Shot, Chain-of-Thought, Generated Knowledge, Least-to-Most, Self-Refine & Maieutic"
+track: "generative-ai-for-beginners"
+category: "Module 2: Prompt Engineering & Text/Chat Applications"
+order: 6
+difficulty: "intermediate"
+xp: 80
+description: "Apply advanced prompting patterns including Few-Shot, Chain-of-Thought, Generated Knowledge, Least-to-Most, Self-Refine security audits, and Maieutic prompting."
+topic: "Advanced Prompting"
+prerequisites: ["generative-ai-for-beginners/05-prompt-engineering-fundamentals"]
+---
+import PythonRunner from '../../../components/islands/PythonRunner';
+import QuizCard from '../../../components/islands/QuizCard';
+import ColabButton from '../../../components/static/ColabButton.astro';
+
+Basic one-line prompts work fine for simple summaries, but they fall apart on multi-step math, strict domain constraints, or production code generation. Think about a classic word problem: *"Alice has 5 apples, throws 3 away, gives 2 to Bob, and Bob gives 1 back. How many apples does Alice have?"* Without structured reasoning, older or rushed prompts often blurt out `"5"`. In this lesson, we'll master seven battle-tested **advanced prompting techniques**—from Chain-of-Thought to Self-Refine security auditing.
+
+---
+
+## The 7 Advanced Prompting Patterns
+
+| Technique | Core Mechanism | Best Use Case |
+| :--- | :--- | :--- |
+| **Zero-Shot** | Direct task request with zero examples (`"What is Algebra?"`) | Quick definitions and simple factual queries |
+| **Few-Shot** | Provide 2–3 input/output exemplars (e.g., Shakespearean Sonnets 18, 116, 132 $\rightarrow$ write a moon sonnet) | Enforcing strict poetic meter, JSON format, or tone |
+| **Chain-of-Thought (CoT)** | Demonstrate intermediate step-by-step arithmetic before the final answer | Word problems, logic puzzles, multi-step debugging |
+| **Generated Knowledge** | Inject structured domain facts (`ACME Insurance` catalog + `\$1000` budget) via template variables | Grounding recommendations in private business rules |
+| **Least-to-Most** | Break a broad goal (`"5 steps to do data science"`) into sequential sub-prompts | Complex tutorials, multi-file system design |
+| **Self-Refine** | Generate initial output $\rightarrow$ critique weaknesses $\rightarrow$ regenerate improved version | Hardening starter code (e.g., Flask XSS & validation fixes) |
+| **Maieutic Prompting** | Build an explanation tree (*"Why is step X true? What if it fails?"*) and prune contradictions | High-stakes crisis planning and logical verification |
+
+---
+
+## Chain-of-Thought & Generated Knowledge in Practice
+
+### 1. Chain-of-Thought (CoT) Arithmetic
+When you show the model **Lisa's worked example** first:
+- *Lisa*: `7 apples - 1 thrown = 6; 6 - 4 given to Bart = 2; 2 + 1 returned = 3 apples.`
+- *Alice*: `5 apples - 3 thrown = 2; 2 - 2 given to Bob = 0; 0 + 1 returned = 1 apple.`
+
+By forcing intermediate state transitions, the model avoids jumping to a surface-level guess.
+
+### 2. Generated Knowledge Templates
+Instead of hoping an LLM guesses your company's pricing, inject a structured knowledge block using template variables like `{{company}}`:
+
+```text
+Company: ACME Insurance | Budget: $1000/yr | Needs: Home + Auto + Boat
+Products: Home ($450), Auto ($400), Marine ($300), Umbrella Bundle ($950)
+Task: Recommend the only combination that covers all 3 needs within budget.
+```
+
+---
+
+## Self-Refine: Hardening a Vulnerable Flask App
+
+One of the highest-ROI uses of **Self-Refine** is security code review. Suppose an initial prompt generates a minimal Flask route:
+
+```python
+@app.route("/")
+def hello():
+    name = request.args.get("name", "World")
+    return f"Hello, {name}!"  # Vulnerable: unescaped XSS + no validation
+```
+
+Prompting the model with *"Suggest 3 improvements of the above code and rewrite it"* upgrades it to production quality:
+1. **Input Validation**: Enforce `FlaskForm` rules (`DataRequired`, `Length`, `Email`).
+2. **Secret Management**: Load `os.environ.get("FLASK_SECRET_KEY")` instead of hardcoding secrets.
+3. **XSS Escaping & Error Handling**: Wrap user input in `markupsafe.escape(name)` and register `@app.errorhandler(400)`.
+
+---
+
+## Open the Companion Colab Notebook
+
+Launch the notebook below to run all seven advanced prompting techniques against `gemini-2.5-flash`, including $T=0.1$ vs $T=0.9$ sampling comparisons and the Flask Self-Refine upgrade.
+
+<ColabButton
+  course="generative-ai-for-beginners"
+  notebook="06-creating-advanced-prompts.ipynb"
+  runtime="Free Tier CPU + Gemini API"
+/>
+
+---
+
+## Try It Yourself: CoT, Generated Knowledge & Self-Refine Auditor
+
+Run this pure-Python sandbox to verify the Chain-of-Thought apple arithmetic, resolve the `ACME Insurance` generated-knowledge budget constraint, and audit the vulnerable vs. Self-Refined Flask snippets.
+
+<PythonRunner
+  client:visible
+  title="Try it Yourself: Advanced Prompting & Self-Refine Auditor"
+  expectedOutput="CoT Lisa: 7 - 1 - 4 + 1 = 3 apples
+CoT Alice: 5 - 3 - 2 + 1 = 1 apples
+ACME Recommendation within $1000: Umbrella Bundle ($950)
+Flask v1 Issues: ['Unescaped HTML/XSS risk', 'No input validation']
+Flask v2 Hardened: Clean (0 issues)"
+  initialCode={`# 1. Chain-of-Thought state tracker
+def solve_apples(name, start, thrown, given, returned):
+    step1 = start - thrown
+    step2 = step1 - given
+    final = step2 + returned
+    print(f"CoT {name}: {start} - {thrown} - {given} + {returned} = {final} apples")
+
+solve_apples("Lisa", 7, 1, 4, 1)
+solve_apples("Alice", 5, 3, 2, 1)
+
+# 2. Generated Knowledge template solver (ACME Insurance)
+products = [
+    ("Individual Home+Auto+Marine", 450 + 400 + 300),
+    ("Umbrella Bundle", 950),
+]
+budget = 1000
+valid = [p for p in products if p[1] <= budget]
+print(f"ACME Recommendation within \${budget}: {valid[0][0]} (\${valid[0][1]})")
+
+# 3. Self-Refine security audit on Flask code
+flask_v1 = 'return f"Hello, {request.args.get(\'name\')}!"'
+flask_v2 = 'form = NameForm(); safe = escape(form.name.data); return f"Hello, {safe}!"'
+
+def audit_flask(code):
+    issues = []
+    if "escape(" not in code:
+        issues.append("Unescaped HTML/XSS risk")
+    if "Form(" not in code:
+        issues.append("No input validation")
+    return issues
+
+print(f"Flask v1 Issues: {audit_flask(flask_v1)}")
+v2_issues = audit_flask(flask_v2)
+print(f"Flask v2 Hardened: Clean ({len(v2_issues)} issues)")`}
+/>
+
+---
+
+## Check Your Understanding
+
+<QuizCard
+  client:visible
+  question="Which advanced prompting technique generates an initial solution (like a Flask API), asks the model to critique it for flaws, and then produces an improved version?"
+  options={[
+    "Zero-Shot Prompting",
+    "Self-Refine Prompting",
+    "Greedy Tokenization",
+    "Vector Quantization"
+  ]}
+  correctAnswer={1}
+  explanation="Self-Refine uses an iterative generate -> critique -> regenerate loop so the LLM catches security, validation, or architectural flaws in its own first draft."
+/>

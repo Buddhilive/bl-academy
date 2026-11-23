@@ -1,0 +1,110 @@
+---
+title: "Deep Learning with PyTorch & Controlling Overfitting"
+track: "ai-for-beginners"
+category: "Module 2: Neural Networks from Scratch"
+order: 6
+difficulty: "intermediate"
+xp: 75
+description: "Transition from manual NumPy backprop to PyTorch tensors, autograd, nn.Module, and diagnose overfitting with L2 weight decay and dropout."
+topic: "PyTorch Foundations and Overfitting"
+prerequisites: ["ai-for-beginners/04-multi-layered-perceptron-and-own-framework"]
+---
+import PythonRunner from '../../../components/islands/PythonRunner';
+import QuizCard from '../../../components/islands/QuizCard';
+import ColabButton from '../../../components/static/ColabButton.astro';
+
+Building a neural network from scratch in NumPy is the best way to understand backpropagation—but manually writing `.backward()` derivatives for a 50-layer ResNet or Transformer is impractical, and NumPy cannot run on GPUs.
+
+That is why modern AI engineering relies on **PyTorch**. PyTorch gives you two superpowers out of the box: GPU-accelerated **Tensors** and **Automatic Differentiation (`autograd`)** over dynamic computational graphs.
+
+---
+
+## Low-Level vs. High-Level PyTorch APIs
+
+PyTorch lets you work at two levels of abstraction depending on your goal:
+
+| API Level | Core Primitives | Best Used For |
+| :--- | :--- | :--- |
+| **Low-Level (`torch.Tensor` + `autograd`)** | `requires_grad=True`, `.backward()`, `.grad` | Custom loss functions, research architectures, physics-informed nets. |
+| **High-Level (`torch.nn` + `torch.optim`)** | `nn.Module`, `nn.Sequential`, `nn.Linear`, `optim.Adam` | Standard production models, rapid prototyping, clean training loops. |
+
+Whenever you perform operations on tensors with `requires_grad=True`, PyTorch records a **computational graph** behind the scenes. Calling `loss.backward()` traverses that graph in reverse and populates `.grad` on every parameter automatically.
+
+---
+
+## Understanding & Preventing Overfitting
+
+As soon as you have a flexible neural network, you will run into the most important failure mode in machine learning: **Overfitting**.
+
+Consider fitting 5 noisy data points: a 2-parameter straight line captures the underlying trend (training error $5.3$, validation error $5.1$), whereas a 7-parameter polynomial passes through every training dot (training error $0.0$) while exploding on unseen data (validation error $20.0$).
+
+This is the **Bias–Variance Trade-off**:
+- **Underfitting (High Bias)**: The model is too simple to capture the real pattern—both training and validation errors stay high.
+- **Overfitting (High Variance)**: The model memorizes random noise in the training set—training loss drops near zero while validation loss climbs.
+
+### Four Practical Ways to Prevent Overfitting
+
+1. **More Training Data / Data Augmentation**: Harder for a model to memorize noise when the dataset is large and varied.
+2. **Early Stopping**: Snapshot model weights at the epoch where validation loss stops improving.
+3. **Dropout**: Randomly zero out a fraction $p$ of hidden neurons during each training step so the network cannot rely on fragile co-adaptations.
+4. **L2 Regularization (Weight Decay)**: Penalize large weights by adding $\frac{\lambda}{2}\|\mathbf{w}\|_2^2$ to the loss:
+
+$$\mathcal{L}_{\text{reg}}(\mathbf{w}) = \mathcal{L}(\mathbf{w}) + \frac{\lambda}{2}\sum_j w_j^2 \implies w_j \leftarrow w_j - \eta \left(\frac{\partial \mathcal{L}}{\partial w_j} + \lambda w_j\right)$$
+
+<ColabButton
+  course="ai-for-beginners"
+  notebook="05-deep-learning-frameworks-and-overfitting.ipynb"
+  runtime="Free Tier T4 GPU"
+/>
+
+---
+
+## Hands-On: L2 Weight Decay Regularization in Python
+
+Notice how adding a small weight-decay penalty $\lambda$ gently shrinks oversized weights toward zero without changing the core gradient descent loop.
+
+<PythonRunner
+  client:visible
+  title="Try it Yourself: Gradient Descent with L2 Weight Decay"
+  expectedOutput="Unregularized (lambda=0.0): w=[2.0, 2.0], ||w||^2=8.00
+Regularized   (lambda=0.2): w=[1.95, 1.95], ||w||^2=7.58"
+  initialCode={`def train_l2(weight_decay: float, steps: int = 40, lr: float = 0.05) -> list[float]:
+    w = [0.0, 0.0]
+    # Target y = 2*x1 + 2*x2
+    samples = [([1.0, 1.0], 4.0), ([2.0, 1.0], 6.0), ([1.0, 2.0], 6.0)]
+    for _ in range(steps):
+        grad = [0.0, 0.0]
+        for x, y in samples:
+            err = (w[0]*x[0] + w[1]*x[1]) - y
+            grad[0] += (2.0 * err * x[0]) / len(samples)
+            grad[1] += (2.0 * err * x[1]) / len(samples)
+        for j in range(2):
+            w[j] -= lr * (grad[j] + weight_decay * w[j])
+    return w
+
+w_no_reg = train_l2(0.0)
+w_reg = train_l2(0.2)
+norm_no = sum(v*v for v in w_no_reg)
+norm_reg = sum(v*v for v in w_reg)
+print(f"Unregularized (lambda=0.0): w={[round(v, 2) for v in w_no_reg]}, ||w||^2={norm_no:.2f}")
+print(f"Regularized   (lambda=0.2): w={[round(v, 2) for v in w_reg]}, ||w||^2={norm_reg:.2f}")`}
+/>
+
+---
+
+## Check Your Understanding
+
+<QuizCard
+  client:visible
+  question="During training, you observe training accuracy reaching 99.5% while validation accuracy peaks at 78% and then drops to 71%. What is happening and what should you do?"
+  options={[
+    "The model is underfitting; increase the number of hidden layers.",
+    "The model is overfitting; apply regularization (Dropout, L2 weight decay), early stopping, or add more training data.",
+    "PyTorch autograd is broken; switch to manual NumPy gradients.",
+    "The learning rate is 0.0."
+  ]}
+  correctAnswer={1}
+  explanation="A widening gap between near-perfect training accuracy and degrading validation accuracy is the classic signature of overfitting (high variance)."
+/>
+
+You've now mastered the fundamentals of neural networks from scratch and PyTorch. Next, let's apply deep learning to images in **Module 3: Computer Vision**.

@@ -1,13 +1,13 @@
 # A11y Verification Report
 
 ## Validation Context
-- **Feature/Epic:** Phase 1 Data Foundations & Classical ML Tutorials (`009-phase-1-data-tutorials`)
-- **Test Date:** 11/20/2026
-- **Covers interface as of:** `009-phase-1-data-tutorials` (`ColabButton.astro`, `index.astro`, `01..08` Phase 1 `.mdx` lessons)
+- **Feature/Epic:** Course 07 — Harness Engineering (`018-harness-engineering-full-course`)
+- **Test Date:** 11/22/2026
+- **Covers interface as of:** `018-harness-engineering-full-course` (`src/lib/curriculum.ts`, `src/content/lessons/harness-engineering/01..24.mdx`, `ColabButton.astro`, `PythonRunner.tsx`, `QuizCard.tsx`)
 - **Standard version:** 2.5.0
 - **Compliance Status:** ⚠️ CONDITIONAL (Headless automated checks run; browser/screen-reader checkpoints pending human verification)
-- **Verification Independence:** self-reported (automated static checks + `check_contrast` / `buddhi scripts contrast`)
-- **Static gate (`verify-a11y.py`):** Run on 2026-11-20 (see latest `buddhi scripts verify-a11y` output)
+- **Verification Independence:** self-reported (automated static checks: `verify-a11y`, `verify_course.py`, `pnpm astro check`, `pnpm build`)
+- **Static gate (`verify-a11y`):** Run on 2026-11-22
 
 ## 1. Technical Verification (Automated & Semantics)
 - [ ] **Axe-Core / Lighthouse:** Not verified — headless environment without live browser DOM runner.

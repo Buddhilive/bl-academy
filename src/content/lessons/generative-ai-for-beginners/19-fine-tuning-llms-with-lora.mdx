@@ -1,0 +1,123 @@
+---
+title: "Fine-Tuning LLMs: SFT, DPO, RFT, Low-Rank Adaptation (LoRA/QLoRA) & Training the Periodic Table Limerick Model"
+track: "generative-ai-for-beginners"
+category: "Module 5: Open-Source Models, AI Agents, LoRA Fine-Tuning & SLMs"
+order: 19
+difficulty: "advanced"
+xp: 90
+description: "Fine-tune open-weight LLMs with SFT, DPO, RFT, and 4-bit QLoRA/LoRA using Hugging Face peft and trl on the Elle Periodic Table Limerick dataset on Colab T4 GPU."
+topic: "LoRA Fine-Tuning"
+prerequisites: ["generative-ai-for-beginners/18-ai-agents-and-multi-agent-workflows"]
+---
+import PythonRunner from '../../../components/islands/PythonRunner';
+import QuizCard from '../../../components/islands/QuizCard';
+import ColabButton from '../../../components/static/ColabButton.astro';
+
+When Prompt Engineering and RAG hit their ceiling—say, you need an LLM to internalize a highly specific poetic style, shrink a 2,000-token system prompt down to 20 tokens, or let a small 1B–3B model match the domain accuracy of a frontier model—it is time for **Fine-Tuning**. Instead of paying to retrain billions of weights, modern **Low-Rank Adaptation (LoRA)** and **4-bit QLoRA** freeze the base model and train tiny adapter matrices on a single **Google Colab Free Tier T4 GPU**.
+
+---
+
+## SFT vs. DPO vs. RFT: Choosing a Fine-Tuning Method
+
+| Method | Training Data Format | Best Used For |
+| :--- | :--- | :--- |
+| **Supervised Fine-Tuning (SFT)** | `(system, user, assistant)` JSONL pairs | Teaching tone, structured formats, or domain tasks |
+| **Direct Preference Optimization (DPO)** | `(prompt, chosen, rejected)` preference triples | Aligning style/safety preferences without a separate reward model |
+| **Reinforcement Fine-Tuning (RFT)** | Prompts + verifiable reward graders | Math, coding, and multi-step reasoning optimization |
+
+---
+
+## The Mathematics of LoRA & 4-Bit QLoRA
+
+Full fine-tuning updates every weight matrix $W_0 \in \mathbb{R}^{d \times k}$. **LoRA** freezes $W_0$ and injects a trainable low-rank decomposition $\Delta W = \frac{\alpha}{r} B A$:
+
+$$W = W_0 + \Delta W = W_0 + \frac{\alpha}{r} B A, \qquad B \in \mathbb{R}^{d \times r}, \; A \in \mathbb{R}^{r \times k}, \; r \ll \min(d, k)$$
+
+With rank $r = 8$ on a $4096 \times 4096$ projection matrix, trainable parameters drop from $16.77\text{M}$ down to $65,536$—a **$99.6\%$ reduction**! **QLoRA** takes this further by quantizing $W_0$ to 4-bit NormalFloat (`nf4`) via `bitsandbytes`, fitting 3B–7B models comfortably inside Colab's 15 GB T4 VRAM.
+
+---
+
+## Hands-On Project: The "Elle" Periodic Table Limerick Dataset
+
+To see SFT + LoRA in action, we use the **"Elle" Periodic Table Limerick** JSONL dataset (`training-data.jsonl` and `validation-data.jsonl`):
+- **System Persona**: `"Elle is a factual chatbot that answers questions about elements in the periodic table with a limerick"`
+- **Training Examples**: 10 elements (Gallium, Hydrogen, Helium, Boron, Iron, Carbon, Cobalt, Titanium, Silver, Mercury) paired with scientifically accurate AABBA limericks.
+- **Evaluation**: Monitoring `train_loss`, `valid_loss`, and `mean_token_accuracy` across epochs to catch overfitting, then testing generalization on an unseen element: `"Tell me about Strontium"`.
+
+---
+
+## Open the Companion Colab Notebook
+
+Launch the notebook below on a **Colab Free Tier T4 GPU**—it embeds the complete `training-data.jsonl` and `validation-data.jsonl` datasets inline and runs real LoRA SFT training with **Hugging Face `peft` (`LoraConfig`) + `trl` (`SFTTrainer`)**.
+
+<ColabButton
+  course="generative-ai-for-beginners"
+  notebook="19-fine-tuning-llms-with-lora.ipynb"
+  runtime="Free Tier T4 GPU"
+/>
+
+---
+
+## Try It Yourself: LoRA Parameter-Savings & JSONL Validator
+
+Run this pure-Python sandbox to compute exact LoRA parameter reduction across ranks $r \in \{4, 8, 16\}$, validate the `"Elle"` JSONL schema, and detect the optimal checkpoint before overfitting.
+
+<PythonRunner
+  client:visible
+  title="Try it Yourself: LoRA Math, JSONL Validator & Checkpoint Selector"
+  expectedOutput="Matrix 4096x4096 = 16,777,216 params
+  Rank r=4 : 32,768 params (99.80% reduction)
+  Rank r=8 : 65,536 params (99.61% reduction)
+  Rank r=16: 131,072 params (99.22% reduction)
+JSONL Record Valid (roles=['system', 'user', 'assistant']): True
+Best Checkpoint (lowest valid_loss): Epoch 3 (train=0.41, valid=0.48)"
+  initialCode={`import json
+
+# 1. LoRA parameter savings calculator
+d, k = 4096, 4096
+full_params = d * k
+print(f"Matrix {d}x{k} = {full_params:,} params")
+for r in (4, 8, 16):
+    lora_params = r * (d + k)
+    reduction = (1 - lora_params / full_params) * 100
+    print(f"  Rank r={r:<2}: {lora_params:,} params ({reduction:.2f}% reduction)")
+
+# 2. Validate "Elle" Periodic Table Limerick JSONL schema
+sample_jsonl = json.dumps({
+    "messages": [
+        {"role": "system", "content": "Elle is a factual chatbot that answers questions about elements in the periodic table with a limerick"},
+        {"role": "user", "content": "Tell me about Helium"},
+        {"role": "assistant", "content": "Helium's light and it floats in the air, / With atomic number two, it's quite rare..."},
+    ]
+})
+parsed = json.loads(sample_jsonl)
+roles = [m["role"] for m in parsed["messages"]]
+print(f"JSONL Record Valid (roles={roles}): {roles == ['system', 'user', 'assistant']}")
+
+# 3. Overfitting checkpoint selector (lowest validation loss)
+history = [
+    {"epoch": 1, "train": 1.25, "valid": 1.18},
+    {"epoch": 2, "train": 0.72, "valid": 0.69},
+    {"epoch": 3, "train": 0.41, "valid": 0.48},
+    {"epoch": 4, "train": 0.15, "valid": 0.63},  # overfitting!
+]
+best = min(history, key=lambda h: h["valid"])
+print(f"Best Checkpoint (lowest valid_loss): Epoch {best['epoch']} (train={best['train']}, valid={best['valid']})")`}
+/>
+
+---
+
+## Check Your Understanding
+
+<QuizCard
+  client:visible
+  question="During LoRA fine-tuning, train_loss keeps dropping from 0.41 to 0.15 in Epoch 4 while valid_loss rises from 0.48 to 0.63. What is happening and what should you do?"
+  options={[
+    "The model is overfitting to the training examples; select the Epoch 3 checkpoint with the lowest validation loss.",
+    "The GPU ran out of electricity.",
+    "LoRA rank r must be increased to 10,000.",
+    "Validation loss rising means the model is generalizing better."
+  ]}
+  correctAnswer={0}
+  explanation="Diverging train_loss (falling) and valid_loss (rising) is the classic signature of overfitting. Always restore the checkpoint with the lowest validation loss."
+/>

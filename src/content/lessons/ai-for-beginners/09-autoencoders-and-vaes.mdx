@@ -1,0 +1,101 @@
+---
+title: "Autoencoders & Variational Autoencoders (VAEs)"
+track: "ai-for-beginners"
+category: "Module 3: Computer Vision"
+order: 10
+difficulty: "intermediate"
+xp: 80
+description: "Learn self-supervised representation learning with Encoder-Decoder Autoencoders, denoising, and Variational Autoencoders (VAEs) with KL divergence."
+topic: "Autoencoders and VAEs"
+prerequisites: ["ai-for-beginners/08-pretrained-networks-and-transfer-learning"]
+---
+import PythonRunner from '../../../components/islands/PythonRunner';
+import QuizCard from '../../../components/islands/QuizCard';
+import ColabButton from '../../../components/static/ColabButton.astro';
+
+Collecting millions of manual class labels is expensive. **Self-supervised learning** bypasses manual labels by using the input image itself as the target output. An **Autoencoder** compresses an image into a low-dimensional **latent vector** $\mathbf{z}$ via an **Encoder** network, then reconstructs the original image from $\mathbf{z}$ via a **Decoder** network.
+
+Because $\mathbf{z}$ is much smaller than the raw image (a bottleneck), the network is forced to discard noise and preserve only the essential semantic structure of the data.
+
+---
+
+## Practical Uses of Autoencoders
+
+| Variant | Training Objective | Real-World Application |
+| :--- | :--- | :--- |
+| **Standard Autoencoder** | Minimize $\text{MSE}(\mathbf{x}, \hat{\mathbf{x}})$ | Non-linear dimensionality reduction and compact image embeddings. |
+| **Denoising Autoencoder** | Reconstruct clean $\mathbf{x}$ from noisy $\tilde{\mathbf{x}}$ | Removing grain, scratches, or compression artifacts from photos. |
+| **Super-Resolution** | Reconstruct high-res $\mathbf{x}$ from downsampled input | Upscaling low-resolution images with learned fine details. |
+| **Variational Autoencoder (VAE)** | Reconstruction Loss $+$ KL Divergence | Smooth, continuous latent space for **generating** brand-new images. |
+
+---
+
+## Variational Autoencoders (VAEs) & The Reparameterization Trick
+
+A standard autoencoder's latent space often has "holes"—sampling a random vector $\mathbf{z}$ produces garbled noise. A **Variational Autoencoder (VAE)** fixes this by forcing the encoder to output the parameters of a Gaussian distribution: a mean vector $\boldsymbol{\mu}$ and log-variance $\log \boldsymbol{\sigma}^2$.
+
+To backpropagate through random sampling, VAEs use the **Reparameterization Trick**:
+
+$$\mathbf{z} = \boldsymbol{\mu} + \boldsymbol{\sigma} \odot \boldsymbol{\epsilon}, \qquad \boldsymbol{\epsilon} \sim \mathcal{N}(\mathbf{0}, I)$$
+
+The VAE loss balances pixel reconstruction against **Kullback–Leibler (KL) Divergence**, which pulls the latent distribution toward a standard normal $\mathcal{N}(\mathbf{0}, I)$:
+
+$$D_{\text{KL}} = -\frac{1}{2}\sum_{j=1}^{d} \left(1 + \log \sigma_j^2 - \mu_j^2 - \sigma_j^2\right)$$
+
+Because the latent space is continuous and well-behaved, you can interpolate smoothly between two encoded digits (for instance, morphing a handwritten `3` into an `8` step by step) or sample brand-new digits from random Gaussian noise. Keep in mind three practical properties of autoencoders: they are **data-specific** (an autoencoder trained on flowers won't reconstruct portraits cleanly), **lossy** (outputs are slightly smoother than originals), and **unsupervised** (requiring zero class labels).
+
+<ColabButton
+  course="ai-for-beginners"
+  notebook="09-autoencoders-and-vaes.ipynb"
+  runtime="Free Tier T4 GPU"
+/>
+
+---
+
+## Hands-On: VAE Reparameterization & KL Divergence Loss
+
+Let's implement the VAE reparameterization sampler and closed-form KL divergence in pure Python. Notice how $D_{\text{KL}} = 0$ when $\boldsymbol{\mu} = \mathbf{0}$ and $\log \boldsymbol{\sigma}^2 = \mathbf{0}$ ($\sigma = 1$).
+
+<PythonRunner
+  client:visible
+  title="Try it Yourself: VAE Reparameterization & KL Loss"
+  expectedOutput="Standard Normal (mu=0, logvar=0) -> KL Loss: -0.0000
+Shifted Latent (mu=[1.2, -0.5], logvar=[-0.4, 0.2]) -> KL Loss: 0.8909
+Sampled z: [1.312, -0.648]"
+  initialCode={`import math
+
+def kl_divergence(mu: list[float], logvar: list[float]) -> float:
+    return -0.5 * sum(1.0 + lv - m**2 - math.exp(lv) for m, lv in zip(mu, logvar))
+
+def reparameterize(mu: list[float], logvar: list[float], eps: list[float]) -> list[float]:
+    return [round(m + math.exp(0.5 * lv) * e, 3) for m, lv, e in zip(mu, logvar, eps)]
+
+kl_zero = kl_divergence([0.0, 0.0], [0.0, 0.0])
+mu = [1.2, -0.5]
+logvar = [-0.4, 0.2]
+kl_shifted = kl_divergence(mu, logvar)
+z = reparameterize(mu, logvar, eps=[0.137, -0.134])
+
+print(f"Standard Normal (mu=0, logvar=0) -> KL Loss: {kl_zero:.4f}")
+print(f"Shifted Latent (mu={mu}, logvar={logvar}) -> KL Loss: {kl_shifted:.4f}")
+print(f"Sampled z: {z}")`}
+/>
+
+---
+
+## Check Your Understanding
+
+<QuizCard
+  client:visible
+  question="Why does a Variational Autoencoder (VAE) add KL Divergence to its reconstruction loss?"
+  options={[
+    "To force the latent space to match a smooth standard normal distribution N(0, I) so random samples decode into coherent new images.",
+    "To double the image resolution during encoding.",
+    "To convert convolutional layers into recurrent layers.",
+    "To eliminate the decoder network completely."
+  ]}
+  correctAnswer={0}
+  explanation="KL divergence regularizes the encoder's latent distributions toward N(0, I), ensuring nearby latent vectors blend smoothly and preventing isolated gaps in latent space."
+/>
+
+Next, let's pit two neural networks against each other for sharper image synthesis in **Lesson 10: Generative Adversarial Networks (GANs) & Neural Style Transfer**.

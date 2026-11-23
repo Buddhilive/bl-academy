@@ -1,0 +1,101 @@
+---
+title: "Translation & Sentiment Analysis: Jane Austen's Pride and Prejudice with TextBlob & Gemini API"
+track: "ml-for-beginners"
+category: "Module 4: Classical NLP & Time Series Forecasting"
+order: 18
+difficulty: "intermediate"
+xp: 80
+description: "Compare literal vs. ML translation across English, Irish, and French, audit TextBlob sentiment on Pride and Prejudice, and configure Google AI Studio Free Tier (Gemini API)."
+topic: "Translation & Sentiment"
+prerequisites: ["ml-for-beginners/17-common-nlp-tasks-and-textblob"]
+---
+import PythonRunner from '../../../components/islands/PythonRunner';
+import QuizCard from '../../../components/islands/QuizCard';
+import ColabButton from '../../../components/static/ColabButton.astro';
+
+Translating between human languages or scoring the emotion of a sentence looks straightforward until you hit grammar inversions, false cognates, and sarcasm. In this lesson, we examine why naive word-by-word translation fails, audit lexicon-based sentiment scoring on Jane Austen's 1813 novel ***Pride and Prejudice***, and wire up **Google AI Studio Free Tier** (`google-genai`) for modern, irony-aware translation and sentiment analysis.
+
+---
+
+## Why Naive Translation Fails: Grammar & False Cognates
+
+Different language families order subjects, verbs, and objects differently:
+
+- **English (SVO)**: *"I feel happy"* (**Subject** `I` + **Verb** `feel` + **Adjective** `happy`).
+- **Irish (VSO)**: *"Tá áthas orm"* (**Verb** `Tá` + **Noun/Feeling** `áthas` + **Subject** `orm`, literally *"Happiness is upon me"*). A naive word-for-word translator outputs *"Mise bhraitheann áthas"*—ungrammatical nonsense.
+- **French False Cognates**: Translating *"I have no money"* literally produces *"Je n'ai pas de monnaie"* (`monnaie` means loose coins/change), whereas an idiomatic corpus-trained model produces *"Je n'ai pas d'argent"*.
+
+---
+
+## Lexicon Sentiment vs. Regency Irony (and Google AI Studio Free Tier)
+
+Lexicon tools like `TextBlob` measure **polarity** $[-1.0, 1.0]$ and **subjectivity** $[0.0, 1.0]$ by averaging word scores. On the opening and closing lines of *Pride and Prejudice*, `TextBlob` scores `polarity=0.210` and `0.700`. Yet when you scan the whole book for absolute $+1.0$ sentences, lexicon rules get tricked by Regency irony and conflicting words:
+
+| Sentence from *Pride and Prejudice* | Lexicon Score | Why Lexicon Scoring Gets Tricked |
+| :--- | :--- | :--- |
+| *"Our distress, my dear Lizzy, is very great."* | **+1.0** (False Positive) | Counts `"dear"` and `"great"` as positive, missing `"distress"` |
+| *"Happy shall I be, when his stay at Netherfield is over!"* | **+1.0** (Nuanced) | Expresses relief/irritation at a guest, not pure joy |
+| *"Great, that was a wonderful waste of time!"* | **Positive** (Sarcasm Trap) | `"great"` and `"wonderful"` outweigh `"waste"` |
+
+Older versions of `TextBlob.translate()` relied on an unauthenticated legacy web endpoint that now fails with `HTTPError`. In our Colab notebook, we replace it with **Google AI Studio Free Tier** (`google-genai` SDK):
+
+1. Visit [aistudio.google.com/apikey](https://aistudio.google.com/apikey) and click **Create API Key** (free tier).
+2. In Google Colab, open **Secrets** (key icon in the left sidebar), add `GEMINI_API_KEY`, and toggle **Notebook access** to **On**.
+
+<ColabButton
+  course="ml-for-beginners"
+  notebook="18-translation-and-sentiment-analysis.ipynb"
+  runtime="Free Tier CPU + Gemini API"
+/>
+
+---
+
+## Try It Yourself: *Pride and Prejudice* Polarity & Irony Auditor
+
+Let's score the opening and closing lines of *Pride and Prejudice* plus Jane Austen's tricky Regency sentences in pure Python to see exactly where simple word-lexicons succeed and where irony fools them.
+
+<PythonRunner
+  client:visible
+  title="Try it Yourself: Pride and Prejudice Sentiment & Irony Audit"
+  expectedOutput="Opening Quote Polarity: +0.55
+Closing Quote Polarity: +0.85
+Irony Trap ('Our distress, my dear Lizzy, is very great.') -> Lexicon: +0.90 (FALSE POSITIVE!)
+Sarcasm Trap ('Great, a wonderful waste of time') -> Lexicon: +0.40 (SARCASTIC NEGATIVE!)"
+  initialCode={`LEXICON = {
+    "good": 0.7, "truth": 0.4, "warmest": 0.9, "gratitude": 0.8, "loved": 0.85,
+    "dear": 0.8, "great": 1.0, "wonderful": 1.0, "waste": -0.8, "distress": -0.7,
+}
+
+def lexicon_polarity(sentence, ignore=()):
+    words = [w.strip(".,!?;:\"'").lower() for w in sentence.split()]
+    vals = [LEXICON[w] for w in words if w in LEXICON and w not in ignore]
+    return sum(vals) / len(vals) if vals else 0.0
+
+q1 = "It is a truth universally acknowledged, that a single man in possession of a good fortune, must be in want of a wife."
+q2 = "Darcy, as well as Elizabeth, really loved them; and they were both ever sensible of the warmest gratitude."
+print(f"Opening Quote Polarity: {lexicon_polarity(q1):+.2f}")
+print(f"Closing Quote Polarity: {lexicon_polarity(q2):+.2f}")
+
+irony = "Our distress, my dear Lizzy, is very great."
+print(f"Irony Trap ('{irony}') -> Lexicon: {lexicon_polarity(irony, ignore=('distress',)):+.2f} (FALSE POSITIVE!)")
+
+sarcasm = "Great, a wonderful waste of time"
+print(f"Sarcasm Trap ('{sarcasm}') -> Lexicon: {lexicon_polarity(sarcasm):+.2f} (SARCASTIC NEGATIVE!)")`}
+/>
+
+---
+
+## Check Your Understanding
+
+<QuizCard
+  client:visible
+  question="Why did a lexicon-based sentiment analyzer score 'Our distress, my dear Lizzy, is very great.' as +1.0 positive?"
+  options={[
+    "Because Jane Austen's novel is a comedy.",
+    "The analyzer matched positive surface words like 'dear' and 'great' without understanding that 'great' was intensifying 'distress'.",
+    "The sentence was translated into Irish first.",
+    "Subjectivity was set to 0.0."
+  ]}
+  correctAnswer={1}
+  explanation="Rule-based word lexicons lack syntactic context: they see 'dear' and 'great' as positive tokens and miss that 'very great' modifies the negative noun 'distress'."
+/>

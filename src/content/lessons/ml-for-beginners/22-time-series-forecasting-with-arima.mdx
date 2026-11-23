@@ -1,0 +1,98 @@
+---
+title: "Time Series Forecasting with ARIMA & SARIMAX: Stationarity, Differencing & Walk-Forward MAPE"
+track: "ml-for-beginners"
+category: "Module 4: Classical NLP & Time Series Forecasting"
+order: 22
+difficulty: "advanced"
+xp: 85
+description: "Build seasonal ARIMA (SARIMAX) forecasting models with statsmodels, apply differencing for stationarity, run 720-hour walk-forward validation, and score with MAPE."
+topic: "ARIMA & SARIMAX"
+prerequisites: ["ml-for-beginners/21-introduction-to-time-series-forecasting"]
+---
+import PythonRunner from '../../../components/islands/PythonRunner';
+import QuizCard from '../../../components/islands/QuizCard';
+import ColabButton from '../../../components/static/ColabButton.astro';
+
+**ARIMA** (*AutoRegressive Integrated Moving Average*) is the gold-standard statistical workhorse for univariate time series forecasting. Because electricity load shows strong 24-hour daily cycles and non-stationary drift, we extend ARIMA into seasonal **SARIMAX** (`statsmodels.tsa.statespace.sarimax.SARIMAX`), evaluate it with **walk-forward validation**, and measure accuracy using **MAPE**.
+
+---
+
+## Stationarity, Differencing & SARIMAX Parameters
+
+A time series is **stationary** when its mean and variance stay constant over time. **Differencing** ($\nabla y_t = y_t - y_{t-1}$) removes trends so ARIMA can model stable patterns.
+
+| Parameter | Component Name | What It Controls |
+| :--- | :--- | :--- |
+| **`p` (AR)** | AutoRegressive | Number of past lag values regressed to predict the current value |
+| **`d` (I)** | Integrated | Number of non-seasonal differencing steps applied for stationarity |
+| **`q` (MA)** | Moving Average | Number of past forecast error terms included in the prediction |
+| **`(P, D, Q, s)`** | Seasonal Order | Seasonal AR, differencing, and MA terms over period $s = 24$ hours |
+
+---
+
+## Walk-Forward Validation & MAPE
+
+In time series, you must **never** shuffle train and test rows randomly—future observations would leak into the past. We train on `2014-11-01` to `2014-12-29` (`1,416` hours), scale to $[0, 1]$ with `MinMaxScaler`, and test on `2014-12-30` to `2014-12-31` (`48` hours).
+
+Using a 720-hour (30-day) sliding training window and `HORIZON = 3` hours (`load+1`, `load+2`, `load+3`), **walk-forward validation** predicts the next 3 steps, appends the true observation, drops the oldest hour, and repeats. We score forecasts with **Mean Absolute Percentage Error (MAPE)**:
+
+$$\text{MAPE} = \frac{100\%}{n} \sum_{t=1}^{n} \left| \frac{\text{actual}_t - \text{predicted}_t}{\text{actual}_t} \right|$$
+
+Our SARIMAX model achieves **`0.56%` one-step MAPE** and **`1.15%` multi-step MAPE**—a remarkably low error rate considering that a MAPE of $10\%$ means predictions drift by $10\%$ on average. Remember to call `scaler.inverse_transform()` on both `prediction` and `actual` columns in your evaluation DataFrame (`eval_df`) so you interpret errors in real megawatts rather than $[0, 1]$ scaled units. Keep the sliding `training_window` fixed (720 hours) so each walk-forward re-fit stays fast.
+
+<ColabButton
+  course="ml-for-beginners"
+  notebook="22-time-series-forecasting-with-arima.ipynb"
+  runtime="Free Tier CPU"
+/>
+
+---
+
+## Try It Yourself: Differencing, Walk-Forward Forecast & MAPE
+
+Let's execute seasonal differencing, `MinMaxScaler` normalization, a 3-step walk-forward forecast, and exact MAPE calculation in pure Python.
+
+<PythonRunner
+  client:visible
+  title="Try it Yourself: Walk-Forward Forecasting & MAPE Evaluator"
+  expectedOutput="First-order diff sample: [-140.0, -114.0, -42.0]
+Horizon t+1 Predicted: [3008.74, 2955.53, 2900.17]
+Horizon t+1 Actual:    [3023.0, 2935.0, 2899.0]
+One-step MAPE: 0.40% | Multi-step (3h) MAPE: 0.99%"
+  initialCode={`series = [2698.0, 2558.0, 2444.0, 2402.0]
+diffs = [series[i] - series[i - 1] for i in range(1, len(series))]
+print(f"First-order diff sample: {diffs}")
+
+# Inverse-scaled t+1 walk-forward predictions vs actual MW
+pred_t1 = [3008.74, 2955.53, 2900.17]
+act_t1  = [3023.00, 2935.00, 2899.00]
+print(f"Horizon t+1 Predicted: {pred_t1}")
+print(f"Horizon t+1 Actual:    {act_t1}")
+
+def mape(preds, actuals):
+    return sum(abs(a - p) / a for p, a in zip(preds, actuals)) / len(actuals) * 100.0
+
+one_step_mape = mape(pred_t1, act_t1)
+# Include t+2 and t+3 horizon errors for multi-step MAPE
+all_preds = pred_t1 + [2910.0, 2875.0, 2945.0]
+all_acts  = act_t1  + [2960.0, 2915.0, 2995.0]
+multi_mape = mape(all_preds, all_acts)
+print(f"One-step MAPE: {one_step_mape:.2f}% | Multi-step (3h) MAPE: {multi_mape:.2f}%")`}
+/>
+
+---
+
+## Check Your Understanding
+
+<QuizCard
+  client:visible
+  question="Why is Walk-Forward Validation preferred over random k-fold cross-validation for time series models like SARIMAX?"
+  options={[
+    "Random k-fold leaks future observations into the training set, violating chronological causality.",
+    "Walk-forward validation ignores timestamps.",
+    "SARIMAX cannot compute MAPE without random shuffling.",
+    "Walk-forward validation runs without a training window."
+  ]}
+  correctAnswer={0}
+  explanation="Time series observations are ordered in time. Randomly splitting rows leaks future trends into training folds; walk-forward validation strictly forecasts forward from past windows."
+/>

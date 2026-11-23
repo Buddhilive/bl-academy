@@ -1,4 +1,3 @@
 # Conventions Index
 
-- [ai-engineer-curriculum-manifest.md](./ai-engineer-curriculum-manifest.md): 6-Phase AI Engineer Curriculum Manifest (33 lessons, `.ref/` sources, runtimes, APIs)
-
+- [ai-engineering-8-course-manifest.md](./ai-engineering-8-course-manifest.md): 8-Course AI Engineering Curriculum Manifest (`.ref/` sources, Colab notebooks, Google AI Studio free tier)

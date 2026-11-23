@@ -1,0 +1,132 @@
+---
+title: "Fairness & Responsible Machine Learning: Bias Harms, Privacy & Fairlearn Audits"
+track: "ml-for-beginners"
+category: "Module 1: ML Foundations, History, Fairness & Techniques"
+order: 3
+difficulty: "beginner"
+xp: 65
+description: "Understand the five fairness-related harms, six Responsible AI principles, pre-training impact assessments, and how to audit subgroup disparities with Fairlearn."
+topic: "ML Fairness"
+prerequisites: ["ml-for-beginners/02-history-of-machine-learning"]
+---
+import PythonRunner from '../../../components/islands/PythonRunner';
+import QuizCard from '../../../components/islands/QuizCard';
+import ColabButton from '../../../components/static/ColabButton.astro';
+
+Machine learning models already make consequential decisions about our lives—screening job applications, scoring loan eligibility, flagging fraud, and assisting medical diagnoses. When training data under-represents a demographic group or encodes historical human bias, an accurate-looking model can quietly harm real people. In this lesson, we'll break down the five concrete fairness harms, the six Responsible AI pillars, and how to run open-source **Fairlearn** audits before a model ever reaches production.
+
+---
+
+## The Five Fairness-Related Harms
+
+In machine learning, **"unfairness"** isn't an abstract philosophy—it shows up as five specific harms affecting groups defined by race, gender, age, or disability status:
+
+| Harm Category | Mechanism | Real-World Example |
+| :--- | :--- | :--- |
+| **1. Allocation** | Unfairly withholding or granting resources/opportunities to one group over another | A loan approval or hiring model favoring one gender or ethnicity |
+| **2. Quality of Service** | Model performs significantly worse for certain groups due to narrow training scenarios | An infrared soap dispenser failing to detect darker skin tones |
+| **3. Denigration** | Offensive, demeaning, or harmful mislabeling of people | Image-tagging models mislabeling dark-skinned people |
+| **4. Over- or Under-representation** | Missing or skewed representation in datasets reinforces exclusion | Training executive-search models on 73% male / 27% female histories |
+| **5. Stereotyping** | Associating fixed demographic attributes with neutral roles or words | Gender-neutral Turkish (*"O bir hemşire / O bir doktor"*) translating to *"She is a nurse / He is a doctor"* |
+
+---
+
+## Six Core Responsible AI Principles
+
+To prevent these harms, every trustworthy ML system should satisfy six engineering principles:
+
+1. **Fairness**: Treat similar individuals consistently regardless of sensitive demographic attributes.
+2. **Reliability & Safety**: Perform predictably under edge cases and unexpected outliers (for example, an autonomous vehicle handling blizzards, night glare, and construction zones).
+3. **Inclusiveness**: Remove barriers for the 1 billion+ people living with disabilities worldwide.
+4. **Privacy & Security**: Respect data origin, informed consent, and regulations like **GDPR**, resisting re-identification or adversarial attacks.
+5. **Transparency**: Provide glass-box explanations of *when*, *why*, and *how* a model makes decisions, especially in regulated domains like consumer lending.
+6. **Accountability**: Ensure the humans who design and deploy models remain responsible for societal impact—especially in high-stakes technologies like facial recognition surveillance.
+
+---
+
+## Pre-Training Impact Assessments & Model Debugging
+
+Before writing a single line of `model.fit()`, responsible teams conduct an **Impact Assessment** covering four areas:
+
+- **Adverse Impact on Individuals**: Document unsupported use cases and known limitations.
+- **Data Requirements**: Verify GDPR/HIPAA compliance, provenance, and demographic coverage.
+- **Summary of Impact**: Catalog potential allocation or quality-of-service harms up front.
+- **Applicable Goals**: Audit whether each of the six principles has concrete verification gates.
+
+Once trained, we never rely solely on aggregate accuracy. Instead, we use open-source tools like **`Fairlearn`** (`MetricFrame`) to inspect **Error Analysis**, **Model Overview disparities**, **Data distribution skew**, and **Feature Importance**.
+
+<ColabButton
+  course="ml-for-beginners"
+  notebook="03-fairness-and-responsible-ml.ipynb"
+  runtime="Free Tier CPU"
+/>
+
+---
+
+## Try It Yourself: Subgroup Fairness & Disparity Auditor
+
+Let's audit a loan-approval classifier in Python by measuring **Selection Rate** ($\text{SR}_g = P(\hat{Y}=1 \mid G=g)$) and **True Positive Rate (TPR)** across two demographic groups. Notice how high overall accuracy ($87.5\%$) can hide a severe allocation disparity!
+
+<PythonRunner
+  client:visible
+  title="Try it Yourself: Demographic Parity & Error Disparity Audit"
+  expectedOutput="Overall Accuracy: 82.5%
+Group A -> Accuracy: 90.0%, Selection Rate: 0.60, TPR: 1.00
+Group B -> Accuracy: 75.0%, Selection Rate: 0.25, TPR: 0.50
+Demographic Parity Difference: 0.35
+Equal Opportunity (TPR) Difference: 0.50
+AUDIT WARNING: Significant allocation/service disparity detected!"
+  initialCode={`# (group, y_true, y_pred)
+records = [
+    # Group A (20 applicants)
+    ("A", 1, 1), ("A", 1, 1), ("A", 1, 1), ("A", 1, 1), ("A", 1, 1),
+    ("A", 1, 1), ("A", 1, 1), ("A", 1, 1), ("A", 1, 1), ("A", 1, 1),
+    ("A", 0, 1), ("A", 0, 1), ("A", 0, 0), ("A", 0, 0), ("A", 0, 0),
+    ("A", 0, 0), ("A", 0, 0), ("A", 0, 0), ("A", 0, 0), ("A", 0, 0),
+    # Group B (20 applicants)
+    ("B", 1, 1), ("B", 1, 1), ("B", 1, 1), ("B", 1, 1), ("B", 1, 0),
+    ("B", 1, 0), ("B", 1, 0), ("B", 1, 0), ("B", 0, 1), ("B", 0, 0),
+    ("B", 0, 0), ("B", 0, 0), ("B", 0, 0), ("B", 0, 0), ("B", 0, 0),
+    ("B", 0, 0), ("B", 0, 0), ("B", 0, 0), ("B", 0, 0), ("B", 0, 0),
+]
+
+def group_metrics(group_name):
+    rows = [r for r in records if r[0] == group_name]
+    acc = sum(1 for _, yt, yp in rows if yt == yp) / len(rows)
+    sel = sum(1 for _, _, yp in rows if yp == 1) / len(rows)
+    positives = [r for r in rows if r[1] == 1]
+    tpr = sum(1 for _, yt, yp in positives if yp == 1) / len(positives)
+    return acc, sel, tpr
+
+overall_acc = sum(1 for _, yt, yp in records if yt == yp) / len(records)
+print(f"Overall Accuracy: {overall_acc * 100:.1f}%")
+
+acc_a, sel_a, tpr_a = group_metrics("A")
+acc_b, sel_b, tpr_b = group_metrics("B")
+print(f"Group A -> Accuracy: {acc_a*100:.1f}%, Selection Rate: {sel_a:.2f}, TPR: {tpr_a:.2f}")
+print(f"Group B -> Accuracy: {acc_b*100:.1f}%, Selection Rate: {sel_b:.2f}, TPR: {tpr_b:.2f}")
+
+dp_diff = abs(sel_a - sel_b)
+tpr_diff = abs(tpr_a - tpr_b)
+print(f"Demographic Parity Difference: {dp_diff:.2f}")
+print(f"Equal Opportunity (TPR) Difference: {tpr_diff:.2f}")
+if dp_diff > 0.10 or tpr_diff > 0.10:
+    print("AUDIT WARNING: Significant allocation/service disparity detected!")`}
+/>
+
+---
+
+## Check Your Understanding
+
+<QuizCard
+  client:visible
+  question="A translation tool converts gender-neutral Turkish sentences ('O bir hemşire. O bir doktor.') into 'She is a nurse. He is a doctor.' Which fairness-related harm does this illustrate?"
+  options={[
+    "Allocation harm",
+    "Stereotyping harm",
+    "Denigration harm",
+    "Security breach"
+  ]}
+  correctAnswer={1}
+  explanation="Associating neutral words or professions with pre-assigned gendered attributes from biased training corpora is a classic example of stereotyping harm."
+/>

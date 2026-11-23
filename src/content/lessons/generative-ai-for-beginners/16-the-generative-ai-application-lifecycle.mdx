@@ -1,0 +1,106 @@
+---
+title: "The Generative AI Application Lifecycle: MLOps vs. LLMOps, 3-Stage DAG Flows & 5-Metric Evaluation Harness"
+track: "generative-ai-for-beginners"
+category: "Module 4: Multimodal Apps, Low-Code UI, AI UX, Security & LLMOps"
+order: 16
+difficulty: "intermediate"
+xp: 80
+description: "Manage the GenAI application lifecycle with LLMOps: contrast MLOps vs. LLMOps, orchestrate 3-stage DAG flows, and evaluate Quality, Harm, Honesty, Cost, and Latency."
+topic: "LLMOps Lifecycle"
+prerequisites: ["generative-ai-for-beginners/15-securing-generative-ai-applications"]
+---
+import PythonRunner from '../../../components/islands/PythonRunner';
+import QuizCard from '../../../components/islands/QuizCard';
+import ColabButton from '../../../components/static/ColabButton.astro';
+
+Shipping your first GenAI prototype takes an afternoon; keeping it accurate, affordable, fast, and safe across thousands of daily users requires **LLMOps**. Traditional MLOps focused on data scientists training custom models from scratch. In Generative AI, application developers orchestrate pre-trained **Models-as-a-Service (MaaS)** through Directed Acyclic Graph (DAG) pipelines combining prompts, RAG retrievers, tools, and guardrails. In this lesson, we'll map the 3-stage GenAI lifecycle and build a 5-metric LLMOps evaluation harness.
+
+---
+
+## MLOps vs. LLMOps: What Changed?
+
+| Dimension | Traditional MLOps | Modern LLMOps |
+| :--- | :--- | :--- |
+| **Primary Builder** | ML Engineers / Data Scientists | Application & AI Engineers |
+| **Core Artifact** | Trained weights + feature pipelines | Prompt templates, RAG indexes, tool schemas, DAG flows |
+| **Model Sourcing** | Train custom models from labeled datasets | Orchestrate hosted MaaS (`gemini-2.5-flash`) or open weights |
+| **Evaluation** | Accuracy, RMSE, ROC-AUC | Quality, Harm, Honesty (Groundedness), Cost, Latency |
+
+---
+
+## The 3 Iterative Stages & 5 Core LLMOps Metrics
+
+Every GenAI application cycles continuously through three stages, wrapped in overarching **Management (Security, Compliance, Governance)**:
+
+1. **Stage 1 — Ideating / Exploring**: Define the business hypothesis, prototype a prompt/RAG DAG flow, and sanity-check on a small golden dataset.
+2. **Stage 2 — Building / Augmenting**: Scale evaluation to larger test sets, compare Metaprompting vs. RAG vs. Fine-Tuning, and gate releases on five holistic metrics:
+   - **Quality**: Relevance, coherence, and task completion.
+   - **Harm**: Responsible AI safety scores (hate, violence, self-harm).
+   - **Honesty (Groundedness)**: Adherence to retrieved context without hallucinations.
+   - **Cost**: Token expenditure across input and output:
+     $$\text{Cost} = \frac{N_{\text{in}} \cdot c_{\text{in}} + N_{\text{out}} \cdot c_{\text{out}}}{10^6}$$
+   - **Latency**: Time-to-First-Token ($\text{TTFT}$) and end-to-end wall-clock milliseconds.
+3. **Stage 3 — Operationalizing**: Deploy to production with CI/CD, live telemetry, A/B routing, and automated regression alerts.
+
+---
+
+## Open the Companion Colab Notebook
+
+Launch the notebook below to run a Python LLMOps DAG tracer and LLM-as-a-Judge evaluator with `google-genai` that scores prompt variants across all 5 LLMOps metrics.
+
+<ColabButton
+  course="generative-ai-for-beginners"
+  notebook="16-the-generative-ai-application-lifecycle.ipynb"
+  runtime="Free Tier CPU + Gemini API"
+/>
+
+---
+
+## Try It Yourself: LLMOps DAG Tracer & 5-Metric Release Gate
+
+Execute this Python sandbox to trace a 3-node DAG (`Retrieve -> Generate -> Guard`) across a golden test suite and evaluate whether the candidate passes the Stage 2 $\rightarrow$ Stage 3 release gate.
+
+<PythonRunner
+  client:visible
+  title="Try it Yourself: LLMOps 5-Metric DAG Evaluation Harness"
+  expectedOutput="DAG Trace: retrieve(18ms) -> generate(142ms) -> safety_guard(9ms) | Total=169ms
+5-Metric Scorecard:
+  Quality=0.92 | Honesty=0.95 | Harm=0.00 | Cost=$0.000240 | Latency=169ms
+Stage 2 -> Stage 3 Release Gate: PASSED"
+  initialCode={`# 1. Simulated DAG execution trace
+stages = [("retrieve", 18), ("generate", 142), ("safety_guard", 9)]
+total_ms = sum(ms for _, ms in stages)
+trace_str = " -> ".join(f"{name}({ms}ms)" for name, ms in stages)
+print(f"DAG Trace: {trace_str} | Total={total_ms}ms")
+
+# 2. 5-Metric LLMOps Evaluation Scorecard
+quality = 0.92
+honesty = 0.95
+harm = 0.00
+tokens_in, tokens_out = 800, 300
+cost_usd = (tokens_in * 0.15 + tokens_out * 0.40) / 1_000_000
+
+print("5-Metric Scorecard:")
+print(f"  Quality={quality:.2f} | Honesty={honesty:.2f} | Harm={harm:.2f} | Cost=\${cost_usd:.6f} | Latency={total_ms}ms")
+
+# 3. Release gate check
+passed = quality >= 0.85 and honesty >= 0.90 and harm == 0.0 and total_ms <= 500
+print(f"Stage 2 -> Stage 3 Release Gate: {'PASSED' if passed else 'BLOCKED'}")`}
+/>
+
+---
+
+## Check Your Understanding
+
+<QuizCard
+  client:visible
+  question="In LLMOps, why must teams evaluate Quality, Harm, Honesty, Cost, and Latency together rather than optimizing Quality alone?"
+  options={[
+    "Because a prompt or model upgrade that boosts Quality by 2% might triple token Cost, double Latency, or introduce ungrounded hallucinations (low Honesty).",
+    "Because Latency and Cost are identical metrics.",
+    "Because Harm is only relevant during Stage 1 ideation.",
+    "Because LLMOps never uses automated evaluation datasets."
+  ]}
+  correctAnswer={0}
+  explanation="Production GenAI engineering is a multi-objective trade-off: improving quality at the expense of runaway latency, token budget, or groundedness breaks real-world SLAs."
+/>

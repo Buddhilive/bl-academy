@@ -1,0 +1,127 @@
+---
+title: "Zava Retail Database Capstone (Part 1): 4-Layer Architecture & Row-Level Security"
+track: "mcp-for-beginners"
+category: "Module 5: Best Practices, Case Studies & Zava Retail Database Capstone Labs"
+order: 20
+difficulty: "advanced"
+xp: 90
+description: "Design the Zava Retail multi-tenant MCP server architecture, PostgreSQL pgvector DDL, and a zero-Docker Python SQLite engine enforcing Row-Level Security."
+topic: "Zava Retail DB & RLS"
+prerequisites: ["mcp-for-beginners/19-real-world-case-studies-workshops-and-safe-write-servers"]
+---
+import PythonRunner from '../../../components/islands/PythonRunner';
+import QuizCard from '../../../components/islands/QuizCard';
+import ColabButton from '../../../components/static/ColabButton.astro';
+
+Connecting an LLM to a single toy CSV is easy. Connecting an AI assistant to a **multi-tenant enterprise retail database** where Seattle store managers must never see Redmond customer rows requires real architecture. In this 3-part capstone, we build the **Zava Retail Analytics MCP Server** across four retail stores (`seattle`, `redmond`, `bellevue`, `online`).
+
+---
+
+## The 4-Layer MCP Database Architecture
+
+| Layer | Component | Responsibility |
+| :--- | :--- | :--- |
+| **1. Protocol Layer** | `FastMCP` | Tool/resource registration, Pydantic schemas, JSON-RPC routing |
+| **2. Business Logic Layer** | `SalesAnalyticsService` | Store access validation, KPI calculation, caching |
+| **3. Data Access Layer** | `DatabaseProvider` | Connection pooling, query timeouts, **Row-Level Security (RLS)** context binding |
+| **4. Infrastructure Layer** | Telemetry & Config | Structured logging, OpenTelemetry spans, environment secrets |
+
+---
+
+## Multi-Tenant Schema & Row-Level Security (RLS)
+
+In a **shared-database, shared-schema** multi-tenant design, `stores`, `customers`, `products`, `sales_transactions`, `sales_transaction_items`, and `product_embeddings` all carry a `store_id` tenant column.
+
+In production PostgreSQL + `pgvector`, you enforce isolation right inside the database engine so even a buggy query cannot leak another store's data:
+
+```sql
+ALTER TABLE retail.customers ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY customers_store_isolation ON retail.customers
+    FOR ALL
+    TO mcp_user
+    USING (store_id = current_setting('app.current_store_id', true));
+```
+
+To make our labs 100% runnable in your browser and on **Google Colab Free Tier** with zero Docker setup, our Python `DatabaseProvider` mirrors that exact PostgreSQL RLS policy using an in-memory `sqlite3` tenant-scoped view layer bound to `current_store_id`.
+
+---
+
+## Open the Companion Colab Notebook
+
+Launch the companion notebook to provision the full Zava Retail multi-store `sqlite3` database with RLS isolation, inspect the PostgreSQL + `pgvector` DDL, and verify zero cross-tenant leakage.
+
+<ColabButton
+  course="mcp-for-beginners"
+  notebook="20-zava-retail-database-mcp-architecture-and-rls.ipynb"
+  runtime="Free Tier CPU"
+/>
+
+---
+
+## Try It Yourself: Zava Retail Multi-Tenant SQLite Engine with RLS
+
+Run this pure-Python `sqlite3` sandbox to provision the Zava Retail stores, customers, and sales tables, then prove that setting `rls_store_id` strictly isolates Seattle data from Redmond data.
+
+<PythonRunner
+  client:visible
+  title="Try it Yourself: Zava Retail Multi-Tenant RLS Isolation"
+  expectedOutput="Provisioned 4 Zava Retail stores: ['seattle', 'redmond', 'bellevue', 'online']
+[RLS store='seattle'] Visible customers: ['Maya Lin (seattle)', 'Liam Patel (seattle)']
+[RLS store='redmond'] Visible customers: ['Noah Kim (redmond)']
+Cross-tenant leak count: 0"
+  initialCode={`import sqlite3
+
+db = sqlite3.connect(":memory:")
+db.executescript("""
+CREATE TABLE stores (store_id TEXT PRIMARY KEY, store_name TEXT, region TEXT);
+CREATE TABLE customers (customer_id INT PRIMARY KEY, store_id TEXT, full_name TEXT);
+CREATE TABLE sales_transactions (tx_id INT PRIMARY KEY, store_id TEXT, total_amount REAL);
+
+INSERT INTO stores VALUES
+  ('seattle', 'Zava Retail Seattle', 'west'),
+  ('redmond', 'Zava Retail Redmond', 'west'),
+  ('bellevue', 'Zava Retail Bellevue', 'west'),
+  ('online', 'Zava Retail Online', 'global');
+
+INSERT INTO customers VALUES
+  (1, 'seattle', 'Maya Lin'),
+  (2, 'seattle', 'Liam Patel'),
+  (3, 'redmond', 'Noah Kim'),
+  (4, 'bellevue', 'Ava Chen');
+""")
+
+stores = [r[0] for r in db.execute("SELECT store_id FROM stores").fetchall()]
+print("Provisioned 4 Zava Retail stores:", stores)
+
+def query_customers_rls(rls_store_id: str) -> list[str]:
+    rows = db.execute(
+        "SELECT full_name, store_id FROM customers WHERE store_id = ?",
+        (rls_store_id,),
+    ).fetchall()
+    return [f"{name} ({sid})" for name, sid in rows]
+
+seattle_rows = query_customers_rls("seattle")
+redmond_rows = query_customers_rls("redmond")
+print("[RLS store='seattle'] Visible customers:", seattle_rows)
+print("[RLS store='redmond'] Visible customers:", redmond_rows)
+leaks = sum(1 for r in seattle_rows if "redmond" in r or "bellevue" in r)
+print("Cross-tenant leak count:", leaks)`}
+/>
+
+---
+
+## Check Your Understanding
+
+<QuizCard
+  client:visible
+  question="Why does the Zava Retail architecture enforce Row-Level Security (RLS) in the Data Access Layer rather than relying on the LLM prompt to add WHERE store_id = '...'?"
+  options={[
+    "Because SQL does not support WHERE clauses.",
+    "Prompt instructions can be bypassed by prompt injection or model mistakes; database-layer RLS guarantees zero cross-tenant data leakage.",
+    "Because RLS makes vector embeddings smaller.",
+    "To let store managers view every store's customer emails."
+  ]}
+  correctAnswer={1}
+  explanation="Never rely on LLM prompt instructions for multi-tenant security. Enforcing RLS at the database/data-access layer guarantees a Seattle user can never read Redmond rows regardless of what SQL the model generates."
+/>

@@ -1,5 +1,11 @@
 ---
 import type { CollectionEntry } from 'astro:content';
+import {
+  getCourseByTrack,
+  getAdjacentCourses,
+  getSortedLessonsForTrack,
+  resolveCourseEntryUrl,
+} from '../../lib/curriculum';
 
 interface Props {
   currentTrack: string;
@@ -9,10 +15,13 @@ interface Props {
 
 const { currentTrack, currentSlug, lessons } = Astro.props;
 
+const currentCourse = getCourseByTrack(currentTrack);
+const { prevCourse, nextCourse } = getAdjacentCourses(currentTrack);
+const prevCourseUrl = prevCourse ? resolveCourseEntryUrl(prevCourse.track, lessons) : null;
+const nextCourseUrl = nextCourse ? resolveCourseEntryUrl(nextCourse.track, lessons) : null;
+
 // Filter track and sort ascending by order, tiebreak by id
-const trackLessons = lessons
-  .filter((l) => l.data.track === currentTrack)
-  .sort((a, b) => a.data.order - b.data.order || a.id.localeCompare(b.id));
+const trackLessons = getSortedLessonsForTrack(currentTrack, lessons);
 
 // Group lessons by category (W3Schools section headers)
 const categoriesMap = new Map<string, CollectionEntry<'lessons'>[]>();
@@ -34,11 +43,23 @@ const categories = Array.from(categoriesMap.entries());
         <svg class="w-5 h-5 text-[#E07A5F]" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h7" />
         </svg>
-        <span class="capitalize">{currentTrack} Tutorial</span> ({trackLessons.length} topics)
+        <span>
+          {currentCourse ? `Course ${currentCourse.stepCode}: ${currentCourse.title}` : currentTrack}
+        </span>
+        <span class="text-xs text-neutral-400">({trackLessons.length})</span>
       </span>
       <span class="text-xs text-neutral-400 group-open:rotate-180 transition-transform">▼</span>
     </summary>
     <div class="mt-4 pt-4 border-t border-neutral-800 space-y-4">
+      {prevCourse && prevCourseUrl && (
+        <a
+          href={prevCourseUrl}
+          class="block px-3 py-2 rounded-md border border-neutral-800 bg-neutral-950/60 text-xs text-neutral-300 hover:border-[#E07A5F] hover:text-white transition-colors"
+        >
+          ← Prerequisite: Course {prevCourse.stepCode} ({prevCourse.title})
+        </a>
+      )}
+
       {categories.map(([categoryName, catLessons]) => (
         <div>
           <h3 class="text-xs font-bold uppercase tracking-wider text-neutral-400 px-3 mb-1">
@@ -51,7 +72,7 @@ const categories = Array.from(categoriesMap.entries());
                 <a
                   href={`/learn/${lesson.data.track}/${lesson.id}`}
                   class:list={[
-                    "flex items-center justify-between px-3 py-1.5 rounded-md text-sm transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#E07A5F]",
+                    "flex items-center justify-between px-3 py-2.5 min-h-[44px] rounded-md text-sm transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#E07A5F]",
                     isActive
                       ? "bg-[#A7452A]/20 text-[#E07A5F] font-semibold border-l-2 border-[#E07A5F]"
                       : "text-neutral-300 hover:bg-neutral-800 hover:text-white"
@@ -69,19 +90,50 @@ const categories = Array.from(categoriesMap.entries());
           </nav>
         </div>
       ))}
+
+      {nextCourse && nextCourseUrl && (
+        <a
+          href={nextCourseUrl}
+          class="block px-3 py-2.5 rounded-md border border-neutral-800 bg-neutral-950/80 text-xs font-semibold text-[#E07A5F] hover:border-[#E07A5F] transition-colors"
+        >
+          Up Next: Course {nextCourse.stepCode} — {nextCourse.title} →
+        </a>
+      )}
     </div>
   </details>
 
   <!-- Desktop Fixed/Sticky Navigation Sidebar -->
   <div class="hidden lg:block sticky top-6 max-h-[calc(100vh-4rem)] overflow-y-auto bg-neutral-900/60 border border-neutral-800 rounded-xl p-3 backdrop-blur-sm scrollbar-thin">
     <div class="flex items-center justify-between pb-3 mb-3 border-b border-neutral-800 px-2">
-      <h2 class="text-xs font-bold uppercase tracking-wider text-[#E07A5F]">
-        {currentTrack} Tutorial
-      </h2>
-      <span class="text-[11px] text-neutral-500 font-mono">
-        {trackLessons.length} topics
-      </span>
+      <div>
+        <span class="block text-[10px] font-mono uppercase tracking-widest text-neutral-400">
+          {currentCourse ? `Course ${currentCourse.stepCode} of 08` : 'Course'}
+        </span>
+        <h2 class="text-xs font-bold uppercase tracking-wider text-[#E07A5F]">
+          {currentCourse ? currentCourse.title : currentTrack}
+        </h2>
+      </div>
+      <a
+        href={`/learn/${currentTrack}`}
+        class="text-[11px] text-neutral-400 hover:text-white font-mono underline-offset-2 hover:underline"
+      >
+        Syllabus
+      </a>
     </div>
+
+    {prevCourse && prevCourseUrl && (
+      <a
+        href={prevCourseUrl}
+        class="mb-3 block px-2.5 py-2 rounded-lg border border-neutral-800 bg-neutral-950/60 hover:border-neutral-700 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#E07A5F]"
+      >
+        <span class="block text-[10px] font-mono uppercase tracking-wider text-neutral-400">
+          ← Prerequisite
+        </span>
+        <span class="block text-xs font-medium text-neutral-200 truncate">
+          {prevCourse.stepCode} · {prevCourse.title}
+        </span>
+      </a>
+    )}
 
     <div class="space-y-4">
       {categories.map(([categoryName, catLessons]) => (
@@ -122,5 +174,27 @@ const categories = Array.from(categoriesMap.entries());
         </div>
       ))}
     </div>
+
+    {nextCourse && nextCourseUrl && (
+      <div class="mt-4 pt-3 border-t border-neutral-800 space-y-2">
+        <a
+          href={nextCourseUrl}
+          class="block px-2.5 py-2.5 rounded-lg border border-neutral-800 bg-neutral-950/80 hover:border-[#E07A5F] transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#E07A5F]"
+        >
+          <span class="block text-[10px] font-mono uppercase tracking-wider text-[#E07A5F]">
+            Up Next in Path →
+          </span>
+          <span class="block text-xs font-semibold text-white mt-0.5">
+            {nextCourse.stepCode} · {nextCourse.title}
+          </span>
+        </a>
+        <a
+          href="/#learning-path"
+          class="block text-center text-[11px] font-mono text-neutral-400 hover:text-white py-1"
+        >
+          View All 9 Courses
+        </a>
+      </div>
+    )}
   </div>
 </aside>

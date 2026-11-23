@@ -1,0 +1,123 @@
+---
+title: "Programmatic Cloud Data Science: Scikit-Learn Pipelines, MLflow & REST Endpoints"
+track: "data-science-for-beginners"
+category: "Module 4: Data Science Lifecycle & Cloud Alternatives"
+order: 19
+difficulty: "intermediate"
+xp: 85
+description: "Build reproducible code-first ML workflows on the Heart Failure dataset using Scikit-Learn Pipeline, ColumnTransformer, GridSearchCV, MLflow, and JSON endpoints."
+topic: "Programmatic ML Pipelines"
+prerequisites: ["data-science-for-beginners/18-low-code-data-science-and-automl"]
+---
+import PythonRunner from '../../../components/islands/PythonRunner';
+import QuizCard from '../../../components/islands/QuizCard';
+import ColabButton from '../../../components/static/ColabButton.astro';
+
+Clicking buttons in a web studio is great for a quick prototype, but production engineering demands **reproducible code**. When your dataset refreshes every week, you want versioned preprocessing pipelines, automated experiment logging, and a serialized model endpoint you can test from CI/CD. In this lesson, we'll rebuild the **Heart Failure Prediction** workflow programmatically using **Scikit-Learn Pipelines**, **MLflow**, and a clean JSON scoring handler (`score.py`).
+
+---
+
+## Five Pillars of Programmatic ML Workflows
+
+| Pillar | Open-Source Tooling | What It Guarantees |
+| :--- | :--- | :--- |
+| **1. Preprocessing Pipeline** | `ColumnTransformer` + `StandardScaler` | Prevents data leakage by fitting scalers strictly on training folds |
+| **2. Automated Search** | `GridSearchCV` / `FLAML` (`scoring='roc_auc'`) | Iterates algorithms and hyperparameters with early stopping |
+| **3. Experiment Tracking** | `MLflow` (`mlflow.log_metric`, `mlflow.sklearn.log_model`) | Logs every run's parameters, `AUC_weighted`, and artifacts |
+| **4. Model Serialization** | `joblib.dump(best_model, "model.joblib")` | Packages preprocessing + estimator into one portable binary |
+| **5. Endpoint Inference** | `score.py` (`init()` + `run(raw_json)`) | Serves consistent JSON predictions (`{"result": [false]}`) via FastAPI or Gradio |
+
+---
+
+## Anatomizing a Programmatic `Pipeline` & `score.py`
+
+By wrapping feature scaling inside a Scikit-Learn `Pipeline`, raw patient JSON dictionaries pass straight through standardization into the classifier without manual rescaling bugs at inference time. During hyperparameter search (`GridSearchCV`), MLflow logs every candidate's `roc_auc` score, parameters, and the winning `best_estimator_` artifact so your team can audit exactly which code and data produced a deployed model.
+
+At inference time, a lightweight `score.py` module separates initialization from request handling: `init()` loads the serialized `heart_failure_pipeline.joblib` artifact once when the container boots, and `run(raw_json)` parses incoming patient arrays and returns structured JSON predictions (`{"result": [false]}`).
+
+```python
+from sklearn.compose import ColumnTransformer
+from sklearn.pipeline import Pipeline
+from sklearn.preprocessing import StandardScaler
+from sklearn.ensemble import RandomForestClassifier
+
+pipe = Pipeline([
+    ("prep", ColumnTransformer([("num", StandardScaler(), num_cols)], remainder="passthrough")),
+    ("clf", RandomForestClassifier(random_state=42)),
+])
+```
+
+<ColabButton
+  course="data-science-for-beginners"
+  notebook="19-cloud-ml-sdk-and-pipelines.ipynb"
+  runtime="Free Tier CPU"
+/>
+
+---
+
+## Try It Yourself: Programmatic Pipeline, MLflow Log & `score.py`
+
+Run this pure-Python simulation of a programmatic ML pipeline—standardizing numeric features, logging an experiment run, and calling `run(test_sample)` with the 60-year-old patient JSON payload.
+
+<PythonRunner
+  client:visible
+  title="Try it Yourself: Programmatic Pipeline & JSON Scoring Service"
+  expectedOutput="=== MLflow Experiment Run Log ===
+experiment='heart-failure-pipeline' | metric_auc=0.884 | status=REGISTERED
+
+=== score.py JSON Endpoint Response ===
+{'result': [False]}"
+  initialCode={`import json
+import math
+
+# Simulated fitted Pipeline state (StandardScaler means/stds + logistic weights)
+scaler_stats = {"age": (60.8, 11.9), "ejection_fraction": (38.1, 11.8), "serum_creatinine": (1.39, 1.03), "time": (130.3, 77.6)}
+weights = {"age": 0.45, "ejection_fraction": -0.75, "serum_creatinine": 0.68, "time": -1.25}
+bias = -0.85
+
+print("=== MLflow Experiment Run Log ===")
+print("experiment='heart-failure-pipeline' | metric_auc=0.884 | status=REGISTERED")
+
+def score_run(raw_json):
+    payload = json.loads(raw_json)
+    results = []
+    for row in payload["data"]:
+        z = bias
+        for feat, (mu, sigma) in scaler_stats.items():
+            x_scaled = (float(row[feat]) - mu) / sigma
+            z += weights[feat] * x_scaled
+        prob = 1.0 / (1.0 + math.exp(-z))
+        results.append(prob >= 0.5)
+    return json.dumps({"result": results})
+
+test_sample = json.dumps({
+    "data": [{
+        "age": "60", "anaemia": "false", "creatinine_phosphokinase": "500",
+        "diabetes": "false", "ejection_fraction": "38", "high_blood_pressure": "false",
+        "platelets": "260000", "serum_creatinine": "1.40", "serum_sodium": "137",
+        "sex": "false", "smoking": "false", "time": "130"
+    }]
+})
+
+print("\n=== score.py JSON Endpoint Response ===")
+print(json.loads(score_run(test_sample)))`}
+/>
+
+---
+
+## Check Your Understanding
+
+<QuizCard
+  client:visible
+  question="Why should feature scaling (`StandardScaler`) be placed inside a Scikit-Learn `Pipeline` rather than applied to the whole dataset before splitting?"
+  options={[
+    "Fitting the scaler only on training folds inside the Pipeline prevents test-set statistics from leaking into training and guarantees identical transforms at inference time.",
+    "Pipelines automatically convert all strings into images.",
+    "StandardScaler raises a syntax error outside a Pipeline.",
+    "Pipelines remove the need for any training labels."
+  ]}
+  correctAnswer={0}
+  explanation="Encapsulating preprocessing inside a Pipeline prevents data leakage during cross-validation and ensures new JSON payloads receive the exact same scaling parameters in production."
+/>
+
+Now let's bring everything together in our final lesson—exploring how data science powers industry, academic research, digital humanities, and planetary sustainability in **Data Science in the Wild**.

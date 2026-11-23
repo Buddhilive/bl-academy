@@ -1,0 +1,178 @@
+---
+title: "MCP Core Concepts: Hosts, Clients, Server Primitives, Tool Annotations & JSON-RPC 2.0"
+track: "mcp-for-beginners"
+category: "Module 1: MCP Foundations, Specification 2026-07-28 & Security"
+order: 2
+difficulty: "beginner"
+xp: 65
+description: "Master MCP Server Primitives (Resources, Prompts, Tools), Full JSON Schema 2020-12, behavioral Tool Annotations, Client Elicitation, and JSON-RPC 2.0 wire framing."
+topic: "MCP Core Concepts"
+prerequisites: ["mcp-for-beginners/01-introduction-to-mcp-and-setup"]
+---
+import PythonRunner from '../../../components/islands/PythonRunner';
+import QuizCard from '../../../components/islands/QuizCard';
+import ColabButton from '../../../components/static/ColabButton.astro';
+
+Once you understand why MCP exists, the next step is learning what actually travels across the wire. Every MCP server exposes capabilities through three core **Server Primitives** (**Resources**, **Prompts**, and **Tools**), encoded as **JSON-RPC 2.0** messages and governed by strict schema validation and user-consent rules.
+
+When I design an MCP server, the single most helpful mental model is separating *who controls each primitive*: the application controls Resources, the user controls Prompts, and the AI model decides when to invoke Tools.
+
+---
+
+## The 3 Server Primitives
+
+MCP servers expose any combination of these three building blocks:
+
+| Primitive | Who Controls It | Discovery & Execution Methods | Typical Examples |
+| :--- | :--- | :--- | :--- |
+| **Resources** | Application / Host | `resources/list`, `resources/read` | `file://docs/spec.md`, `database://prod/users/schema`, `api://weather/current` |
+| **Prompts** | User (slash commands / UI) | `prompts/list`, `prompts/get` | Parameterized templates like `Summarize {{topic}} for {{audience}}` |
+| **Tools** | AI Model (with Host consent) | `tools/list`, `tools/call` | `search_products`, `execute_sql`, `create_support_ticket` |
+
+### Behavioral Tool Annotations & Full JSON Schema 2020-12
+
+Under the current MCP specification, tool `inputSchema` and `outputSchema` use **Full JSON Schema 2020-12** (supporting `$defs`, `$ref`, `oneOf`, `anyOf`, `allOf`, and structured outputs). Tools also carry behavioral **Tool Annotations** so Hosts know how to prompt users safely:
+
+- `readOnlyHint`: `true` if the tool never mutates external state (safe to auto-run).
+- `destructiveHint`: `true` if the tool deletes files, drops records, or sends irreversible messages (Host should require explicit human confirmation).
+- `idempotentHint`: `true` if calling the tool repeatedly with the same arguments has no extra side effect.
+- `openWorldHint`: `true` if the tool interacts with external systems beyond a closed local dataset.
+
+Keep in mind that annotations are untrusted client-UX hints, not server-side authorization enforcement.
+
+---
+
+## Client Primitives & JSON-RPC 2.0 Wire Framing
+
+On the client side, **Elicitation (`elicitation/create`)** lets a server ask the user for missing structured inputs mid-execution (such as confirming a deletion or entering a missing parameter). Two older client primitives, **Sampling** and **Roots**, are deprecated in MCP `2026-07-28` and covered with migration paths later in this course.
+
+Every request and response uses **JSON-RPC 2.0**:
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "method": "tools/call",
+  "params": {
+    "name": "search_products",
+    "arguments": { "query": "running shoes", "max_results": 5 }
+  }
+}
+```
+
+Standard JSON-RPC 2.0 error codes let clients diagnose failures cleanly:
+
+| Error Code | Meaning | Common MCP Cause |
+| :--- | :--- | :--- |
+| `-32700` | Parse Error | Malformed JSON payload on `stdio` or HTTP |
+| `-32600` | Invalid Request | Missing `jsonrpc: "2.0"` or `method` field |
+| `-32601` | Method Not Found | Unknown MCP method or unregistered tool name |
+| `-32602` | Invalid Params | Schema validation failure or missing resource URI |
+| `-32603` | Internal Error | Unhandled server exception during tool execution |
+
+---
+
+## Polyglot SDK Comparison
+
+While this course runs all interactive code in Python (`FastMCP`), MCP's official SDKs follow the exact same primitive model across languages:
+
+| Language | Official SDK | Tool Registration Pattern |
+| :--- | :--- | :--- |
+| **Python** | `mcp` (`FastMCP`) | `@mcp.tool()` with Python type hints & docstrings |
+| **TypeScript** | `@modelcontextprotocol/sdk` | `server.tool("name", zodSchema, async (params) => ...)` |
+| **C# (.NET)** | `ModelContextProtocol` | `[McpServerTool]` attribute on C# methods |
+| **Java** | Spring AI MCP SDK | `@Tool` / `@McpMethod` annotations |
+| **Rust** | `rmcp` | `#[tool]` macro with `schemars::JsonSchema` |
+
+---
+
+## Open the Companion Colab Notebook
+
+Launch the companion notebook to register Resources, Prompts, and annotated Tools with Python `FastMCP` and inspect the generated JSON Schema 2020-12 definitions.
+
+<ColabButton
+  course="mcp-for-beginners"
+  notebook="02-core-concepts-primitives-and-json-rpc.ipynb"
+  runtime="Free Tier CPU + Gemini API"
+/>
+
+---
+
+## Try It Yourself: JSON-RPC 2.0 Primitive Dispatcher
+
+Run this pure-Python JSON-RPC 2.0 MCP server simulator. It dispatches `resources/read`, `prompts/get`, and `tools/call`, enforces `destructiveHint` safety checks, and emits standard `-32601` and `-32602` error frames.
+
+<PythonRunner
+  client:visible
+  title="Try it Yourself: MCP Primitives & JSON-RPC 2.0 Engine"
+  expectedOutput='{"jsonrpc": "2.0", "id": 1, "result": {"uri": "database://prod/users/schema", "text": "users(id INT, email TEXT)"}}
+{"jsonrpc": "2.0", "id": 2, "result": {"prompt": "Review PR #42 for security"}}
+{"jsonrpc": "2.0", "id": 3, "result": {"content": [{"type": "text", "text": "Found 2 matches for mcp"}], "annotations": {"readOnlyHint": true}}}
+{"jsonrpc": "2.0", "id": 4, "error": {"code": -32602, "message": "Resource not found: file://missing.md"}}'
+  initialCode={`import json
+
+RESOURCES = {
+    "database://prod/users/schema": "users(id INT, email TEXT)",
+}
+PROMPTS = {
+    "code_review": lambda pr, focus: f"Review PR #{pr} for {focus}",
+}
+TOOLS = {
+    "search_docs": {
+        "annotations": {"readOnlyHint": True},
+        "fn": lambda query: f"Found 2 matches for {query}",
+    }
+}
+
+def handle_rpc(req: dict) -> str:
+    rid = req.get("id")
+    method = req.get("method")
+    params = req.get("params", {})
+
+    if method == "resources/read":
+        uri = params.get("uri", "")
+        if uri not in RESOURCES:
+            return json.dumps({"jsonrpc": "2.0", "id": rid, "error": {"code": -32602, "message": f"Resource not found: {uri}"}})
+        return json.dumps({"jsonrpc": "2.0", "id": rid, "result": {"uri": uri, "text": RESOURCES[uri]}})
+
+    if method == "prompts/get":
+        name = params.get("name")
+        if name not in PROMPTS:
+            return json.dumps({"jsonrpc": "2.0", "id": rid, "error": {"code": -32601, "message": f"Prompt not found: {name}"}})
+        return json.dumps({"jsonrpc": "2.0", "id": rid, "result": {"prompt": PROMPTS[name](**params.get("arguments", {}))}})
+
+    if method == "tools/call":
+        name = params.get("name")
+        if name not in TOOLS:
+            return json.dumps({"jsonrpc": "2.0", "id": rid, "error": {"code": -32601, "message": f"Tool not found: {name}"}})
+        out = TOOLS[name]["fn"](**params.get("arguments", {}))
+        return json.dumps({"jsonrpc": "2.0", "id": rid, "result": {"content": [{"type": "text", "text": out}], "annotations": TOOLS[name]["annotations"]}})
+
+    return json.dumps({"jsonrpc": "2.0", "id": rid, "error": {"code": -32601, "message": "Method not found"}})
+
+requests = [
+    {"jsonrpc": "2.0", "id": 1, "method": "resources/read", "params": {"uri": "database://prod/users/schema"}},
+    {"jsonrpc": "2.0", "id": 2, "method": "prompts/get", "params": {"name": "code_review", "arguments": {"pr": 42, "focus": "security"}}},
+    {"jsonrpc": "2.0", "id": 3, "method": "tools/call", "params": {"name": "search_docs", "arguments": {"query": "mcp"}}},
+    {"jsonrpc": "2.0", "id": 4, "method": "resources/read", "params": {"uri": "file://missing.md"}},
+]
+for r in requests:
+    print(handle_rpc(r))`}
+/>
+
+---
+
+## Check Your Understanding
+
+<QuizCard
+  client:visible
+  question="Under MCP Specification 2026-07-28, which JSON-RPC 2.0 error code should a server return when a client requests a resource URI that does not exist?"
+  options={[
+    "-32700 (Parse Error)",
+    "-32602 (Invalid Params)",
+    "-32000 (Generic Server Error)",
+    "200 OK with an empty string"
+  ]}
+  correctAnswer={1}
+  explanation="MCP 2026-07-28 standardized missing-resource errors on the JSON-RPC standard -32602 (Invalid Params) code, replacing the older custom -32002 error code."
+/>

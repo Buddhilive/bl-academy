@@ -1,0 +1,135 @@
+---
+title: "Introduction to Reinforcement Learning & Q-Learning: Peter and the Wolf Grid World"
+track: "ml-for-beginners"
+category: "Module 5: Reinforcement Learning & Real-World ML"
+order: 24
+difficulty: "advanced"
+xp: 90
+description: "Learn Reinforcement Learning fundamentals—agents, environments, delayed rewards, exploration vs. exploitation, and the Bellman Q-Table update—in Peter and the Wolf's grid world."
+topic: "Q-Learning"
+prerequisites: ["ml-for-beginners/23-time-series-forecasting-with-svr"]
+---
+import PythonRunner from '../../../components/islands/PythonRunner';
+import QuizCard from '../../../components/islands/QuizCard';
+import ColabButton from '../../../components/static/ColabButton.astro';
+
+Supervised learning hands your model a labeled dataset of right answers, and unsupervised clustering groups unlabeled points. **Reinforcement Learning (RL)** tackles a third, completely different challenge: teaching an **agent** to make sequential decisions inside a simulated **environment** when it only learns whether a move succeeded via delayed **rewards** at the end of an episode. Inspired by Sergei Prokofiev's *Peter and the Wolf*, let's train Peter to find apples on an $8 \times 8$ forest board while avoiding water and the wolf.
+
+---
+
+## Grid World Environment, Random Walk & Reward Function
+
+In our `Board(8, 8)` simulator (`rlboard.py`), every cell is `ground`, `water` (impassable), `tree`/`grass`, an `apple` (`+10` reward), or a `wolf` (`-10` terminal penalty), while each regular step costs `-0.1` to encourage short paths. Peter's **action space** consists of four moves: `U` `(0, -1)`, `D` `(0, 1)`, `L` `(-1, 0)`, and `R` `(1, 0)`.
+
+If Peter follows a baseline `random_policy`, he wanders blindly for **30–40 steps** on average and frequently gets eaten by the wolf—even though the nearest apple is only 5–6 steps away!
+
+---
+
+## The Bellman Equation & Exploration vs. Exploitation
+
+To learn an optimal navigation **policy**, we maintain an $8 \times 8 \times 4$ **Q-Table** initialized uniformly at `0.25`. Whenever Peter transitions from state $s$ to $s'$ via action $a$ and receives reward $r$, we update $Q(s, a)$ with the **Bellman Equation**:
+
+$$Q(s, a) \leftarrow (1 - \alpha)\, Q(s, a) + \alpha \left( r + \gamma \max_{a'} Q(s', a') \right)$$
+
+| Hyperparameter / Strategy | Role in Q-Learning | Practical Insight |
+| :--- | :--- | :--- |
+| **Learning Rate ($\alpha$)** | Step size for updating $Q(s, a)$ | Decaying $\alpha$ prevents late-stage updates from spoiling learned paths |
+| **Discount Factor ($\gamma$)** | Weights future rewards vs. immediate reward | $\gamma = 0.5$ balances short-term survival with reaching the apple |
+| **Strict Greedy (`argmax`)** | Always picks the highest Q-value action | Can trap Peter in an infinite 2-cell loop if two states point to each other |
+| **Probabilistic (`probs(Q[x, y])`)** | Samples actions proportional to Q-values | Balances **exploration** and **exploitation**, cutting paths to **3–6 steps** |
+
+During 5,000 training epochs, the average path length first rises (as Peter learns to avoid dying immediately), then drops sharply toward optimal navigation.
+
+<ColabButton
+  course="ml-for-beginners"
+  notebook="24-reinforcement-learning-and-q-learning.ipynb"
+  runtime="Free Tier CPU"
+/>
+
+---
+
+## Try It Yourself: Peter & the Wolf Q-Learning Simulator
+
+Let's run a pure-Python $5 \times 5$ *Peter and the Wolf* Q-Learning simulation comparing a baseline `random_policy` against a Bellman-trained Q-Table policy.
+
+<PythonRunner
+  client:visible
+  title="Try it Yourself: Bellman Q-Table Training on Grid World"
+  expectedOutput="Random Policy (20 episodes) -> Avg Steps: 50.0 | Wolf/Trap Hits: 20
+Trained Q-Policy (20 episodes) -> Avg Steps: 8.0 | Wolf/Trap Hits: 0
+Learned Best Action at Start (0,0): D"
+  initialCode={`import random
+
+SIZE = 5
+APPLE = (4, 4)
+WOLVES = {(2, 2), (3, 1), (1, 3)}
+ACTIONS = {"U": (0, -1), "D": (0, 1), "L": (-1, 0), "R": (1, 0)}
+ACT_KEYS = list(ACTIONS.keys())
+
+def step(pos, act_name):
+    dx, dy = ACTIONS[act_name]
+    nx, ny = pos[0] + dx, pos[1] + dy
+    if not (0 <= nx < SIZE and 0 <= ny < SIZE):
+        return pos, -10.0, True
+    if (nx, ny) in WOLVES:
+        return (nx, ny), -10.0, True
+    if (nx, ny) == APPLE:
+        return (nx, ny), 10.0, True
+    return (nx, ny), -0.1, False
+
+rng = random.Random(24)
+
+def eval_policy(choose_fn, episodes=20):
+    total_steps, wolf_hits = 0, 0
+    for _ in range(episodes):
+        pos = (0, 0)
+        for s in range(1, 51):
+            a = choose_fn(pos)
+            pos, r, done = step(pos, a)
+            if done:
+                if r < 0: wolf_hits += 1
+                else: total_steps += s
+                break
+        else:
+            total_steps += 50
+    ok = episodes - wolf_hits
+    return (total_steps / ok if ok else 50.0), wolf_hits
+
+rand_steps, rand_wolves = eval_policy(lambda _: rng.choice(ACT_KEYS))
+print(f"Random Policy (20 episodes) -> Avg Steps: {rand_steps:.1f} | Wolf/Trap Hits: {rand_wolves}")
+
+# Train Q-Table with Bellman updates
+Q = {(x, y): {a: 0.0 for a in ACT_KEYS} for x in range(SIZE) for y in range(SIZE)}
+alpha, gamma = 0.25, 0.9
+for ep in range(400):
+    pos = (0, 0)
+    for _ in range(40):
+        a = rng.choice(ACT_KEYS) if rng.random() < 0.3 else max(ACT_KEYS, key=lambda k: Q[pos][k])
+        npos, r, done = step(pos, a)
+        best_next = 0.0 if done else max(Q[npos].values())
+        Q[pos][a] = (1 - alpha) * Q[pos][a] + alpha * (r + gamma * best_next)
+        pos = npos
+        if done:
+            break
+
+q_steps, q_wolves = eval_policy(lambda p: max(ACT_KEYS, key=lambda k: Q[p][k]))
+print(f"Trained Q-Policy (20 episodes) -> Avg Steps: {q_steps:.1f} | Wolf/Trap Hits: {q_wolves}")
+print(f"Learned Best Action at Start (0,0): {max(ACT_KEYS, key=lambda k: Q[(0, 0)][k])}")`}
+/>
+
+---
+
+## Check Your Understanding
+
+<QuizCard
+  client:visible
+  question="Why can a strict greedy policy (always picking argmax Q[x, y]) cause an agent to hang in an infinite loop on a grid board?"
+  options={[
+    "Because the Bellman equation sets all Q-values to zero.",
+    "Two neighboring states can point to each other with their highest Q-values, trapping the agent bouncing back and forth forever.",
+    "Because discount factor gamma is greater than 0.",
+    "Random policies never terminate."
+  ]}
+  correctAnswer={1}
+  explanation="If state A's highest Q-value points to state B and state B's highest Q-value points back to state A, a strictly deterministic argmax policy will oscillate indefinitely unless you cap max steps or sample probabilistically."
+/>

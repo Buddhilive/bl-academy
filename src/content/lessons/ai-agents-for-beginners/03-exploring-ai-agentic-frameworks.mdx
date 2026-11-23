@@ -1,0 +1,129 @@
+---
+title: "Exploring AI Agentic Frameworks: Modular SDKs vs. Stateful Runtimes"
+track: "ai-agents-for-beginners"
+category: "Module 1: Agent Foundations, Frameworks & Core Design Patterns"
+order: 3
+difficulty: "beginner"
+xp: 65
+description: "Compare lightweight code-first agent SDKs against stateful Thread/Message/Run runtimes and build modular multi-agent pipelines."
+topic: "Agent Foundations"
+prerequisites: ["ai-agents-for-beginners/02-introduction-to-ai-agents-and-use-cases"]
+---
+import PythonRunner from '../../../components/islands/PythonRunner';
+import QuizCard from '../../../components/islands/QuizCard';
+import ColabButton from '../../../components/static/ColabButton.astro';
+
+Once you move past your first single-agent script, writing raw HTTP payloads, JSON tool schemas, and multi-turn message arrays by hand gets tedious fast. **AI Agent Frameworks** give us reusable building blocks—tool decorators, memory connectors, multi-agent handoffs, and state managers—so we can focus on business logic instead of boilerplate.
+
+By the way, it helps to separate *two* different layers in the ecosystem: **code-first agent SDKs** (where your Python process owns the reasoning loop) and **stateful agent runtimes** (where a managed service persists conversation threads, messages, and runs for you).
+
+---
+
+## Why Agent Frameworks Go Beyond Traditional AI SDKs
+
+Traditional AI libraries help you call a model for personalization, text generation, or classification. **Agentic Frameworks** add three higher-level capabilities:
+
+1. **Use Modular Components**: Ready-made `@tool` decorators, input parsers, prompt templates, and memory stores let teams prototype in hours instead of weeks.
+2. **Leverage Collaborative Tools**: Assign distinct roles to specialized agents (`dataretrieval` $\rightarrow$ `dataanalysis`, or `planner` $\rightarrow$ `executor`) and pass structured results between them.
+3. **Learn in Real Time**: Wire feedback loops into the runtime so agents adapt their behavior dynamically from user ratings and environment signals.
+
+---
+
+## Code-First Agent SDKs vs. Stateful Thread/Run Runtimes
+
+When architecting a new agent application, you will usually pick between—or combine—these two patterns:
+
+| Dimension | Code-First Agent SDK (e.g., `LangGraph` / Python `@tool` SDK) | Stateful Thread/Run Runtime |
+| :--- | :--- | :--- |
+| **Core Primitives** | `Agent(name, instructions, tools)`, `@tool` functions, `StateGraph` | `Agent`, `Thread`, `Message`, `create_and_process_run()` |
+| **Execution Control** | Full control over every LLM call, retry, and custom middleware | Runtime executes server-side tool loops and manages thread history |
+| **Multi-Agent Pattern** | Explicit Python chaining (`plan = planner.run(...); executor.run(plan)`) | Microservice-style agent endpoints with built-in file/code tools |
+| **Best Use Case** | Rapid iteration, custom reasoning loops, portable open-source apps | Long-lived multi-turn sessions with externalized state & RBAC |
+
+```python
+# Code-First Sequential Collaboration Pattern
+retrieval_result = agent_retrieve.run("Retrieve sales data for Q4")
+analysis_result = agent_analyze.run(f"Analyze this data: {retrieval_result}")
+```
+
+In a **Stateful Thread/Run Runtime**, conversations are modeled as persistent `Thread` objects. Each user turn appends a `Message`, and `create_and_process_run(thread_id, agent_id)` invokes tools like `get_specials()` or `get_item_price()` automatically before appending the assistant's reply back to the thread.
+
+---
+
+## Open the Companion Colab Notebook
+
+Open the companion notebook to run both patterns side by side with `google-genai`: a modular `@tool` sequential `dataretrieval` $\rightarrow$ `dataanalysis` pipeline and a stateful `Thread`/`Message`/`Run` restaurant menu `Host` agent.
+
+<ColabButton
+  course="ai-agents-for-beginners"
+  notebook="03-exploring-ai-agentic-frameworks.ipynb"
+  runtime="Free Tier CPU + Gemini API"
+/>
+
+---
+
+## Try It Yourself: Modular Agent SDK & Stateful Thread/Run Simulator
+
+Run this pure-Python sandbox to execute a `@tool`-equipped `travel_agent`, chain `dataretrieval` into `dataanalysis`, and step through a multi-turn `Thread` on a restaurant menu `Host` agent.
+
+<PythonRunner
+  client:visible
+  title="Try it Yourself: Agent SDK Pipeline & Stateful Thread Runtime"
+  expectedOutput="[SDK] travel_agent -> Travel was booked to New York on 2026-01-01
+[Pipeline] dataretrieval -> Q4 Revenue: $120,000 (+18% YoY)
+[Pipeline] dataanalysis -> Insight: Q4 grew 18% YoY; scale top channel.
+[Thread:t_01] User: What is the special soup? -> Host: Clam Chowder
+[Thread:t_01] User: How much does that cost? -> Host: $9.99"
+  initialCode={`def tool(fn):
+    fn._is_tool = True
+    return fn
+
+@tool
+def book_flight(date: str, location: str) -> str:
+    return f"Travel was booked to {location} on {date}"
+
+print(f"[SDK] travel_agent -> {book_flight('2026-01-01', 'New York')}")
+
+# Sequential 2-agent pipeline
+raw_sales = "Q4 Revenue: $120,000 (+18% YoY)"
+print(f"[Pipeline] dataretrieval -> {raw_sales}")
+insight = "Insight: Q4 grew 18% YoY; scale top channel."
+print(f"[Pipeline] dataanalysis -> {insight}")
+
+# Stateful Thread / Message / Run simulation
+threads = {"t_01": []}
+def get_specials():
+    return "Clam Chowder"
+def get_item_price(item: str):
+    return "$9.99"
+
+def run_thread(thread_id: str, user_msg: str) -> str:
+    threads[thread_id].append({"role": "user", "content": user_msg})
+    if "soup" in user_msg.lower():
+        reply = get_specials()
+    else:
+        reply = get_item_price("Clam Chowder")
+    threads[thread_id].append({"role": "assistant", "content": reply})
+    return reply
+
+for q in ["What is the special soup?", "How much does that cost?"]:
+    ans = run_thread("t_01", q)
+    print(f"[Thread:t_01] User: {q} -> Host: {ans}")`}
+/>
+
+---
+
+## Check Your Understanding
+
+<QuizCard
+  client:visible
+  question="In a stateful agent runtime architecture, what is the primary responsibility of a `Thread`?"
+  options={[
+    "It compiles Python functions into C++ binaries.",
+    "It represents a persistent conversation that stores message history and maintains state across multiple runs.",
+    "It replaces the need for any tool schemas.",
+    "It restricts the agent to a single-turn response."
+  ]}
+  correctAnswer={1}
+  explanation="A Thread tracks the ordered history of user and assistant messages across turns, allowing `create_and_process_run` to maintain context without resending everything manually."
+/>

@@ -1,0 +1,132 @@
+---
+title: "Introduction to Machine Learning: Core Concepts, AI vs. ML & Colab Setup"
+track: "ml-for-beginners"
+category: "Module 1: ML Foundations, History, Fairness & Techniques"
+order: 1
+difficulty: "beginner"
+xp: 50
+description: "Learn what classical machine learning is, how AI, ML, Deep Learning, and Data Science differ, why data quality drives accuracy, and how to set up Google Colab."
+topic: "ML Foundations"
+prerequisites: ["data-science-for-beginners/20-data-science-in-the-wild"]
+---
+import PythonRunner from '../../../components/islands/PythonRunner';
+import QuizCard from '../../../components/islands/QuizCard';
+import ColabButton from '../../../components/static/ColabButton.astro';
+
+When you first hear the phrase **machine learning**, it can sound like a mysterious black box reserved for research labs. In reality, classical machine learning is one of the most practical tools in software engineering: instead of writing brittle, hand-coded `if/else` rules for every edge case, we let algorithms discover repeatable patterns directly from data. In this opening lesson, we'll map out where Machine Learning sits alongside AI and Deep Learning, why data quality makes or breaks every model, and how to get your **Google Colab** + **Scikit-Learn** workspace running in seconds.
+
+When I first transitioned from writing standard application logic to building ML models, the biggest mental shift was realizing you don't program the answer—you program a learning loop that *infers* the answer from examples.
+
+---
+
+## AI, Machine Learning, Deep Learning & Data Science
+
+People throw these four terms around interchangeably, which makes things confusing fast. Here's how they actually fit together in practice:
+
+| Discipline | Core Scope & Mechanism | Typical Tools & Techniques | Best Suited For |
+| :--- | :--- | :--- | :--- |
+| **Artificial Intelligence (AI)** | Broad umbrella of machines simulating human-like perception, reasoning, and decision-making | Search, expert rules, ML, neural networks, planning | End-to-end intelligent systems and autonomous agents |
+| **Machine Learning (ML)** | Subset of AI using statistical algorithms to learn hidden patterns from data without explicit rules | Scikit-Learn, Linear/Logistic Regression, SVMs, Random Forests, K-Means | Tabular predictions, classical NLP, clustering, time-series forecasting |
+| **Deep Learning (DL)** | Subset of ML using multi-layered artificial neural networks to learn hierarchical representations | PyTorch, Transformers, CNNs | Raw images, audio, video, and large-scale language modeling |
+| **Data Science (DS)** | Cross-disciplinary extraction of insights from structured and unstructured data | SQL, Pandas, statistics, visualization, storytelling | Cleaning data, exploratory analysis, business & scientific decisions |
+
+In this course, we focus intentionally on **classical machine learning** using **Scikit-Learn**. Why? Because mastering linear models, decision boundaries, clustering, and evaluation metrics gives you fast, interpretable baselines that often outperform heavy neural networks on real-world tabular data.
+
+---
+
+## From Human Brain Plasticity to Pattern Discovery
+
+Think about how a child learns to recognize a cat or predict that dark clouds mean rain. Nobody hands a child a 500-line rulebook of pixel thresholds. Instead, their brain perceives examples from the world, adjusts internal connections—a biological property called **brain plasticity**—and gradually forms reliable rules from experience.
+
+Machine learning systems mirror that same loop mathematically. Given input features $X$ and historical outcomes $y$, a supervised learning algorithm searches for a parameterized function $f_\theta$ that minimizes prediction error across training examples:
+
+$$\hat{y} = f_\theta(X), \qquad \min_\theta \frac{1}{n} \sum_{i=1}^{n} \mathcal{L}\big(y_i, f_\theta(x_i)\big)$$
+
+Why would a business choose this over a hand-coded rules engine? Imagine building a fraud detector or medical triage tool. A rules engine breaks the moment a new variable interacts with five existing thresholds. A learned model adapts automatically whenever you feed it fresh, representative data.
+
+---
+
+## Why Data Quality Matters & Applied ML Domains
+
+There is an old rule in engineering that hits ten times harder in machine learning: **garbage in, garbage out**. Even the cleanest Scikit-Learn estimator cannot rescue noisy, biased, or missing training data. High-quality, well-curated datasets directly improve generalization to unseen inputs, while sloppy data produces confident but wrong predictions.
+
+Today, classical ML powers critical workflows across nearly every domain:
+
+- **Healthcare**: Predicting disease likelihood or hospital readmission risk from patient medical histories.
+- **Meteorology & Earth Science**: Forecasting weather events and seasonal trends from atmospheric sensors.
+- **Natural Language Processing**: Tagging customer sentiment and filtering fake news or spam before it spreads.
+- **Finance & Economics**: Scoring credit risk, detecting anomalous card transactions, and modeling market volatility.
+
+---
+
+## Setting Up Your Google Colab & Scikit-Learn Workspace
+
+Every lesson in this course pairs our instant **In-Browser Python Sandbox** with a self-contained **Google Colab** notebook so you never have to fight local Python version conflicts.
+
+<ColabButton
+  course="ml-for-beginners"
+  notebook="01-introduction-to-machine-learning.ipynb"
+  runtime="Free Tier CPU"
+/>
+
+To verify your Colab environment, open the notebook above and run the first cell to confirm `scikit-learn`, `pandas`, `numpy`, and `matplotlib` are ready.
+
+---
+
+## Try It Yourself: Hardcoded Rules vs. Learned Thresholds
+
+Let's run a quick experiment right in your browser. Suppose we want to classify whether a day is a high-risk wildfire day based on temperature ($^\circ\text{C}$) and relative humidity ($\%$). Watch how a rigid hardcoded rule misses diagonal interactions, while a simple data-driven linear boundary learns the true relationship from labeled examples.
+
+<PythonRunner
+  client:visible
+  title="Try it Yourself: Rules Engine vs. Learned ML Boundary"
+  expectedOutput="Hardcoded Rule Accuracy: 66.7% (4/6)
+Learned ML Boundary: w_temp=0.12, w_humid=-0.08, bias=-1.20
+Learned ML Accuracy: 100.0% (6/6)
+New Day (Temp=33C, Humid=22%): Risk=HIGH (score=1.00)"
+  initialCode={`# Labeled observations: (temp_c, humidity_pct, is_high_risk)
+dataset = [
+    (36, 18, 1),
+    (34, 25, 1),
+    (31, 20, 1),
+    (28, 65, 0),
+    (24, 55, 0),
+    (35, 70, 0),  # Hot, but humid -> NOT high risk
+]
+
+# 1. Brittle hardcoded rule: "High risk if temp > 32"
+rule_correct = sum(1 for t, h, y in dataset if (1 if t > 32 else 0) == y)
+print(f"Hardcoded Rule Accuracy: {rule_correct / len(dataset) * 100:.1f}% ({rule_correct}/{len(dataset)})")
+
+# 2. Data-driven linear decision score: w_temp * T + w_humid * H + bias > 0
+w_temp, w_humid, bias = 0.12, -0.08, -1.20
+ml_correct = sum(
+    1 for t, h, y in dataset
+    if (1 if (w_temp * t + w_humid * h + bias) > 0 else 0) == y
+)
+print(f"Learned ML Boundary: w_temp={w_temp:.2f}, w_humid={w_humid:.2f}, bias={bias:.2f}")
+print(f"Learned ML Accuracy: {ml_correct / len(dataset) * 100:.1f}% ({ml_correct}/{len(dataset)})")
+
+# 3. Predict on an unseen day
+new_t, new_h = 33, 22
+score = w_temp * new_t + w_humid * new_h + bias
+label = "HIGH" if score > 0 else "LOW"
+print(f"New Day (Temp={new_t}C, Humid={new_h}%): Risk={label} (score={score:.2f})")`}
+/>
+
+---
+
+## Check Your Understanding
+
+<QuizCard
+  client:visible
+  question="Why do ML teams often prefer classical Machine Learning (e.g., Scikit-Learn) over a hardcoded if/else rules engine for complex problems?"
+  options={[
+    "Classical ML requires zero data cleaning or domain knowledge.",
+    "ML algorithms automatically discover multi-variable patterns from labeled data and adapt as new data arrives.",
+    "Hardcoded rules engines cannot run in Python.",
+    "Classical ML always uses deep multi-layer neural networks."
+  ]}
+  correctAnswer={1}
+  explanation="Hardcoded rules break down quickly when multiple variables interact in subtle ways. Classical ML learns weighted relationships directly from data and updates cleanly when retrained on new observations."
+/>

@@ -1,0 +1,114 @@
+---
+title: "Agentic RAG: Iterative Maker-Checker Retrieval Loops & Self-Correction"
+track: "ai-agents-for-beginners"
+category: "Module 2: Tool Use, Agentic RAG & Trustworthy Agents"
+order: 6
+difficulty: "intermediate"
+xp: 80
+description: "Move beyond static retrieve-then-read RAG to Agentic RAG with iterative maker-checker loops, query reformulation, and NL2SQL self-correction."
+topic: "Tool Use & Agentic RAG"
+prerequisites: ["ai-agents-for-beginners/05-tool-use-design-pattern"]
+---
+import PythonRunner from '../../../components/islands/PythonRunner';
+import QuizCard from '../../../components/islands/QuizCard';
+import ColabButton from '../../../components/static/ColabButton.astro';
+
+Traditional Retrieval-Augmented Generation (RAG) follows a rigid, one-shot script: embed the user's question, grab the top-$k$ chunks, and hope the answer is somewhere inside them. If the initial query was phrased poorly or the first SQL lookup failed, the model hallucinates or gives up.
+
+**Agentic RAG** flips that model on its head. Instead of a static *retrieve-then-read* pipeline, the LLM **owns its reasoning process** inside an iterative **maker-checker loop**: it calls retrieval tools, grades what came back, rewrites failed queries, switches between vector search (`ChromaDB` + `gemini-embedding-001`), web search, and SQL databases, and keeps iterating until the evidence is solid.
+
+---
+
+## Traditional RAG vs. Agentic RAG
+
+| Capability | Traditional Static RAG | Agentic RAG (Maker-Checker Loop) |
+| :--- | :--- | :--- |
+| **Control Flow** | Fixed human-scripted chain (`query -> top_k -> answer`) | Model autonomously chooses tools, order, and stop condition |
+| **Failed / Malformed Queries** | Fails silently or returns irrelevant chunks | Detects low similarity or SQL errors and rewrites the query |
+| **Multi-Source Synthesis** | Usually a single vector index | Combines vector search, web grounding, and structured SQL |
+| **State & Memory** | Stateless single pass | Tracks prior attempts to avoid repeating dead-end searches |
+
+---
+
+## The Iterative Maker-Checker Loop & Self-Correction
+
+Research patterns like **Self-Refine**, **Reflexion**, and **CRITIC** formalize how Agentic RAG self-corrects across turns:
+
+1. **Initial Call & Tool Invocation**: Given a complex goal (*"Draft a product launch strategy"*), the agent decides independently to query market trends, competitor vector docs, and internal SQL sales history.
+2. **Assessment & Query Refinement**: If vector similarity $\cos(\theta) = \frac{\mathbf{q}\cdot\mathbf{d}}{\|\mathbf{q}\|_2\|\mathbf{d}\|_2}$ falls below a confidence threshold $\tau$, or if an NL2SQL query hits a missing column error, the checker step triggers query reformulation.
+3. **Diagnostic Tracing & Human Fallback**: Every step emits a trace span for auditability; if max iterations are exhausted without sufficient evidence, the agent escalates to human oversight rather than guessing.
+
+### Boundaries of Agency
+
+Agentic RAG is **not** unconstrained general intelligence. Its autonomy is strictly bounded by **domain-specific tools**, **developer-wired data sources**, and **policy guardrails**—making it ideal for *correctness-first* compliance workflows, complex database NL2SQL, and multi-step research.
+
+---
+
+## Open the Companion Colab Notebook
+
+Launch the companion notebook to run a full Maker-Checker Agentic RAG pipeline backed by `gemini-2.5-flash`, `ChromaDB` vector search, and self-correcting SQLite NL2SQL queries.
+
+<ColabButton
+  course="ai-agents-for-beginners"
+  notebook="06-agentic-rag.ipynb"
+  runtime="Free Tier CPU + Gemini API"
+/>
+
+---
+
+## Try It Yourself: Maker-Checker Agentic RAG & NL2SQL Self-Correction
+
+Run this pure-Python sandbox to watch an Agentic RAG loop detect low recall on Turn 1, catch a malformed SQL column name (`rev` $\rightarrow$ `q4_revenue`), rewrite both queries on Turn 2, and pass the `TravelRAGAgent` smoke-test check.
+
+<PythonRunner
+  client:visible
+  title="Try it Yourself: Iterative Maker-Checker Agentic RAG"
+  expectedOutput="[Turn 1] Vector query 'launch' -> best_score=0.41 (< 0.70 threshold, REJECT)
+[Turn 1] SQL 'SELECT rev FROM metrics' -> Error: no such column: rev
+[Turn 2] Rewrote vector query -> 'Q4 travel product launch competitor pricing' (score=0.93, PASS)
+[Turn 2] Rewrote SQL -> 'SELECT q4_revenue FROM metrics' -> [(485000,)]
+[Answer] Grounded synthesis complete using 2 verified sources."
+  initialCode={`import sqlite3
+
+conn = sqlite3.connect(":memory:")
+conn.execute("CREATE TABLE metrics (product TEXT, q4_revenue INT)")
+conn.execute("INSERT INTO metrics VALUES ('TravelPass', 485000)")
+
+kb = {
+    "Q4 travel product launch competitor pricing": 0.93,
+    "launch": 0.41,
+}
+
+# Turn 1: Initial under-specified attempts
+v_score = kb["launch"]
+print(f"[Turn 1] Vector query 'launch' -> best_score={v_score:.2f} (< 0.70 threshold, REJECT)")
+try:
+    conn.execute("SELECT rev FROM metrics").fetchall()
+except sqlite3.OperationalError as err:
+    print(f"[Turn 1] SQL 'SELECT rev FROM metrics' -> Error: {err}")
+
+# Turn 2: Self-correction & query reformulation
+refined_q = "Q4 travel product launch competitor pricing"
+v_score2 = kb[refined_q]
+print(f"[Turn 2] Rewrote vector query -> '{refined_q}' (score={v_score2:.2f}, PASS)")
+rows = conn.execute("SELECT q4_revenue FROM metrics").fetchall()
+print(f"[Turn 2] Rewrote SQL -> 'SELECT q4_revenue FROM metrics' -> {rows}")
+print("[Answer] Grounded synthesis complete using 2 verified sources.")`}
+/>
+
+---
+
+## Check Your Understanding
+
+<QuizCard
+  client:visible
+  question="What distinguishes Agentic RAG from a traditional retrieve-then-read RAG pipeline?"
+  options={[
+    "Agentic RAG never uses vector databases.",
+    "The LLM owns its reasoning loop—evaluating retrieved results, rewriting failed queries, and choosing additional tools iteratively until evidence is sufficient.",
+    "Agentic RAG skips all guardrails and invents its own database schemas.",
+    "Traditional RAG always makes more LLM calls than Agentic RAG."
+  ]}
+  correctAnswer={1}
+  explanation="In Agentic RAG, the model acts as a maker-checker loop that evaluates retrieval quality, reformulates poor vector or SQL queries, and iterates across tools until it has grounded evidence."
+/>

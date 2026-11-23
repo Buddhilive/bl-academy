@@ -1,0 +1,112 @@
+---
+title: "The Qwen SLM Family: Dual Thinking Modes, MoE & Multilingual Edge Scaling"
+track: "edge-ai-for-beginners"
+category: "Module 2: Small Language Model (SLM) Families & Architectures"
+order: 6
+difficulty: "intermediate"
+xp: 65
+description: "Explore Alibaba's Qwen SLM family from 0.5B micro models to Qwen3 dual thinking/non-thinking modes, Sparse MoE routing, and 119-language edge tokenization."
+topic: "Qwen SLM Family"
+prerequisites: ["edge-ai-for-beginners/05-phi-model-family-textbook-training-and-reasoning"]
+---
+import PythonRunner from '../../../components/islands/PythonRunner';
+import QuizCard from '../../../components/islands/QuizCard';
+import ColabButton from '../../../components/static/ColabButton.astro';
+
+You may know that many edge deployments serve global users who switch between English, Spanish, Japanese, Arabic, and Python code in the same session. While many compact models degrade sharply outside English, the **Qwen model family** (Qwen 1.0 through Qwen2.5 and Qwen3) was trained on up to **36 trillion tokens** spanning **119 languages** and offers continuous parameter scaling from **0.5B/0.6B** mobile models up to **30B+ Sparse Mixture-of-Experts (MoE)** architectures.
+
+Here is an overview of Qwen's scaling tiers, its dual thinking/non-thinking mode, and how Sparse MoE keeps inference fast.
+
+---
+
+## Qwen Parameter Tiers & Specialized Variants
+
+| Tier | Representative Models | Target Hardware | Key Edge Capability |
+| :--- | :--- | :--- | :--- |
+| **Micro Edge (0.5B–1.7B)** | `Qwen2.5-0.5B`, `Qwen3-0.6B`, `Qwen3-1.7B` | Smartphones, Raspberry Pi, browser WebGPU | Sub-1 GB INT4 footprint for instant classification & local chat |
+| **Mainstream Edge (3B–8B)** | `Qwen2.5-3B/7B`, `Qwen3-4B/8B` | 8–16 GB laptops, Jetson Orin Nano, Colab T4 | Strong tool calling, multilingual RAG, and reasoning |
+| **Sparse MoE (30B-A3B)** | `Qwen3-30B-A3B` | Workstation / edge server (32 GB+ RAM) | 30B total knowledge with only **3B active parameters** per token |
+| **Domain Specialists** | `Qwen-Coder`, `Qwen-Math`, `Qwen-VL` | Developer PCs & multimodal kiosks | Dedicated code synthesis, symbolic math, and vision-language |
+
+---
+
+## Dual-Mode Operation: `/think` vs. `/no_think`
+
+In Qwen3, a single model checkpoint supports two distinct inference regimes controlled at prompt time:
+
+1. **Thinking Mode (`/think`)**: Emits an explicit `<think>...</think>` reasoning trace before the final answer, ideal for multi-step math, code debugging, and tool-plan verification.
+2. **Non-Thinking Mode (`/no_think`)**: Skips intermediate reasoning tokens and streams the final answer immediately, cutting latency when handling simple lookups or UI autocompletion.
+
+In Sparse MoE variants, each token is routed to only the top-$K$ experts out of $N$ total experts:
+
+$$
+y = \sum_{i \in \text{TopK}(G(x))} G(x)_i \, E_i(x)
+$$
+
+Because only $K$ experts execute per token, FLOPs per generated token scale with the **active parameter count** ($P_{\text{active}}$) rather than total stored parameters ($P_{\text{total}}$).
+
+---
+
+## Open the Companion Colab Notebook
+
+Launch the companion notebook to run `Qwen/Qwen2.5-0.5B-Instruct` on Colab and benchmark thinking vs. non-thinking latency budgets.
+
+<ColabButton
+  course="edge-ai-for-beginners"
+  notebook="06-qwen-model-family-multilingual-and-thinking-modes.ipynb"
+  runtime="Colab Free T4 GPU"
+/>
+
+---
+
+## Try It Yourself: Dual-Mode Router & Sparse MoE Gating Simulator
+
+Run this Python simulator to route queries dynamically between `/no_think` and `/think` modes and compute active FLOPs for a Top-2 Sparse MoE layer.
+
+<PythonRunner
+  client:visible
+  title="Try it Yourself: Qwen Dual-Mode & Sparse MoE Gating Simulator"
+  expectedOutput="Query: 'Translate hello to Japanese' -> Mode=/no_think | Latency=115.0ms
+Query: 'Prove why INT4 reduces DRAM traffic' -> Mode=/think | Latency=475.0ms
+Sparse MoE Active Experts: [2, 5] | Active Ratio: 25.0% (2 of 8 experts)"
+  initialCode={`def route_qwen_mode(query):
+    reasoning_triggers = ("prove", "derive", "debug", "calculate", "why")
+    is_complex = any(t in query.lower() for t in reasoning_triggers)
+    mode = "/think" if is_complex else "/no_think"
+    think_toks = 180 if is_complex else 0
+    ans_toks = 40
+    ttft_ms = 35.0
+    tps = 500.0
+    latency = ttft_ms + ((think_toks + ans_toks) / tps) * 1000.0
+    return mode, latency
+
+for q in [
+    "Translate hello to Japanese",
+    "Prove why INT4 reduces DRAM traffic",
+]:
+    mode, lat = route_qwen_mode(q)
+    print(f"Query: '{q}' -> Mode={mode} | Latency={lat:.1f}ms")
+
+# Top-2 Sparse MoE routing across 8 experts
+router_logits = [0.12, 0.05, 0.88, 0.31, 0.19, 0.74, 0.08, 0.22]
+top_k = sorted(range(len(router_logits)), key=lambda i: router_logits[i], reverse=True)[:2]
+active_pct = (len(top_k) / len(router_logits)) * 100.0
+print(f"Sparse MoE Active Experts: {top_k} | Active Ratio: {active_pct:.1f}% (2 of {len(router_logits)} experts)")`}
+/>
+
+---
+
+## Check Your Understanding
+
+<QuizCard
+  client:visible
+  question="Why can a Qwen3-30B-A3B Sparse Mixture-of-Experts model generate tokens at speeds closer to a 3B dense model than a 30B dense model?"
+  options={[
+    "Because the router activates only a small subset of experts (3B active parameters) for each token instead of computing all 30B parameters.",
+    "Because MoE models compress all weights into 1-bit integers.",
+    "Because MoE models skip tokenization during prefill.",
+    "Because MoE models only support English text."
+  ]}
+  correctAnswer={0}
+  explanation="In a Sparse MoE layer, the gating network routes each token to only the Top-K experts (3B active parameters), keeping per-token FLOPs and memory reads proportional to 3B rather than 30B."
+/>

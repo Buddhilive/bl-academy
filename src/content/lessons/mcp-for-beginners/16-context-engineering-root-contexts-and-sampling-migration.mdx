@@ -1,0 +1,119 @@
+---
+title: "Context Engineering in MCP: The 5-Stage Journey, Compression & Root/Sampling Migration"
+track: "mcp-for-beginners"
+category: "Module 4: Advanced Topics: Multi-Modal, OAuth 2.1, Context Engineering & Debate Agents"
+order: 16
+difficulty: "advanced"
+xp: 85
+description: "Apply Context Engineering principles in MCP, measure Context Utilization Ratio and Relevance Density, pack token budgets, and migrate legacy Root Contexts."
+topic: "Context Engineering"
+prerequisites: ["mcp-for-beginners/15-oauth2-oidc-security-and-identity-hardening"]
+---
+import PythonRunner from '../../../components/islands/PythonRunner';
+import QuizCard from '../../../components/islands/QuizCard';
+import ColabButton from '../../../components/static/ColabButton.astro';
+
+Even the smartest language model fails if you feed it noisy, fragmented, or truncated context. **Context Engineering** is the discipline of selecting, structuring, compressing, and maintaining the exact information an LLM needs at each turn. Because MCP standardizes how tools and resources feed into a model, it is the natural control plane for context engineering.
+
+---
+
+## The 5-Stage Context Journey & 3 Core Principles
+
+Every MCP turn moves through five stages: **User Input** -> **Context Assembly** -> **Model Processing** -> **Response Generation** -> **State Management**.
+
+Three practical principles keep that pipeline reliable:
+
+1. **Share Context Completely**: Fragmenting context across isolated sub-agents produces conflicting assumptions. Keep a shared, consistent context ledger whenever steps depend on prior decisions.
+2. **Actions Carry Implicit Decisions**: Every tool call or architectural choice shapes downstream steps; prefer linear, context-aware execution over blind parallel fan-out when decisions compound.
+3. **Balance Depth with Window Limits**: Use progressive resource loading (`resources/read` on demand) and semantic pruning instead of dumping entire repositories into the prompt.
+
+### Measuring Context Effectiveness
+
+We can track context quality quantitatively with **Context Utilization Ratio (CUR)**:
+
+$$\text{CUR} = \frac{|C_{\text{cited}}|}{|C_{\text{assembled}}|}$$
+
+A high CUR means the tokens you paid to assemble actually contributed to the final answer rather than acting as distracting noise.
+
+---
+
+## Migrating Legacy `2025-11-25` Root Contexts to `2026-07-28`
+
+In `2025-11-25`, clients used the `roots/list` capability (`file://workspace`) to hint which directories a server should inspect. Because Roots never enforced a security boundary and are **deprecated in `2026-07-28`**, modern servers accept explicit workspace paths as tool parameters or server configuration and enforce strict path-traversal sandboxing (`Path.resolve().is_relative_to(allowed_root)`).
+
+---
+
+## Open the Companion Colab Notebook
+
+Launch the companion notebook to build a token-budget context assembler, enforce path-traversal workspace sandboxing, and evaluate Context Utilization Ratio with `gemini-2.5-flash`.
+
+<ColabButton
+  course="mcp-for-beginners"
+  notebook="16-context-engineering-root-contexts-and-sampling-migration.ipynb"
+  runtime="Free Tier CPU + Gemini API"
+/>
+
+---
+
+## Try It Yourself: Context Budget Packer, CUR Evaluator & Path Sandbox
+
+Run this pure-Python sandbox to pack MCP context chunks by value-density within a strict token budget, compute Context Utilization Ratio, and block a `../../etc/passwd` traversal attempt.
+
+<PythonRunner
+  client:visible
+  title="Try it Yourself: Context Budget Optimizer & Workspace Sandbox"
+  expectedOutput="Packed 3/4 chunks (tokens=95/100): ['arch_spec', 'auth_rules', 'sql_schema']
+Context Utilization Ratio (CUR): 0.67 (2/3 packed chunks cited)
+Sandbox check '/workspace/src/app.py' -> ALLOWED
+Sandbox check '/workspace/../../etc/passwd' -> BLOCKED (path traversal)"
+  initialCode={`from pathlib import PurePosixPath
+import posixpath
+
+# 1. Greedy value-density context packing within token budget
+chunks = [
+    {"id": "arch_spec", "tokens": 40, "relevance": 0.95},
+    {"id": "auth_rules", "tokens": 35, "relevance": 0.88},
+    {"id": "old_logs", "tokens": 50, "relevance": 0.20},
+    {"id": "sql_schema", "tokens": 20, "relevance": 0.90},
+]
+budget = 100
+ranked = sorted(chunks, key=lambda c: c["relevance"] / c["tokens"], reverse=True)
+packed, used = [], 0
+for c in ranked:
+    if used + c["tokens"] <= budget:
+        packed.append(c["id"])
+        used += c["tokens"]
+
+print(f"Packed {len(packed)}/{len(chunks)} chunks (tokens={used}/{budget}): {packed}")
+cited = {"arch_spec", "sql_schema"}
+cur = len(cited.intersection(packed)) / len(packed)
+print(f"Context Utilization Ratio (CUR): {cur:.2f} ({len(cited)}/{len(packed)} packed chunks cited)")
+
+# 2. Modern 2026-07-28 workspace path sandbox (replaces legacy Roots)
+ALLOWED_ROOT = "/workspace"
+def check_workspace_path(candidate: str) -> str:
+    norm = posixpath.normpath(candidate)
+    if norm == ALLOWED_ROOT or norm.startswith(ALLOWED_ROOT + "/"):
+        return "ALLOWED"
+    return "BLOCKED (path traversal)"
+
+for p in ["/workspace/src/app.py", "/workspace/../../etc/passwd"]:
+    print(f"Sandbox check '{p}' -> {check_workspace_path(p)}")`}
+/>
+
+---
+
+## Check Your Understanding
+
+<QuizCard
+  client:visible
+  question="Since Roots is deprecated in MCP 2026-07-28, how should a filesystem MCP server safely restrict which directories a tool can access?"
+  options={[
+    "Trust whatever path string the LLM sends without checking it.",
+    "Accept explicit path parameters or server config and enforce canonical path-containment checks (is_relative_to) on the server.",
+    "Expose the entire root filesystem / as an unauthenticated Resource.",
+    "Ask the user to disable OS file permissions."
+  ]}
+  correctAnswer={1}
+  explanation="Legacy Roots were only informational hints, never a security boundary. Modern servers take explicit paths via parameters or config and enforce strict canonical path-containment checks server-side."
+/>

@@ -4,10 +4,12 @@ import { python } from '@codemirror/lang-python';
 import { keymap, EditorView } from '@codemirror/view';
 import { usePyodide } from '../../hooks/usePyodide';
 import { triggerCompletionConfetti } from '../../lib/confetti';
+import { getProgress, saveProgress } from '../../lib/storage';
 import type { PythonRunnerProps } from '../../types/islands';
 
 export const PythonRunner: React.FC<PythonRunnerProps> = ({
-  initialCode = '# Write your Python code below\nprint("Hello, Buddhilive Academy!")',
+  lessonSlug,
+  initialCode = '# Write your Python code below\nprint("Hello, BuddhiAI Academy!")',
   expectedOutput,
   packages,
   title = 'Example',
@@ -22,13 +24,40 @@ export const PythonRunner: React.FC<PythonRunnerProps> = ({
   const [copied, setCopied] = useState<boolean>(false);
   const editorContainerRef = useRef<HTMLDivElement>(null);
   const runButtonRef = useRef<HTMLButtonElement>(null);
+  const hydratedRef = useRef<boolean>(false);
 
   const { runCode, isRunning, isReady } = usePyodide();
 
-  // Avoid SSR hydration issues by deferring rich editor mount
+  // Avoid SSR hydration issues by deferring rich editor mount and hydrating saved code
   useEffect(() => {
     setIsMounted(true);
-  }, []);
+    if (!lessonSlug) {
+      hydratedRef.current = true;
+      return;
+    }
+
+    let active = true;
+    getProgress(lessonSlug).then((prog) => {
+      if (!active) return;
+      if (prog?.saved_code) {
+        setCode(prog.saved_code);
+      }
+      hydratedRef.current = true;
+    });
+
+    return () => {
+      active = false;
+    };
+  }, [lessonSlug]);
+
+  // Debounced auto-save to IndexedDB when lessonSlug is provided
+  useEffect(() => {
+    if (!lessonSlug || !hydratedRef.current) return;
+    const timer = setTimeout(() => {
+      saveProgress(lessonSlug, { saved_code: code });
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [code, lessonSlug]);
 
   const handleCopy = useCallback(() => {
     if (typeof navigator !== 'undefined' && navigator.clipboard) {
@@ -83,7 +112,10 @@ export const PythonRunner: React.FC<PythonRunnerProps> = ({
     setExecutionOutput('');
     setExecutionError(null);
     setTestStatus('idle');
-  }, [initialCode]);
+    if (lessonSlug) {
+      saveProgress(lessonSlug, { saved_code: initialCode });
+    }
+  }, [initialCode, lessonSlug]);
 
   // CodeMirror keyboard escape keymap to prevent tab trapping
   const editorExtensions = React.useMemo(() => {
@@ -122,12 +154,12 @@ export const PythonRunner: React.FC<PythonRunnerProps> = ({
           </h3>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           {/* Copy Button */}
           <button
             type="button"
             onClick={handleCopy}
-            className="px-2.5 py-1.5 text-xs font-medium rounded text-neutral-400 hover:text-white hover:bg-neutral-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E07A5F] transition-colors"
+            className="px-3 py-2 min-h-[40px] text-xs font-medium rounded text-neutral-300 hover:text-white hover:bg-neutral-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E07A5F] transition-colors"
             title="Copy code"
           >
             {copied ? 'Copied!' : 'Copy'}
@@ -137,7 +169,7 @@ export const PythonRunner: React.FC<PythonRunnerProps> = ({
             type="button"
             onClick={handleReset}
             disabled={isRunning}
-            className="px-2.5 py-1.5 text-xs font-medium rounded text-neutral-400 hover:text-white hover:bg-neutral-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E07A5F] transition-colors disabled:opacity-50"
+            className="px-3 py-2 min-h-[40px] text-xs font-medium rounded text-neutral-300 hover:text-white hover:bg-neutral-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E07A5F] transition-colors disabled:opacity-50"
             title="Reset code"
           >
             Reset
@@ -151,7 +183,7 @@ export const PythonRunner: React.FC<PythonRunnerProps> = ({
             disabled={isRunning}
             aria-busy={isRunning}
             aria-label={isRunning ? 'Executing Python code' : 'Try it Yourself (Run)'}
-            className="inline-flex items-center gap-1.5 px-4 py-1.5 min-h-[38px] justify-center text-xs sm:text-sm font-semibold rounded bg-[#A7452A] hover:bg-[#93371E] dark:bg-[#E07A5F] dark:hover:bg-[#E58A73] text-white dark:text-neutral-950 shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E07A5F] transition-all disabled:opacity-60 disabled:cursor-not-allowed"
+            className="inline-flex items-center gap-1.5 px-4 py-2 min-h-[40px] justify-center text-xs sm:text-sm font-semibold rounded bg-[#A7452A] hover:bg-[#93371E] dark:bg-[#E07A5F] dark:hover:bg-[#E58A73] text-white dark:text-neutral-950 shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E07A5F] transition-all disabled:opacity-60 disabled:cursor-not-allowed"
           >
             {isRunning ? (
               <>

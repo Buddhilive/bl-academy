@@ -3,12 +3,14 @@ interface Props {
   notebook: string;
   course?: string;
   label?: string;
+  runtime?: string;
 }
 
 const {
   notebook,
-  course = 'data-foundations-and-classical-ml',
+  course = 'ai-for-beginners',
   label = 'Open with Google Colab',
+  runtime = 'Free Tier CPU',
 } = Astro.props;
 
 const colabUrl = `https://colab.research.google.com/github/buddhilive/bl-academy/blob/main/notebook/${course}/${notebook}`;
@@ -39,6 +41,6 @@ const colabUrl = `https://colab.research.google.com/github/buddhilive/bl-academy
     <span class="sr-only"> (opens in a new tab)</span>
   </a>
   <span class="text-xs text-neutral-400 font-mono">
-    notebook/{course}/{notebook} • Free Tier CPU
+    notebook/{course}/{notebook} • {runtime}
   </span>
 </div>

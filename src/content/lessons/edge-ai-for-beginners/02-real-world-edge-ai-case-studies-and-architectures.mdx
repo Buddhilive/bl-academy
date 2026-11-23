@@ -1,0 +1,125 @@
+---
+title: "Real-World Edge AI Case Studies: QuaRot, Micro-Models & Enterprise Aviation"
+track: "edge-ai-for-beginners"
+category: "Module 1: Edge AI Foundations, Case Studies & Hardware Platforms"
+order: 2
+difficulty: "intermediate"
+xp: 55
+description: "Analyze production Edge AI architectures including QuaRot 4-bit outlier rotation, 330M encoder-decoder Mu micro-models, and Japan Airlines offline cabin reporting."
+topic: "Edge AI Case Studies"
+prerequisites: ["edge-ai-for-beginners/01-introduction-to-edge-ai-and-paradigm-shift"]
+---
+import PythonRunner from '../../../components/islands/PythonRunner';
+import QuizCard from '../../../components/islands/QuizCard';
+
+You may know that shrinking a 7B model down to 4 bits looks easy on paper, until a handful of massive activation outliers destroy the quantization scale and turn coherent sentences into gibberish. Real-world Edge AI engineering is defined by how teams solve these numerical and systems bottlenecks under strict memory and battery limits.
+
+Here is an overview of three landmark production architectures that prove Small Language Models (SLMs) can deliver sub-second responses on consumer and enterprise edge hardware.
+
+---
+
+## Case Study 1: 4-Bit Edge Inference with QuaRot & Sliding Windows
+
+When deploying a Phi-3.5-mini derivative (~3.8B parameters) directly onto an NPU for system-wide assistance (rewriting text, summarizing emails, and contextual actions), standard 16-bit weights consume nearly 7.6 GB of memory. That leaves almost no room for the operating system.
+
+Two architectural innovations bring that footprint down by roughly 60 percent while hitting **230ms time-to-first-token (TTFT)** and **20 tokens/second** on an NPU:
+
+1. **QuaRot (Quantization with Rotation)**: Neural network activations often contain extreme channel outliers (values 50x larger than the median). QuaRot multiplies weight and activation matrices by an orthogonal Hadamard matrix $H$ ($H H^T = I$) before quantization:
+   $$
+   Y = X W = (X H)(H^T W)
+   $$
+   Because $H$ is orthogonal, the exact linear transformation is preserved in full precision, yet the rotated activations $X H$ spread outlier energy evenly across all channels. This suppresses the peak magnitude $\|X H\|_\infty \ll \|X\|_\infty$ and enables end-to-end **4-bit quantization** across weights, activations, and the KV cache.
+2. **Sliding Window Chunking ($N = 64$)**: Rather than processing a 2,000-token prompt in one monolithic prefill pass that spikes NPU SRAM, long prompts are decomposed into $N = 64$ token chunks, bounding peak memory while sustaining a 2K to 4K token context window.
+
+---
+
+## Case Study 2: Task-Specific Micro-Models (Mu 330M)
+
+General-purpose 3B+ models are overkill when an application only needs to map natural language intent to structured device settings (for example, *"turn on night light"* or *"connect my Bluetooth headphones"*). The **Mu** architecture takes a task-specific micro-model approach:
+
+| Architectural Feature | General-Purpose Decoder SLM | Task-Specific Mu Micro-Model |
+| :--- | :--- | :--- |
+| **Total Parameters** | 3.8B (decoder-only) | 330M (encoder-decoder) |
+| **Parameter Split** | Uniform decoder stack | 2/3 encoder, 1/3 decoder |
+| **Target Latency** | ~230ms TTFT | Sub-500ms full settings action |
+| **Speedup vs. Baseline** | Baseline | 47% lower TTFT, 4.7x faster decode |
+| **Training Corpus** | Broad web + textbook corpus | 3.6M curated settings samples |
+
+Why an **encoder-decoder** split? In narrow command-and-control tasks, the input query is rich and ambiguous while the output action is short and structured. Allocating two-thirds of the 330M parameters to the bidirectional encoder lets the model understand complex multi-word queries deeply, while the lightweight 1/3 decoder emits the structured action in milliseconds.
+
+---
+
+## Case Study 3: Japan Airlines (JAL) Offline Cabin Report System
+
+Airline cabin attendants write detailed post-flight safety, service, and maintenance reports after every leg. On international flights without reliable high-bandwidth Wi-Fi, cloud-based AI assistants fail mid-flight, and passenger or operational notes raise strict data privacy concerns.
+
+```mermaid
+flowchart LR
+    A["Cabin Attendant Input (Tablet)"] -->|"Offline On-Device SLM"| B["Structured Draft & Categorization"]
+    B -->|"Human Verification"| C["Local Encrypted Queue"]
+    C -->|"Post-Flight Gate Wi-Fi"| D["Enterprise Operations Sync"]
+```
+
+By running a quantized SLM directly on cabin tablets, JAL enabled attendants to dictate and structure reports immediately while offline, cutting post-flight administrative delays and ensuring sensitive operational records never traverse untrusted public networks.
+
+---
+
+## Try It Yourself: QuaRot Outlier Suppression & Quantization Error Simulator
+
+Run this pure-Python simulation to see how multiplying an activation vector containing a 24.0 outlier by an orthogonal 4x4 Walsh-Hadamard matrix slashes symmetric INT4 quantization Mean Squared Error (MSE).
+
+<PythonRunner
+  client:visible
+  title="Try it Yourself: QuaRot Hadamard Rotation vs. Naive INT4 Quantization"
+  expectedOutput="Original max |x|: 24.0000 | Naive INT4 MSE: 0.375000
+Rotated max |xH|: 12.5000 | QuaRot INT4 MSE: 0.082908
+MSE Reduction Factor: 4.52x"
+  initialCode={`import math
+
+def int4_quant_dequant(vec):
+    max_abs = max(abs(v) for v in vec)
+    scale = max_abs / 7.0 if max_abs > 0 else 1.0
+    recon = [round(v / scale) * scale for v in vec]
+    mse = sum((a - b) ** 2 for a, b in zip(vec, recon)) / len(vec)
+    return max_abs, mse
+
+# Activation vector with a severe channel outlier (24.0)
+x = [0.5, -0.5, 24.0, 1.0]
+
+# Normalized 4x4 Walsh-Hadamard matrix (H * H^T = I)
+h_raw = [
+    [1,  1,  1,  1],
+    [1, -1,  1, -1],
+    [1,  1, -1, -1],
+    [1, -1, -1,  1],
+]
+inv_sqrt_4 = 0.5
+x_rot = [
+    sum(x[i] * h_raw[i][j] * inv_sqrt_4 for i in range(4))
+    for j in range(4)
+]
+
+orig_max, naive_mse = int4_quant_dequant(x)
+rot_max, quarot_mse = int4_quant_dequant(x_rot)
+
+print(f"Original max |x|: {orig_max:.4f} | Naive INT4 MSE: {naive_mse:.6f}")
+print(f"Rotated max |xH|: {rot_max:.4f} | QuaRot INT4 MSE: {quarot_mse:.6f}")
+print(f"MSE Reduction Factor: {naive_mse / quarot_mse:.2f}x")`}
+/>
+
+---
+
+## Check Your Understanding
+
+<QuizCard
+  client:visible
+  question="Why does QuaRot apply an orthogonal Hadamard transformation to activations and weights before 4-bit quantization?"
+  options={[
+    "To double the number of parameters in the model for higher accuracy.",
+    "To preserve the exact linear product while spreading extreme channel outliers evenly, dramatically reducing INT4 quantization error.",
+    "To convert floating-point numbers into text tokens before inference.",
+    "To bypass the need for a tokenizer on mobile devices."
+  ]}
+  correctAnswer={1}
+  explanation="Because an orthogonal matrix satisfies H * H^T = I, (X H)(H^T W) equals X W exactly in full precision, while redistributing extreme activation outliers across channels so 4-bit quantization retains much higher fidelity."
+/>

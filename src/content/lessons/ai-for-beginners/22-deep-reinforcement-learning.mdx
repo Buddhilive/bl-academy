@@ -1,0 +1,111 @@
+---
+title: "Deep Reinforcement Learning: Q-Learning & Policy Gradients"
+track: "ai-for-beginners"
+category: "Module 5: Alternative Paradigms & Ethics"
+order: 23
+difficulty: "advanced"
+xp: 90
+description: "Learn Markov Decision Processes, the Bellman Q-learning equation, exploration vs exploitation, and Policy Gradients on Gymnasium CartPole."
+topic: "Deep Reinforcement Learning"
+prerequisites: ["ai-for-beginners/21-genetic-algorithms"]
+---
+import PythonRunner from '../../../components/islands/PythonRunner';
+import QuizCard from '../../../components/islands/QuizCard';
+import ColabButton from '../../../components/static/ColabButton.astro';
+
+In supervised learning, every training example comes with a ground-truth label. **Reinforcement Learning (RL)** tackles a harder, more natural setting: **learning by doing**. An **agent** interacts with an **environment**, observes a **state** $s_t$, picks an **action** $a_t$, and receives a **reward** $r_t$—often long after the decisive move was made.
+
+---
+
+## Core RL Concepts & The Bellman Update
+
+An RL task is formalized as a **Markov Decision Process (MDP)** where the agent maximizes expected **discounted cumulative return**:
+
+$$G_t = \sum_{k=0}^{\infty} \gamma^k r_{t+k+1}, \qquad \gamma \in [0, 1)$$
+
+A discount factor like $\gamma = 0.99$ values immediate rewards slightly more than distant future rewards. Throughout training, the agent balances **Exploration** (trying new actions with probability $\epsilon$) against **Exploitation** (picking the best-known action with probability $1 - \epsilon$).
+
+### Tabular Q-Learning vs. Deep Policy Gradients
+
+| RL Algorithm | What It Learns | Update Rule / Loss | Best Used For |
+| :--- | :--- | :--- | :--- |
+| **Tabular Q-Learning** | State–action value table $Q(s, a)$ | $Q(s,a) \leftarrow (1-\alpha)Q(s,a) + \alpha[r + \gamma \max_{a'} Q(s',a')]$ | Small discrete gridworlds (like *Peter & the Wolf*). |
+| **Policy Gradients (REINFORCE)** | Neural network policy $\pi_\theta(a \mid s)$ | Reinforce actions that led to high discounted returns $G_t$. | Continuous or high-dimensional states (`CartPole-v1`). |
+| **Actor–Critic** | Policy (**Actor**) + Value baseline (**Critic**) | Critic estimates expected return; Actor improves policy with lower variance. | Complex control (`MountainCar`, robotics, Atari). |
+
+In Python, modern RL environments use the open-source **`gymnasium`** library (`env = gym.make("CartPole-v1")`) with standardized `env.reset()` and `env.step(action)` loops. Each step returns `(observation, reward, terminated, truncated, info)`, letting you swap physics simulators, classic Atari games, or custom gridworlds without rewriting your training agent. Beyond games, RL powers industrial control systems, warehouse robotics, autonomous navigation, and **RLHF** (Reinforcement Learning from Human Feedback) for aligning modern Large Language Models with human preferences. In the companion Colab notebook, you'll train a REINFORCE Policy Gradient agent in PyTorch on `CartPole-v1` and explore `MountainCar-v0`.
+
+<ColabButton
+  course="ai-for-beginners"
+  notebook="22-deep-reinforcement-learning.ipynb"
+  runtime="Free Tier CPU / T4 GPU"
+/>
+
+---
+
+## Hands-On: Tabular Q-Learning in a 1D Corridor
+
+Let's train a pure-Python **Q-Learning** agent on a 5-tile corridor (`0..4`) where tile `4` holds an apple (`+10` reward) and tile `0` has a wolf (`-10` penalty). Watch how the Bellman update propagates value backward from the goal!
+
+<PythonRunner
+  client:visible
+  title="Try it Yourself: Tabular Q-Learning Agent"
+  expectedOutput="Learned Q-Values (Left vs Right) per State:
+  State 1: L=-2.00, R=7.90 -> Best: RIGHT
+  State 2: L=6.96, R=8.90 -> Best: RIGHT
+  State 3: L=7.89, R=10.00 -> Best: RIGHT"
+  initialCode={`import random
+
+random.seed(42)
+# States: 0 (wolf: -10), 1, 2, 3, 4 (apple: +10)
+Q = {s: {"L": 0.0, "R": 0.0} for s in range(1, 4)}
+alpha, gamma, eps = 0.2, 0.9, 0.2
+
+for _ in range(250):
+    s = 2  # start in middle
+    for _ in range(15):
+        if random.random() < eps:
+            a = random.choice(["L", "R"])
+        else:
+            a = "R" if Q[s]["R"] >= Q[s]["L"] else "L"
+
+        ns = s + (1 if a == "R" else -1)
+        if ns == 4:
+            r, done = 10.0, True
+            target = r
+        elif ns == 0:
+            r, done = -10.0, True
+            target = r
+        else:
+            r, done = -0.1, False
+            target = r + gamma * max(Q[ns].values())
+
+        Q[s][a] = (1 - alpha) * Q[s][a] + alpha * target
+        s = ns
+        if done:
+            break
+
+print("Learned Q-Values (Left vs Right) per State:")
+for s in (1, 2, 3):
+    best = "RIGHT" if Q[s]["R"] >= Q[s]["L"] else "LEFT"
+    print(f"  State {s}: L={Q[s]['L']:.2f}, R={Q[s]['R']:.2f} -> Best: {best}")`}
+/>
+
+---
+
+## Check Your Understanding
+
+<QuizCard
+  client:visible
+  question="In Reinforcement Learning, what is the purpose of the epsilon-greedy strategy?"
+  options={[
+    "To balance Exploration (trying new actions to discover higher rewards) with Exploitation (choosing the highest-valued action known so far).",
+    "To freeze all neural network weights permanently.",
+    "To convert continuous images into discrete BIO tags.",
+    "To set the discount factor gamma to 0."
+  ]}
+  correctAnswer={0}
+  explanation="Pure exploitation can trap an agent in a suboptimal routine; epsilon-greedy ensures occasional random exploration to discover better trajectories."
+/>
+
+Next, let's see what happens when *dozens* of simple agents interact in a shared environment in **Lesson 23: Multi-Agent Systems**.

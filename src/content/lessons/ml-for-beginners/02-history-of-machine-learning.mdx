@@ -1,0 +1,121 @@
+---
+title: "The History of Machine Learning: From Bayes & Least Squares to Modern ML"
+track: "ml-for-beginners"
+category: "Module 1: ML Foundations, History, Fairness & Techniques"
+order: 2
+difficulty: "beginner"
+xp: 55
+description: "Trace machine learning's evolution from Bayes' Theorem (1763), Least Squares (1805), and Turing's Test (1950) through AI Winters, Expert Systems, and modern big data."
+topic: "History of ML"
+prerequisites: ["ml-for-beginners/01-introduction-to-machine-learning"]
+---
+import PythonRunner from '../../../components/islands/PythonRunner';
+import QuizCard from '../../../components/islands/QuizCard';
+import ColabButton from '../../../components/static/ColabButton.astro';
+
+It is easy to assume machine learning was invented ten years ago alongside cloud GPUs. In truth, the mathematical engines powering today's Scikit-Learn models—Bayes' Theorem, Ordinary Least Squares, and Markov Chains—were formulated in the 18th, 19th, and early 20th centuries, decades before electronic computers existed. Understanding this history explains *why* modern ML looks the way it does and keeps us honest about hype cycles.
+
+When you look at the timeline of AI and ML, you see a recurring pattern: bold breakthroughs, overpromised timelines, painful "AI Winters" when compute and data couldn't keep up, and eventual maturation into engineering discipline.
+
+---
+
+## Pre-Computer Mathematical Foundations (1763–1913)
+
+Long before Alan Turing asked whether machines could think, mathematicians built the probabilistic and geometric tools that still sit inside modern ML libraries:
+
+| Year | Breakthrough | Creator(s) | Core Role in Modern ML |
+| :--- | :--- | :--- | :--- |
+| **1763 / 1812** | **Bayes' Theorem** | Thomas Bayes & Pierre-Simon Laplace | Updates event probability $P(A\mid B)$ from prior knowledge and new evidence |
+| **1805** | **Method of Least Squares** | Adrien-Marie Legendre | Fits regression lines by minimizing squared vertical residuals |
+| **1913** | **Markov Chains** | Andrey Markov | Models sequential state transitions based solely on the current state |
+| **1957** | **Perceptron** | Frank Rosenblatt | Linear binary classifier that laid the foundation for neural networks |
+| **1967** | **Nearest Neighbor** | Cover & Hart | Classifies patterns by finding the closest labeled examples in feature space |
+| **1970 / 1982** | **Backpropagation & RNNs** | Linnainmaa / Hopfield | Trains multi-layer feedforward and temporal recurrent networks |
+
+Bayes' Theorem remains the backbone of probabilistic classifiers:
+
+$$P(A \mid B) = \frac{P(B \mid A)\,P(A)}{P(B)}$$
+
+---
+
+## 1950–1974: Turing, Dartmouth & "The Golden Years"
+
+In **1950**, Alan Turing published *Computing Machinery and Intelligence* and proposed the **Turing Test** (originally *The Imitation Game*) as an empirical way to evaluate whether a machine's typed responses are indistinguishable from a human's. Six years later, the **1956 Dartmouth Summer Research Project**—led by John McCarthy and Marvin Minsky—officially coined the term **Artificial Intelligence**, sparking intense optimism.
+
+Between **1956 and 1974**, government-funded labs produced landmark prototypes:
+
+- **Shakey the Robot (1966–1972)**: One of the first mobile robots capable of reasoning about physical actions in its environment.
+- **ELIZA (1966)**: Joseph Weizenbaum's rule-based conversational "therapist" that used keyword substitution to mimic human dialogue.
+- **SHRDLU & Blocks World (1968–1970)**: Terry Winograd's micro-world where a computer manipulated virtual blocks using natural-language commands.
+
+---
+
+## 1974–1993: AI Winters, Neats vs. Scruffies & Expert Systems
+
+By the mid-1970s, reality hit hard. Researchers had underestimated the **combinatorial explosion** of parameters, suffered from severe **paucity of data**, and ran out of compute. Critics also challenged whether passing the Turing Test proved real understanding—most famously John Searle's **Chinese Room** thought experiment—and questioned the ethics of deploying chatbots like ELIZA as simulated therapists. Funding dried up during the **1974–1980 AI Winter**.
+
+During this period, AI split into two camps: **"Scruffies"** (like ELIZA and SHRDLU, tuned empirically until they worked) and **"Neats"** (focused on formal logic, reproducibility, and explainable math). By the **1980s**, the Neat approach fueled commercial **Expert Systems**—hybrid architectures pairing a business rules engine with an inference engine. Yet specialized Lisp hardware couldn't compete with the rise of affordable personal computers, triggering a second **AI Chill (1987–1993)**.
+
+---
+
+## 1993–Present: Big Data, Smartphones & Accountability
+
+From **1993 to 2011**, the democratization of personal computing, the web, and the 2007 smartphone boom finally solved the twin bottlenecks of the 1970s: **massive datasets** and **exponential compute**. Today, machine learning touches nearly every digital product—which makes understanding both its mathematical roots and its societal risks essential.
+
+<ColabButton
+  course="ml-for-beginners"
+  notebook="02-history-of-machine-learning.ipynb"
+  runtime="Free Tier CPU"
+/>
+
+---
+
+## Try It Yourself: Three Historical ML Equations in Action
+
+Let's execute three foundational algorithms from **1763**, **1805**, and **1913** right in your browser to see how pre-computer mathematics powers modern machine learning.
+
+<PythonRunner
+  client:visible
+  title="Try it Yourself: 1763 Bayes, 1805 Least Squares & 1913 Markov Chain"
+  expectedOutput="1763 Bayes Posterior P(Spam|Free): 0.857
+1805 Least Squares Fit: Y = 2.00 + 1.50*X
+1913 Markov Sunny->Rainy->Sunny (2 steps): 0.610"
+  initialCode={`# 1. 1763 Bayes' Theorem: Spam filter update
+p_spam = 0.30
+p_free_given_spam = 0.80
+p_free_given_ham = 0.057142857
+p_free = p_free_given_spam * p_spam + p_free_given_ham * (1 - p_spam)
+p_spam_given_free = (p_free_given_spam * p_spam) / p_free
+print(f"1763 Bayes Posterior P(Spam|Free): {p_spam_given_free:.3f}")
+
+# 2. 1805 Legendre Least Squares: Fit Y = a + bX
+xs = [1, 2, 3, 4]
+ys = [3.5, 5.0, 6.5, 8.0]
+n = len(xs)
+b = (n * sum(x * y for x, y in zip(xs, ys)) - sum(xs) * sum(ys)) / (n * sum(x * x for x in xs) - sum(xs) ** 2)
+a = (sum(ys) - b * sum(xs)) / n
+print(f"1805 Least Squares Fit: Y = {a:.2f} + {b:.2f}*X")
+
+# 3. 1913 Markov Chain: Two-step weather transition starting Sunny
+# Transition matrix: Sunny -> (0.7 Sunny, 0.3 Rainy), Rainy -> (0.4 Sunny, 0.6 Rainy)
+p_sunny_step1, p_rainy_step1 = 0.7, 0.3
+p_sunny_step2 = p_sunny_step1 * 0.7 + p_rainy_step1 * 0.4
+print(f"1913 Markov Sunny->Rainy->Sunny (2 steps): {p_sunny_step2:.3f}")`}
+/>
+
+---
+
+## Check Your Understanding
+
+<QuizCard
+  client:visible
+  question="What were the primary technical causes of the first AI Winter (1974–1980)?"
+  options={[
+    "Too much labeled training data and overly fast GPUs.",
+    "Limited compute power, combinatorial parameter explosion, and a severe paucity of data.",
+    "The invention of Scikit-Learn and Python.",
+    "Expert systems replacing all neural networks in 1974."
+  ]}
+  correctAnswer={1}
+  explanation="In the 1970s, compute capacity was far too small, parameter spaces grew exponentially (combinatorial explosion), and large digital datasets did not yet exist to train or validate complex models."
+/>

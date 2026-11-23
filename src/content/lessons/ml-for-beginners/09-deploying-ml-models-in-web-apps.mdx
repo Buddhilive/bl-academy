@@ -1,0 +1,109 @@
+---
+title: "Building a Web App for an ML Model: Pickling UFO Sightings with Flask, FastAPI & Gradio"
+track: "ml-for-beginners"
+category: "Module 2: Regression Models & Web App Deployment"
+order: 9
+difficulty: "intermediate"
+xp: 80
+description: "Train a Logistic Regression classifier on NUFORC UFO sightings, serialize it with pickle, and serve predictions through Flask, FastAPI, and interactive Gradio web apps."
+topic: "ML Web Deployment"
+prerequisites: ["ml-for-beginners/08-logistic-regression-and-roc-curves"]
+---
+import PythonRunner from '../../../components/islands/PythonRunner';
+import QuizCard from '../../../components/islands/QuizCard';
+import ColabButton from '../../../components/static/ColabButton.astro';
+
+Training a model in a notebook is only half the job—eventually, real users need to interact with it through a web or mobile app. In this lesson, we train a multi-class classifier on **80,000 NUFORC UFO sightings** (`Seconds`, `Latitude`, `Longitude` $\rightarrow$ `Country`), serialize the fitted model with Python's `pickle` module, and wire it into both a classic **Flask** web server and an instant **Gradio / FastAPI** interface on Google Colab.
+
+---
+
+## Architecture Choices for Serving ML Models
+
+Before exporting a model, confirm four architectural questions:
+
+| Question | Option A (Server-Side Python) | Option B (Client / Edge / Mobile) |
+| :--- | :--- | :--- |
+| **Runtime** | `pickle` + Flask / FastAPI / Gradio | ONNX Runtime Web, TensorFlow.js, or TensorFlow Lite |
+| **Offline Support** | Requires network call to REST endpoint | Runs locally inside the browser or mobile device |
+| **Security Note** | Never un-pickle `.pkl` files from untrusted sources | Export weights as safe tensor formats (`.onnx`, `.safetensors`) |
+
+---
+
+## Cleaning, Pickling & Serving the UFO Sightings Model
+
+After dropping null rows and filtering sightings between `1` and `60` seconds, we encode the five target countries alphabetically (`0: Australia, 1: Canada, 2: Germany, 3: UK, 4: US`) with `LabelEncoder` and fit `LogisticRegression()`. Because `Latitude` and `Longitude` correlate strongly with geography, the model reaches **~95% accuracy**.
+
+We flatten the model to disk with `pickle.dump(model, open('ufo-model.pkl', 'wb'))`, verify `model.predict([[50, 44, -12]])` returns `[3]` (`UK`), and serve predictions in Flask (`app.py`):
+
+```python
+@app.route("/predict", methods=["POST"])
+def predict():
+    int_features = [float(x) for x in request.form.values()]
+    prediction = model.predict([np.array(int_features)])
+    countries = ["Australia", "Canada", "Germany", "UK", "US"]
+    return render_template("index.html", prediction_text=f"Likely country: {countries[prediction[0]]}")
+```
+
+In Google Colab, we can also launch the exact same pickled model with **Gradio** (`gr.Interface`) or **FastAPI** in three lines of code. Notice what makes deployment tricky in production: the web server must pass input features in the **exact same order, scale, and shape** (`[Seconds, Latitude, Longitude]`) that the notebook used during `model.fit()`. Documenting that input contract clearly is what keeps model training and application engineering in sync.
+
+<ColabButton
+  course="ml-for-beginners"
+  notebook="09-deploying-ml-models-in-web-apps.ipynb"
+  runtime="Free Tier CPU"
+/>
+
+---
+
+## Try It Yourself: `pickle` Serialization & `/predict` Endpoint
+
+Let's serialize a trained UFO country-centroid classifier in memory using Python's `pickle.dumps` and `pickle.loads`, then process a simulated `/predict` form request for `[50, 44, -12]`.
+
+<PythonRunner
+  client:visible
+  title="Try it Yourself: Pickle Model Serialization & /predict Route"
+  expectedOutput="Serialized model size: 136 bytes
+Reloaded model prediction for [50, 44, -12]: index=3 -> Likely country: UK"
+  initialCode={`import math
+import pickle
+
+COUNTRIES = ["Australia", "Canada", "Germany", "UK", "US"]
+# Approximate geographic centroids (Seconds, Latitude, Longitude)
+centroids = {
+    0: (30, -25.3, 133.8),   # Australia
+    1: (25, 56.1, -106.3),   # Canada
+    2: (20, 51.2, 10.4),     # Germany
+    3: (35, 54.0, -2.0),     # UK
+    4: (30, 39.8, -98.6),    # US
+}
+
+# Serialize model weights with pickle
+raw_bytes = pickle.dumps(centroids)
+print(f"Serialized model size: {len(raw_bytes)} bytes")
+
+# Reload model (as Flask/FastAPI startup does) and run /predict
+loaded_centroids = pickle.loads(raw_bytes)
+query = [50, 44, -12]
+
+best_idx = min(
+    loaded_centroids,
+    key=lambda idx: (query[1] - loaded_centroids[idx][1]) ** 2 + (query[2] - loaded_centroids[idx][2]) ** 2,
+)
+print(f"Reloaded model prediction for {query}: index={best_idx} -> Likely country: {COUNTRIES[best_idx]}")`}
+/>
+
+---
+
+## Check Your Understanding
+
+<QuizCard
+  client:visible
+  question="What critical security precaution must you follow when working with Python pickle (.pkl) model files?"
+  options={[
+    "Pickle files can only store integers, not floating-point weights.",
+    "Never un-pickle a .pkl file from an untrusted source, because pickle deserialization can execute arbitrary code.",
+    "Pickle automatically encrypts all HTTP requests.",
+    "Flask blocks any .pkl file larger than 1 KB."
+  ]}
+  correctAnswer={1}
+  explanation="Python's pickle format is not secure against maliciously constructed data—unpickling untrusted files can execute arbitrary Python code. Only load .pkl artifacts you trained or verified yourself."
+/>

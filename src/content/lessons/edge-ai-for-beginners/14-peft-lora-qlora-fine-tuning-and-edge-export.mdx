@@ -1,0 +1,124 @@
+---
+title: "Parameter-Efficient Fine-Tuning (LoRA & QLoRA) and Quantized Edge Export"
+track: "edge-ai-for-beginners"
+category: "Module 4: SLMOps, Knowledge Distillation, LoRA Fine-Tuning & Edge Agents"
+order: 14
+difficulty: "advanced"
+xp: 75
+description: "Customize Small Language Models on a single Colab T4 GPU using PEFT LoRA and 4-bit QLoRA, then merge adapters and export to quantized ONNX or GGUF for edge deployment."
+topic: "LoRA, QLoRA & Edge Export"
+prerequisites: ["edge-ai-for-beginners/13-slmops-lifecycle-and-knowledge-distillation-with-gemini"]
+---
+import PythonRunner from '../../../components/islands/PythonRunner';
+import QuizCard from '../../../components/islands/QuizCard';
+import ColabButton from '../../../components/static/ColabButton.astro';
+
+You may know that full fine-tuning updates every single weight in a neural network, requiring optimizer states and gradients that easily exceed 60 GB of VRAM even for a 3.8B model. **Parameter-Efficient Fine-Tuning (PEFT)** using **LoRA (Low-Rank Adaptation)** and **QLoRA (4-bit Quantized LoRA)** shrinks that requirement so you can specialize an edge SLM on a single free 15 GB Colab T4 GPU.
+
+Here is an overview of how LoRA rank decomposition works, how QLoRA fits multi-billion-parameter tuning into 15 GB, and how to merge adapters for zero-overhead edge inference.
+
+---
+
+## Full Fine-Tuning vs. LoRA vs. QLoRA
+
+| Method | Base Weights | Trainable Params | Optimizer VRAM (3.8B Model) | Best Use Case |
+| :--- | :--- | :--- | :--- | :--- |
+| **Full Fine-Tuning** | FP16 / BF16 | 100% | ~60 GB+ | Multi-GPU pretraining or massive domain shift |
+| **LoRA** | Frozen FP16 | ~0.2% – 1.5% | ~10–12 GB | Fast domain adaptation on 16–24 GB GPUs |
+| **QLoRA (NF4)** | **Frozen 4-bit NormalFloat** | ~0.2% – 1.5% (FP16) | **~4.5–6 GB** | Fine-tuning 3.8B–8B SLMs on **Colab Free T4** |
+
+### Low-Rank Weight Decomposition & Zero-Overhead Merging
+
+Instead of updating a dense weight matrix $W_0 \in \mathbb{R}^{d \times k}$ directly, LoRA freezes $W_0$ and injects two small trainable matrices $B \in \mathbb{R}^{d \times r}$ and $A \in \mathbb{R}^{r \times k}$ where rank $r \ll \min(d, k)$:
+
+$$
+h = W_0 x + \frac{\alpha}{r} B A x
+$$
+
+The trainable parameter fraction for a linear layer is:
+
+$$
+\rho_{\text{LoRA}} = \frac{r(d + k)}{d \cdot k}
+$$
+
+For a $3072 \times 3072$ projection with rank $r = 8$, LoRA trains only **0.52 percent** of the weights! And once training finishes, you do not need to ship separate adapter files to the edge device: simply compute $W_{\text{merged}} = W_0 + \frac{\alpha}{r} B A$ (`peft_model.merge_and_unload()`), then export the merged model to **GGUF `Q4_K_M`** or **ONNX INT4** with zero extra runtime latency.
+
+---
+
+## Open the Companion Colab Notebook
+
+Launch the companion notebook to attach a PEFT LoRA adapter, inspect trainable parameter counts, and merge weights into a clean edge-ready checkpoint on Google Colab.
+
+<ColabButton
+  course="edge-ai-for-beginners"
+  notebook="14-peft-lora-qlora-fine-tuning-and-edge-export.ipynb"
+  runtime="Colab Free T4 GPU"
+/>
+
+---
+
+## Try It Yourself: LoRA Parameter Compression & Weight Merger Simulator
+
+Run this pure-Python simulator to compute LoRA parameter savings across ranks $r \in \{4, 8, 16\}$ and verify that merging $W_0 + \frac{\alpha}{r} B A$ produces the exact same output as running the unmerged adapter branch.
+
+<PythonRunner
+  client:visible
+  title="Try it Yourself: LoRA Rank Savings & Adapter Merger Verification"
+  expectedOutput="Rank r= 4 | Trainable Params=  24,576 / 9,437,184 (0.26%)
+Rank r= 8 | Trainable Params=  49,152 / 9,437,184 (0.52%)
+Rank r=16 | Trainable Params=  98,304 / 9,437,184 (1.04%)
+Unmerged LoRA Output: [1.2000, 1.1500]
+Merged Edge Output:   [1.2000, 1.1500] | Max Diff: 0.00e+00"
+  initialCode={`d, k = 3072, 3072
+base_params = d * k
+
+for r in (4, 8, 16):
+    lora_params = r * (d + k)
+    pct = (lora_params / base_params) * 100.0
+    print(f"Rank r={r:2d} | Trainable Params={lora_params:8,d} / {base_params:,d} ({pct:.2f}%)")
+
+# Verify W_0*x + (alpha/r)*B*A*x == (W_0 + (alpha/r)*B*A)*x
+W0 = [[1.0, 0.5], [-0.5, 1.0]]
+A = [[0.2, 0.1]]   # 1 x 2 (r=1, k=2)
+B = [[0.5], [1.0]] # 2 x 1 (d=2, r=1)
+x = [0.5, 1.0]
+alpha, r_small = 2.0, 1
+scale = alpha / r_small
+
+def matvec(M, v):
+    return [sum(M[i][j] * v[j] for j in range(len(v))) for i in range(len(M))]
+
+# Unmerged path
+ax = matvec(A, x)
+bax = matvec(B, ax)
+w0x = matvec(W0, x)
+unmerged = [w0x[i] + scale * bax[i] for i in range(2)]
+
+# Merged path: W_merged = W0 + scale * (B @ A)
+W_merged = [
+    [W0[i][j] + scale * B[i][0] * A[0][j] for j in range(2)]
+    for i in range(2)
+]
+merged = matvec(W_merged, x)
+max_diff = max(abs(a - b) for a, b in zip(unmerged, merged))
+
+print(f"Unmerged LoRA Output: [{unmerged[0]:.4f}, {unmerged[1]:.4f}]")
+print(f"Merged Edge Output:   [{merged[0]:.4f}, {merged[1]:.4f}] | Max Diff: {max_diff:.2e}")`}
+/>
+
+---
+
+## Check Your Understanding
+
+<QuizCard
+  client:visible
+  question="Why do edge engineers call merge_and_unload() on a LoRA-tuned SLM before exporting to ONNX or GGUF?"
+  options={[
+    "Because merging folds (alpha/r) * B * A directly into the base weights W_0, eliminating extra adapter matrix multiplications and runtime overhead during edge inference.",
+    "Because merge_and_unload() deletes all fine-tuned knowledge and resets to random weights.",
+    "Because ONNX Runtime only supports 64-bit floating-point adapters.",
+    "Because LoRA adapters can only run on cloud TPUs."
+  ]}
+  correctAnswer={0}
+  explanation="Folding the low-rank delta (alpha/r)*B*A into W_0 yields a single standard weight matrix with identical mathematical output and zero extra inference latency."
+/>

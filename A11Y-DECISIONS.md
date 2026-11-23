@@ -87,3 +87,11 @@ Record of conformant accessibility choices made during development.
   2. Avoided `focus:outline-none` so focus indicators remain visible in Windows Forced Colors / High Contrast mode, using `focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#E07A5F]`.
   3. Verified contrast via `buddhi scripts contrast` (`#A7452A` on `#FFFFFF` = 5.95:1 PASS AA; `#E07A5F` on `#121212` = 6.35:1 PASS AA).
 - **Evidence**: `src/components/static/ColabButton.astro`.
+
+## 2026-11-20: Runtime Tier Badge in `ColabButton.astro` (`010-phase-2-math`)
+
+### Decision 9: Accessible Runtime Tier Metadata in `ColabButton.astro`
+- **Pattern**: Optional `runtime` prop (`'Free Tier CPU'` / `'Free Tier T4 GPU'`) rendered in `src/components/static/ColabButton.astro`.
+- **Rule**: WCAG 2.2 SC 1.4.3 (Contrast Minimum) & SC 1.3.1 (Info and Relationships).
+- **Choice**: Rendered `notebook/{course}/{notebook} • {runtime}` inside the existing `text-neutral-400` (`#A3A3A3` on `bg-neutral-900/70` `#171717`, >= 7.0:1 contrast) metadata span alongside the semantic `<a href={colabUrl}>` CTA, keeping button text concise and preserving zero CLS.
+- **Evidence**: `src/components/static/ColabButton.astro`.

@@ -1,0 +1,169 @@
+---
+title: "Course Setup: Google AI Studio Free API Key, Google Colab Runtimes & Local Python Environment"
+track: "generative-ai-for-beginners"
+category: "Module 1: GenAI Setup & Foundations"
+order: 1
+difficulty: "beginner"
+xp: 50
+description: "Set up your Generative AI engineering environment with a free Google AI Studio API key, Google Colab Secrets, python-dotenv, and open-weight Hugging Face models."
+topic: "GenAI Setup"
+prerequisites: ["ml-for-beginners/27-debugging-ml-models-and-explainability"]
+---
+import PythonRunner from '../../../components/islands/PythonRunner';
+import QuizCard from '../../../components/islands/QuizCard';
+import ColabButton from '../../../components/static/ColabButton.astro';
+
+Moving from classical Machine Learning into **Generative AI Engineering** changes how you build software. Instead of training every model from scratch on tabular CSVs, you orchestrate hosted foundation models over REST APIs alongside open-weight models running on free cloud GPUs. In this opening lesson, we will wire up your **Google AI Studio Free Tier** API key (`GEMINI_API_KEY`), configure **Google Colab** (both CPU and T4 GPU runtimes), and set up clean local Python environment hygiene so you never leak a secret key to GitHub.
+
+When I first started prototyping LLM apps, the biggest friction wasn't the math—it was juggling paid cloud quotas, broken local CUDA drivers, and accidentally hardcoding API keys in scripts. Using Google AI Studio's free tier paired with Google Colab Secrets eliminates all three headaches from day one.
+
+---
+
+## Step-by-Step: Getting Your Free Google AI Studio API Key
+
+You do not need a credit card or enterprise cloud subscription to complete this entire 22-lesson course. **Google AI Studio** gives developers a generous free tier for `gemini-2.5-flash`, `gemini-2.5-pro`, and `gemini-embedding-001` via the official `google-genai` Python SDK.
+
+1. **Sign in to Google AI Studio**: Open [aistudio.google.com](https://aistudio.google.com/) in your browser and sign in with a standard Google account.
+2. **Create an API Key**: Click **Get API key** in the left navigation rail, then select **Create API key**.
+3. **Copy & Store Safely**: Copy the generated key (starting with `AIza...`). Never paste this string directly into `.py` files, `.ipynb` cells, or `git commit` history.
+
+### Storing `GEMINI_API_KEY` in Google Colab Secrets
+
+Every companion notebook in this course is designed to run on **Google Colab Free Tier**:
+
+1. Open any notebook via the **Open with Google Colab** button.
+2. Click the **Key icon (Secrets)** in the left sidebar of Colab.
+3. Click **Add new secret**, set **Name** to `GEMINI_API_KEY`, paste your key as **Value**, and toggle **Notebook access** ON.
+4. Read the key cleanly inside Python using `google.colab.userdata`:
+
+```python
+from google.colab import userdata
+from google import genai
+
+api_key = userdata.get("GEMINI_API_KEY")
+client = genai.Client(api_key=api_key)
+```
+
+---
+
+## Local Python Setup & `.env` Secret Hygiene
+
+If you prefer running scripts locally on your own machine, isolate your dependencies in a virtual environment and load secrets from a `.env` file excluded by `.gitignore`:
+
+```bash
+python -m venv .venv
+# Activate on Windows (PowerShell): .venv\Scripts\Activate.ps1
+# Activate on macOS/Linux: source .venv/bin/activate
+pip install google-genai python-dotenv
+```
+
+Create a `.env` file in your project root (and verify `.env` is listed in `.gitignore`):
+
+```text
+GEMINI_API_KEY=your_actual_api_key_here
+```
+
+Then load it in Python with `python-dotenv`:
+
+```python
+import os
+from dotenv import load_dotenv
+from google import genai
+
+load_dotenv()
+client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
+```
+
+---
+
+## Comparing Free-Tier Runtimes & Model Providers
+
+Throughout this course, you will combine hosted Gemini API calls with open-weight Hugging Face models running directly on Colab's free NVIDIA T4 GPU (15 GB VRAM).
+
+| Environment / Provider | Hardware & Cost | Primary SDK / Package | Best Used For |
+| :--- | :--- | :--- | :--- |
+| **In-Browser Pyodide** | Client-side WASM (Free) | Python Standard Library | Tokenization math, cosine similarity, prompt builders, fast logic checks |
+| **Google AI Studio** | Cloud Free Tier (`GEMINI_API_KEY`) | `google-genai` (`gemini-2.5-flash`, `gemini-embedding-001`) | Text generation, multi-turn chat, function calling, RAG, multimodal vision |
+| **Google Colab CPU** | Cloud Free Tier (12 GB RAM) | `scikit-learn`, `chromadb`, `faiss-cpu`, `gradio` | Vector databases, semantic search, low-code UIs, LLMOps evaluation |
+| **Google Colab T4 GPU** | Cloud Free Tier (15 GB VRAM) | `transformers`, `diffusers`, `peft`, `trl`, `bitsandbytes` | Open-weight LLMs/SLMs (Gemma, Mistral, Llama), LoRA fine-tuning, image diffusion |
+
+### Rate Limits & Exponential Backoff Math
+
+Free-tier APIs enforce **Requests Per Minute (RPM)**, **Tokens Per Minute (TPM)**, and **Requests Per Day (RPD)** quotas. When building batch pipelines (like embedding 500 document chunks), always throttle requests or apply truncated **exponential backoff** with jitter when a `429 Too Many Requests` status occurs:
+
+$$t_k = \min\Big(t_{\max},\; t_0 \cdot 2^k\Big) + \epsilon_{\text{jitter}}$$
+
+where $t_0$ is the base delay in seconds and $k$ is the retry attempt index.
+
+---
+
+## Open the Companion Colab Notebook
+
+Launch the interactive setup notebook below to verify your `GEMINI_API_KEY` connection and run your first live `gemini-2.5-flash` request.
+
+<ColabButton
+  course="generative-ai-for-beginners"
+  notebook="01-course-setup-and-google-ai-studio.ipynb"
+  runtime="Free Tier CPU + Gemini API"
+/>
+
+---
+
+## Try It Yourself: `.env` Validator & Backoff Calculator
+
+Run this pure-Python sandbox to practice safe API key masking, `.env` parsing, and free-tier exponential backoff scheduling without touching live network credentials.
+
+<PythonRunner
+  client:visible
+  title="Try it Yourself: Secret Hygiene & Free-Tier Rate-Limit Planner"
+  expectedOutput="Loaded key: AIza****9xQ2 (valid_prefix=True, length=16)
+Gitignore protects .env: True
+Batch of 45 requests @ 15 RPM -> 3.00 minutes
+Retry backoff schedule (t0=1.0s, max=10.0s): [1.0, 2.0, 4.0, 8.0, 10.0]"
+  initialCode={`# 1. Simulated .env content and .gitignore entries
+env_lines = [
+    "# Local secrets file",
+    "GEMINI_API_KEY=AIzaDemoKey19xQ2",
+]
+gitignore_entries = {".venv/", "__pycache__/", ".env"}
+
+# Parse .env safely
+config = {}
+for line in env_lines:
+    stripped = line.strip()
+    if stripped and not stripped.startswith("#") and "=" in stripped:
+        key, value = stripped.split("=", 1)
+        config[key.strip()] = value.strip()
+
+raw_key = config.get("GEMINI_API_KEY", "")
+masked = f"{raw_key[:4]}****{raw_key[-4:]}" if len(raw_key) >= 8 else "INVALID"
+valid_prefix = raw_key.startswith("AIza")
+print(f"Loaded key: {masked} (valid_prefix={valid_prefix}, length={len(raw_key)})")
+print(f"Gitignore protects .env: {'.env' in gitignore_entries}")
+
+# 2. Free-tier RPM batch planner & exponential backoff schedule
+total_requests = 45
+rpm_limit = 15
+print(f"Batch of {total_requests} requests @ {rpm_limit} RPM -> {total_requests / rpm_limit:.2f} minutes")
+
+t0, t_max = 1.0, 10.0
+backoff = [min(t_max, t0 * (2 ** k)) for k in range(5)]
+print(f"Retry backoff schedule (t0={t0}s, max={t_max}s): {backoff}")`}
+/>
+
+---
+
+## Check Your Understanding
+
+<QuizCard
+  client:visible
+  question="What is the safest way to use your free Google AI Studio GEMINI_API_KEY inside a Google Colab notebook?"
+  options={[
+    "Paste the raw API key string directly inside genai.Client(api_key='AIza...') so it runs faster.",
+    "Store the key in Google Colab Secrets (userdata.get('GEMINI_API_KEY')) or a gitignored .env file locally.",
+    "Commit your .env file to GitHub so collaborators can share the same quota.",
+    "Pass the API key as a URL query parameter in your Markdown documentation."
+  ]}
+  correctAnswer={1}
+  explanation="Storing GEMINI_API_KEY in Google Colab Secrets or a gitignored .env file keeps credentials out of source control and prevents accidental leakage when sharing notebooks."
+/>

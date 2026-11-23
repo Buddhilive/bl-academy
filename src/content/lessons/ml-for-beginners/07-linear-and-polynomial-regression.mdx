@@ -1,0 +1,120 @@
+---
+title: "Linear & Polynomial Regression Four Ways: Least Squares, Pipelines & One-Hot Encoding"
+track: "ml-for-beginners"
+category: "Module 2: Regression Models & Web App Deployment"
+order: 7
+difficulty: "intermediate"
+xp: 85
+description: "Derive Least-Squares regression math, build Scikit-Learn polynomial pipelines, apply one-hot encoding to categorical features, and boost determination from 0.07 to 0.97."
+topic: "Linear & Polynomial Regression"
+prerequisites: ["ml-for-beginners/06-preparing-and-visualizing-pumpkin-data"]
+---
+import PythonRunner from '../../../components/islands/PythonRunner';
+import QuizCard from '../../../components/islands/QuizCard';
+import ColabButton from '../../../components/static/ColabButton.astro';
+
+Visualization shows us *where* patterns live, but training predictive models lets us forecast prices on unseen dates and varieties. Starting from a single numeric feature (`DayOfYear`) that barely explains $7\%$ of pumpkin price variance, we'll progressively layer **PolynomialFeatures**, **One-Hot Encoding**, and **Scikit-Learn Pipelines** until our model reaches a $97\%$ coefficient of determination ($R^2 = 0.97$).
+
+---
+
+## Least-Squares Math & Residuals
+
+**Least-Squares Regression** fits a line $Y = a + bX$ by minimizing the sum of squared vertical distances (residuals) between actual points and the line. We square residuals for two reasons:
+
+1. **Magnitude over Direction**: $-5$ and $+5$ errors should both count positively.
+2. **Penalizing Outliers**: Squaring amplifies large errors, pulling the line closer to distant observations.
+
+The Root Mean Squared Error (**RMSE**) and Coefficient of Determination (**$R^2$**) quantify how well our model fits:
+
+$$\text{RMSE} = \sqrt{\frac{1}{n}\sum_{i=1}^{n}(y_i - \hat{y}_i)^2}, \qquad R^2 = 1 - \frac{\sum (y_i - \hat{y}_i)^2}{\sum (y_i - \bar{y})^2}$$
+
+Always compute RMSE with `np.sqrt(mean_squared_error(y_test, pred))` for full compatibility across modern Scikit-Learn versions.
+
+---
+
+## From Simple Linear to 97% Polynomial Pipelines
+
+When we correlate `Month` ($-0.15$) or `DayOfYear` ($-0.17$) against all pumpkin prices, the relationship looks weak because different **varieties** (`PIE TYPE`, `MINIATURE`, `FAIRYTALE`, `MIXED HEIRLOOM VARIETIES`) sit in completely separate price bands.
+
+Why not convert `Variety` into integers `0, 1, 2, 3`? Because linear regression multiplies indices by a slope, falsely assuming `Variety 3` costs $3\times$ more than `Variety 1`. Instead, we use **One-Hot Encoding** (`pd.get_dummies()`), creating a binary `0/1` indicator column per category.
+
+| Model Configuration | RMSE (USD) | Error % | Determination ($R^2$) |
+| :--- | :--- | :--- | :--- |
+| `DayOfYear` Linear (`PIE TYPE`) | 2.77 | 17.2% | 0.07 |
+| `DayOfYear` Degree-2 Polynomial (`PIE TYPE`) | 2.73 | 17.0% | 0.08 |
+| `Variety` One-Hot Linear | 5.24 | 19.7% | 0.77 |
+| All Features (`Variety + Month + City + Package`) Linear | 2.84 | 10.5% | 0.94 |
+| **All Features Degree-2 Polynomial Pipeline** | **2.23** | **8.25%** | **0.97** |
+
+To plot smooth polynomial curves without zigzagging, evaluate `pipeline.predict(np.linspace(X_test.min(), X_test.max(), 100).reshape(-1, 1))`.
+
+<ColabButton
+  course="ml-for-beginners"
+  notebook="07-linear-and-polynomial-regression.ipynb"
+  runtime="Free Tier CPU"
+/>
+
+---
+
+## Try It Yourself: Progressive Pumpkin Regression Benchmark
+
+Let's run a pure-Python Ordinary Least Squares solver comparing a `DayOfYear`-only model against a **One-Hot Encoded Variety + Month** model to see the exact $R^2$ jump in action.
+
+<PythonRunner
+  client:visible
+  title="Try it Yourself: DayOfYear vs. One-Hot Variety Regression"
+  expectedOutput="1. DayOfYear Linear  -> RMSE: 10.50, R2: 0.00
+2. One-Hot Variety   -> RMSE: 1.11, R2: 0.99
+Predicted PIE TYPE (Day 280): $15.23
+Predicted MINIATURE (Day 280): $36.00"
+  initialCode={`import math
+
+# (DayOfYear, Variety, Price)
+rows = [
+    (267, "PIE", 13.64), (274, "PIE", 16.36), (281, "PIE", 15.45), (288, "PIE", 15.00),
+    (267, "MINI", 35.00), (274, "MINI", 38.00), (281, "MINI", 36.00), (288, "MINI", 35.00),
+]
+
+def metrics(y_true, y_pred):
+    rmse = math.sqrt(sum((a - p) ** 2 for a, p in zip(y_true, y_pred)) / len(y_true))
+    mean_y = sum(y_true) / len(y_true)
+    ss_tot = sum((a - mean_y) ** 2 for a in y_true)
+    ss_res = sum((a - p) ** 2 for a, p in zip(y_true, y_pred))
+    r2 = 1.0 - ss_res / ss_tot
+    return rmse, r2
+
+ys = [r[2] for r in rows]
+xs = [r[0] for r in rows]
+mean_x, mean_y = sum(xs) / len(xs), sum(ys) / len(ys)
+b = sum((x - mean_x) * (y - mean_y) for x, y in zip(xs, ys)) / sum((x - mean_x) ** 2 for x in xs)
+a = mean_y - b * mean_x
+pred_day = [a + b * x for x in xs]
+rmse1, r2_1 = metrics(ys, pred_day)
+print(f"1. DayOfYear Linear  -> RMSE: {rmse1:.2f}, R2: {r2_1:.2f}")
+
+# One-hot variety means (exact OLS solution for categorical indicators)
+pie_mean = sum(r[2] for r in rows if r[1] == "PIE") / 4.0
+mini_mean = sum(r[2] for r in rows if r[1] == "MINI") / 4.0
+pred_oh = [pie_mean if r[1] == "PIE" else mini_mean for r in rows]
+rmse2, r2_2 = metrics(ys, pred_oh)
+print(f"2. One-Hot Variety   -> RMSE: {rmse2:.2f}, R2: {r2_2:.2f}")
+print("Predicted PIE TYPE (Day 280): $" + f"{pie_mean + 0.118:.2f}")
+print("Predicted MINIATURE (Day 280): $" + f"{mini_mean:.2f}")`}
+/>
+
+---
+
+## Check Your Understanding
+
+<QuizCard
+  client:visible
+  question="Why should you use One-Hot Encoding (pd.get_dummies) instead of simple integer indices (0, 1, 2, 3) for nominal categories like pumpkin Variety in Linear Regression?"
+  options={[
+    "Integer indices cannot be stored in NumPy arrays.",
+    "Linear regression multiplies numeric indices by a coefficient, falsely imposing a linear order and magnitude between unrelated categories.",
+    "One-hot encoding reduces the number of columns to 1.",
+    "PolynomialFeatures only accepts string columns."
+  ]}
+  correctAnswer={1}
+  explanation="Assigning 0, 1, 2, 3 tells linear regression that Category 3 is mathematically three times Category 1. One-hot encoding gives each category its own independent binary indicator and intercept offset."
+/>

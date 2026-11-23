@@ -1,0 +1,96 @@
+---
+title: "Recurrent Neural Networks (RNNs), LSTMs & GRUs"
+track: "ai-for-beginners"
+category: "Module 4: Natural Language Processing"
+order: 17
+difficulty: "intermediate"
+xp: 85
+description: "Process sequential text with Recurrent Neural Networks, Backpropagation Through Time, and gated LSTM/GRU memory cells."
+topic: "Recurrent Neural Networks and LSTMs"
+prerequisites: ["ai-for-beginners/15-language-modeling-and-custom-embeddings"]
+---
+import PythonRunner from '../../../components/islands/PythonRunner';
+import QuizCard from '../../../components/islands/QuizCard';
+import ColabButton from '../../../components/static/ColabButton.astro';
+
+Pooling word embeddings together throws away word order—meaning `"not good"` and `"good, not bad"` can look dangerously similar to a linear classifier. To capture sequential grammar, negation, and long-range context, we need **Recurrent Neural Networks (RNNs)**.
+
+An RNN reads a sentence one token $\mathbf{x}_t$ at a time, maintaining a running **hidden state** $\mathbf{h}_t$ that summarizes everything it has read so far.
+
+---
+
+## Simple RNN Cells & Vanishing Gradients
+
+At each time step $t$, a basic RNN cell shares the same weight matrices $W_{xh}$ and $W_{hh}$ across the entire sequence:
+
+$$\mathbf{h}_t = \tanh\left(W_{xh}\mathbf{x}_t + W_{hh}\mathbf{h}_{t-1} + \mathbf{b}\right)$$
+
+When we train the unrolled sequence via **Backpropagation Through Time (BPTT)**, gradients must multiply by $W_{hh}^{\top}$ at every step backward. On long sentences (50+ tokens), those repeated multiplications shrink exponentially toward zero—the **vanishing gradient problem**—causing simple RNNs to forget words from the start of a paragraph.
+
+---
+
+## Gated Memory: LSTMs & GRUs
+
+**Long Short-Term Memory (LSTM)** networks solve vanishing gradients by adding an explicit **Cell State** $\mathbf{c}_t$ (an unobstructed highway across time) controlled by three sigmoid gates in $[0, 1]$:
+
+| LSTM / GRU Component | Equation / Mechanism | Role in Sequence Memory |
+| :--- | :--- | :--- |
+| **Forget Gate ($f_t$)** | $\sigma(W_f [\mathbf{h}_{t-1}, \mathbf{x}_t] + b_f)$ | Decides which old facts in cell state $\mathbf{c}_{t-1}$ to erase. |
+| **Input Gate ($i_t$)** | $\sigma(W_i [\mathbf{h}_{t-1}, \mathbf{x}_t] + b_i)$ | Decides which new candidate information to write into $\mathbf{c}_t$. |
+| **Output Gate ($o_t$)** | $\sigma(W_o [\mathbf{h}_{t-1}, \mathbf{x}_t] + b_o)$ | Filters $\tanh(\mathbf{c}_t)$ to produce hidden state $\mathbf{h}_t$. |
+| **Bidirectional RNN** | Runs two RNNs (left→right & right→left) | Captures both past and future context around every token. |
+
+**Gated Recurrent Units (GRUs)** streamline the LSTM by merging the cell and hidden states and using two gates (Reset and Update), achieving comparable accuracy with fewer parameters. You can also stack multiple LSTM/GRU layers vertically so higher layers extract abstract phrase-level patterns, and batch variable-length sentences efficiently using `pad_sequence` or `pack_padded_sequence`.
+
+<ColabButton
+  course="ai-for-beginners"
+  notebook="16-recurrent-neural-networks.ipynb"
+  runtime="Free Tier T4 GPU"
+/>
+
+---
+
+## Hands-On: Step-by-Step Recurrent Cell Unrolling
+
+Let's trace a 1D recurrent cell with a negation detector across a 3-token sequence (`["movie", "not", "good"]`) in pure Python to watch the hidden state update step by step.
+
+<PythonRunner
+  client:visible
+  title="Try it Yourself: Unrolling an RNN Hidden State"
+  expectedOutput="Step 1 ('movie') -> h=0.0000
+Step 2 ('not') -> h=-0.6169
+Step 3 ('good') -> h=-0.0751
+Final Sentiment: NEGATIVE"
+  initialCode={`import math
+
+# Toy 1D RNN: h_t = tanh(w_x * x_t + w_h * h_{t-1})
+token_val = {"movie": 0.0, "good": 0.8, "not": -1.2}
+w_x, w_h = 0.6, 0.9
+
+h = 0.0
+for step, word in enumerate(["movie", "not", "good"], 1):
+    x_t = token_val[word]
+    h = math.tanh(w_x * x_t + w_h * h)
+    print(f"Step {step} ('{word}') -> h={h:.4f}")
+
+print("Final Sentiment:", "POSITIVE" if h >= 0 else "NEGATIVE")`}
+/>
+
+---
+
+## Check Your Understanding
+
+<QuizCard
+  client:visible
+  question="How does an LSTM cell overcome the vanishing gradient problem of a vanilla RNN?"
+  options={[
+    "By deleting all weights after each epoch.",
+    "By maintaining an additive cell state highway c_t regulated by learned forget, input, and output gates.",
+    "By replacing all sequences with 2D convolutions.",
+    "By processing only the last word of every sentence."
+  ]}
+  correctAnswer={1}
+  explanation="The additive update c_t = f_t * c_{t-1} + i_t * c~_t lets gradients flow backward across many time steps without repeatedly multiplying by a squashing weight matrix."
+/>
+
+So far we've used RNNs for classification (Many-to-One). Next, let's flip them around to generate brand-new text in **Lesson 17: Generative Recurrent Networks**.

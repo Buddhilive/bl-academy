@@ -1,0 +1,101 @@
+---
+title: "Character-Level & Word-Level Text Generation with Recurrent Networks"
+track: "ai-for-beginners"
+category: "Module 4: Natural Language Processing"
+order: 18
+difficulty: "intermediate"
+xp: 85
+description: "Build autoregressive generative RNNs and LSTMs, compare recurrent sequence topologies, and control creativity with temperature-scaled sampling."
+topic: "Generative Recurrent Networks"
+prerequisites: ["ai-for-beginners/16-recurrent-neural-networks"]
+---
+import PythonRunner from '../../../components/islands/PythonRunner';
+import QuizCard from '../../../components/islands/QuizCard';
+import ColabButton from '../../../components/static/ColabButton.astro';
+
+Up to this point, our Recurrent Neural Networks took an entire sentence and compressed it into a single class label. However, RNNs can also work in reverse—predicting the *next* token in a sequence given everything generated so far. That simple shift turns an RNN into an **autoregressive generative model** capable of writing poetry, generating Python code, translating languages, or captioning images.
+
+---
+
+## Four Recurrent Sequence Topologies
+
+Depending on how inputs and outputs align in time, recurrent networks support four distinct architectural patterns:
+
+| Topology | Input → Output | Classic Real-World Use Case |
+| :--- | :--- | :--- |
+| **One-to-One** | Fixed vector → Fixed vector | Standard feedforward classification (not sequential). |
+| **One-to-Many** | Single vector → Sequence | **Image Captioning**: CNN image embedding initializes an LSTM that emits caption words one by one. |
+| **Many-to-One** | Sequence → Single label | Sentiment analysis, spam detection, topic classification. |
+| **Many-to-Many (Seq2Seq)** | Sequence → Sequence | **Machine Translation** (encoder collapses source sentence; decoder unrolls target sentence) or **NER**. |
+
+---
+
+## Teacher Forcing & Autoregressive Generation
+
+During training, we feed a character or word sequence of length $T$ (for example, `"HELL"`) and ask the network at every step $t$ to predict the shifted next token (`"ELLO"`). Feeding the true ground-truth token as the next step's input—rather than the model's own noisy guess—is called **Teacher Forcing**, and it stabilizes gradient updates dramatically.
+
+At inference time, we start with a short **prompt**, run it through the LSTM to warm up its hidden state $(\mathbf{h}_t, \mathbf{c}_t)$, and then generate one token at a time, feeding each newly chosen token right back into the model.
+
+---
+
+## Soft Text Generation & Temperature Scaling
+
+If you always pick the single highest-probability token (**Greedy Decoding**), generative models quickly get trapped in repetitive loops like *"of the company and the company and the company..."*. Instead, we sample from the predicted Softmax probability distribution—and tune creativity using a **Temperature** parameter $T > 0$:
+
+$$P_i = \frac{\exp(z_i / T)}{\sum_j \exp(z_j / T)}$$
+
+- **Low Temperature ($T < 1.0$, e.g., `0.3`)**: Sharpens the distribution, making the model conservative, grammatical, and deterministic.
+- **Neutral Temperature ($T = 1.0$)**: Samples directly from the model's learned probabilities.
+- **High Temperature ($T > 1.0$, e.g., `1.5`)**: Flattens the distribution, boosting rare tokens for creative (and occasionally chaotic) output.
+
+<ColabButton
+  course="ai-for-beginners"
+  notebook="17-generative-recurrent-networks.ipynb"
+  runtime="Free Tier T4 GPU"
+/>
+
+---
+
+## Hands-On: Temperature-Scaled Token Sampling
+
+Let's test how **Temperature Scaling** reshapes raw logit scores `[3.0, 2.0, 0.5]` across $T = 0.3$, $T = 1.0$, and $T = 2.0$ in pure Python.
+
+<PythonRunner
+  client:visible
+  title="Try it Yourself: Softmax Temperature Scaling"
+  expectedOutput="Logits: {'the': 3.0, 'a': 2.0, 'quantum': 0.5}
+T=0.3 -> {'the': 0.965, 'a': 0.034, 'quantum': 0.0}
+T=1.0 -> {'the': 0.69, 'a': 0.254, 'quantum': 0.057}
+T=2.0 -> {'the': 0.528, 'a': 0.32, 'quantum': 0.151}"
+  initialCode={`import math
+
+logits = {"the": 3.0, "a": 2.0, "quantum": 0.5}
+
+def softmax_temp(scores: dict[str, float], temp: float) -> dict[str, float]:
+    scaled = {k: math.exp(v / temp) for k, v in scores.items()}
+    total = sum(scaled.values())
+    return {k: round(v / total, 3) for k, v in scaled.items()}
+
+print(f"Logits: {logits}")
+for t in (0.3, 1.0, 2.0):
+    print(f"T={t} -> {softmax_temp(logits, t)}")`}
+/>
+
+---
+
+## Check Your Understanding
+
+<QuizCard
+  client:visible
+  question="What happens to the output probability distribution of a generative language model when you lower the sampling temperature from T = 1.0 to T = 0.2?"
+  options={[
+    "All tokens in the vocabulary become equally likely.",
+    "The distribution becomes sharper, concentrating probability mass on the highest-scoring tokens and making output more deterministic.",
+    "The model switches from character-level to image generation.",
+    "Teacher forcing is enabled during inference."
+  ]}
+  correctAnswer={1}
+  explanation="Dividing logits by a small temperature T < 1 exaggerates differences between high and low logits before Softmax, strongly favoring the top-ranked tokens."
+/>
+
+RNNs generate great sequences, but processing tokens strictly one-by-one prevents GPU parallelization. Next, let's discover the architecture that changed all of AI in **Lesson 18: Attention Mechanisms, Transformers & BERT**.

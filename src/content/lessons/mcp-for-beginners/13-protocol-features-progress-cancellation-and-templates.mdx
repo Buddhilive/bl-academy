@@ -1,0 +1,99 @@
+---
+title: "Protocol Features Deep Dive: Progress, Cancellation, URI Templates & Tasks Extension"
+track: "mcp-for-beginners"
+category: "Module 3: Practical Implementation, Pagination & Protocol Features"
+order: 13
+difficulty: "intermediate"
+xp: 85
+description: "Master MCP progress notifications, cooperative request cancellation, RFC 6570 resource URI templates, and the 2026-07-28 Tasks extension lifecycle."
+topic: "MCP Protocol Features"
+prerequisites: ["mcp-for-beginners/12-cursor-based-pagination-and-large-result-sets"]
+---
+import PythonRunner from '../../../components/islands/PythonRunner';
+import QuizCard from '../../../components/islands/QuizCard';
+import ColabButton from '../../../components/static/ColabButton.astro';
+
+Real-world AI tools do not always finish in 50 milliseconds. Analyzing a large log file, cloning a repository, or running a multi-table query can take several seconds. To keep users informed and prevent wasted compute when a user hits Stop, MCP provides four protocol mechanisms: **Progress Notifications**, **Request Cancellation**, **RFC 6570 Resource Templates**, and the **`2026-07-28` Tasks Extension (`SEP-2663`)**.
+
+---
+
+## 4 Production Protocol Features
+
+| Feature | Mechanism | Key Rule in `2026-07-28` |
+| :--- | :--- | :--- |
+| **Progress Notifications** | `notifications/progress` with `progressToken`, `progress`, `total` | Streams incremental updates over Streamable HTTP SSE or `stdio` |
+| **Cooperative Cancellation** | `notifications/cancelled` (`requestId`, `reason`) | Tool catches `asyncio.CancelledError`, rolls back partial state, frees locks |
+| **Resource Templates** | `resources/templates/list` using RFC 6570 URIs (`users://{id}/profile`) | Validates extracted URI parameters to prevent path traversal |
+| **Tasks Extension (`SEP-2663`)** | Server-directed task handles driven via `tasks/get`, `tasks/update`, `tasks/cancel` | Replaces experimental `2025-11-25` Tasks; `tasks/list` is removed |
+
+### Tasks Extension Lifecycle (`2026-07-28`)
+
+When a client advertises the Tasks extension, the server decides whether a `tools/call` should run synchronously or return a stateless **Task Handle** (`task_id`). The client then polls `tasks/get`, sends updates with `tasks/update`, or aborts with `tasks/cancel`. Removing `tasks/list` ensures one tenant can never enumerate another tenant's background jobs in a stateless deployment.
+
+---
+
+## Open the Companion Colab Notebook
+
+Launch the companion notebook to implement async `notifications/progress` streams, cooperative `asyncio.CancelledError` cleanup, RFC 6570 resource URI routing, and the `SEP-2663` Tasks state machine.
+
+<ColabButton
+  course="mcp-for-beginners"
+  notebook="13-protocol-features-progress-cancellation-and-templates.ipynb"
+  runtime="Free Tier CPU"
+/>
+
+---
+
+## Try It Yourself: Progress, Cancellation, URI Templates & Tasks State Machine
+
+Run this pure-Python sandbox to emit progress notifications, trigger cooperative cancellation with rollback at step 3, resolve an RFC 6570 URI template (`reports://{year}/{month}`), and step through a `SEP-2663` Task handle.
+
+<PythonRunner
+  client:visible
+  title="Try it Yourself: MCP Progress, Cancellation, URI Templates & Tasks"
+  expectedOutput="[Progress] 1/4 (25%)
+[Progress] 2/4 (50%)
+[Cancelled] Rolled back partial state at step 3
+[Template Match] reports://{year}/{month} -> {'year': '2026', 'month': '11'}
+[Tasks Ext] Created task_901 -> status=running -> tasks/get -> status=completed"
+  initialCode={`import re
+
+# 1. Progress notifications + cooperative cancellation
+def run_batch(cancel_at_step: int | None = None):
+    for step in range(1, 5):
+        if cancel_at_step == step:
+            print(f"[Cancelled] Rolled back partial state at step {step}")
+            return
+        print(f"[Progress] {step}/4 ({step * 25}%)")
+
+run_batch(cancel_at_step=3)
+
+# 2. RFC 6570 URI Template matcher
+template = "reports://{year}/{month}"
+pattern = re.sub(r"\\{(\\w+)\\}", r"(?P<\\1>[^/]+)", template)
+match = re.fullmatch(pattern, "reports://2026/11")
+print(f"[Template Match] {template} -> {match.groupdict()}")
+
+# 3. SEP-2663 Tasks Extension lifecycle
+task_store = {"task_901": {"status": "running", "progress": 50}}
+print(f"[Tasks Ext] Created task_901 -> status={task_store['task_901']['status']}", end=" -> ")
+task_store["task_901"]["status"] = "completed"
+print(f"tasks/get -> status={task_store['task_901']['status']}")`}
+/>
+
+---
+
+## Check Your Understanding
+
+<QuizCard
+  client:visible
+  question="Why did the MCP 2026-07-28 Tasks extension remove the tasks/list method?"
+  options={[
+    "Because servers can only run one task per year.",
+    "Because without protocol-level sessions, tasks/list cannot be safely scoped to a single caller without risking cross-tenant leakage.",
+    "Because JSON-RPC does not allow returning arrays.",
+    "Because Tasks was merged into Roots."
+  ]}
+  correctAnswer={1}
+  explanation="In a stateless protocol without session IDs, tasks/list cannot safely scope tasks without leaking other callers' jobs. Clients instead track the explicit task_id handle returned by tools/call."
+/>

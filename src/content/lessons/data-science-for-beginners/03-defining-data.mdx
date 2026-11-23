@@ -1,0 +1,127 @@
+---
+title: "Defining Data: Quantitative, Qualitative & Structural Taxonomies"
+track: "data-science-for-beginners"
+category: "Module 1: Data Foundations & Statistics"
+order: 3
+difficulty: "beginner"
+xp: 55
+description: "Learn how data scientists classify raw data into quantitative vs. qualitative observations and structured, semi-structured, and unstructured formats."
+topic: "Data Classification"
+prerequisites: ["data-science-for-beginners/02-data-science-ethics"]
+---
+import PythonRunner from '../../../components/islands/PythonRunner';
+import QuizCard from '../../../components/islands/QuizCard';
+import ColabButton from '../../../components/static/ColabButton.astro';
+
+A single observation—like a heart-rate reading from your smartwatch or one row in a monthly earnings sheet—is a **data point**, and a collection of them forms a **dataset**. Before you write a single line of analysis code, you need to know what kind of data you're holding. In this lesson, we'll classify data by its measurement type and its structural layout.
+
+By the way, getting this classification right early saves hours of debugging later. Treating a phone number as a continuous math variable or assuming an unstructured sensor log has a rigid schema is one of the fastest ways to break a data pipeline.
+
+---
+
+## Quantitative vs. Qualitative Data
+
+**Raw data** arrives straight from its source before any cleaning or organization. Once we inspect its values, every feature falls into one of two measurement families:
+
+- **Quantitative Data**: Objective, numerical observations you can measure and compute mathematically—such as a country's population, height in centimeters, Air Quality Index (AQI) readings, or quarterly revenue.
+- **Qualitative (Categorical) Data**: Descriptive observations capturing qualities or categories—such as car make and model, video comments, or favorite color. Watch out for *numerical identifiers* like phone numbers, zip codes, or order IDs: even though they use digits, averaging two phone numbers is meaningless, so they behave as qualitative labels.
+
+---
+
+## Structural Taxonomy: Structured, Semi-Structured & Unstructured
+
+Beyond what a value measures, data is organized by how strictly its layout is enforced:
+
+| Structure Type | Layout & Rules | Schema Flexibility | Common Examples |
+| :--- | :--- | :--- | :--- |
+| **Structured** | Fixed rows and columns with strict data types and constraints | Rigid — adding a new non-null column requires migrating all existing rows | Spreadsheets, relational SQL tables, bank statements |
+| **Semi-Structured** | Flexible hierarchy using metadata tags, keys, or delimiters | Moderate — new attributes can be added per record without altering old rows | JSON, CSV, HTML, email headers + body |
+| **Unstructured** | No predefined rows, columns, or schema rules | High — easy to append new formats, but slower to parse and clean | Plain text, audio, video feeds, raw sensor streams |
+
+Think about a barometric pressure sensor logging every 2 minutes. If it is unstructured, adding a temperature field tomorrow takes zero schema migration. The trade-off? You might discover the sensor occasionally wrote `"e"` instead of a number to signal a hardware fault, forcing you to sanitize the stream before computing an average.
+
+---
+
+## Primary vs. Secondary Data Sources
+
+Where data originates matters just as much as its format:
+
+- **Primary Data**: Collected firsthand by your team or instrumentation (e.g., field scientists recording rainforest humidity sensors).
+- **Secondary Data**: Collected by another organization and shared for broader analysis (e.g., open datasets on Kaggle, government census tables, or public REST APIs).
+
+Common retrieval channels include **Relational/NoSQL Databases** (queried via SQL or document filters), **Files** (CSV, Excel, audio, images), **APIs** (JSON endpoints), and **Web Scraping** (extracting structured fields from HTML pages).
+
+<ColabButton
+  course="data-science-for-beginners"
+  notebook="03-defining-data.ipynb"
+  runtime="Free Tier CPU"
+/>
+
+---
+
+## Try It Yourself: Dataset Taxonomy & Sensor Sanitizer
+
+Let's run a pure-Python classifier and sensor stream sanitizer that inspects mixed fields, separates quantitative metrics from qualitative identifiers, and flags corrupted `"e"` readings in an unstructured sensor stream.
+
+<PythonRunner
+  client:visible
+  title="Try it Yourself: Data Taxonomy & Sensor Stream Sanitizer"
+  expectedOutput="=== Field Classification ===
+temperature_c: Quantitative (numeric)
+aqi_index: Quantitative (numeric)
+zip_code: Qualitative (identifier)
+sensor_status: Qualitative (categorical)
+
+=== Unstructured Sensor Stream Audit ===
+Valid readings: [101.2, 101.5, 100.9]
+Corrupted tokens skipped: ['e', 'ERR']
+Mean pressure: 101.20 hPa"
+  initialCode={`sample_record = {
+    "temperature_c": 22.4,
+    "aqi_index": 42,
+    "zip_code": "94107",
+    "sensor_status": "healthy",
+}
+
+print("=== Field Classification ===")
+for field, val in sample_record.items():
+    if isinstance(val, (int, float)) and "zip" not in field:
+        kind = "Quantitative (numeric)"
+    elif "zip" in field or "phone" in field:
+        kind = "Qualitative (identifier)"
+    else:
+        kind = "Qualitative (categorical)"
+    print(f"{field}: {kind}")
+
+raw_stream = ["101.2", "e", "101.5", "ERR", "100.9"]
+valid, corrupted = [], []
+for token in raw_stream:
+    try:
+        valid.append(float(token))
+    except ValueError:
+        corrupted.append(token)
+
+print("\n=== Unstructured Sensor Stream Audit ===")
+print(f"Valid readings: {valid}")
+print(f"Corrupted tokens skipped: {corrupted}")
+print(f"Mean pressure: {sum(valid) / len(valid):.2f} hPa")`}
+/>
+
+---
+
+## Check Your Understanding
+
+<QuizCard
+  client:visible
+  question="A customer dataset stores phone numbers and zip codes as digits. How should a data scientist classify these columns?"
+  options={[
+    "Continuous quantitative data because they are numbers",
+    "Qualitative (categorical) data because mathematical operations like averaging them are meaningless",
+    "Unstructured binary data",
+    "Time-series ordinal data"
+  ]}
+  correctAnswer={1}
+  explanation="Even when represented with digits, identifiers like phone numbers and zip codes label categories or entities rather than measurable quantities, making them qualitative."
+/>
+
+Now that you can classify any dataset, let's build the mathematical toolkit to summarize and test hypotheses on it in **Statistics & Probability**.

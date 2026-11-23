@@ -1,0 +1,141 @@
+---
+title: "Simple Auth, RBAC Middleware, Configuring MCP Hosts & Container Deployment"
+track: "mcp-for-beginners"
+category: "Module 2: Building MCP Servers, Clients, Gemini Hosts & Transports"
+order: 9
+difficulty: "intermediate"
+xp: 80
+description: "Add Bearer JWT and RBAC middleware to remote MCP servers, configure VS Code, Claude Desktop, Cursor, and Cline hosts, and package servers in Docker."
+topic: "Auth, Hosts & Deployment"
+prerequisites: ["mcp-for-beginners/08-testing-and-debugging-with-mcp-inspector"]
+---
+import PythonRunner from '../../../components/islands/PythonRunner';
+import QuizCard from '../../../components/islands/QuizCard';
+import ColabButton from '../../../components/static/ColabButton.astro';
+
+Once your MCP server passes local tests, you need to wire it into real developer hosts (like VS Code, Claude Desktop, Cursor, or Cline) and protect remote HTTP endpoints with **Authentication** and **Role-Based Access Control (RBAC)** before deploying to containers.
+
+---
+
+## Authentication & RBAC Middleware
+
+Authentication answers *"Who are you?"* (HTTP `401 Unauthorized` when missing or invalid), while Authorization / RBAC answers *"Are you allowed to invoke this specific tool?"* (HTTP `403 Forbidden` when your role lacks permission).
+
+| Role | Allowed Tool Annotations / Operations | Denied Operations |
+| :--- | :--- | :--- |
+| **`viewer`** | `readOnlyHint: True` (`list_docs`, `get_status`) | Any write or destructive tool (`create_record`, `delete_record`) |
+| **`developer`** | Read tools + non-destructive writes (`create_record`) | Admin or `destructiveHint: True` operations (`delete_record`) |
+| **`admin`** | Full access across all tools, resources, and admin configs | None |
+
+In a Starlette or FastAPI remote MCP server, ASGI middleware validates the `Authorization: Bearer <token>` header, attaches the verified role to request context, and blocks unauthorized calls before they ever reach tool business logic.
+
+---
+
+## Configuring Real-World MCP Hosts
+
+Most popular IDEs and desktop AI clients read a declarative JSON configuration file:
+
+- **VS Code (`.vscode/mcp.json`)**: Supports `inputs` with `"password": true` so API keys are prompted securely at runtime rather than committed to Git:
+
+```json
+{
+  "inputs": [
+    { "type": "promptString", "id": "api-key", "description": "API Key", "password": true }
+  ],
+  "servers": {
+    "my-local-mcp": {
+      "type": "stdio",
+      "command": "python",
+      "args": ["server.py"],
+      "env": { "API_KEY": "${input:api-key}" }
+    }
+  }
+}
+```
+
+- **Claude Desktop / Cursor / Cline**: Use `"mcpServers"` as the top-level key with `"command"`, `"args"`, and `"env"` for `stdio` servers, or `"url"` for Streamable HTTP endpoints.
+
+### Hardened Container Deployment Checklist
+
+When packaging a remote Streamable HTTP MCP server for cloud deployment:
+1. Use a **multi-stage Docker build** with a non-root user (`USER appuser`).
+2. Expose `/health` and `/ready` endpoints for orchestrator probes.
+3. Inject secrets strictly via runtime environment variables, never `COPY .env`.
+
+---
+
+## Open the Companion Colab Notebook
+
+Launch the companion notebook to implement an ASGI JWT + RBAC middleware gate, validate `.vscode/mcp.json` and `claude_desktop_config.json` manifests, and generate a non-root multi-stage `Dockerfile`.
+
+<ColabButton
+  course="mcp-for-beginners"
+  notebook="09-authentication-rbac-mcp-hosts-and-deployment.ipynb"
+  runtime="Free Tier CPU"
+/>
+
+---
+
+## Try It Yourself: RBAC Policy Gate & Multi-Host Config Compiler
+
+Run this pure-Python sandbox to enforce RBAC permissions across `viewer`, `developer`, and `admin` roles and validate a `.vscode/mcp.json` configuration without hardcoded secrets.
+
+<PythonRunner
+  client:visible
+  title="Try it Yourself: MCP RBAC Gate & Host Config Validator"
+  expectedOutput="Missing token -> 401 Unauthorized
+viewer calling 'list_docs' -> 200 ALLOWED
+viewer calling 'delete_record' -> 403 Forbidden (requires admin)
+admin calling 'delete_record' -> 200 ALLOWED
+Host config valid: secret_hygiene=True, servers=['calc-mcp']"
+  initialCode={`import json
+
+ROLE_PERMS = {
+    "viewer": {"read"},
+    "developer": {"read", "write"},
+    "admin": {"read", "write", "delete"},
+}
+TOOL_REQ = {
+    "list_docs": "read",
+    "create_record": "write",
+    "delete_record": "delete",
+}
+
+def authorize_call(token_role: str | None, tool_name: str) -> str:
+    if not token_role:
+        return "401 Unauthorized"
+    needed = TOOL_REQ[tool_name]
+    if needed not in ROLE_PERMS.get(token_role, set()):
+        return "403 Forbidden (requires admin)"
+    return "200 ALLOWED"
+
+print("Missing token ->", authorize_call(None, "list_docs"))
+print("viewer calling 'list_docs' ->", authorize_call("viewer", "list_docs"))
+print("viewer calling 'delete_record' ->", authorize_call("viewer", "delete_record"))
+print("admin calling 'delete_record' ->", authorize_call("admin", "delete_record"))
+
+vscode_mcp = {
+    "inputs": [{"type": "promptString", "id": "gemini-key", "password": True}],
+    "servers": {"calc-mcp": {"type": "stdio", "command": "python", "args": ["calc.py"], "env": {"GEMINI_API_KEY": "\${input:gemini-key}"}}},
+}
+raw = json.dumps(vscode_mcp)
+secret_hygiene = "AIza" not in raw and "\${input:" in raw
+print(f"Host config valid: secret_hygiene={secret_hygiene}, servers={list(vscode_mcp['servers'].keys())}")`}
+/>
+
+---
+
+## Check Your Understanding
+
+<QuizCard
+  client:visible
+  question="When configuring an MCP server in .vscode/mcp.json that needs an API key, how should you supply the secret safely?"
+  options={[
+    "Paste the literal API key string into the env object and commit it to Git.",
+    "Declare a password-masked entry in inputs and reference it with ${input:key-id}.",
+    "Disable authentication on the MCP server.",
+    "Pass the API key in the server's public URL path."
+  ]}
+  correctAnswer={1}
+  explanation="VS Code's mcp.json supports an inputs array with password: true, allowing ${input:...} placeholders so secrets are prompted securely at runtime and never committed to source control."
+/>

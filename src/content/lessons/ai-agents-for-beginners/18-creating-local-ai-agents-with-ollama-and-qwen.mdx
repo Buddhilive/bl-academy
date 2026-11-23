@@ -1,0 +1,115 @@
+---
+title: "Creating Local AI Agents with Ollama, Qwen2.5 & On-Device RAG"
+track: "ai-agents-for-beginners"
+category: "Module 5: Computer Use, Scalable Deployment, Local SLM Agents & Cryptographic Security"
+order: 18
+difficulty: "advanced"
+xp: 90
+description: "Run private, zero-cost, offline AI agents locally using Ollama, Qwen2.5 function calling, sandboxed file tools, local ChromaDB RAG, and hybrid routing."
+topic: "Production, Local & Security"
+prerequisites: ["ai-agents-for-beginners/17-deploying-scalable-agents-in-production"]
+---
+import PythonRunner from '../../../components/islands/PythonRunner';
+import QuizCard from '../../../components/islands/QuizCard';
+import ColabButton from '../../../components/static/ColabButton.astro';
+
+In Lesson 17, we scaled agents *up* into the cloud. Now we bring them *down* onto a single machine—with **zero cloud inference calls**. Three real-world drivers make local agents indispensable: **Privacy** (source code never leaves your device), **Cost** (zero per-token API bill), and **Offline Resilience** (works on a plane or inside air-gapped networks).
+
+---
+
+## The Golden Rule of Local SLM Agents
+
+Small Language Models (SLMs, 3B–7B parameters fitting in 8–16 GB RAM) have less world knowledge than giant frontier models, but **Qwen2.5 (`qwen2.5:7b` / `qwen2.5:3b`)** excels at structured **tool calling**. The winning architecture is simple: **let the SLM orchestrate, and let local tools do the heavy lifting** (`read_file`, `search_docs`, `find_todos`).
+
+Because **Ollama** exposes an **OpenAI-compatible `/v1` HTTP endpoint** (`http://localhost:11434/v1`), your cloud agent code runs locally with a single `base_url` change.
+
+---
+
+## Sandboxed Local Tools, Local RAG & Hybrid Routing
+
+1. **Path-Sandboxed File Tools**: Always resolve paths against `PROJECT_ROOT` (`(PROJECT_ROOT / path).resolve()`) and reject any path escaping the sandbox (`../../etc/passwd`).
+2. **100% On-Device RAG & `stdio` MCP**: Embed docs locally into an on-disk **ChromaDB** store and scope local `stdio` MCP servers to the project directory.
+3. **Hybrid Cloud-and-Local Routing**:
+
+| Situation | Routed Target | Rationale |
+| :--- | :--- | :--- |
+| **Sensitive Code / Offline** | **Local Qwen SLM (`Ollama`)** | Zero network egress |
+| **Simple Bounded Task** | **Local Qwen SLM (`Ollama`)** | Fast, zero per-token cost |
+| **Hard Multi-Hop (Non-Sensitive)** | **Cloud Gemini (`gemini-2.5-flash`)** | Deeper reasoning capacity |
+| **Cloud Outage** | **Local Qwen SLM (`Ollama`)** | Graceful degradation |
+
+---
+
+## Open the Companion Colab Notebook
+
+Launch the companion notebook to run a **Local Engineering Assistant & Documentation Reviewer** (`read_file`, `find_todos`, on-disk `ChromaDB` RAG, and `Ollama` Qwen2.5 tool calling) on Colab Free Tier.
+
+<ColabButton
+  course="ai-agents-for-beginners"
+  notebook="18-creating-local-ai-agents-with-ollama-and-qwen.ipynb"
+  runtime="Free Tier T4 GPU / CPU"
+/>
+
+---
+
+## Try It Yourself: Sandboxed Local File Tools, `find_todos` & Hybrid Router
+
+Run this pure-Python sandbox to enforce directory-traversal sandboxing, scan project files for `TODO`/`FIXME` comments, and test the Hybrid Local/Cloud Router.
+
+<PythonRunner
+  client:visible
+  title="Try it Yourself: Local Sandboxed Tools & Hybrid Router"
+  expectedOutput="[Sandbox] read_file('auth.py') -> OK (37 bytes)
+[Sandbox] BLOCKED path traversal: '../../etc/passwd'
+[Tool:find_todos] Found 2 items -> ['auth.py:1 # TODO: rotate keys', 'rag.py:2 # FIXME: tune top_k']
+[HybridRouter] sensitive=True -> Local Ollama (qwen2.5:7b)
+[HybridRouter] sensitive=False, complex=True -> Cloud Gemini (gemini-2.5-flash)"
+  initialCode={`from pathlib import PurePosixPath
+
+PROJECT_FILES = {
+    "auth.py": "# TODO: rotate keys\ndef login(): pass",
+    "rag.py": "def search():\n# FIXME: tune top_k\n    return []",
+}
+
+def read_file_sandboxed(rel_path: str) -> str:
+    norm = PurePosixPath(rel_path)
+    if ".." in norm.parts or rel_path.startswith("/"):
+        return f"BLOCKED path traversal: '{rel_path}'"
+    content = PROJECT_FILES.get(rel_path, "")
+    return f"OK ({len(content)} bytes)"
+
+print(f"[Sandbox] read_file('auth.py') -> {read_file_sandboxed('auth.py')}")
+print(f"[Sandbox] {read_file_sandboxed('../../etc/passwd')}")
+
+todos = []
+for fname, body in PROJECT_FILES.items():
+    for idx, line in enumerate(body.splitlines(), start=1):
+        if "TODO" in line or "FIXME" in line:
+            todos.append(f"{fname}:{idx} {line.strip()}")
+print(f"[Tool:find_todos] Found {len(todos)} items -> {todos}")
+
+def hybrid_route(sensitive: bool, complex_task: bool, offline: bool = False) -> str:
+    if sensitive or offline or not complex_task:
+        return "Local Ollama (qwen2.5:7b)"
+    return "Cloud Gemini (gemini-2.5-flash)"
+
+print(f"[HybridRouter] sensitive=True -> {hybrid_route(True, True)}")
+print(f"[HybridRouter] sensitive=False, complex=True -> {hybrid_route(False, True)}")`}
+/>
+
+---
+
+## Check Your Understanding
+
+<QuizCard
+  client:visible
+  question="What is the recommended division of labor when building a local agent with a Small Language Model (SLM) like Qwen2.5?"
+  options={[
+    "Expect the SLM to memorize your entire codebase without any tools.",
+    "Let the SLM orchestrate tool selection and arguments, while deterministic local tools (read_file, ChromaDB RAG, find_todos) do the heavy lifting.",
+    "Disable all path sandboxing so the SLM can read `/etc/passwd`.",
+    "Always send sensitive proprietary code to a public cloud API."
+  ]}
+  correctAnswer={1}
+  explanation="SLMs excel at bounded tool-calling decisions. Letting deterministic local tools handle file reads, code scanning, and ChromaDB retrieval plays directly to an SLM's strengths."
+/>

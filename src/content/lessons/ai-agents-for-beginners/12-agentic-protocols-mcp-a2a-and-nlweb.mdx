@@ -1,0 +1,97 @@
+---
+title: "Using Agentic Protocols: MCP, Agent-to-Agent (A2A) & NLWeb"
+track: "ai-agents-for-beginners"
+category: "Module 4: Agentic Protocols, Context Engineering, Memory & Graph Workflows"
+order: 12
+difficulty: "advanced"
+xp: 85
+description: "Connect agents to tools, other agents, and websites using Model Context Protocol (MCP), Agent-to-Agent (A2A), and Natural Language Web (NLWeb)."
+topic: "Protocols, Context & Memory"
+prerequisites: ["ai-agents-for-beginners/11-ai-agents-in-production-observability-and-evaluation"]
+---
+import PythonRunner from '../../../components/islands/PythonRunner';
+import QuizCard from '../../../components/islands/QuizCard';
+import ColabButton from '../../../components/static/ColabButton.astro';
+
+As AI agents move into multi-vendor ecosystems, custom one-off integrations break down. Open **Agentic Protocols** standardize how agents connect to tools, collaborate with external agents, and query websites—without brittle glue code.
+
+In this lesson, we unify the three core protocols shaping modern agent architectures: **Model Context Protocol (MCP)**, **Agent-to-Agent (A2A)**, and **Natural Language Web (NLWeb)**.
+
+---
+
+## Comparing MCP, A2A, and NLWeb
+
+| Protocol | Primary Connection | Core Primitives / Components | Travel Booking Role |
+| :--- | :--- | :--- | :--- |
+| **MCP** | Agent (Host/Client) $\leftrightarrow$ Tools & Data | **Tools** (actions), **Resources** (read-only data), **Prompts** (templates) | Travel agent discovers `search_flights` & `book_flight` on an Airline MCP server |
+| **A2A** | Agent $\leftrightarrow$ Remote Agent | **Agent Card**, **Agent Executor**, **Artifact**, **Event Queue** | Travel agent delegates hotel & car booking to external company agents |
+| **NLWeb** | Human / Agent $\leftrightarrow$ Website | **NLWeb Protocol** (Schema.org JSON), **MCP `ask` endpoint**, **Vector DB** | Queries a Honolulu hotel catalog with natural language and zero hallucination |
+
+---
+
+## How Each Protocol Works in Practice
+
+1. **Model Context Protocol (MCP)**: Operates on a client-server model where a Host creates 1:1 Clients to connect to Servers. Agents dynamically discover tool schemas at runtime, switch underlying LLMs freely, and use standardized authentication.
+2. **Agent-to-Agent Protocol (A2A)**: Connects independent agents across organizations. Each remote agent publishes an **Agent Card** (name, skills, endpoint URL, streaming capabilities). The calling agent sends context to an **Agent Executor**, receives progress via an **Event Queue** so long-running connections never drop, and collects the finished **Artifact**.
+3. **Natural Language Web (NLWeb)**: Turns any website into an AI-native catalog. Site data (Schema.org/RSS) is embedded into a vector database (`ChromaDB` / `Qdrant`). Both humans in a web chat and external AI agents calling the built-in MCP `ask()` method get grounded JSON responses.
+
+---
+
+## Open the Companion Colab Notebook
+
+Launch the companion notebook to implement an Airline `FastMCP` tool server, an A2A `AgentCard`/`Artifact` coordinator, and an `NLWeb` Schema.org + `ChromaDB` `ask()` endpoint using `google-genai`.
+
+<ColabButton
+  course="ai-agents-for-beginners"
+  notebook="12-agentic-protocols-mcp-a2a-and-nlweb.ipynb"
+  runtime="Free Tier CPU + Gemini API"
+/>
+
+---
+
+## Try It Yourself: Tri-Protocol Honolulu Travel Orchestrator
+
+Run this pure-Python sandbox to watch a Travel Agent discover `search_flights` via MCP, delegate hotel and car rentals via A2A Agent Cards and Artifacts, and query a Honolulu resort catalog through `NLWeb.ask()`.
+
+<PythonRunner
+  client:visible
+  title="Try it Yourself: MCP + A2A + NLWeb Travel Orchestrator"
+  expectedOutput="[MCP] Discovered AirlineMCP tools: ['search_flights', 'book_flight'] -> PDX->HNL $410
+[A2A] AgentCard 'HotelAgent' (skills=['book_hotel']) -> Artifact: Waikiki Family Suite confirmed
+[A2A] AgentCard 'CarRentalAgent' (skills=['rent_car']) -> Artifact: SUV reserved via EventQueue
+[NLWeb] ask('family-friendly hotel with pool in Honolulu') -> Schema.org match: OceanBreeze Resort"
+  initialCode={`# 1. MCP Tool Discovery & Invocation
+airline_mcp_tools = ["search_flights", "book_flight"]
+print(f"[MCP] Discovered AirlineMCP tools: {airline_mcp_tools} -> PDX->HNL \$410")
+
+# 2. A2A Cross-Agent Collaboration
+agent_cards = [
+    {"name": "HotelAgent", "skills": ["book_hotel"], "artifact": "Waikiki Family Suite confirmed"},
+    {"name": "CarRentalAgent", "skills": ["rent_car"], "artifact": "SUV reserved via EventQueue"},
+]
+for card in agent_cards:
+    print(f"[A2A] AgentCard '{card['name']}' (skills={card['skills']}) -> Artifact: {card['artifact']}")
+
+# 3. NLWeb Schema.org Vector Ask
+nlweb_catalog = [{"@type": "Hotel", "name": "OceanBreeze Resort", "tags": ["family-friendly", "pool", "honolulu"]}]
+query = "family-friendly hotel with pool in Honolulu"
+match = next(h["name"] for h in nlweb_catalog if "pool" in h["tags"] and "honolulu" in h["tags"])
+print(f"[NLWeb] ask('{query}') -> Schema.org match: {match}")`}
+/>
+
+---
+
+## Check Your Understanding
+
+<QuizCard
+  client:visible
+  question="In the Agent-to-Agent (A2A) protocol, what is the purpose of an `Agent Card`?"
+  options={[
+    "It encrypts local SQLite files on disk.",
+    "It advertises an agent's name, task description, skills, endpoint URL, and capabilities so other agents know when and how to call it.",
+    "It replaces vector embeddings in NLWeb.",
+    "It forces all agents to use the exact same LLM."
+  ]}
+  correctAnswer={1}
+  explanation="An Agent Card is the discovery manifest in A2A—allowing client agents to inspect a remote agent's skills, endpoint, and streaming capabilities before delegating tasks."
+/>

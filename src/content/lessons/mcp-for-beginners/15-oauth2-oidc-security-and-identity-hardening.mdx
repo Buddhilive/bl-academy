@@ -1,0 +1,102 @@
+---
+title: "Enterprise OAuth 2.1, S256 PKCE, JWKS Verification & Identity Hardening"
+track: "mcp-for-beginners"
+category: "Module 4: Advanced Topics: Multi-Modal, OAuth 2.1, Context Engineering & Debate Agents"
+order: 15
+difficulty: "advanced"
+xp: 85
+description: "Implement OAuth 2.1 Authorization Code + S256 PKCE, .well-known/oauth-protected-resource discovery, RFC 9207 iss validation, and step-up scope challenges in Python."
+topic: "OAuth 2.1 & Identity Hardening"
+prerequisites: ["mcp-for-beginners/14-multimodal-workflows-realtime-streaming-and-web-search"]
+---
+import PythonRunner from '../../../components/islands/PythonRunner';
+import QuizCard from '../../../components/islands/QuizCard';
+import ColabButton from '../../../components/static/ColabButton.astro';
+
+Simple API keys work for local prototypes, but multi-user remote MCP servers need **OAuth 2.1**. Under the MCP authorization specification, your MCP server acts strictly as an **OAuth Resource Server**: it never handles user passwords directly. Instead, it delegates login to an external Authorization Server, advertises its metadata, and validates signed JWT access tokens.
+
+---
+
+## OAuth 2.1 + S256 PKCE & `2026-07-28` Hardening
+
+Public and native MCP clients (like desktop IDEs or CLI tools) cannot safely store a client secret, so OAuth 2.1 requires **Proof Key for Code Exchange (PKCE)** with `S256`:
+
+$$\text{code\_challenge} = \text{BASE64URL-ENCODE}\Big(\text{SHA256}\big(\text{ASCII}(\text{code\_verifier})\big)\Big)$$
+
+MCP `2026-07-28` adds four critical hardening rules on top of standard OAuth 2.1:
+
+| Security Control | Purpose | Spec Reference |
+| :--- | :--- | :--- |
+| **Protected Resource Metadata** | `/.well-known/oauth-protected-resource` points clients to the trusted Auth Server | `SEP-2351` |
+| **RFC 9207 `iss` Validation** | Client checks `iss` on auth responses to defeat multi-server mix-up attacks | `SEP-2468` |
+| **Issuer-Bound Credentials** | Client credentials are bound to the issuing `issuer` and re-registered if migrated | `SEP-2352` |
+| **Step-Up Scope Accumulation** | Server responds `403 insufficient_scope` + `WWW-Authenticate` when write scopes are needed | `SEP-2350` |
+
+---
+
+## Open the Companion Colab Notebook
+
+Launch the companion notebook to run an end-to-end Python OAuth 2.1 Authorization Server + Protected MCP Resource Server with RS256 JWKS verification, S256 PKCE, and step-up scope challenges.
+
+<ColabButton
+  course="mcp-for-beginners"
+  notebook="15-oauth2-oidc-security-and-identity-hardening.ipynb"
+  runtime="Free Tier CPU"
+/>
+
+---
+
+## Try It Yourself: S256 PKCE, RFC 9207 `iss` Guard & Step-Up Scope Flow
+
+Run this pure-Python sandbox to compute and verify an S256 PKCE challenge, block an OAuth mix-up attack with a mismatched `iss` parameter, and execute a step-up scope challenge (`mcp:read` -> `mcp:read mcp:write`).
+
+<PythonRunner
+  client:visible
+  title="Try it Yourself: OAuth 2.1 S256 PKCE & RFC 9207 Mix-Up Guard"
+  expectedOutput="PKCE S256 verified: True
+RFC 9207 iss check (expected=https://auth.example.com/): BLOCKED mix-up (got https://evil.example.com/)
+Calling write tool with scope='mcp:read' -> 403 insufficient_scope (WWW-Authenticate: scope='mcp:read mcp:write')
+Calling write tool after step-up -> 200 OK (scope='mcp:read mcp:write')"
+  initialCode={`import base64
+import hashlib
+
+# 1. S256 PKCE computation and verification
+verifier = "dBjftJeZ4CVP-mB92K27uhbUJU1p1r_wW1gFWFOEjXk"
+digest = hashlib.sha256(verifier.encode("ascii")).digest()
+challenge = base64.urlsafe_b64encode(digest).rstrip(b"=").decode("ascii")
+
+recomputed = base64.urlsafe_b64encode(hashlib.sha256(verifier.encode("ascii")).digest()).rstrip(b"=").decode("ascii")
+print("PKCE S256 verified:", recomputed == challenge)
+
+# 2. RFC 9207 iss mix-up protection
+expected_iss = "https://auth.example.com/"
+callback_iss = "https://evil.example.com/"
+if callback_iss != expected_iss:
+    print(f"RFC 9207 iss check (expected={expected_iss}): BLOCKED mix-up (got {callback_iss})")
+
+# 3. Step-up scope accumulation
+def call_write_tool(scopes: set[str]) -> str:
+    if "mcp:write" not in scopes:
+        return "403 insufficient_scope (WWW-Authenticate: scope='mcp:read mcp:write')"
+    return f"200 OK (scope='{' '.join(sorted(scopes))}')"
+
+print("Calling write tool with scope='mcp:read' ->", call_write_tool({"mcp:read"}))
+print("Calling write tool after step-up ->", call_write_tool({"mcp:read", "mcp:write"}))`}
+/>
+
+---
+
+## Check Your Understanding
+
+<QuizCard
+  client:visible
+  question="Why does MCP 2026-07-28 require OAuth clients to validate the iss parameter (RFC 9207) on authorization responses?"
+  options={[
+    "To compress JWT tokens to half their size.",
+    "To prevent authorization server mix-up attacks in single-client, multi-server MCP topologies.",
+    "To allow servers to skip verifying JWT signatures.",
+    "To replace PKCE with plain-text passwords."
+  ]}
+  correctAnswer={1}
+  explanation="Because one MCP client connects to many MCP servers and authorization servers, validating RFC 9207 iss ensures an attacker cannot trick the client into sending an authorization code to the wrong token endpoint."
+/>

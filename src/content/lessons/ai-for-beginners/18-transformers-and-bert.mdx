@@ -1,0 +1,114 @@
+---
+title: "Attention Mechanisms, Transformers & BERT"
+track: "ai-for-beginners"
+category: "Module 4: Natural Language Processing"
+order: 19
+difficulty: "advanced"
+xp: 90
+description: "Master Scaled Dot-Product Self-Attention, Multi-Head Attention, Positional Encoding, and fine-tuning BERT with HuggingFace Transformers."
+topic: "Transformers and BERT"
+prerequisites: ["ai-for-beginners/17-generative-recurrent-networks"]
+---
+import PythonRunner from '../../../components/islands/PythonRunner';
+import QuizCard from '../../../components/islands/QuizCard';
+import ColabButton from '../../../components/static/ColabButton.astro';
+
+Recurrent Neural Networks had two stubborn bottlenecks: they still struggled to remember very long contexts, and because step $t$ depends on step $t-1$, you cannot parallelize sequence processing across GPU cores.
+
+In 2017, the landmark paper **"Attention Is All You Need"** replaced recurrence completely with **Self-Attention**—birthing the **Transformer** architecture behind BERT, GPT, and Gemini.
+
+---
+
+## Scaled Dot-Product Self-Attention
+
+Instead of passing a single hidden vector down a chain, Self-Attention lets *every token* look directly at *every other token* in the sequence simultaneously. Each token embedding is projected into three vectors: a **Query ($Q$)** (*"what am I looking for?"*), a **Key ($K$)** (*"what do I contain?"*), and a **Value ($V$)** (*"what information do I pass forward?"*):
+
+$$\text{Attention}(Q, K, V) = \text{softmax}\left(\frac{QK^{\top}}{\sqrt{d_k}}\right)V$$
+
+Dividing by $\sqrt{d_k}$ keeps dot-product magnitudes stable so Softmax gradients don't saturate when embedding dimensions grow large.
+
+### Positional Encoding & Multi-Head Attention
+
+Because Self-Attention processes all tokens in parallel without sequential order, a Transformer would treat *"dog bites man"* identically to *"man bites dog"* unless we inject **Positional Encoding** (either fixed sine/cosine waves or learned position embeddings) into every token vector.
+
+**Multi-Head Attention** runs $h$ independent attention projections in parallel—letting one head track subject–verb agreement, another resolve pronouns (`"it"` → `"animal"`), and another capture local modifiers.
+
+---
+
+## BERT: Bidirectional Encoder Representations from Transformers
+
+**BERT** stacks 12 (`BERT-base`) or 24 (`BERT-large`) Transformer Encoder layers and pre-trains on massive unlabeled text corpora (Wikipedia + Books) using two self-supervised tasks:
+
+| BERT Pre-Training Task | How It Works | Why It Matters |
+| :--- | :--- | :--- |
+| **Masked Language Modeling (MLM)** | Masks 15% of input tokens (`[MASK]`) and predicts them using **both** left and right context. | Produces deeply contextualized word representations. |
+| **Next Sentence Prediction (NSP)** | Predicts whether Sentence B naturally follows Sentence A. | Helps downstream QA and sentence-pair classification. |
+
+Once pre-trained, BERT can be fine-tuned in minutes on custom classification, QA, or entity extraction datasets using HuggingFace `transformers`—replacing weeks of training from scratch with transfer learning for text.
+
+<ColabButton
+  course="ai-for-beginners"
+  notebook="18-transformers-and-bert.ipynb"
+  runtime="Free Tier T4 GPU"
+/>
+
+---
+
+## Hands-On: Scaled Dot-Product Self-Attention in Python
+
+Let's compute exact **Scaled Dot-Product Self-Attention** across 3 tokens (`["bank", "of", "river"]`) in pure Python and inspect the resulting attention weights.
+
+<PythonRunner
+  client:visible
+  title="Try it Yourself: Scaled Dot-Product Self-Attention"
+  expectedOutput="Attention Weight Matrix (3x3):
+  [0.456, 0.225, 0.32]
+  [0.225, 0.456, 0.32]
+  [0.333, 0.333, 0.333]
+Contextual Output[0] ('bank'): [0.456, 0.544]"
+  initialCode={`import math
+
+# 3 tokens, d_k = 2
+Q = [[1.0, 0.0], [0.0, 1.0], [0.5, 0.5]]
+K = [[1.0, 0.0], [0.0, 1.0], [0.5, 0.5]]
+V = [[1.0, 0.0], [0.0, 1.0], [0.0, 1.0]]  # 'river' shifts 'bank' toward [0, 1]
+
+d_k = len(Q[0])
+scale = math.sqrt(d_k)
+
+def softmax_row(row: list[float]) -> list[float]:
+    exps = [math.exp(x) for x in row]
+    s = sum(exps)
+    return [e / s for e in exps]
+
+attn_weights = []
+for q in Q:
+    scores = [sum(q[m] * k[m] for m in range(d_k)) / scale for k in K]
+    attn_weights.append(softmax_row(scores))
+
+print("Attention Weight Matrix (3x3):")
+for row in attn_weights:
+    print(" ", [round(w, 3) for w in row])
+
+out_0 = [round(sum(attn_weights[0][j] * V[j][d] for j in range(3)), 3) for d in range(2)]
+print(f"Contextual Output[0] ('bank'): {out_0}")`}
+/>
+
+---
+
+## Check Your Understanding
+
+<QuizCard
+  client:visible
+  question="Why do Transformer models require Positional Encoding?"
+  options={[
+    "Self-attention computes pairwise token interactions simultaneously and is inherently permutation-invariant without position signals.",
+    "Positional encoding replaces the Softmax function in attention.",
+    "Without positional encoding, PyTorch cannot allocate GPU memory.",
+    "Positional encoding removes all punctuation from the input."
+  ]}
+  correctAnswer={0}
+  explanation="Unlike RNNs that process tokens one step at a time, Self-Attention views all tokens in parallel—so adding positional encodings is essential to preserve word order."
+/>
+
+Next, let's apply Transformers and sequence models to token-level extraction in **Lesson 19: Named Entity Recognition (NER)**.

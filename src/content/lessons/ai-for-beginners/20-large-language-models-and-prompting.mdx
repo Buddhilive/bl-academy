@@ -1,0 +1,103 @@
+---
+title: "Large Language Models, Perplexity, Few-Shot Prompting & Gemini API"
+track: "ai-for-beginners"
+category: "Module 4: Natural Language Processing"
+order: 21
+difficulty: "intermediate"
+xp: 90
+description: "Learn causal Large Language Models, Perplexity evaluation, Zero/Few-Shot Prompt Engineering, and run live Gemini API prompts on Google AI Studio Free Tier."
+topic: "Large Language Models and Prompting"
+prerequisites: ["ai-for-beginners/19-named-entity-recognition"]
+---
+import PythonRunner from '../../../components/islands/PythonRunner';
+import QuizCard from '../../../components/islands/QuizCard';
+import ColabButton from '../../../components/static/ColabButton.astro';
+
+With BERT, you still needed a labeled dataset and a fine-tuning pass for every new downstream task. **Large Language Models (LLMs)**—starting with the **GPT** (Generative Pre-Trained Transformer) family and scaling up to modern frontier models like **Gemini**—flipped that workflow on its head.
+
+Because an LLM is trained on trillions of tokens of text and code to predict the next token $P(w_N \mid w_0, \dots, w_{N-1})$, it absorbs grammar, world facts, and reasoning patterns simultaneously. As a result, you can solve new tasks **zero-shot** or **few-shot** simply by phrasing your instructions clearly in natural language—a discipline known as **Prompt Engineering**.
+
+---
+
+## Measuring Language Models: Perplexity
+
+How do we measure the quality of a generative language model without a task-specific labeled test set? We use **Perplexity (PPL)**, defined as the normalized inverse probability of a real test sequence $W_1, \dots, W_N$:
+
+$$\text{Perplexity}(W) = \sqrt[N]{\frac{1}{P(W_1, \dots, W_N)}} = \exp\left(-\frac{1}{N}\sum_{i=1}^{N} \log P(w_i \mid w_{<i})\right)$$
+
+Lower perplexity means the model is less "surprised" by real human sentences. A model assigning $P = 0.5$ to every next token has $\text{PPL} = 2.0$, whereas a model assigning $P = 0.1$ has $\text{PPL} = 10.0$.
+
+---
+
+## Prompt Engineering & Google AI Studio Free Tier (`google-genai`)
+
+Instead of retraining weights, you steer an LLM at inference time using structured prompts:
+
+| Prompting Technique | How It Works | Best Used For |
+| :--- | :--- | :--- |
+| **Zero-Shot Prompting** | Provide only the task instruction and input—no examples. | Summarization, translation, general Q&A. |
+| **Few-Shot Prompting** | Include 2–5 `(input → output)` demonstrations inside the prompt. | Enforcing strict JSON/CSV formatting or domain-specific classification. |
+| **Chain-of-Thought (CoT)** | Ask the model to *"reason step by step"* before answering. | Multi-step math, logic puzzles, and code debugging. |
+
+In the companion notebook, you can run both **local open-source GPT-2** generation on Colab AND live cloud calls to **Google AI Studio Free Tier** (`gemini-2.5-flash`) using your `GEMINI_API_KEY` from Lesson 00. Seeing both side by side—a small local causal model and a frontier cloud model—makes the jump from classical NLP to modern prompt engineering crystal clear:
+
+```python
+from google.colab import userdata
+from google import genai
+
+client = genai.Client(api_key=userdata.get("GEMINI_API_KEY"))
+response = client.models.generate_content(
+    model="gemini-2.5-flash",
+    contents="Classify sentiment (Positive/Negative): 'The neural network converged in 3 epochs!'",
+)
+print(response.text)
+```
+
+<ColabButton
+  course="ai-for-beginners"
+  notebook="20-large-language-models-and-prompting.ipynb"
+  runtime="Free Tier T4 GPU + Gemini API"
+/>
+
+---
+
+## Hands-On: Language Model Perplexity Calculator
+
+Let's calculate exact **Perplexity** for two candidate language models on a 4-token test sentence in pure Python. Notice how higher confidence on true tokens drives perplexity down sharply.
+
+<PythonRunner
+  client:visible
+  title="Try it Yourself: Perplexity Evaluation"
+  expectedOutput="Confident Model PPL: 1.49
+Uncertain Model PPL: 6.04"
+  initialCode={`import math
+
+def perplexity(token_probs: list[float]) -> float:
+    avg_neg_log_prob = -sum(math.log(p) for p in token_probs) / len(token_probs)
+    return math.exp(avg_neg_log_prob)
+
+confident_probs = [0.80, 0.70, 0.60, 0.60]
+uncertain_probs = [0.20, 0.15, 0.10, 0.25]
+
+print(f"Confident Model PPL: {perplexity(confident_probs):.2f}")
+print(f"Uncertain Model PPL: {perplexity(uncertain_probs):.2f}")`}
+/>
+
+---
+
+## Check Your Understanding
+
+<QuizCard
+  client:visible
+  question="What does a lower Perplexity score indicate when evaluating a generative Large Language Model on real text?"
+  options={[
+    "The model assigns higher probability to real, grammatical sentences and is less 'surprised' by the test corpus.",
+    "The model has fewer parameters than a Perceptron.",
+    "The model is overfitting to bounding boxes.",
+    "The model requires zero-shot temperature > 5.0."
+  ]}
+  correctAnswer={0}
+  explanation="Perplexity is the exponentiated average negative log-likelihood; higher probability assigned to real tokens yields a lower perplexity score."
+/>
+
+You've now completed **Module 4: Natural Language Processing**! Next, let's explore non-gradient and alternative AI paradigms in **Module 5**.

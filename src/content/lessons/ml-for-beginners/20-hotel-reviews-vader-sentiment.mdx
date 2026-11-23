@@ -1,0 +1,106 @@
+---
+title: "Hotel Reviews Sentiment Analysis Part 2: Tag Filtering, Stop Words, NLTK VADER & Gemini Nuance"
+track: "ml-for-beginners"
+category: "Module 4: Classical NLP & Time Series Forecasting"
+order: 20
+difficulty: "intermediate"
+xp: 85
+description: "Normalize European hotel addresses, extract 8 binary guest/trip tag features, speed up NLTK VADER sentiment with cached stop words, and audit sarcasm with Gemini API."
+topic: "VADER Sentiment Pipeline"
+prerequisites: ["ml-for-beginners/19-exploring-european-hotel-reviews"]
+---
+import PythonRunner from '../../../components/islands/PythonRunner';
+import QuizCard from '../../../components/islands/QuizCard';
+import ColabButton from '../../../components/static/ColabButton.astro';
+
+Now that we've audited the 515K European hotel reviews dataset, it is time to engineer clean features and score review sentiment. In this lesson, we normalize raw addresses into 6 European capitals, distill 2,428 noisy `Tags` into 8 high-signal binary columns, accelerate **NLTK VADER** with cached stop-word removal, and use **Google AI Studio Free Tier** (`google-genai`) to catch sarcasm that trips up lexicon models.
+
+---
+
+## Normalizing Cities & Extracting the 8 High-Signal Tags
+
+First, we drop `lat`/`lng`, replace `Hotel_Address` with its canonical city-country (`Amsterdam, Netherlands`: 105 hotels; `Barcelona, Spain`: 211; `London, United Kingdom`: 400; `Milan, Italy`: 162; `Paris, France`: 458; `Vienna, Austria`: 158), and recompute `Total_Number_of_Reviews` and `Average_Score` directly from the dataset rows.
+
+Next, the raw `Tags` column packs variable-length comma-separated lists across 2,428 unique phrases (`Submitted from a mobile device`, `Stayed 1 night`, `Double Room`). Stripping brackets and filtering out device, stay-length, and room-type noise leaves **8 high-signal binary indicators**:
+
+| Binary Indicator Column | Source Tag Pattern | Total Dataset Matches |
+| :--- | :--- | :--- |
+| `Leisure_trip` / `Business_trip` | `"Leisure trip"` / `"Business trip"` | `417,778` / `82,939` |
+| `Couple` / `Solo_traveler` | `"Couple"` / `"Solo traveler"` | `252,294` / `108,545` |
+| `Group` | `"Group"` or `"Travelers with friends"` | `67,535` |
+| `Family_with_young_children` / `older` | `"Family with young/older children"` | `61,015` / `26,349` |
+| `With_a_pet` | `"With a pet"` | `1,405` |
+
+---
+
+## Cached Stop-Word Removal, VADER & Gemini Sarcasm Audit
+
+Caching `cache = set(stopwords.words("english"))` shrinks the longest negative review from `395` words to `195` sentiment-bearing words in just `3.3` seconds across 515K rows. We then compute compound polarity $[-1, 1]$ with **NLTK VADER** (`SentimentIntensityAnalyzer`), returning `0` for `"No Negative"` and `"No Positive"`.
+
+Remember VADER's blind spot: a sarcastic review like *"Of course I LOVED sleeping in a room with no heating"* uses capitalized `"LOVED"`, so VADER scores it positive! In our Colab notebook, we pair VADER with **Google AI Studio Free Tier** (`gemini-2.5-flash` via `GEMINI_API_KEY`) to flag sarcasm accurately.
+
+<ColabButton
+  course="ml-for-beginners"
+  notebook="20-hotel-reviews-vader-sentiment.ipynb"
+  runtime="Free Tier CPU + Gemini API"
+/>
+
+---
+
+## Try It Yourself: Tag Extractor, Stop-Word Filter & VADER Scorer
+
+Let's run the city normalizer, 8-tag binary encoder, cached stop-word stripper, and VADER-style compound sentiment scorer in pure Python.
+
+<PythonRunner
+  client:visible
+  title="Try it Yourself: Hotel Tag Encoder & Sentiment Pipeline"
+  expectedOutput="City: London, United Kingdom | Tags -> Leisure: 1, Couple: 1, Pet: 0
+Filtered Negative Words: ['room', 'noisy', 'broken', 'heating']
+VADER-Style Compound -> Neg: -0.66, Pos: 0.00 (No Positive sentinel)
+Sarcasm Alert ('Of course I LOVED sleeping in a room with no heating'): Lexicon=+0.64 vs True=Negative"
+  initialCode={`STOPWORDS = {"the", "a", "an", "in", "with", "and", "was", "were", "no", "of", "to"}
+VALENCE = {"noisy": -1.6, "broken": -1.8, "heating": 0.0, "loved": 3.2, "great": 2.5}
+
+raw_addr = "123 Westminster Bridge Rd, London, United Kingdom"
+city = "London, United Kingdom" if "United Kingdom" in raw_addr else "Other"
+
+raw_tags = "[' Leisure trip ', ' Couple ', ' Double Room ', ' Stayed 2 nights ']"
+leisure = 1 if "Leisure trip" in raw_tags else 0
+couple = 1 if "Couple" in raw_tags else 0
+pet = 1 if "With a pet" in raw_tags else 0
+print(f"City: {city} | Tags -> Leisure: {leisure}, Couple: {couple}, Pet: {pet}")
+
+neg_review = "The room was noisy with broken heating"
+filtered = [w.lower() for w in neg_review.split() if w.lower() not in STOPWORDS]
+print(f"Filtered Negative Words: {filtered}")
+
+def compound_score(text):
+    if text in ("No Negative", "No Positive"):
+        return 0.0
+    total = sum(VALENCE.get(w.lower(), 0.0) for w in text.split())
+    return total / ((total * total + 15.0) ** 0.5)
+
+neg_score = compound_score(" ".join(filtered))
+pos_score = compound_score("No Positive")
+print(f"VADER-Style Compound -> Neg: {neg_score:.2f}, Pos: {pos_score:.2f} (No Positive sentinel)")
+
+sarcastic = "Of course I LOVED sleeping in a room with no heating"
+print(f"Sarcasm Alert ('{sarcastic}'): Lexicon={compound_score(sarcastic):+.2f} vs True=Negative")`}
+/>
+
+---
+
+## Check Your Understanding
+
+<QuizCard
+  client:visible
+  question="Why do we cache English stop words into a Python set (cache = set(stopwords.words('english'))) before filtering 515,000 hotel reviews?"
+  options={[
+    "Set membership lookup is O(1) instead of O(N) list scanning, cutting processing time across half a million rows to a few seconds.",
+    "Sets automatically translate French reviews into English.",
+    "NLTK VADER refuses to run unless stop words are in a set.",
+    "Sets preserve duplicate stop words for frequency counting."
+  ]}
+  correctAnswer={0}
+  explanation="Checking 'word not in cache' on a Python set is an O(1) hash lookup, whereas scanning a list repeatedly across millions of tokens is orders of magnitude slower."
+/>

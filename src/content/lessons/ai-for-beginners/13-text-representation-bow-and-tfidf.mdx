@@ -1,0 +1,113 @@
+---
+title: "Text Representation: Tokenization, Bag-of-Words, N-Grams & TF-IDF"
+track: "ai-for-beginners"
+category: "Module 4: Natural Language Processing"
+order: 14
+difficulty: "beginner"
+xp: 70
+description: "Convert raw text into numerical tensors using character and word tokenization, N-grams, Bag-of-Words vectors, and TF-IDF weighting."
+topic: "NLP Text Representation"
+prerequisites: ["ai-for-beginners/12-semantic-segmentation-and-unet"]
+---
+import PythonRunner from '../../../components/islands/PythonRunner';
+import QuizCard from '../../../components/islands/QuizCard';
+import ColabButton from '../../../components/static/ColabButton.astro';
+
+Unlike images—which arrive as clean numerical grids of pixel intensities—human language is discrete, variable-length, and symbolic. Before any neural network can classify a news article, translate a sentence, or answer a question, we must convert text into numerical **tensors**.
+
+---
+
+## Tokenization & Vocabulary Mapping
+
+Computers already store characters as integers under **ASCII** or **UTF-8**. When feeding text to a model, we first split strings into discrete units called **tokens** and map each unique token to an integer ID inside a **vocabulary**:
+
+- **Character-level tokenization**: Small vocabulary ($C \approx 100$), long sequences, and individual characters carry little semantic meaning on their own.
+- **Word-level tokenization**: Preserves whole-word semantics, but requires a huge vocabulary ($V \approx 50{,}000+$) where rare words or typos become unknown (`<UNK>`) tokens.
+- **Subword tokenization (BPE / WordPiece)**: Modern sweet spot used by BERT and Gemini—splits rare words into meaningful pieces (`"unhappiness"` → `["un", "happiness"]`).
+
+---
+
+## Bag-of-Words (BoW), N-Grams & TF-IDF
+
+When classifying documents (such as categorizing **AG News** articles into *World*, *Sports*, *Business*, or *Sci/Tech*), we often collapse a variable-length sentence into a fixed-size vector of length $V$:
+
+| Representation | How It Works | Strengths & Limitations |
+| :--- | :--- | :--- |
+| **Bag-of-Words (BoW)** | Sums one-hot word vectors to count how many times each vocabulary word appears. | Fast and simple baseline; loses word order (*"dog bites man"* = *"man bites dog"*). |
+| **N-Grams (Bigrams / Trigrams)** | Treats consecutive $N$-word phrases (e.g., `"neural network"` vs `"fishing network"`) as tokens. | Captures local word order, but causes vocabulary size to explode. |
+| **TF-IDF** | Scales word frequency by inverse document frequency across the corpus. | Down-weights ubiquitous filler words (`the`, `is`, `and`) and highlights rare, informative terms. |
+
+Mathematically, **Term Frequency–Inverse Document Frequency (TF-IDF)** for term $t$ in document $d$ across $N$ total documents is:
+
+$$\text{TF-IDF}(t, d) = \text{tf}(t, d) \times \log\left(\frac{N}{1 + \text{df}(t)}\right)$$
+
+While BoW, N-grams, and TF-IDF provide fast, interpretable baselines for topic classification and spam filtering, they treat every word as an independent coordinate and cannot recognize that *"laptop"* and *"notebook"* share similar meaning. To capture true semantics, we'll move to dense word embeddings next.
+
+<ColabButton
+  course="ai-for-beginners"
+  notebook="13-text-representation-bow-and-tfidf.ipynb"
+  runtime="Free Tier CPU"
+/>
+
+---
+
+## Hands-On: Tokenizer, Bigrams & TF-IDF Scorer in Python
+
+Let's build a pure-Python text vectorizer that generates **word unigrams**, **bigrams**, and **TF-IDF scores** across three mini news headlines. Notice how common words like `"the"` score near zero while domain words like `"neural"` or `"markets"` stand out.
+
+<PythonRunner
+  client:visible
+  title="Try it Yourself: Bigrams & TF-IDF Vectorizer"
+  expectedOutput="Bigrams for Doc 0: [('the', 'neural'), ('neural', 'network'), ('network', 'learns')]
+Doc 0 Top TF-IDF Terms: [('learns', 0.2747), ('network', 0.2747), ('neural', 0.2747), ('the', 0.0)]
+Doc 1 Top TF-IDF Terms: [('markets', 0.3662), ('rally', 0.3662), ('the', 0.0)]"
+  initialCode={`import math
+from collections import Counter
+
+docs = [
+    "the neural network learns",
+    "the markets rally",
+    "the team wins the game",
+]
+
+tokenized = [d.lower().split() for d in docs]
+bigrams_0 = list(zip(tokenized[0], tokenized[0][1:]))
+print(f"Bigrams for Doc 0: {bigrams_0}")
+
+N = len(docs)
+df = Counter()
+for words in tokenized:
+    for w in set(words):
+        df[w] += 1
+
+def tfidf_scores(words: list[str]) -> list[tuple[str, float]]:
+    counts = Counter(words)
+    scores = {}
+    for w, c in counts.items():
+        tf = c / len(words)
+        idf = math.log(N / df[w])
+        scores[w] = round(tf * idf, 4)
+    return sorted(scores.items(), key=lambda x: (-x[1], x[0]))
+
+print(f"Doc 0 Top TF-IDF Terms: {tfidf_scores(tokenized[0])}")
+print(f"Doc 1 Top TF-IDF Terms: {tfidf_scores(tokenized[1])}")`}
+/>
+
+---
+
+## Check Your Understanding
+
+<QuizCard
+  client:visible
+  question="Why does TF-IDF often outperform raw Bag-of-Words (BoW) for topic classification?"
+  options={[
+    "TF-IDF compresses every sentence into a 2D image.",
+    "TF-IDF down-weights high-frequency stop words that appear in almost every document and boosts rare, topic-specific terms.",
+    "TF-IDF preserves the full grammatical parse tree of every sentence.",
+    "TF-IDF automatically translates text into multiple languages."
+  ]}
+  correctAnswer={1}
+  explanation="In raw BoW, common words like 'the' and 'is' dominate word counts. Multiplying by Inverse Document Frequency (IDF) dampens words shared across all documents."
+/>
+
+Bag-of-Words and TF-IDF treat every word as an isolated dimension—so `"car"` and `"automobile"` have zero similarity. Next, let's fix that using dense vector spaces in **Lesson 14: Semantic Word Embeddings**.

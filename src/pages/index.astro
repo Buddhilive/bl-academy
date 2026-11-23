@@ -1,179 +1,412 @@
 ---
 import Layout from '../layouts/Layout.astro';
+import CoursesDropdown from '../components/islands/CoursesDropdown';
 import { getCollection } from 'astro:content';
+import {
+  CURRICULUM_COURSES,
+  buildTrackUrlMap,
+  getSortedLessonsForTrack,
+  resolveCourseEntryUrl,
+} from '../lib/curriculum';
 
 const allLessons = await getCollection('lessons');
-const pythonLessons = allLessons
-  .filter((l) => l.data.track === 'python')
-  .sort((a, b) => a.data.order - b.data.order);
+const trackUrls = buildTrackUrlMap(allLessons);
 
-const firstLesson = pythonLessons[0];
-const firstLessonUrl = firstLesson ? `/learn/${firstLesson.data.track}/${firstLesson.id}` : '#';
+const homeJsonLd = {
+  '@context': 'https://schema.org',
+  '@graph': [
+    {
+      '@type': 'EducationalOrganization',
+      name: 'BuddhiAI Academy',
+      url: 'https://academy.buddhilive.com',
+      description:
+        'Open-source, zero-backend 9-course AI Engineering curriculum with client-side Pyodide execution and Google Colab notebooks.',
+    },
+    {
+      '@type': 'WebSite',
+      name: 'BuddhiAI Academy',
+      url: 'https://academy.buddhilive.com',
+    },
+  ],
+};
 
-const dataMlLessons = allLessons
-  .filter((l) => l.data.track === 'data-ml')
-  .sort((a, b) => a.data.order - b.data.order);
-const firstDataMlLesson = dataMlLessons[0];
-const firstDataMlLessonUrl = firstDataMlLesson ? `/learn/${firstDataMlLesson.data.track}/${firstDataMlLesson.id}` : '#';
+const courseCards = CURRICULUM_COURSES.map((course) => {
+  const liveLessons = getSortedLessonsForTrack(course.track, allLessons);
+  const liveCount = liveLessons.length;
+  const entryUrl = resolveCourseEntryUrl(course.track, allLessons);
+  return {
+    ...course,
+    liveCount,
+    entryUrl,
+  };
+});
 
-const subjects = [
+const totalPlannedLessons = CURRICULUM_COURSES.reduce((sum, c) => sum + c.plannedLessonCount, 0);
+const totalLiveLessons = allLessons.length;
+
+const startRoutes = [
   {
-    name: 'Python',
-    description: 'A popular high-level programming language for web, data science, and scripting.',
-    href: firstLessonUrl,
-    badge: 'Popular',
-    color: '#A7452A',
+    who: 'New to Programming',
+    courseCode: 'Course 00',
+    title: 'Start with Python Zero to Hero',
+    meta: '12 Live Lessons • Browser Pyodide',
+    href: resolveCourseEntryUrl('python', allLessons),
   },
   {
-    name: 'Data Foundations & Classical ML',
-    description: 'Data cleaning, EDA, visualization, regression, classification, clustering, and time series in Python & Colab.',
-    href: firstDataMlLessonUrl,
-    badge: 'New • 8 Lessons',
-    color: '#E07A5F',
+    who: 'Know Python, New to AI',
+    courseCode: 'Course 01',
+    title: 'AI for Beginners (Neural Nets & Vision)',
+    meta: '24 Planned • Colab T4 GPU',
+    href: resolveCourseEntryUrl('ai-for-beginners', allLessons),
   },
   {
-    name: 'NumPy',
-    description: 'The fundamental package for scientific computing and matrix arrays in Python.',
-    href: '#',
-    badge: 'Coming Soon',
-    color: '#3B82F6',
+    who: 'Data & Classical ML',
+    courseCode: 'Courses 02–03',
+    title: 'Data Science & Machine Learning',
+    meta: '46 Planned • Pandas & Scikit-Learn',
+    href: resolveCourseEntryUrl('data-science-for-beginners', allLessons),
   },
   {
-    name: 'Pandas',
-    description: 'Fast, powerful, flexible and easy-to-use open-source data analysis tool.',
-    href: '#',
-    badge: 'Coming Soon',
-    color: '#10B981',
+    who: 'LLMs, MCP & Reliable Agents',
+    courseCode: 'Courses 04–08',
+    title: 'GenAI, MCP, Agents, Harnesses & Edge AI',
+    meta: '94 Planned • Gemini Free Tier + Colab',
+    href: resolveCourseEntryUrl('generative-ai-for-beginners', allLessons),
+  },
+];
+
+const pedagogySteps = [
+  {
+    step: '01',
+    label: 'The Problem',
+    detail: 'Start with a concrete failure mode or real engineering question before importing any abstraction.',
   },
   {
-    name: 'Data Structures & Algorithms',
-    description: 'Master binary trees, graphs, sorting, and asymptotic Big-O runtime analysis.',
-    href: '#',
-    badge: 'Coming Soon',
-    color: '#8B5CF6',
+    step: '02',
+    label: 'The Concept',
+    detail: 'Scannable architecture diagrams, KaTeX math where it matters, and crisp syntax reference tables.',
+  },
+  {
+    step: '03',
+    label: 'Build & Try It',
+    detail: 'Run Python instantly in-browser via Pyodide Web Workers or launch 1-click Google Colab notebooks.',
+  },
+  {
+    step: '04',
+    label: 'Verify & Connect',
+    detail: 'Self-check quizzes, Pathfinder XP milestones, and direct progression into the next course.',
   },
 ];
 ---
 
-<Layout title="BuddhiLive Academy - Learn to Code with Interactive Tutorials">
-  <div class="min-h-screen bg-neutral-950 text-neutral-100 flex flex-col">
-    {/* Navigation */}
-    <header class="border-b border-neutral-800 bg-neutral-900/80 backdrop-blur-sm sticky top-0 z-30">
-      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3.5 flex items-center justify-between">
-        <a href="/" class="flex items-center gap-2.5 font-extrabold text-lg text-white">
-          <span class="w-7 h-7 rounded bg-[#A7452A] flex items-center justify-center text-xs text-white">
-            BL
-          </span>
-          <span>BuddhiLive Academy</span>
-        </a>
+<Layout
+  title="BuddhiAI Academy — 9-Course AI Engineering Learning Path"
+  description="Master AI Engineering sequentially from Python fundamentals to neural networks, data science, ML, Generative AI, MCP, AI Agents, Harness Engineering, and Edge AI."
+>
+  <script slot="head" type="application/ld+json" set:html={JSON.stringify(homeJsonLd)} />
 
-        <div class="flex items-center gap-4">
-          <a
-            href={firstLessonUrl}
-            class="px-4 py-2 text-xs sm:text-sm font-semibold rounded-md bg-[#A7452A] hover:bg-[#93371E] text-white shadow-sm transition-colors"
-          >
-            Start Learning Python »
+  <div class="min-h-screen bg-neutral-950 text-neutral-100 flex flex-col">
+    {/* Top Navigation */}
+    <header class="border-b border-neutral-800 bg-neutral-900/95 backdrop-blur-sm sticky top-0 z-30">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2.5 flex items-center justify-between gap-3">
+        <div class="flex items-center gap-2.5 sm:gap-3 min-w-0">
+          <a href="/" class="flex items-center gap-2.5 font-extrabold text-base sm:text-lg text-white min-h-[44px] shrink-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#E07A5F] rounded">
+            <img
+              src="/logo.png"
+              alt=""
+              width="28"
+              height="28"
+              class="w-7 h-7 rounded object-contain shrink-0"
+            />
+            <span class="truncate">BuddhiAI Academy</span>
           </a>
+
+          <div class="h-5 w-px bg-neutral-800 shrink-0" aria-hidden="true" />
+
+          <CoursesDropdown client:load trackUrls={trackUrls} buttonLabel="Courses" />
+        </div>
+
+        <nav aria-label="Primary navigation" class="hidden lg:flex items-center gap-6 text-xs font-mono uppercase tracking-wider text-neutral-300">
+          <a href="#learning-path" class="hover:text-[#E07A5F] transition-colors py-2">Learning Path</a>
+          <a href="#how-it-works" class="hover:text-[#E07A5F] transition-colors py-2">Pedagogy</a>
+          <a href="#free-stack" class="hover:text-[#E07A5F] transition-colors py-2">Colab &amp; Gemini Setup</a>
+        </nav>
+
+        <div class="flex items-center gap-2 shrink-0">
+          <a
+            href={resolveCourseEntryUrl('python', allLessons)}
+            class="hidden sm:inline-flex items-center min-h-[44px] px-4 py-2 text-xs sm:text-sm font-semibold rounded-md bg-[#A7452A] hover:bg-[#93371E] text-white shadow-sm transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#E07A5F]"
+          >
+            Start Course 00 »
+          </a>
+
+          {/* Mobile Section Navigation Menu */}
+          <details class="lg:hidden relative group">
+            <summary class="list-none inline-flex items-center justify-center min-w-[44px] min-h-[44px] rounded-md border border-neutral-700 bg-neutral-800/80 text-neutral-200 hover:bg-neutral-800 hover:text-white cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-[#E07A5F]" aria-label="Toggle section menu">
+              <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+              </svg>
+            </summary>
+            <nav aria-label="Mobile section navigation" class="absolute right-0 top-full mt-2 w-[min(calc(100vw-2rem),18rem)] rounded-xl border border-neutral-700 bg-neutral-900 shadow-xl p-2 z-50">
+              <ul class="space-y-1 text-sm font-medium">
+                <li>
+                  <a href="#learning-path" class="flex items-center min-h-[44px] px-3 py-2 rounded-lg text-neutral-200 hover:bg-neutral-800 hover:text-[#E07A5F]">Learning Path</a>
+                </li>
+                <li>
+                  <a href="#how-it-works" class="flex items-center min-h-[44px] px-3 py-2 rounded-lg text-neutral-200 hover:bg-neutral-800 hover:text-[#E07A5F]">Pedagogy</a>
+                </li>
+                <li>
+                  <a href="#free-stack" class="flex items-center min-h-[44px] px-3 py-2 rounded-lg text-neutral-200 hover:bg-neutral-800 hover:text-[#E07A5F]">Colab &amp; Gemini Setup</a>
+                </li>
+                <li class="pt-1 border-t border-neutral-800 sm:hidden">
+                  <a href={resolveCourseEntryUrl('python', allLessons)} class="flex items-center justify-center min-h-[44px] px-3 py-2 rounded-lg bg-[#A7452A] text-white font-semibold">Start Course 00 »</a>
+                </li>
+              </ul>
+            </nav>
+          </details>
         </div>
       </div>
     </header>
 
-    {/* Hero Section */}
-    <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16">
-      <div class="text-center max-w-3xl mx-auto mb-16">
-        <h1 class="text-4xl sm:text-5xl font-extrabold text-white tracking-tight mb-4">
-          Learn to Code with Free Interactive Tutorials
-        </h1>
-        <p class="text-lg text-neutral-400 mb-8">
-          Clear, scannable tutorials and syntax reference tables with built-in client-side code execution. Run and experiment directly in your browser.
-        </p>
-        <div class="flex flex-wrap items-center justify-center gap-3">
-          <a
-            href={firstLessonUrl}
-            class="px-6 py-3 text-sm font-bold rounded-lg bg-[#A7452A] hover:bg-[#93371E] text-white shadow-md transition-all"
-          >
-            Start Python Tutorial ❮ ❯
-          </a>
-          <a
-            href="#subjects"
-            class="px-6 py-3 text-sm font-semibold rounded-lg bg-neutral-900 border border-neutral-800 text-neutral-200 hover:bg-neutral-800 transition-colors"
-          >
-            Browse All Subjects
-          </a>
-        </div>
-      </div>
-
-      {/* Featured Try It Yourself Example Box */}
-      <section class="mb-16 bg-neutral-900 border border-neutral-800 rounded-xl p-6 sm:p-8 max-w-4xl mx-auto shadow-sm">
-        <div class="flex items-center justify-between mb-4 pb-3 border-b border-neutral-800">
-          <div>
-            <span class="text-xs font-bold text-[#E07A5F] uppercase tracking-wider">Interactive Example</span>
-            <h2 class="text-xl font-bold text-white mt-0.5">Python Syntax</h2>
+    <main id="main-content" class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-14 space-y-16">
+      {/* Masthead + "Start Where You Are" Two-Column Grid */}
+      <section class="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10 items-start border-b border-neutral-800 pb-12">
+        <div class="lg:col-span-7 space-y-5">
+          <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-neutral-800 bg-neutral-900 text-xs font-mono text-[#E07A5F] uppercase tracking-wider">
+            <span>9 Sequential Courses</span>
+            <span>•</span>
+            <span>{totalLiveLessons} Live / {totalPlannedLessons} Total Lessons</span>
           </div>
-          <span class="text-xs px-2.5 py-1 rounded-full bg-neutral-800 text-neutral-300 font-mono">
-            Pure Client-Side
-          </span>
+
+          <h1 class="text-4xl sm:text-5xl font-extrabold text-white tracking-tight leading-tight">
+            From First Line of Python to Autonomous AI Systems
+          </h1>
+
+          <p class="text-base sm:text-lg text-neutral-300 leading-relaxed max-w-2xl">
+            A connected, open-source AI Engineering curriculum. Start with Python, build neural networks and classical ML models, ship RAG and MCP servers, engineer reliable agent harnesses, and deploy quantized SLMs on the edge — all on free-tier tools.
+          </p>
+
+          <div class="flex flex-wrap items-center gap-3 pt-2">
+            <a
+              href={resolveCourseEntryUrl('python', allLessons)}
+              class="px-6 py-3 text-sm font-bold rounded-lg bg-[#A7452A] hover:bg-[#93371E] text-white shadow-sm transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#E07A5F]"
+            >
+              Start at Course 00: Python ❮ ❯
+            </a>
+            <a
+              href="#learning-path"
+              class="px-6 py-3 text-sm font-semibold rounded-lg bg-neutral-900 border border-neutral-700 text-neutral-200 hover:bg-neutral-800 transition-colors"
+            >
+              Browse All 9 Courses ↓
+            </a>
+          </div>
         </div>
 
-        <p class="text-neutral-400 text-sm mb-4">
-          Try running this code directly. You don't need to install anything on your machine:
-        </p>
-
-        <div class="bg-neutral-950 p-4 rounded-lg font-mono text-sm text-neutral-200 border border-neutral-800/80 mb-4 overflow-x-auto">
-          <pre><span class="text-purple-400">def</span> <span class="text-blue-400">welcome</span>(name):
-    <span class="text-purple-400">return</span> <span class="text-amber-300">f"Hello, &#123;name&#125;! Welcome to BuddhiLive Academy."</span>
-
-print(welcome(<span class="text-amber-300">"Developer"</span>))</pre>
-        </div>
-
-        <a
-          href={firstLessonUrl}
-          class="inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold rounded-md bg-[#A7452A] hover:bg-[#93371E] text-white transition-colors"
+        {/* Right Column: Start Where You Are Router */}
+        <nav
+          aria-labelledby="start-router-title"
+          class="lg:col-span-5 rounded-xl border border-neutral-700 bg-neutral-900/80 overflow-hidden"
         >
-          Try it in Sandbox »
-        </a>
+          <div class="px-5 py-3.5 border-b border-neutral-800 bg-neutral-900 flex items-center justify-between">
+            <h2 id="start-router-title" class="text-xs font-mono font-bold uppercase tracking-widest text-[#E07A5F]">
+              Start Where You Are
+            </h2>
+            <span class="text-[11px] font-mono text-neutral-400">Choose Entry Point</span>
+          </div>
+          <ul class="divide-y divide-neutral-800">
+            {startRoutes.map((route) => (
+              <li>
+                <a
+                  href={route.href}
+                  class="flex items-center justify-between gap-4 px-5 py-3.5 hover:bg-neutral-800/60 transition-colors group focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#E07A5F]"
+                >
+                  <div class="min-w-0">
+                    <span class="block text-[11px] font-mono uppercase tracking-wider text-neutral-400">
+                      {route.who} • {route.courseCode}
+                    </span>
+                    <span class="block text-sm font-bold text-white group-hover:text-[#E07A5F] transition-colors truncate">
+                      {route.title}
+                    </span>
+                    <span class="block text-xs text-neutral-400 mt-0.5">
+                      {route.meta}
+                    </span>
+                  </div>
+                  <span class="text-sm font-mono text-[#E07A5F] shrink-0" aria-hidden="true">→</span>
+                </a>
+              </li>
+            ))}
+          </ul>
+        </nav>
       </section>
 
-      {/* Subjects Grid */}
-      <section id="subjects">
-        <div class="flex items-center justify-between mb-8">
+      {/* 4-Step Engineering Pedagogy */}
+      <section id="how-it-works" class="space-y-6">
+        <div class="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
           <div>
-            <h2 class="text-2xl font-bold text-white">Tutorial Subjects</h2>
-            <p class="text-sm text-neutral-400">Systematic learning tracks & references</p>
+            <span class="text-xs font-mono uppercase tracking-widest text-[#E07A5F]">
+              Lesson Architecture
+            </span>
+            <h2 class="text-2xl sm:text-3xl font-bold text-white mt-1">
+              How Every Lesson Works
+            </h2>
           </div>
+          <p class="text-sm text-neutral-400 max-w-md">
+            Scannable developer reference meets hands-on implementation — no passive video lectures.
+          </p>
         </div>
 
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          {subjects.map((sub) => (
-            <a
-              href={sub.href}
-              class="group block p-6 rounded-xl bg-neutral-900/60 border border-neutral-800 hover:border-neutral-700 hover:bg-neutral-900 transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-[#E07A5F]"
-            >
-              <div class="flex items-center justify-between mb-4">
-                <span class="w-3 h-3 rounded-full" style={`background-color: ${sub.color}`} />
-                <span class="text-[11px] font-semibold px-2 py-0.5 rounded bg-neutral-800 text-neutral-300">
-                  {sub.badge}
-                </span>
-              </div>
-              <h3 class="text-lg font-bold text-white group-hover:text-[#E07A5F] transition-colors mb-2">
-                {sub.name}
-              </h3>
-              <p class="text-xs text-neutral-400 leading-relaxed mb-4">
-                {sub.description}
-              </p>
-              <span class="text-xs font-semibold text-[#E07A5F] group-hover:underline inline-flex items-center gap-1">
-                Explore Tutorial »
+        <ol class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          {pedagogySteps.map((item) => (
+            <li class="rounded-xl border border-neutral-800 bg-neutral-900/50 p-5 space-y-2">
+              <span class="block text-2xl font-extrabold font-mono text-[#E07A5F]">
+                {item.step}
               </span>
-            </a>
+              <h3 class="text-base font-bold text-white">
+                {item.label}
+              </h3>
+              <p class="text-xs sm:text-sm text-neutral-400 leading-relaxed">
+                {item.detail}
+              </p>
+            </li>
           ))}
+        </ol>
+      </section>
+
+      {/* 100% Free-Tier Execution Stack (Pyodide + Colab + Google AI Studio) */}
+      <section id="free-stack" class="rounded-xl border border-neutral-800 bg-neutral-900/60 p-6 sm:p-8">
+        <div class="mb-6">
+          <span class="text-xs font-mono uppercase tracking-widest text-[#E07A5F]">
+            Zero-Cost Runtime Stack
+          </span>
+          <h2 class="text-2xl font-bold text-white mt-1">
+            Run Everything in Your Browser or Free-Tier Google Colab
+          </h2>
         </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div class="rounded-lg border border-neutral-800 bg-neutral-950 p-5">
+            <h3 class="text-sm font-bold text-white font-mono uppercase tracking-wider mb-2">
+              1. In-Browser Pyodide
+            </h3>
+            <p class="text-xs sm:text-sm text-neutral-400 leading-relaxed">
+              Python fundamentals and lightweight NumPy experiments execute 100% client-side in a dedicated Web Worker with zero setup.
+            </p>
+          </div>
+
+          <div class="rounded-lg border border-neutral-800 bg-neutral-950 p-5">
+            <h3 class="text-sm font-bold text-white font-mono uppercase tracking-wider mb-2">
+              2. Google Colab Notebooks
+            </h3>
+            <p class="text-xs sm:text-sm text-neutral-400 leading-relaxed">
+              Heavy PyTorch, Scikit-Learn, RAG, and quantization labs include 1-click <strong class="text-neutral-200">Open with Google Colab</strong> buttons targeting <code class="text-[#E07A5F]">notebook/&lt;course&gt;/</code>.
+            </p>
+          </div>
+
+          <div class="rounded-lg border border-neutral-800 bg-neutral-950 p-5">
+            <h3 class="text-sm font-bold text-white font-mono uppercase tracking-wider mb-2">
+              3. Google AI Studio Free Tier
+            </h3>
+            <p class="text-xs sm:text-sm text-neutral-400 leading-relaxed">
+              Courses 04–07 use open-source tools paired with a free <code class="text-[#E07A5F]">GEMINI_API_KEY</code> from <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener noreferrer" class="text-[#E07A5F] underline">Google AI Studio</a> — no paid cloud credits needed.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      {/* 9-Course Sequential Learning Path Spine */}
+      <section id="learning-path" class="space-y-6">
+        <div class="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
+          <div>
+            <span class="text-xs font-mono uppercase tracking-widest text-[#E07A5F]">
+              Complete Curriculum
+            </span>
+            <h2 class="text-2xl sm:text-3xl font-bold text-white mt-1">
+              The 9-Course Sequential Learning Path
+            </h2>
+          </div>
+          <p class="text-sm text-neutral-400">
+            Each course leads directly into the next, from Python basics to Edge AI.
+          </p>
+        </div>
+
+        <ol class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {courseCards.map((course) => (
+            <li class="flex flex-col rounded-xl border border-neutral-800 bg-neutral-900/60 hover:border-[#E07A5F]/80 transition-colors overflow-hidden">
+              <div class="p-6 flex-1 flex flex-col">
+                <div class="flex items-center justify-between gap-2 mb-3">
+                  <span class="px-2.5 py-0.5 rounded bg-[#A7452A]/20 border border-[#A7452A]/50 text-[#E07A5F] font-mono text-xs font-bold">
+                    COURSE {course.stepCode}
+                  </span>
+                  {course.liveCount > 0 ? (
+                    <span class="px-2.5 py-0.5 rounded-full bg-emerald-950/60 border border-emerald-800/60 text-emerald-300 font-mono text-[11px] font-semibold">
+                      {course.liveCount} Live Lessons
+                    </span>
+                  ) : (
+                    <span class="px-2.5 py-0.5 rounded-full bg-neutral-800 text-neutral-300 font-mono text-[11px]">
+                      {course.plannedLessonCount} Planned
+                    </span>
+                  )}
+                </div>
+
+                <h3 class="text-xl font-bold text-white mb-2">
+                  <a
+                    href={course.entryUrl}
+                    class="hover:text-[#E07A5F] transition-colors focus:outline-none focus-visible:underline"
+                  >
+                    {course.title}
+                  </a>
+                </h3>
+
+                <p class="text-xs sm:text-sm text-neutral-400 leading-relaxed mb-4 flex-1">
+                  {course.summary}
+                </p>
+
+                <div class="flex flex-wrap gap-1.5 mb-4">
+                  {course.runtimeBadges.map((badge) => (
+                    <span class="px-2 py-0.5 rounded bg-neutral-950 border border-neutral-800 text-[11px] font-mono text-neutral-300">
+                      {badge}
+                    </span>
+                  ))}
+                </div>
+              </div>
+
+              <div class="px-6 py-3.5 border-t border-neutral-800 bg-neutral-950/60 flex items-center justify-between gap-2 text-xs font-mono">
+                <a
+                  href={`/learn/${course.track}`}
+                  class="text-neutral-300 hover:text-white transition-colors"
+                >
+                  Syllabus
+                </a>
+                <a
+                  href={course.entryUrl}
+                  class="font-semibold text-[#E07A5F] hover:underline"
+                >
+                  {course.liveCount > 0 ? 'Start Course →' : 'Preview Path →'}
+                </a>
+              </div>
+            </li>
+          ))}
+        </ol>
       </section>
     </main>
 
-    {/* Footer */}
-    <footer class="border-t border-neutral-800 bg-neutral-900/40 py-8 text-center text-xs text-neutral-500">
-      <div class="max-w-7xl mx-auto px-4">
-        <p>© 2026 BuddhiLive Academy. Fast, accessible, client-side developer reference.</p>
+    {/* Footer & Acknowledgements */}
+    <footer id="acknowledgements" class="border-t border-neutral-800 bg-neutral-900/40 py-10 text-xs text-neutral-400">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-4">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div>
+            <p class="font-semibold text-neutral-200">BuddhiAI Academy</p>
+            <p class="mt-1">
+              Fast, accessible, open-source AI Engineering tutorials with client-side Pyodide &amp; Google Colab Free Tier.
+            </p>
+          </div>
+          <div class="text-left sm:text-right">
+            <p class="font-mono text-neutral-300">Open-Source Acknowledgements</p>
+            <p class="mt-1">
+              Grounded in open-source curricula credited in <code class="text-[#E07A5F]">ACKNOWLEDGEMENTS.md</code>.
+            </p>
+          </div>
+        </div>
       </div>
     </footer>
   </div>

@@ -1,0 +1,113 @@
+---
+title: "Multi-Model Edge Benchmarking: TTFT, Throughput, Perplexity & SLM vs. Cloud LLM Trade-offs"
+track: "edge-ai-for-beginners"
+category: "Module 5: Production Edge AI Toolkits, Hybrid Routing & AI Podcast Studio Capstone"
+order: 18
+difficulty: "advanced"
+xp: 80
+description: "Benchmark local SLMs against cloud LLMs using Time-To-First-Token (TTFT), inter-token latency, p95 tail latency, Pareto efficiency, and resilient REST clients."
+topic: "Edge Benchmarking & Trade-Offs"
+prerequisites: ["edge-ai-for-beginners/17-local-rag-pipelines-and-ragas-quality-evaluation"]
+---
+import PythonRunner from '../../../components/islands/PythonRunner';
+import QuizCard from '../../../components/islands/QuizCard';
+import ColabButton from '../../../components/static/ColabButton.astro';
+
+You may know that choosing between a 0.5B micro model, a 3.8B SLM, and a cloud frontier model like `gemini-2.5-flash` without real telemetry is pure guesswork. A model that looks great on average latency can still ruin user experience if cold-start loading spikes p95 latency past three seconds.
+
+Here is an overview of how to benchmark edge models systematically across **Time-To-First-Token (TTFT)**, **Inter-Token Latency (ITL)**, **Tokens Per Second (TPS)**, and **Pareto efficiency**, while building resilient direct REST clients.
+
+---
+
+## Streaming Telemetry & Pareto Efficiency
+
+In streaming inference, total response time for $N$ generated tokens splits into two measurable phases:
+
+$$
+T_{\text{stream}}(N) = \text{TTFT} + (N - 1) \cdot \text{ITL}, \qquad \text{TPS} = \frac{N - 1}{T_{\text{total}} - \text{TTFT}}
+$$
+
+- **TTFT (Time-To-First-Token)**: Dominated by network RTT (for cloud) or prompt prefill + cold model load (for local).
+- **ITL (Inter-Token Latency)**: Dominated by DRAM bandwidth during autoregressive decode.
+- **p95 Tail Latency**: Captures worst-case stalls (thermal throttling, garbage collection, or cold cache misses).
+
+To compare heterogeneous candidates fairly across quality, speed, and memory footprint, compute the **Pareto Efficiency Score**:
+
+$$
+E(m) = \frac{\text{Quality}(m)}{\text{Latency}(m) \cdot \text{Memory}(m)}
+$$
+
+| Metric | Micro SLM (`Qwen2.5-0.5B`) | Small SLM (`Phi-4-mini-3.8B`) | Cloud LLM (`gemini-2.5-flash`) |
+| :--- | :--- | :--- | :--- |
+| **TTFT** | ~25–60 ms (local) | ~90–230 ms (local) | ~250–600 ms (network) |
+| **Memory on Device** | ~0.45 GB (Q4_K_M) | ~2.2 GB (Q4_K_M) | 0 GB (remote) |
+| **Offline Capability** | 100% | 100% | None |
+| **Best Role** | Intent classification & extraction | Local RAG, coding & tool calling | Complex synthesis & fallback |
+
+When integrating directly over HTTP without heavy SDKs, always include a **health check** (`/v1/models`), **streaming SSE parser**, and **exponential backoff retry** for cold-start transients.
+
+---
+
+## Open the Companion Colab Notebook
+
+Launch the companion notebook to run live latency and tokens/sec benchmarks across compact open-source SLMs on Google Colab.
+
+<ColabButton
+  course="edge-ai-for-beginners"
+  notebook="18-multi-model-edge-benchmarking-and-slm-vs-llm-tradeoffs.ipynb"
+  runtime="Colab Free CPU"
+/>
+
+---
+
+## Try It Yourself: Multi-Model TTFT, TPS & p95 Benchmark Harness
+
+Run this Python benchmark harness to compute TTFT, decode TPS, p95 latency, and the Pareto efficiency winner across three candidate models.
+
+<PythonRunner
+  client:visible
+  title="Try it Yourself: Multi-Model Edge Benchmark & Pareto Ranker"
+  expectedOutput="qwen2.5-0.5b   | Avg=175.0ms | p95=185.0ms | TPS=153.8 | Eff=3.07
+phi-4-mini     | Avg=430.0ms | p95=450.0ms | TPS=71.4 | Eff=0.65
+gemini-flash   | Avg=620.0ms | p95=710.0ms | TPS=112.4 | Eff=0.77
+Pareto Efficiency Winner: qwen2.5-0.5b"
+  initialCode={`def percentile_95(values):
+    s = sorted(values)
+    idx = min(len(s) - 1, int(0.95 * len(s)))
+    return s[idx]
+
+runs = [
+    ("qwen2.5-0.5b", [165.0, 175.0, 185.0], 45.0, 21, 0.78, 0.45),
+    ("phi-4-mini",   [410.0, 430.0, 450.0], 150.0, 21, 0.90, 2.20),
+    ("gemini-flash", [560.0, 590.0, 710.0], 442.0, 21, 0.95, 1.00),  # 1.0GB nominal cloud equiv
+]
+
+best_name, best_eff = None, -1.0
+for name, totals, ttft, n_toks, qual, mem_gb in runs:
+    avg_ms = sum(totals) / len(totals)
+    p95_ms = percentile_95(totals)
+    tps = (n_toks - 1) / ((avg_ms - ttft) / 1000.0)
+    eff = qual / ((avg_ms / 1000.0) * (mem_gb + 1.0))
+    if eff > best_eff:
+        best_eff, best_name = eff, name
+    print(f"{name:14s} | Avg={avg_ms:.1f}ms | p95={p95_ms:.1f}ms | TPS={tps:.1f} | Eff={eff:.2f}")
+
+print(f"Pareto Efficiency Winner: {best_name}")`}
+/>
+
+---
+
+## Check Your Understanding
+
+<QuizCard
+  client:visible
+  question="Why should edge benchmark suites separate Time-To-First-Token (TTFT) from Tokens Per Second (TPS)?"
+  options={[
+    "Because TTFT measures prefill/network/cold-start responsiveness while TPS measures steady-state decode speed governed by DRAM bandwidth.",
+    "Because TTFT only applies to Python scripts, not language models.",
+    "Because TPS is always identical across every model size.",
+    "Because separating them disables streaming output."
+  ]}
+  correctAnswer={0}
+  explanation="A model can have high decode TPS yet terrible perceived responsiveness if cold-start loading or long-prompt prefill causes a multi-second TTFT."
+/>

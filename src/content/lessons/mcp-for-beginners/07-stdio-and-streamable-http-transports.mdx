@@ -1,0 +1,136 @@
+---
+title: "MCP Transports Deep Dive: Subprocess stdio vs. Stateless Streamable HTTP"
+track: "mcp-for-beginners"
+category: "Module 2: Building MCP Servers, Clients, Gemini Hosts & Transports"
+order: 7
+difficulty: "intermediate"
+xp: 80
+description: "Compare MCP's two standard transports: local subprocess stdio with stderr logging hygiene and stateless 2026-07-28 Streamable HTTP with SSE framing."
+topic: "MCP Transports"
+prerequisites: ["mcp-for-beginners/06-building-mcp-clients-and-gemini-llm-hosts"]
+---
+import PythonRunner from '../../../components/islands/PythonRunner';
+import QuizCard from '../../../components/islands/QuizCard';
+import ColabButton from '../../../components/static/ColabButton.astro';
+
+The Data Layer defines *what* MCP messages say, and the **Transport Layer** defines *how* those bytes move between client and server. Under MCP `2026-07-28`, there are two standard transports: **`stdio`** for local subprocesses and **`Streamable HTTP`** for remote services. The older dual-endpoint `HTTP+SSE` transport (`/sse` + `/messages`) is deprecated and should not be used in new servers.
+
+---
+
+## Transport Comparison
+
+| Transport | Status | Isolation & Network | Typical Deployment |
+| :--- | :--- | :--- | :--- |
+| **`stdio`** | Current Standard | OS child process (`stdin`/`stdout`) | IDE extensions, local CLI tools, desktop hosts |
+| **`Streamable HTTP`** | Current Standard | HTTPS `POST /mcp` + optional `text/event-stream` | Cloud microservices, shared team servers, API gateways |
+| **`HTTP+SSE` (2024-11-05)** | Deprecated | Persistent `/sse` GET + separate `/messages` POST | Legacy servers only |
+
+---
+
+## Subprocess `stdio` Transport & The `stdout` Rule
+
+With `stdio`, the MCP Host spawns your server as a child process. Requests arrive on `stdin` as single-line, newline-delimited JSON-RPC strings (`\n`), and responses leave on `stdout`.
+
+That leads to the single most common beginner bug in `stdio` servers: **never call `print()` to `stdout` for debug logs**. Any non-JSON text written to `stdout` corrupts the JSON-RPC stream and breaks the host connection immediately. Route all diagnostics to `sys.stderr`:
+
+```python
+import logging
+import sys
+
+logging.basicConfig(stream=sys.stderr, level=logging.INFO)
+```
+
+---
+
+## Stateless Streamable HTTP & SSE Framing (`2026-07-28`)
+
+Remote servers expose a single `/mcp` endpoint accepting `POST` JSON-RPC payloads with three required headers:
+
+- `MCP-Protocol-Version: 2026-07-28`
+- `Mcp-Method: tools/call`
+- `Mcp-Name: process_dataset`
+
+For fast operations, the server returns `Content-Type: application/json`. For long-running operations that emit incremental `notifications/progress` updates before the final result, the server upgrades the response to `Content-Type: text/event-stream` (SSE framing), streaming `data: {...}\n\n` chunks on the same `POST` response without requiring a separate persistent `GET /sse` connection.
+
+---
+
+## Open the Companion Colab Notebook
+
+Launch the companion notebook to run a `stdio` FastMCP server over subprocess pipes and a Streamable HTTP FastAPI/SSE streaming endpoint in Python.
+
+<ColabButton
+  course="mcp-for-beginners"
+  notebook="07-stdio-and-streamable-http-transports.ipynb"
+  runtime="Free Tier CPU"
+/>
+
+---
+
+## Try It Yourself: `stdio` Frame Validator & Streamable HTTP SSE Multiplexer
+
+Run this pure-Python sandbox to detect corrupted `stdout` logging on `stdio` frames and parse a multi-chunk `text/event-stream` Streamable HTTP response.
+
+<PythonRunner
+  client:visible
+  title="Try it Yourself: stdio Corruption Detector & Streamable HTTP SSE Parser"
+  expectedOutput="[stdio] Frame 1 valid JSON-RPC: id=1
+[stdio] Frame 2 CORRUPTED (non-JSON stdout leak): DEBUG: starting server...
+[HTTP POST /mcp] Validated headers: Mcp-Method=tools/call, Mcp-Name=batch_job
+[SSE Chunk 1] progress=50%
+[SSE Chunk 2] progress=100%
+[SSE Final Result] status=complete"
+  initialCode={`import json
+
+# 1. Validate newline-delimited stdio stdout lines
+stdio_lines = [
+    '{"jsonrpc": "2.0", "id": 1, "result": {"ok": true}}',
+    "DEBUG: starting server...",
+]
+
+for idx, line in enumerate(stdio_lines, start=1):
+    try:
+        frame = json.loads(line)
+        print(f"[stdio] Frame {idx} valid JSON-RPC: id={frame['id']}")
+    except json.JSONDecodeError:
+        print(f"[stdio] Frame {idx} CORRUPTED (non-JSON stdout leak): {line}")
+
+# 2. Validate Streamable HTTP headers + SSE stream chunks
+headers = {
+    "MCP-Protocol-Version": "2026-07-28",
+    "Mcp-Method": "tools/call",
+    "Mcp-Name": "batch_job",
+}
+print(f"[HTTP POST /mcp] Validated headers: Mcp-Method={headers['Mcp-Method']}, Mcp-Name={headers['Mcp-Name']}")
+
+sse_blocks = [
+    'data: {"method": "notifications/progress", "params": {"progress": 50}}',
+    'data: {"method": "notifications/progress", "params": {"progress": 100}}',
+    'data: {"jsonrpc": "2.0", "id": 2, "result": {"status": "complete"}}',
+]
+
+chunk_num = 0
+for block in sse_blocks:
+    data = json.loads(block.replace("data: ", "", 1))
+    if "method" in data:
+        chunk_num += 1
+        print(f"[SSE Chunk {chunk_num}] progress={data['params']['progress']}%")
+    else:
+        print(f"[SSE Final Result] status={data['result']['status']}")`}
+/>
+
+---
+
+## Check Your Understanding
+
+<QuizCard
+  client:visible
+  question="Why should a local stdio MCP server always write debug logs to stderr instead of stdout?"
+  options={[
+    "stderr is encrypted automatically by Python.",
+    "stdout is reserved exclusively for newline-delimited JSON-RPC protocol messages; stray print statements corrupt framing.",
+    "stderr is faster than stdout on Windows.",
+    "MCP clients ignore all messages sent on stdout."
+  ]}
+  correctAnswer={1}
+  explanation="In stdio transport, the Host parses stdout line by line as JSON-RPC 2.0 messages. Writing plain-text debug logs to stdout breaks JSON parsing; logs belong on stderr."
+/>

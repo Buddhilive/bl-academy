@@ -1,0 +1,98 @@
+---
+title: "Open-Source & Open-Weight Models: OSI Criteria, Multi-Query Attention, Sparse MoE & Hugging Face Benchmarks"
+track: "generative-ai-for-beginners"
+category: "Module 5: Open-Source Models, AI Agents, LoRA Fine-Tuning & SLMs"
+order: 17
+difficulty: "advanced"
+xp: 85
+description: "Compare truly open-source LLMs (OLMo) vs. open-weight models (Llama, Mistral, Falcon, Gemma), Multi-Query Attention KV-cache math, and Sparse MoE on Hugging Face."
+topic: "Open-Source Models"
+prerequisites: ["generative-ai-for-beginners/16-the-generative-ai-application-lifecycle"]
+---
+import PythonRunner from '../../../components/islands/PythonRunner';
+import QuizCard from '../../../components/islands/QuizCard';
+import ColabButton from '../../../components/static/ColabButton.astro';
+
+Hosted APIs like Gemini are unbeatable for rapid prototyping, but many teams eventually need **open-weight models** they can inspect, customize, self-host privately, or fine-tune for specialized domains like medicine or math. Before downloading weights from **Hugging Face**, it helps to know what makes a model truly **open-source** versus **open-weight**, and how architectural breakthroughs like **Multi-Query Attention (MQA)** and **Sparse Mixture-of-Experts (MoE)** let massive models fit on a single free GPU.
+
+---
+
+## Open-Source vs. Open-Weight LLMs
+
+- **Truly Open-Source LLMs (OSI Criteria)**: Release not just model weights, but also the pre-training datasets, evaluation harnesses, fine-tuning code, and training logs—exemplified by AllenAI's **OLMo-7B**.
+- **Open-Weight Models**: Release trained weights under permissive (Apache 2.0) or custom community licenses without necessarily publishing the full pre-training dataset (e.g., **Meta Llama**, **Mistral**, **Falcon**, **Google Gemma**).
+
+### Major Open Model Families & Domain Fine-Tunes
+
+| Model Family | Architectural Highlight | Notable Domain Derivatives |
+| :--- | :--- | :--- |
+| **Meta Llama** | RLHF/DPO dialogue alignment, GQA | *Japanese Llama*, *Llama Pro* (code & math extension) |
+| **Mistral** | Apache 2.0 weights, Sparse MoE & Sliding Window | *BioMistral* (biomedical PubMed), *OpenMath-Mistral* |
+| **Falcon (TII)** | FlashAttention + Multi-Query Attention (MQA) | *OpenAssistant*, *GPT4All* |
+| **Google Gemma & OLMo** | Lightweight edge-friendly & fully open OSI weights | *Gemma-2-2B-IT*, *OLMo-7B* |
+
+---
+
+## Architectural Optimizations: MQA, FlashAttention & Sparse MoE
+
+1. **Multi-Query Attention (MQA) & Grouped-Query Attention (GQA)**: Standard Multi-Head Attention (MHA) stores separate Key ($K$) and Value ($V$) caches for every query head. MQA shares a single $K/V$ head across all query heads, slashing **KV-Cache** VRAM usage by $n_{\text{heads}}\times$:
+   $$\text{KV Cache Bytes} = 2 \cdot b \cdot s \cdot L \cdot n_{\text{kv\_heads}} \cdot d_{\text{head}} \cdot \text{bytes}$$
+2. **FlashAttention**: Reorders attention matrix tiling inside fast GPU SRAM to avoid quadratic $O(N^2)$ memory bottlenecks.
+3. **Sparse Mixture-of-Experts (MoE)**: Routes each token to only the top-$k$ specialized feed-forward experts—giving a 47B total-parameter model the inference speed of a ~13B active-parameter model.
+
+---
+
+## Open the Companion Colab Notebook
+
+Launch the notebook below on a **Colab Free Tier T4 GPU** to load an open-weight Hugging Face model (`transformers.pipeline`), inspect its attention heads, and benchmark tokens-per-second throughput.
+
+<ColabButton
+  course="generative-ai-for-beginners"
+  notebook="17-open-source-models-and-hugging-face.ipynb"
+  runtime="Free Tier T4 GPU"
+/>
+
+---
+
+## Try It Yourself: KV-Cache VRAM Profiler (MHA vs. GQA vs. MQA)
+
+Execute this Python sandbox to calculate exact FP16 KV-cache memory across MHA, GQA, and MQA at a 32,768-token context length.
+
+<PythonRunner
+  client:visible
+  title="Try it Yourself: Attention KV-Cache Memory Profiler"
+  expectedOutput="Context=32768, Layers=32, HeadDim=128, FP16:
+  MHA (32 kv_heads): 16.00 GB
+  GQA (8 kv_heads):  4.00 GB
+  MQA (1 kv_head):   0.50 GB (32.0x smaller)"
+  initialCode={`def kv_cache_gb(batch, seq_len, layers, kv_heads, head_dim, bytes_per_param=2):
+    total_bytes = 2 * batch * seq_len * layers * kv_heads * head_dim * bytes_per_param
+    return total_bytes / (1024 ** 3)
+
+seq, layers, dim = 32768, 32, 128
+mha = kv_cache_gb(1, seq, layers, 32, dim)
+gqa = kv_cache_gb(1, seq, layers, 8, dim)
+mqa = kv_cache_gb(1, seq, layers, 1, dim)
+
+print(f"Context={seq}, Layers={layers}, HeadDim={dim}, FP16:")
+print(f"  MHA (32 kv_heads): {mha:.2f} GB")
+print(f"  GQA (8 kv_heads):  {gqa:.2f} GB")
+print(f"  MQA (1 kv_head):   {mqa:.2f} GB ({mha / mqa:.1f}x smaller)")`}
+/>
+
+---
+
+## Check Your Understanding
+
+<QuizCard
+  client:visible
+  question="Why do open-weight models like Falcon and Llama use Multi-Query Attention (MQA) or Grouped-Query Attention (GQA) instead of standard Multi-Head Attention (MHA)?"
+  options={[
+    "To eliminate the need for a tokenizer.",
+    "Sharing Key and Value heads across Query heads dramatically shrinks the autoregressive KV-Cache memory footprint and speeds up long-context inference.",
+    "Because MQA doubles the number of parameters per layer.",
+    "To disable GPU acceleration."
+  ]}
+  correctAnswer={1}
+  explanation="During long-context decoding, the KV-cache dominates GPU VRAM bandwidth. Sharing K/V heads via MQA or GQA cuts KV-cache size by 4x to 32x."
+/>

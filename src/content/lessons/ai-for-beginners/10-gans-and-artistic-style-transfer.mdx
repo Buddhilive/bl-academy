@@ -1,0 +1,110 @@
+---
+title: "Generative Adversarial Networks (GANs) & Neural Style Transfer"
+track: "ai-for-beginners"
+category: "Module 3: Computer Vision"
+order: 11
+difficulty: "intermediate"
+xp: 85
+description: "Understand the two-player minimax game behind GANs and DCGANs, common failure modes like mode collapse, and Gram-matrix Neural Style Transfer."
+topic: "GANs and Style Transfer"
+prerequisites: ["ai-for-beginners/09-autoencoders-and-vaes"]
+---
+import PythonRunner from '../../../components/islands/PythonRunner';
+import QuizCard from '../../../components/islands/QuizCard';
+import ColabButton from '../../../components/static/ColabButton.astro';
+
+While Variational Autoencoders generate smooth images, they often blur fine details because of pixel-wise MSE reconstruction loss. **Generative Adversarial Networks (GANs)** take a completely different approach: instead of comparing pixels directly, they pit two neural networks against each other in a game-theoretic duel.
+
+---
+
+## The Two-Player Minimax Game
+
+A GAN pairs a **Generator** $G(\mathbf{z})$ (which transforms random noise $\mathbf{z}$ into a synthetic image via transposed convolutions) against a **Discriminator** $D(\mathbf{x})$ (a CNN binary classifier predicting whether $\mathbf{x}$ is real or fake):
+
+$$\min_G \max_D V(D, G) = \mathbb{E}_{\mathbf{x} \sim p_{\text{data}}}[\log D(\mathbf{x})] + \mathbb{E}_{\mathbf{z} \sim p_{\mathbf{z}}}[\log(1 - D(G(\mathbf{z})))]$$
+
+Training alternates in two steps:
+1. **Update Discriminator ($D$)**: Show $D$ real images (label $1$) and generated images $G(\mathbf{z})$ (label $0$), updating $D$ to tell them apart.
+2. **Update Generator ($G$)**: Freeze $D$'s weights, feed $G(\mathbf{z})$ into $D$, and update $G$ so $D$ outputs $1$ ("real").
+
+| Challenge in GAN Training | What Happens | Mitigation Strategy |
+| :--- | :--- | :--- |
+| **Mode Collapse** | $G$ discovers one single image that fools $D$ and ignores diversity. | Minibatch discrimination, Wasserstein loss (WGAN), diverse noise sampling. |
+| **Discriminator Dominance** | $D$ reaches 100% accuracy too quickly, leaving $G$ with zero gradient. | Tune separate learning rates ($lr_G, lr_D$) or skip $D$ updates when loss is near zero. |
+| **High-Resolution Artifacts** | Deep deconvolution stacks introduce checkerboard patterns. | Progressive growing (ProGAN) or multi-scale gradient training. |
+
+---
+
+## Neural Artistic Style Transfer
+
+GANs aren't the only way to synthesize art. **Neural Style Transfer** starts with a noise image $\mathbf{x}$ and optimizes the pixels directly via gradient descent against a frozen pre-trained VGG network to minimize three losses:
+- **Content Loss**: Feature distance between $\mathbf{x}$ and the content photo at deeper layers.
+- **Style Loss**: Distance between **Gram matrices** $G_{ij}^l = \sum_k F_{ik}^l F_{jk}^l$, which measure *feature correlations* (texture and brushstrokes) regardless of spatial position.
+- **Total Variation Loss**: Smooths neighboring pixel jumps to suppress high-frequency noise.
+
+By tuning the relative weights of Content, Style, and Variation losses, you can blend the recognizable geometry of a photograph with the color palette and brushwork of Van Gogh or Monet. Unlike GANs, classical optimization-based Style Transfer doesn't train a generator network from scratch—it optimizes the pixels of a single canvas directly via backpropagation.
+
+<ColabButton
+  course="ai-for-beginners"
+  notebook="10-gans-and-artistic-style-transfer.ipynb"
+  runtime="Free Tier T4 GPU"
+/>
+
+---
+
+## Hands-On: Gram Matrix Style Correlation & Minimax Loss
+
+Let's compute the **Gram matrix** of a 2-channel feature map and evaluate the GAN Discriminator/Generator minimax objective in pure Python.
+
+<PythonRunner
+  client:visible
+  title="Try it Yourself: Gram Matrix & GAN Minimax Loss"
+  expectedOutput="Gram Matrix (2x2 feature correlation):
+  [[14.0, 19.0], [19.0, 26.0]]
+GAN Discriminator Loss: 0.4463
+GAN Generator Loss:     1.6094"
+  initialCode={`import math
+
+# Two flattened feature channels (length 3 each)
+F = [
+    [1.0, 2.0, 3.0],
+    [1.0, 3.0, 4.0],
+]
+
+def gram_matrix(features):
+    c = len(features)
+    return [
+        [round(sum(features[i][k] * features[j][k] for k in range(len(features[0]))), 2) for j in range(c)]
+        for i in range(c)
+    ]
+
+G = gram_matrix(F)
+print("Gram Matrix (2x2 feature correlation):")
+print(f"  {G}")
+
+# GAN Loss evaluation: D(real)=0.8, D(fake)=0.2
+d_real, d_fake = 0.8, 0.2
+d_loss = -(math.log(d_real) + math.log(1.0 - d_fake))
+g_loss = -math.log(d_fake)  # non-saturating generator objective
+print(f"GAN Discriminator Loss: {d_loss:.4f}")
+print(f"GAN Generator Loss:     {g_loss:.4f}")`}
+/>
+
+---
+
+## Check Your Understanding
+
+<QuizCard
+  client:visible
+  question="In Neural Style Transfer, what does the Gram Matrix capture about an image's CNN feature map?"
+  options={[
+    "The exact (x, y) pixel coordinates of every object.",
+    "The pairwise correlations between feature channels, encoding texture and artistic style independent of spatial layout.",
+    "The number of parameters in the Generator network.",
+    "The bounding box Intersection over Union."
+  ]}
+  correctAnswer={1}
+  explanation="By taking inner products across channels (summing over spatial positions), the Gram matrix discards where objects sit and captures which visual textures co-occur."
+/>
+
+Next, let's move from generating images to locating multiple objects inside complex scenes in **Lesson 11: Object Detection**.

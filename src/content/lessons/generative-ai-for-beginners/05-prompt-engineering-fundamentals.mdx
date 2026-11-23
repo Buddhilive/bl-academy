@@ -1,0 +1,143 @@
+---
+title: "Prompt Engineering Fundamentals: Tokenizers, Instructions, Primary/Supporting Content, Cues & Multi-Turn Roles"
+track: "generative-ai-for-beginners"
+category: "Module 2: Prompt Engineering & Text/Chat Applications"
+order: 5
+difficulty: "beginner"
+xp: 75
+description: "Master prompt engineering fundamentals: subword tokenization with tiktoken, base vs. RLHF models, prompt anatomy, cues, templates, and multi-turn system personas."
+topic: "Prompt Engineering"
+prerequisites: ["generative-ai-for-beginners/04-using-generative-ai-responsibly"]
+---
+import PythonRunner from '../../../components/islands/PythonRunner';
+import QuizCard from '../../../components/islands/QuizCard';
+import ColabButton from '../../../components/static/ColabButton.astro';
+
+Once you connect to a Large Language Model API, you quickly notice that two slightly different phrasings of the same question can yield wildly different answers. **Prompt engineering** is the craft of structuring your inputs—context, instructions, examples, delimiters, and output cues—so a stochastic model consistently produces accurate, structured results. In this lesson, we'll inspect how tokenizers slice real text, compare base models against instruction-tuned models, and break down the anatomy of production prompts.
+
+---
+
+## Base Models vs. Instruction-Tuned LLMs
+
+When you send a prompt to an LLM, its behavior depends heavily on how it was post-trained:
+
+- **Base LLMs**: Trained purely on next-token prediction over raw internet text. If you prompt `"oh say can you see"`, a base model completes the song lyrics. If you ask a question, it might just generate three more similar questions!
+- **Instruction-Tuned LLMs (RLHF / DPO)**: Post-trained with Supervised Fine-Tuning and **Reinforcement Learning from Human Feedback (RLHF)** to treat your input as a direct command or multi-turn conversation (`system`, `user`, `model`).
+
+### Why Prompt Engineering Matters
+
+Even instruction-tuned models suffer from two core quirks:
+1. **Stochasticity**: Sampling introduces randomness across runs unless temperature and constraints are tightened.
+2. **Fabrications**: Ask a model to `"generate a lesson plan on the Martian War of 2076"`, and without an explicit *"out"*, it may invent battle dates and treaties out of thin air.
+
+---
+
+## Tokenization Deep Dive
+
+LLMs do not read characters or whole words; they read subword **tokens**. Counting tokens accurately matters for both context-window limits and API cost budgets:
+
+- In English, $1\text{ token} \approx 4\text{ characters}$ or $\approx 0.75\text{ words}$.
+- Tools like **`tiktoken`** (or `client.models.count_tokens()` in `google-genai`) split text such as a paragraph about **Jupiter** (the fifth planet from the Sun, $2.5\times$ the mass of all other Solar System planets combined) into integer token IDs before the Transformer ever sees them.
+
+---
+
+## Anatomy of a Well-Engineered Prompt
+
+Production developer tools—like **AI coding assistants** that assemble open editor tabs, cursor neighbor lines, file paths, and comments into a single context window—rely on five modular building blocks:
+
+| Component | Role in the Prompt | Practical Example |
+| :--- | :--- | :--- |
+| **Instruction** | Explicit task verb, constraints, and target audience | *"Summarize the passage below for a second-grade student."* |
+| **Primary Content** | The raw source text or code to transform | Triple-quoted `"""Jupiter is the fifth planet..."""` passage |
+| **Examples (Shots)** | Zero, one, or few input-output demonstrations | `Input: 400 -> Output: 4xx Client Error` |
+| **Cues** | A trailing prefix that forces output format | `Summary in 3 bullet points:\n- ` |
+| **Supporting Content** | Taxonomies, style guides, or prioritization tags | `[Priority: High] Use plain language without jargon.` |
+
+### 6 Field-Tested Best Practices
+
+1. **Use Clear Delimiters**: Wrap primary content in `"""..."""` or XML tags (`<passage>...</passage>`) so the model never confuses data with instructions.
+2. **Be Specific**: Specify exact length, format (JSON, Markdown table), and reading level.
+3. **Give the Model an "Out"**: Explicitly say *"If the passage does not contain the answer or the event never occurred, reply: I cannot verify this."*
+4. **Show and Tell**: Combine an explicit instruction with 1–2 concrete examples.
+5. **Leverage Recency Bias**: Models pay strongest attention to instructions placed at the very **beginning** (system instruction) and very **end** of a prompt.
+6. **Multi-Turn System Personas**: Use `system_instruction` to lock tone and behavior (such as a sarcastic assistant answering 2020 World Series trivia) across multiple user turns.
+
+---
+
+## Open the Companion Colab Notebook
+
+Run all five hands-on exercises in Colab: Jupiter tokenization with `tiktoken` and `count_tokens()`, `"oh say can you see"` completion, the Martian War of 2076 fabrication test, 2nd-grade Jupiter summarization, and a multi-turn persona chat.
+
+<ColabButton
+  course="generative-ai-for-beginners"
+  notebook="05-prompt-engineering-fundamentals.ipynb"
+  runtime="Free Tier CPU + Gemini API"
+/>
+
+---
+
+## Try It Yourself: Prompt Anatomy Compiler & Fabrication Guard
+
+Execute this Python sandbox to tokenize the Jupiter passage, compile a delimited multi-part prompt with a cue, and watch how an explicit "out" instruction prevents the *"Martian War of 2076"* fabrication.
+
+<PythonRunner
+  client:visible
+  title="Try it Yourself: Prompt Compiler & Fabrication Guard"
+  expectedOutput="Jupiter passage: 20 words | Estimated tokens: 27
+--- Compiled Prompt ---
+[INSTRUCTION] Summarize for a 2nd grader. If unknown, say UNVERIFIED.
+[PASSAGE] '''Jupiter is the fifth planet from the Sun and the largest in the Solar System.'''
+[CUE] Simple Summary:
+--- Fabrication Check ---
+Unguarded: Generates fictional timeline for 'Martian War of 2076'
+With 'Out' Guard: UNVERIFIED - No historical record of 'Martian War of 2076'."
+  initialCode={`# 1. Token estimation on the Jupiter astronomy passage
+jupiter_text = (
+    "Jupiter is the fifth planet from the Sun and the largest in the Solar System. "
+    "It is a gas giant."
+)
+word_count = len(jupiter_text.split())
+est_tokens = round(word_count * 1.33)
+print(f"Jupiter passage: {word_count} words | Estimated tokens: {est_tokens}")
+
+# 2. Modular prompt compiler with delimiters & cue
+def build_prompt(instruction, primary_content, cue):
+    return "\n".join([
+        f"[INSTRUCTION] {instruction}",
+        f"[PASSAGE] '''{primary_content}'''",
+        f"[CUE] {cue}",
+    ])
+
+compiled = build_prompt(
+    "Summarize for a 2nd grader. If unknown, say UNVERIFIED.",
+    "Jupiter is the fifth planet from the Sun and the largest in the Solar System.",
+    "Simple Summary:",
+)
+print("--- Compiled Prompt ---")
+print(compiled)
+
+# 3. Giving the model an explicit "out"
+print("--- Fabrication Check ---")
+topic = "Martian War of 2076"
+known_events = {"World Series 2020", "Apollo 11"}
+print(f"Unguarded: Generates fictional timeline for '{topic}'")
+if topic not in known_events:
+    print(f"With 'Out' Guard: UNVERIFIED - No historical record of '{topic}'.")`}
+/>
+
+---
+
+## Check Your Understanding
+
+<QuizCard
+  client:visible
+  question="Why should you wrap user-supplied text in delimiters like triple quotes or XML tags AND give the model an explicit 'out'?"
+  options={[
+    "Delimiters make the prompt execute faster on a GPU without tokenization.",
+    "Delimiters separate instructions from primary data (reducing prompt injection), and an explicit 'out' prevents the model from fabricating facts when data is missing.",
+    "XML tags automatically translate the prompt into Spanish.",
+    "Giving the model an 'out' increases temperature to 2.0."
+  ]}
+  correctAnswer={1}
+  explanation="Clear delimiters help the LLM distinguish system instructions from untrusted data, while an explicit fallback rule stops it from hallucinating plausible-sounding falsehoods."
+/>

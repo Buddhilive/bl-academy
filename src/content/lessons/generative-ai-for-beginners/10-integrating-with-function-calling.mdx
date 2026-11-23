@@ -1,0 +1,119 @@
+---
+title: "Integrating External Applications with Function Calling: JSON Tool Schemas, Live Catalog APIs & Structured Outputs"
+track: "generative-ai-for-beginners"
+category: "Module 3: Semantic Search, RAG & Function Calling"
+order: 10
+difficulty: "intermediate"
+xp: 85
+description: "Connect LLMs to external APIs and databases using function calling, JSON Schema tool declarations, Pydantic structured outputs, and multi-turn tool dispatch loops."
+topic: "Function Calling"
+prerequisites: ["generative-ai-for-beginners/09-building-semantic-search-applications"]
+---
+import PythonRunner from '../../../components/islands/PythonRunner';
+import QuizCard from '../../../components/islands/QuizCard';
+import ColabButton from '../../../components/static/ColabButton.astro';
+
+Even the smartest Large Language Model is trapped inside its training cutoff—it cannot check today's weather, query your SQL database, or search a live course catalog on its own. Worse, if you ask a model with plain text to extract structured fields from two student bios (`Emily Johnson` at Duke with a `3.7` GPA vs. `Michael Lee` at Stanford with a `3.8 GPA`), plain prompting frequently returns inconsistent formatting. **Function calling** (also called tool use) and **structured outputs** solve both problems cleanly by binding LLMs to strict JSON Schemas and live Python functions.
+
+---
+
+## Why Plain Prompting Breaks Data Pipelines
+
+When integrating an LLM with downstream code, inconsistent keys or types break parsers immediately:
+
+| Approach | Sample Output for Student Bios | Reliability |
+| :--- | :--- | :--- |
+| **Plain Prompting** | `Emily: {"grades": "3.7"}` vs. `Michael: {"GPA": "3.8 GPA"}` | Fragile; requires brittle regex cleanup |
+| **Function Calling / `response_schema`** | Both return `{"name": str, "major": str, "school": str, "gpa": float, "club": str}` | Deterministic schema guaranteed |
+
+---
+
+## The 4-Stage Function Calling Lifecycle
+
+When you register a Python function like `search_courses(role, product, level)` with `google-genai`, the model never executes your code directly. Instead, your application orchestrates a 4-stage loop:
+
+1. **Tool Registration**: Send the user query (*"Find beginner Python courses for a student"*) alongside JSON Schema declarations (`name`, `description`, `parameters`, `properties`, `required`).
+2. **Structured Tool Call**: The LLM recognizes it needs external data and emits a `function_call` payload: `search_courses(role="student", product="python", level="beginner")`.
+3. **Local / API Execution**: Your Python code validates the arguments, looks up `available_functions[function_name](**args)`, queries the live REST API, and extracts the top 5 matching courses (`title`, `url`).
+4. **Grounded Synthesis**: Your app passes the `function_response` back to the LLM so it can write a helpful, accurate reply citing the real URLs.
+
+### Core Function-Calling Use Cases
+
+- **Calling External Tools**: `send_email(to, subject, body)` or `create_calendar_event(...)`.
+- **Querying Live APIs & Databases**: `search_courses(role, product, level)` or `get_completed(user_id)`.
+- **Structured Information Extraction**: `get_important_facts(text)` enforcing strict Pydantic schemas.
+
+---
+
+## Open the Companion Colab Notebook
+
+Launch the notebook below to run both **Pydantic `response_schema` extraction** on the `Emily Johnson` / `Michael Lee` student profiles and a live **`search_courses` function-calling loop** with `google-genai`.
+
+<ColabButton
+  course="generative-ai-for-beginners"
+  notebook="10-integrating-with-function-calling.ipynb"
+  runtime="Free Tier CPU + Gemini API"
+/>
+
+---
+
+## Try It Yourself: JSON Schema Extractor & Tool Dispatcher
+
+Run this pure-Python sandbox to compare uniform student schema extraction and trace the full 4-stage `search_courses` function-calling dispatch loop.
+
+<PythonRunner
+  client:visible
+  title="Try it Yourself: Function Calling Dispatcher & Schema Validator"
+  expectedOutput="Student 1: {'name': 'Emily Johnson', 'school': 'Duke University', 'gpa': 3.7, 'club': 'Chess Club'}
+Student 2: {'name': 'Michael Lee', 'school': 'Stanford University', 'gpa': 3.8, 'club': 'Robotics Team'}
+Model emitted function_call: search_courses({'role': 'student', 'product': 'python', 'level': 'beginner'})
+Tool returned 2 course(s): ['Python Zero to Hero', 'Intro to Python Data']
+Final Assistant Reply: I found 2 beginner Python courses for students: Python Zero to Hero, Intro to Python Data."
+  initialCode={`import json
+
+# 1. Uniform structured extraction for Emily Johnson & Michael Lee
+students = [
+    {"name": "Emily Johnson", "school": "Duke University", "gpa": 3.7, "club": "Chess Club"},
+    {"name": "Michael Lee", "school": "Stanford University", "gpa": 3.8, "club": "Robotics Team"},
+]
+for idx, s in enumerate(students, 1):
+    print(f"Student {idx}: {s}")
+
+# 2. Live course catalog function + tool registry
+CATALOG = [
+    {"title": "Python Zero to Hero", "role": "student", "product": "python", "level": "beginner"},
+    {"title": "Intro to Python Data", "role": "student", "product": "python", "level": "beginner"},
+    {"title": "Distributed Kubernetes", "role": "architect", "product": "k8s", "level": "advanced"},
+]
+
+def search_courses(role, product, level):
+    return [c["title"] for c in CATALOG if c["role"] == role and c["product"] == product and c["level"] == level]
+
+available_functions = {"search_courses": search_courses}
+
+# 3. Simulated model function_call -> dispatch -> final response
+tool_call = {"name": "search_courses", "args": {"role": "student", "product": "python", "level": "beginner"}}
+print(f"Model emitted function_call: {tool_call['name']}({tool_call['args']})")
+
+fn = available_functions[tool_call["name"]]
+results = fn(**tool_call["args"])
+print(f"Tool returned {len(results)} course(s): {results}")
+print(f"Final Assistant Reply: I found {len(results)} beginner {tool_call['args']['product'].title()} courses for {tool_call['args']['role']}s: {', '.join(results)}.")`}
+/>
+
+---
+
+## Check Your Understanding
+
+<QuizCard
+  client:visible
+  question="In a function-calling workflow, who actually executes the Python function or REST API call?"
+  options={[
+    "The LLM executes the Python code directly inside its Transformer weights.",
+    "The LLM emits a structured function_call with arguments, and your application code executes the function and returns the result to the LLM.",
+    "The browser's CSS engine runs the API call.",
+    "The tokenizer automatically executes REST POST requests."
+  ]}
+  correctAnswer={1}
+  explanation="The LLM only selects the tool name and extracts structured JSON arguments. Your application retains full control over executing the function safely and feeding the output back for synthesis."
+/>

@@ -1,0 +1,135 @@
+---
+title: "Building MCP Clients & Autonomous Gemini LLM Host Applications"
+track: "mcp-for-beginners"
+category: "Module 2: Building MCP Servers, Clients, Gemini Hosts & Transports"
+order: 6
+difficulty: "intermediate"
+xp: 80
+description: "Write programmatic Python MCP clients and connect them to an autonomous Google AI Studio Gemini 2.5 Flash LLM Host with dynamic MCP tool discovery."
+topic: "MCP Clients & Gemini Hosts"
+prerequisites: ["mcp-for-beginners/05-building-your-first-mcp-server-with-fastmcp"]
+---
+import PythonRunner from '../../../components/islands/PythonRunner';
+import QuizCard from '../../../components/islands/QuizCard';
+import ColabButton from '../../../components/static/ColabButton.astro';
+
+A programmatic MCP client can call `session.list_tools()` and `session.call_tool("add", {"a": 2, "b": 3})`, which is great for scripts and automated tests. Real users, however, want to type a natural-language question and let an AI model figure out which tools to invoke and in what order. That is the job of an **MCP Host Application**.
+
+In this lesson, we wire a Python MCP client directly into **Google AI Studio (`google-genai`, `gemini-2.5-flash`)** so Gemini discovers your MCP server's tools dynamically and orchestrates multi-step tool calls on its own.
+
+---
+
+## Programmatic Client vs. Autonomous LLM Host
+
+| Mode | Who Picks the Tool? | How Arguments Are Built | Best For |
+| :--- | :--- | :--- | :--- |
+| **Deterministic MCP Client** | Your Python code | Hardcoded or parsed from CLI flags | Automated tests, CI pipelines, batch ETL scripts |
+| **Autonomous LLM Host** | `gemini-2.5-flash` | Extracted from user natural language via JSON Schema | Chat assistants, IDE copilots, multi-step agents |
+
+### The 4-Step Host Negotiation Loop
+
+When a user sends a prompt to an MCP Host powered by Gemini:
+
+1. **Discover Capabilities**: The MCP Client calls `list_tools()` on connected MCP servers and converts each MCP `inputSchema` into a `google.genai.types.FunctionDeclaration`.
+2. **Reason & Plan**: The Host sends the user prompt plus the converted tool declarations to `client.models.generate_content(model="gemini-2.5-flash", ...)`.
+3. **Execute on MCP Server**: If Gemini returns `response.function_calls`, the Host routes each call to the matching MCP Server via `session.call_tool(name, args)`.
+4. **Synthesize Grounded Answer**: The Host appends each `FunctionResponse` part back into the conversation and lets Gemini produce the final human-readable answer.
+
+---
+
+## Translating MCP JSON Schemas for `google-genai`
+
+MCP uses standard JSON Schema `type`, `properties`, and `required` fields. Converting them for `google-genai` is a lightweight mapping function:
+
+```python
+from google.genai import types
+
+def mcp_tools_to_gemini(mcp_tools) -> list[types.Tool]:
+    declarations = []
+    for tool in mcp_tools:
+        declarations.append(
+            types.FunctionDeclaration(
+                name=tool.name,
+                description=tool.description or "",
+                parameters=tool.inputSchema,
+            )
+        )
+    return [types.Tool(function_declarations=declarations)]
+```
+
+Notice how clean that boundary is: the MCP server knows nothing about Gemini, and Gemini knows nothing about `stdio` or HTTP transports. The Host bridges both worlds.
+
+---
+
+## Open the Companion Colab Notebook
+
+Launch the companion notebook to run a live `gemini-2.5-flash` MCP Host connected to an in-memory `FastMCP` server via `google-genai`.
+
+<ColabButton
+  course="mcp-for-beginners"
+  notebook="06-building-mcp-clients-and-gemini-llm-hosts.ipynb"
+  runtime="Free Tier CPU + Gemini API"
+/>
+
+---
+
+## Try It Yourself: MCP-to-Gemini Schema Bridge & Multi-Step Host Loop
+
+Run this pure-Python simulator to convert MCP tool schemas into Gemini `FunctionDeclaration` dictionaries and execute a 3-step tool-calling loop (`multiply(24, 15)` -> `sqrt(144)` -> `add(360, 12)`).
+
+<PythonRunner
+  client:visible
+  title="Try it Yourself: Autonomous Gemini LLM Host Tool Loop"
+  expectedOutput="Converted 3 MCP tools to Gemini declarations: ['add', 'multiply', 'sqrt']
+[Turn 1] Model requested: multiply({'a': 24, 'b': 15}) -> 360
+[Turn 2] Model requested: sqrt({'x': 144}) -> 12.0
+[Turn 3] Model requested: add({'a': 360, 'b': 12.0}) -> 372.0
+[Final Answer] (24 * 15) + sqrt(144) equals 372.0."
+  initialCode={`import math
+
+MCP_TOOLS = [
+    {"name": "add", "description": "Add two numbers", "inputSchema": {"type": "object", "properties": {"a": {"type": "number"}, "b": {"type": "number"}}, "required": ["a", "b"]}},
+    {"name": "multiply", "description": "Multiply two numbers", "inputSchema": {"type": "object", "properties": {"a": {"type": "number"}, "b": {"type": "number"}}, "required": ["a", "b"]}},
+    {"name": "sqrt", "description": "Square root", "inputSchema": {"type": "object", "properties": {"x": {"type": "number"}}, "required": ["x"]}},
+]
+
+SERVER_IMPLS = {
+    "add": lambda a, b: a + b,
+    "multiply": lambda a, b: a * b,
+    "sqrt": lambda x: math.sqrt(x),
+}
+
+# 1. Translate MCP schemas -> Gemini declarations
+gemini_decls = [{"name": t["name"], "description": t["description"], "parameters": t["inputSchema"]} for t in MCP_TOOLS]
+print("Converted 3 MCP tools to Gemini declarations:", [d["name"] for d in gemini_decls])
+
+# 2. Simulate multi-step Gemini function-calling turns
+planned_calls = [
+    ("multiply", {"a": 24, "b": 15}),
+    ("sqrt", {"x": 144}),
+    ("add", {"a": 360, "b": 12.0}),
+]
+
+for idx, (tool_name, args) in enumerate(planned_calls, start=1):
+    result = SERVER_IMPLS[tool_name](**args)
+    print(f"[Turn {idx}] Model requested: {tool_name}({args}) -> {result}")
+
+print("[Final Answer] (24 * 15) + sqrt(144) equals 372.0.")`}
+/>
+
+---
+
+## Check Your Understanding
+
+<QuizCard
+  client:visible
+  question="In an MCP Host application powered by Gemini, what happens immediately after Gemini emits a FunctionCall for an MCP tool?"
+  options={[
+    "Gemini opens a subprocess directly to the MCP server.",
+    "The MCP Host intercepts the FunctionCall, invokes the MCP Server via session.call_tool(), and feeds the FunctionResponse back to Gemini.",
+    "The MCP Server sends the result straight to the user without informing Gemini.",
+    "The connection closes and the user must re-type the prompt."
+  ]}
+  correctAnswer={1}
+  explanation="The Host mediates every interaction: it executes the requested tool on the MCP Server and passes the structured FunctionResponse back to Gemini so the model can synthesize a grounded final answer."
+/>

@@ -1,0 +1,115 @@
+---
+title: "Data Science in the Cloud: Architecture, Colab Runtimes & Gemini API Analytics"
+track: "data-science-for-beginners"
+category: "Module 4: Data Science Lifecycle & Cloud Alternatives"
+order: 17
+difficulty: "intermediate"
+xp: 75
+description: "Understand Public, Private, and Hybrid clouds, IaaS/PaaS/SaaS layers, cloud data science benefits, and real-time text analytics with Google Colab and Gemini API."
+topic: "Cloud Data Science"
+prerequisites: ["data-science-for-beginners/16-data-science-lifecycle-communication"]
+---
+import PythonRunner from '../../../components/islands/PythonRunner';
+import QuizCard from '../../../components/islands/QuizCard';
+import ColabButton from '../../../components/static/ColabButton.astro';
+
+When datasets grow to millions of rows or require heavy GPU compute, your laptop quickly hits a wall. **Cloud Computing** solves this by delivering pay-as-you-go storage, networking, and elastic compute over the internet—and with **Google Colab Free Tier** and **Google AI Studio Free Tier**, you can practice real cloud data science without spending a dime.
+
+---
+
+## Cloud Topologies & Service Models (IaaS, PaaS, SaaS)
+
+Cloud environments are organized by who owns the hardware and how much infrastructure you manage yourself:
+
+| Category | Model | What You Manage vs. What the Provider Manages |
+| :--- | :--- | :--- |
+| **Deployment** | **Public Cloud** | Shared third-party infrastructure over the internet (AWS, GCP, Azure) |
+| **Deployment** | **Private Cloud** | Dedicated infrastructure on a private network for a single organization |
+| **Deployment** | **Hybrid Cloud** | Combines on-premises datacenters with public cloud burst capacity |
+| **Service** | **IaaS** | Rent raw VMs, storage, and networking; you manage OS and runtimes |
+| **Service** | **PaaS** | Managed dev/notebook environment (e.g., Google Colab); focus purely on code and data |
+| **Service** | **SaaS** | Ready-to-use web applications over the internet (e.g., BI dashboards) |
+
+Data teams adopt the cloud for seven core advantages: **Innovation** (managed AI APIs), **Flexibility**, **Budget** (zero upfront hardware), **Scalability**, **Productivity**, **Reliability** (automated backups & disaster recovery), and **Security**.
+
+---
+
+## Two Cloud Data Science Scenarios (Open-Source & Gemini API)
+
+1. **Real-Time Social Media Sentiment Streaming**: Ingesting live hashtag streams, computing rolling volume and sentiment windows, and storing structured metrics in an analytical database like **DuckDB**.
+2. **Scientific Paper Knowledge Extraction**: Parsing medical research abstracts (like COVID-19 literature) to extract structured diagnoses, treatments, and dosages using **Google AI Studio Free Tier** (`google-genai` SDK + `GEMINI_API_KEY` stored in Colab Secrets). To set up your free key, visit [aistudio.google.com/apikey](https://aistudio.google.com/apikey), generate a key, paste it into Colab's **Secrets** panel as `GEMINI_API_KEY`, and toggle **Notebook access** on.
+
+```python
+from google.colab import userdata
+from google import genai
+
+client = genai.Client(api_key=userdata.get("GEMINI_API_KEY"))
+resp = client.models.generate_content(
+    model="gemini-2.5-flash",
+    contents="Extract JSON {sentiment, topic} from: Open-source Python data tools are super fast!"
+)
+print(resp.text)
+```
+
+<ColabButton
+  course="data-science-for-beginners"
+  notebook="17-data-science-in-the-cloud.ipynb"
+  runtime="Free Tier CPU + Gemini API"
+/>
+
+---
+
+## Try It Yourself: Streaming Sentiment & Paper Extractor
+
+Run this pure-Python cloud analytics simulator to aggregate a sliding window of social media hashtag sentiment and extract structured medical entities from a research abstract.
+
+<PythonRunner
+  client:visible
+  title="Try it Yourself: Cloud Stream Window & Medical Paper Extractor"
+  expectedOutput="=== Real-Time Hashtag Sentiment Window ===
+#datascience: 2 posts | avg_sentiment=+0.85
+#python: 1 posts | avg_sentiment=+0.60
+
+=== Scientific Paper Structured Extraction ===
+Treatments: ['dexamethasone', 'oxygen'] | Outcome: reduced mortality"
+  initialCode={`stream = [
+    {"tag": "#datascience", "score": 0.9},
+    {"tag": "#datascience", "score": 0.8},
+    {"tag": "#python", "score": 0.6},
+]
+
+agg = {}
+for msg in stream:
+    agg.setdefault(msg["tag"], []).append(msg["score"])
+
+print("=== Real-Time Hashtag Sentiment Window ===")
+for tag, scores in agg.items():
+    print(f"{tag}: {len(scores)} posts | avg_sentiment={sum(scores)/len(scores):+.2f}")
+
+abstract = "Patients receiving dexamethasone and supplemental oxygen showed reduced mortality."
+known_treatments = ["dexamethasone", "remdesivir", "oxygen"]
+found = [t for t in known_treatments if t in abstract.lower()]
+outcome = "reduced mortality" if "reduced mortality" in abstract.lower() else "inconclusive"
+
+print("\n=== Scientific Paper Structured Extraction ===")
+print(f"Treatments: {found} | Outcome: {outcome}")`}
+/>
+
+---
+
+## Check Your Understanding
+
+<QuizCard
+  client:visible
+  question="Which cloud service model lets data scientists write and run notebooks or ML code without managing underlying servers, OS patches, or storage hardware?"
+  options={[
+    "IaaS (Infrastructure as a Service)",
+    "PaaS (Platform as a Service)",
+    "On-Premises Bare Metal",
+    "Cold Archival Storage"
+  ]}
+  correctAnswer={1}
+  explanation="Platform as a Service (PaaS) abstracts away servers, OS updates, and runtime provisioning so you can focus directly on code, models, and data."
+/>
+
+Next, we'll train and deploy a clinical **Heart Failure Prediction** model using open-source **AutoML** and **Gradio** in **Low-Code Cloud Data Science**.

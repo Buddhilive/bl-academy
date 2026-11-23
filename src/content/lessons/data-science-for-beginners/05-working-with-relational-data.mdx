@@ -1,0 +1,137 @@
+---
+title: "Working with Relational Databases & SQL Joins in Python"
+track: "data-science-for-beginners"
+category: "Module 2: Working with Data"
+order: 5
+difficulty: "beginner"
+xp: 65
+description: "Learn relational database normalization, primary and foreign keys, SQL SELECT/WHERE/INNER JOIN queries, and in-memory SQLite3 workflows in Python."
+topic: "Relational Databases & SQL"
+prerequisites: ["data-science-for-beginners/04-statistics-and-probability"]
+---
+import PythonRunner from '../../../components/islands/PythonRunner';
+import QuizCard from '../../../components/islands/QuizCard';
+import ColabButton from '../../../components/static/ColabButton.astro';
+
+If you have ever used a spreadsheet, you already understand the basic building block of a relational database: rows hold observations, and columns describe them. The trouble starts when your dataset grows—repeating city and country names on every rainfall row wastes space and invites typos, while adding a new column for every year breaks your table schema. **Relational databases** solve this by splitting data into linked tables and reconnecting them on demand with **SQL**.
+
+In this lesson, we'll design normalized tables using primary and foreign keys, write `SELECT`, `WHERE`, and `INNER JOIN` queries, and run them directly against Python's built-in `sqlite3` engine.
+
+---
+
+## Why Single Tables Break Down
+
+Suppose we track annual rainfall (in millimeters) for Tokyo, Atlanta, and Auckland from 2018 to 2020. Putting everything in one table forces us into one of two bad designs:
+
+1. **Row Duplication**: Repeating `"Tokyo"` and `"Japan"` three times—once per year—bloats storage and risks inconsistent edits.
+2. **Column Proliferation**: Creating columns `2018`, `2019`, `2020` forces you to alter the table structure every January and makes multi-year aggregations awkward.
+
+---
+
+## Normalization, Primary Keys & Foreign Keys
+
+Relational databases split entities into separate tables linked by immutable numeric identifiers:
+
+- **Primary Key (`PK`)**: A unique, unchanging identifier for each row in a table (e.g., `city_id = 1` for Tokyo). Never use mutable text like a city name as a primary key if it might ever change.
+- **Foreign Key (`FK`)**: A column in a child table (like `city_id` in `rainfall`) that points to the primary key of a parent table (`cities`).
+
+| Table | Columns | Key Role |
+| :--- | :--- | :--- |
+| `cities` | `city_id`, `city`, `country` | `city_id` is the **Primary Key (PK)** |
+| `rainfall` | `rainfall_id`, `city_id`, `year`, `amount` | `rainfall_id` is **PK**; `city_id` is **Foreign Key (FK)** |
+| `airports` | `id`, `name`, `city`, `country`, `code` | Multi-table aviation dataset (`airports.db`) |
+
+---
+
+## Querying & Joining Data with SQL
+
+**Structured Query Language (SQL)** is the standard language for retrieving and filtering relational data. While SQL keywords are case-insensitive, writing keywords like `SELECT`, `FROM`, `WHERE`, and `INNER JOIN` in uppercase makes queries much easier to scan:
+
+```sql
+SELECT cities.city, rainfall.amount
+FROM cities
+INNER JOIN rainfall ON cities.city_id = rainfall.city_id
+WHERE rainfall.year = 2019;
+```
+
+An **`INNER JOIN`** stitches two tables together along a matching key seam (`cities.city_id = rainfall.city_id`) and keeps only rows that match on both sides.
+
+<ColabButton
+  course="data-science-for-beginners"
+  notebook="05-working-with-relational-data.ipynb"
+  runtime="Free Tier CPU"
+/>
+
+---
+
+## Try It Yourself: In-Browser SQLite3 Relational Joins
+
+Python ships with `sqlite3` in the standard library—so you can spin up a real SQL database right inside your browser. Run the sandbox below to build the normalized `cities` and `rainfall` tables, run the 2019 `INNER JOIN`, and query the airport directory.
+
+<PythonRunner
+  client:visible
+  title="Try it Yourself: SQLite3 INNER JOIN & Airport Queries"
+  expectedOutput="=== 2019 Rainfall (INNER JOIN) ===
+Tokyo: 1874 mm
+Atlanta: 1111 mm
+Auckland: 942 mm
+
+=== UK Airports (WHERE country = 'United Kingdom') ===
+Heathrow (LHR) - London
+Gatwick (LGW) - London"
+  initialCode={`import sqlite3
+
+conn = sqlite3.connect(":memory:")
+cur = conn.cursor()
+
+cur.executescript("""
+CREATE TABLE cities (city_id INTEGER PRIMARY KEY, city TEXT, country TEXT);
+CREATE TABLE rainfall (rainfall_id INTEGER PRIMARY KEY, city_id INTEGER, year INTEGER, amount INTEGER);
+
+INSERT INTO cities VALUES (1, 'Tokyo', 'Japan'), (2, 'Atlanta', 'United States'), (3, 'Auckland', 'New Zealand');
+INSERT INTO rainfall VALUES
+    (1, 1, 2020, 1690), (2, 1, 2019, 1874), (3, 1, 2018, 1445),
+    (4, 2, 2018, 1779), (5, 2, 2019, 1111), (6, 2, 2020, 1683),
+    (7, 3, 2018, 1386), (8, 3, 2019, 942),  (9, 3, 2020, 1176);
+
+CREATE TABLE airports (id INTEGER PRIMARY KEY, name TEXT, city TEXT, country TEXT, code TEXT);
+INSERT INTO airports VALUES
+    (1, 'Heathrow', 'London', 'United Kingdom', 'LHR'),
+    (2, 'Gatwick', 'London', 'United Kingdom', 'LGW'),
+    (3, 'Haneda', 'Tokyo', 'Japan', 'HND');
+""")
+
+print("=== 2019 Rainfall (INNER JOIN) ===")
+rows = cur.execute("""
+    SELECT cities.city, rainfall.amount
+    FROM cities
+    INNER JOIN rainfall ON cities.city_id = rainfall.city_id
+    WHERE rainfall.year = 2019
+""").fetchall()
+for city, amount in rows:
+    print(f"{city}: {amount} mm")
+
+print("\n=== UK Airports (WHERE country = 'United Kingdom') ===")
+uk = cur.execute("SELECT name, code, city FROM airports WHERE country = 'United Kingdom'").fetchall()
+for name, code, city in uk:
+    print(f"{name} ({code}) - {city}")`}
+/>
+
+---
+
+## Check Your Understanding
+
+<QuizCard
+  client:visible
+  question="In a normalized database with a `cities` table (`city_id`, `city`, `country`) and a `rainfall` table (`rainfall_id`, `city_id`, `year`, `amount`), what role does `city_id` play inside the `rainfall` table?"
+  options={[
+    "Primary Key (PK) of the rainfall table",
+    "Foreign Key (FK) referencing the primary key of cities",
+    "Aggregate index for SQL SUM operations",
+    "Unstructured metadata tag"
+  ]}
+  correctAnswer={1}
+  explanation="A foreign key in one table points to the primary key of another table, allowing you to link records cleanly without duplicating city and country strings."
+/>
+
+Next, we'll step outside rigid tables to explore spreadsheets, NoSQL families, and JSON document stores in **Working with Non-Relational Data**.

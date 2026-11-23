@@ -1,0 +1,102 @@
+---
+title: "Multi-Agent Design Patterns: Group Chat, Handoff, Collaborative Filtering & Topologies"
+track: "ai-agents-for-beginners"
+category: "Module 3: Planning, Multi-Agent Systems, Metacognition & Production Observability"
+order: 9
+difficulty: "intermediate"
+xp: 85
+description: "Master Multi-Agent Design Patterns including Group Chat, Handoff, Collaborative Filtering, and enterprise Refund & Support topologies."
+topic: "Planning & Multi-Agent"
+prerequisites: ["ai-agents-for-beginners/08-planning-design-pattern"]
+---
+import PythonRunner from '../../../components/islands/PythonRunner';
+import QuizCard from '../../../components/islands/QuizCard';
+import ColabButton from '../../../components/static/ColabButton.astro';
+
+A single agent with a handful of tools works great for straightforward tasks—like a "mom-and-pop" travel desk. But as soon as your system handles **large workloads**, **complex multi-stage workflows**, or **diverse specialist expertise**, stuffing 25 tools into one prompt creates a brittle monolith.
+
+**Multi-Agent Systems (MAS)** split that monolith into a franchise of specialized agents that communicate, coordinate, and hand off work while maintaining **Specialization**, **Scalability**, and **Fault Tolerance**.
+
+---
+
+## The 6 Building Blocks & 3 Core Multi-Agent Patterns
+
+To engineer a reliable multi-agent system, you must design six building blocks: **Agent Communication** (sharing dates/constraints), **Coordination Mechanisms**, **Agent Architecture**, **Visibility** (logging, interaction graphs, performance metrics), **Multi-Agent Patterns**, and **Human-in-the-Loop** escalation.
+
+| Multi-Agent Pattern | How Agents Coordinate | Ideal Use Case |
+| :--- | :--- | :--- |
+| **Group Chat** | Agents exchange messages in a shared centralized or decentralized room | Team brainstorming, customer support triage |
+| **Handoff** | Agents pass task ownership sequentially based on rules or completion state | Multi-step workflows (Flight $\rightarrow$ Hotel $\rightarrow$ Car Rental) |
+| **Collaborative Filtering** | Independent specialists score options and combine via weighted consensus $S = \sum_k w_k s_k$ | Investment research (*Industry* + *Technical* + *Fundamental* experts) |
+
+---
+
+## Enterprise Topologies: 15-Agent Refund & 14-Agent Support Systems
+
+When designing enterprise workflows like an e-commerce **Refund Process** or **Customer Support Process**, separate **domain-specific agents** from **reusable general business agents**:
+
+- **Refund-Specific Agents (5)**: `Customer`, `Seller`, `Payment`, `Resolution`, `Compliance`.
+- **General Business Agents (10)**: `Shipping`, `Feedback`, `Escalation`, `Notification`, `Analytics`, `Audit`, `Reporting`, `Knowledge`, `Security`, `Quality`.
+- **Customer Support Assignment (14)**: Combines `Customer`, `Support`, `Escalation`, `Resolution` with `Feedback`, `Notification`, `Analytics`, `Audit`, `Reporting`, `Knowledge`, `Security`, `Quality`, `Compliance`, and `Training`.
+
+*Rule of thumb*: Prefer a **single agent** when one set of instructions and tools can handle the task cleanly; switch to **multi-agent** when distinct roles require separate tools, permissions, and independent audit trails.
+
+---
+
+## Open the Companion Colab Notebook
+
+Launch the companion notebook to run Group Chat, Handoff, Collaborative Filtering, and the 15-Agent Refund Topology with `google-genai` and `LangGraph`.
+
+<ColabButton
+  course="ai-agents-for-beginners"
+  notebook="09-multi-agent-design-patterns.ipynb"
+  runtime="Free Tier CPU + Gemini API"
+/>
+
+---
+
+## Try It Yourself: Handoff, Collaborative Filtering & 15-Agent Refund Trace
+
+Run this pure-Python sandbox to execute a Flight $\rightarrow$ Hotel $\rightarrow$ Car Rental Handoff chain, a 3-Analyst Collaborative Filtering consensus scorer, and a logged 15-Agent Refund workflow.
+
+<PythonRunner
+  client:visible
+  title="Try it Yourself: Multi-Agent Handoff & Collaborative Filtering"
+  expectedOutput="[Handoff] FlightAgent -> Dates: 2026-06-10..2026-06-14 | Handed off to HotelAgent
+[Handoff] HotelAgent -> Airport Hotel booked for 2026-06-10..2026-06-14 | Handed off to CarRentalAgent
+[CollabFilter] Consensus score for ACME: 0.86 (Industry=0.90, Tech=0.80, Fundamental=0.88)
+[RefundMAS] Executed 5 refund-specific + 4 general audit/notify agents -> Status: APPROVED"
+  initialCode={`# 1. Handoff Pattern with shared date constraints
+state = {"dates": "2026-06-10..2026-06-14", "airport_only": True}
+print(f"[Handoff] FlightAgent -> Dates: {state['dates']} | Handed off to HotelAgent")
+print(f"[Handoff] HotelAgent -> Airport Hotel booked for {state['dates']} | Handed off to CarRentalAgent")
+
+# 2. Collaborative Filtering (weighted consensus)
+scores = {"Industry": 0.90, "Technical": 0.80, "Fundamental": 0.88}
+weights = {"Industry": 0.35, "Technical": 0.30, "Fundamental": 0.35}
+consensus = sum(scores[k] * weights[k] for k in scores)
+print(f"[CollabFilter] Consensus score for ACME: {consensus:.2f} (Industry={scores['Industry']:.2f}, Tech={scores['Technical']:.2f}, Fundamental={scores['Fundamental']:.2f})")
+
+# 3. 15-Agent Refund Topology visibility trace
+refund_specific = ["Customer", "Seller", "Payment", "Resolution", "Compliance"]
+general_agents = ["Shipping", "Audit", "Security", "Notification"]
+trace = [{"agent": a, "status": "OK"} for a in refund_specific + general_agents]
+print(f"[RefundMAS] Executed {len(refund_specific)} refund-specific + {len(general_agents)} general audit/notify agents -> Status: APPROVED")`}
+/>
+
+---
+
+## Check Your Understanding
+
+<QuizCard
+  client:visible
+  question="When is a single agent usually a better architectural choice than a multi-agent system?"
+  options={[
+    "When the workflow requires separate fraud, payment, and compliance roles with isolated permissions.",
+    "When the task can be handled cleanly with one set of instructions and tools, without specialist handoffs or separate permission boundaries.",
+    "Whenever an agent has access to more than one tool.",
+    "When you need independent audit trails across different departments."
+  ]}
+  correctAnswer={1}
+  explanation="A single agent is simpler to test, observe, and operate when one instruction set and toolset suffice. Multi-agent systems pay off when distinct roles require separate tools, permissions, and handoffs."
+/>

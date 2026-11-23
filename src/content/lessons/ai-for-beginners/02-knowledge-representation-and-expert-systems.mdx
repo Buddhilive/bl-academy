@@ -1,0 +1,170 @@
+---
+title: "Knowledge Representation, Ontologies & Expert Systems"
+track: "ai-for-beginners"
+category: "Module 1: Symbolic AI & Foundations"
+order: 3
+difficulty: "beginner"
+xp: 60
+description: "Learn the DIKW pyramid, semantic triplets, RDF ontologies, and how to build forward- and backward-chaining expert systems in Python."
+topic: "Symbolic AI and Knowledge Representation"
+prerequisites: ["ai-for-beginners/01-introduction-and-history-of-ai"]
+---
+import PythonRunner from '../../../components/islands/PythonRunner';
+import QuizCard from '../../../components/islands/QuizCard';
+import ColabButton from '../../../components/static/ColabButton.astro';
+
+Before neural networks dominated the headlines, AI researchers asked a very practical question: *If we want a computer to reason like a human specialist, how should we store human expertise inside memory?* That question launched **Symbolic AI**—an approach built on two pillars: **Knowledge Representation** and **Automated Reasoning**.
+
+Even today, symbolic reasoning remains essential whenever a system must guarantee explainability, enforce strict business rules, or query structured knowledge graphs.
+
+---
+
+## The DIKW Pyramid: Data vs. Knowledge
+
+In everyday conversation, we use *data*, *information*, and *knowledge* interchangeably. In AI, the **DIKW Pyramid** draws a sharp line between them:
+
+| Level | Definition | Concrete Example |
+| :--- | :--- | :--- |
+| **Data** | Raw symbols stored on physical or digital media with no interpretation. | The string `"Python"` or `"38.5"`. |
+| **Information** | Data interpreted with context and meaning. | `"Patient body temperature is 38.5°C."` |
+| **Knowledge** | Interconnected information integrated into a working world model. | `"A temperature of 38.5°C indicates fever, which often accompanies infection."` |
+| **Wisdom** | Meta-knowledge about when and how to apply knowledge safely. | Knowing when to order a blood test versus prescribing rest. |
+
+On the **knowledge representation spectrum**, raw Python algorithms sit at one extreme (fast for computers, rigid for humans) while natural language prose sits at the other (expressive for humans, ambiguous for computers). Symbolic AI lives in the sweet spot in between: **structured, machine-readable representations**.
+
+---
+
+## Four Ways to Represent Knowledge
+
+Computer scientists organize symbolic knowledge into four major families:
+
+1. **Semantic Networks (Object–Attribute–Value Triplets)**: Store concepts as a graph of nodes and directed edges $(s, p, o)$. For example: `("Python", "invented-by", "Guido van Rossum")`.
+2. **Hierarchical Frames**: Group an object's properties into named **slots** with default values, valid intervals, and inheritance (`Canary` inherits `has_wings=True` from `Bird`).
+3. **Production Rules (`IF-THEN`)**: Capture procedural expertise as conditional rules:
+   ```text
+   IF animal has hair OR animal gives milk THEN animal is mammal
+   IF animal is mammal AND animal eats meat THEN animal is carnivore
+   ```
+4. **Formal Logic**: Uses Predicate Logic or **Description Logics (DL)**—the mathematical foundation behind the Semantic Web.
+
+---
+
+## Expert Systems: Forward vs. Backward Inference
+
+A classic **Expert System** separates domain knowledge from the reasoning engine using three components:
+- **Working Memory (Problem Memory)**: Current facts known about the active case (e.g., `has_feathers = True`).
+- **Knowledge Base**: Long-term `IF-THEN` production rules authored by human experts.
+- **Inference Engine**: Matches rules against working memory and resolves conflicts when multiple rules apply.
+
+There are two directions an inference engine can run:
+
+| Inference Mode | Starting Point | How It Works | Best Used When |
+| :--- | :--- | :--- | :--- |
+| **Forward Chaining** | Initial observed facts | Scans rules whose `IF` conditions are satisfied, adds new facts to working memory, and repeats until the goal is reached. | Sensor monitoring, reactive alerts, all initial facts are already known. |
+| **Backward Chaining** | Target hypothesis (goal) | Starts from a goal (`animal = ?`), finds rules that produce it, and recursively proves or asks the user for missing sub-conditions. | Medical diagnosis or troubleshooting where asking unnecessary tests is costly. |
+
+---
+
+## Ontologies, RDF Triplets & Open Concept Graphs
+
+To share structured knowledge across the web, the **Semantic Web** standardizes triplets using **Resource Description Framework (RDF)** and **Web Ontology Language (OWL)**. Every entity and relationship gets a unique URI:
+
+$$\text{Triple} = \langle \text{Subject URI},\ \text{Predicate URI},\ \text{Object URI or Literal} \rangle$$
+
+You can query massive public knowledge graphs like **Wikidata** and **DBpedia** using **SPARQL**, or mine `is-a` taxonomic probabilities (e.g., *"Python is-a programming language"*) from open-source graphs like **ConceptNet** using Python libraries such as `rdflib`.
+
+<ColabButton
+  course="ai-for-beginners"
+  notebook="02-knowledge-representation-and-expert-systems.ipynb"
+  runtime="Free Tier CPU"
+/>
+
+---
+
+## Hands-On: Animal Expert System in Python
+
+Let's build a clean **Forward-Chaining** and **Backward-Chaining** expert system right here in the browser. Given a small set of physical observations, the engine infers intermediate classes (`mammal`, `carnivore`, `ungulate`) and identifies the exact animal.
+
+<PythonRunner
+  client:visible
+  title="Try it Yourself: Forward & Backward Chaining Animal Expert System"
+  expectedOutput="=== Forward Chaining Inference ===
+Initial facts: ['gives milk', 'has hooves', 'long neck', 'long legs', 'dark spots']
+  Fired rule -> inferred 'mammal'
+  Fired rule -> inferred 'ungulate'
+  Fired rule -> inferred 'animal:giraffe'
+Final Diagnosis: animal:giraffe
+
+=== Backward Chaining Proof ===
+Can we prove 'animal:tiger' from tiger facts? True
+Can we prove 'animal:giraffe' from tiger facts? False"
+  initialCode={`# Production rules: (goal_fact, list_of_OR_clauses_where_each_clause_is_AND_list)
+RULES = [
+    ("mammal", [["hair"], ["gives milk"]]),
+    ("carnivore", [["eats meat"], ["sharp teeth", "claws", "forward-looking eyes"]]),
+    ("ungulate", [["mammal", "has hooves"], ["mammal", "chews cud"]]),
+    ("bird", [["feathers"], ["flies", "lays eggs"]]),
+    ("animal:tiger", [["mammal", "carnivore", "red-brown", "dark stripes"]]),
+    ("animal:giraffe", [["ungulate", "long neck", "long legs", "dark spots"]]),
+    ("animal:zebra", [["ungulate", "dark stripes"]]),
+]
+
+def forward_chain(initial_facts: list[str]) -> set[str]:
+    memory = set(initial_facts)
+    changed = True
+    while changed:
+        changed = False
+        for conclusion, or_clauses in RULES:
+            if conclusion in memory:
+                continue
+            if any(all(cond in memory for cond in and_group) for and_group in or_clauses):
+                memory.add(conclusion)
+                print(f"  Fired rule -> inferred '{conclusion}'")
+                changed = True
+    return memory
+
+def backward_prove(goal: str, facts: set[str], visited: set[str] | None = None) -> bool:
+    if goal in facts:
+        return True
+    visited = visited or set()
+    if goal in visited:
+        return False
+    visited.add(goal)
+    for conclusion, or_clauses in RULES:
+        if conclusion == goal:
+            for and_group in or_clauses:
+                if all(backward_prove(cond, facts, visited.copy()) for cond in and_group):
+                    return True
+    return False
+
+print("=== Forward Chaining Inference ===")
+obs = ["gives milk", "has hooves", "long neck", "long legs", "dark spots"]
+print(f"Initial facts: {obs}")
+final_mem = forward_chain(obs)
+animals = sorted(f for f in final_mem if f.startswith("animal:"))
+print(f"Final Diagnosis: {animals[0] if animals else 'unknown'}\n")
+
+print("=== Backward Chaining Proof ===")
+tiger_facts = {"hair", "eats meat", "red-brown", "dark stripes"}
+print(f"Can we prove 'animal:tiger' from tiger facts? {backward_prove('animal:tiger', tiger_facts)}")
+print(f"Can we prove 'animal:giraffe' from tiger facts? {backward_prove('animal:giraffe', tiger_facts)}")`}
+/>
+
+---
+
+## Check Your Understanding
+
+<QuizCard
+  client:visible
+  question="When is Backward Chaining preferred over Forward Chaining in an Expert System?"
+  options={[
+    "When all sensor measurements are already loaded into memory and you want to derive every possible consequence.",
+    "When you want to test a specific hypothesis (goal) and only ask the user for the minimal missing facts needed to prove it.",
+    "When the knowledge base contains zero IF-THEN rules.",
+    "When you are training a deep convolutional neural network on ImageNet."
+  ]}
+  correctAnswer={1}
+  explanation="Backward chaining is goal-driven: it works backward from a target hypothesis and only requests or evaluates the sub-conditions necessary to prove that goal, avoiding wasted questions or tests."
+/>
+
+Now that you've seen how Top-Down Symbolic AI reasons with rules and ontologies, let's flip to the Bottom-Up paradigm in **Module 2: Neural Networks from Scratch**.

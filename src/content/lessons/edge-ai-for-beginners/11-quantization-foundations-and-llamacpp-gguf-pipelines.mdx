@@ -1,0 +1,122 @@
+---
+title: "Quantization Foundations & llama.cpp: Precision Tiers, GGUF Conversion & K-Quants"
+track: "edge-ai-for-beginners"
+category: "Module 3: Local & Containerized SLM Deployment, Quantization & Runtimes"
+order: 11
+difficulty: "intermediate"
+xp: 75
+description: "Master 1-bit to 8-bit quantization boundaries, GGUF binary layout, llama.cpp K-quantization (Q4_0, Q4_K_M, Q8_0), and SQNR error analysis."
+topic: "Quantization & llama.cpp"
+prerequisites: ["edge-ai-for-beginners/10-containerized-slm-deployment-vllm-and-onnx-runtime"]
+---
+import PythonRunner from '../../../components/islands/PythonRunner';
+import QuizCard from '../../../components/islands/QuizCard';
+import ColabButton from '../../../components/static/ColabButton.astro';
+
+You may know that downloading a model from Hugging Face gives you FP16 or BF16 weights where every parameter takes 16 bits. On a 7B model, that is 14 GB before you even type a single word. **Quantization** compresses those weights down to 8, 4, or even 2 bits, and **`llama.cpp`** with the **GGUF** format makes running those compressed weights on CPUs and edge GPUs fast and portable.
+
+Here is an overview of precision tiers, affine block quantization math, and how `llama.cpp` K-quants preserve accuracy.
+
+---
+
+## Precision Tiers & GGUF K-Quants
+
+Practitioners group quantization into three precision bands:
+- **Ultra-Low Precision (1–2 bit)**: `Q2_K`, BitNet 1.58-bit; extreme compression for memory-starved hardware, higher perplexity trade-off.
+- **Low Precision (3–4 bit)**: `Q4_0`, `Q4_K_M`; ~75 percent size reduction with strong reasoning retention. `Q4_K_M` is the industry workhorse for edge SLMs.
+- **Medium Precision (5–8 bit)**: `Q5_K_S`, `Q6_K`, `Q8_0`; ~50 to 65 percent reduction with near-FP16 fidelity.
+
+| GGUF Format | Effective Bits/Weight | 7B Model Size | Quality Retention | Recommended Use Case |
+| :--- | :--- | :--- | :--- | :--- |
+| **`Q8_0`** | 8.50 bpw | ~7.2 GB | Near-lossless | Accuracy baselines and teacher evaluation |
+| **`Q5_K_M`** | 5.69 bpw | ~4.8 GB | Very high | Production coding and JSON function calling |
+| **`Q4_K_M`** | 4.85 bpw | ~4.1 GB | High | Default balanced edge deployment |
+| **`Q4_0`** | 4.50 bpw | ~3.8 GB | Moderate-high | Legacy CPU SIMD and mobile baseline |
+| **`Q2_K`** | 3.35 bpw | ~2.8 GB | Degraded | Extreme RAM-constrained experiments |
+
+---
+
+## Block Quantization & Super-Block Overhead
+
+In uniform affine quantization, a floating-point weight block $x$ is mapped to $b$-bit integers using scale $s$ and zero-point $z$:
+
+$$
+q = \text{clamp}\!\left(\text{round}\!\left(\frac{x}{s}\right) + z,\; q_{\min},\; q_{\max}\right), \qquad \hat{x} = s \cdot (q - z)
+$$
+
+Because storing one FP16 scale per 32 weights (`Q4_0`) adds $\frac{16}{32} = 0.5\text{ bpw}$ overhead, **K-quants** (`Q4_K_M`) group 256 weights into a **super-block** and quantize the sub-block scales themselves! The effective bits per weight is:
+
+$$
+\text{bpw} = b + \frac{b_{\text{scale}}}{B_{\text{block}}}
+$$
+
+And the end-to-end `llama.cpp` conversion workflow takes three commands:
+
+```bash
+python convert_hf_to_gguf.py ./phi-4-mini --outtype f16 --outfile phi-4-mini-f16.gguf
+./build/bin/llama-quantize phi-4-mini-f16.gguf phi-4-mini-q4_k_m.gguf Q4_K_M
+./build/bin/llama-cli -m phi-4-mini-q4_k_m.gguf -p "Explain edge AI briefly." -n 128
+```
+
+---
+
+## Open the Companion Colab Notebook
+
+Launch the companion notebook to download a real `Q4_K_M` GGUF model and run `llama-cpp-python` inference on Google Colab.
+
+<ColabButton
+  course="edge-ai-for-beginners"
+  notebook="11-quantization-foundations-and-llamacpp-gguf-pipelines.ipynb"
+  runtime="Colab Free T4 GPU"
+/>
+
+---
+
+## Try It Yourself: Block Quantizer & SQNR Analyzer
+
+Run this Python block quantizer to quantize a 32-weight tensor at 8-bit (`Q8_0`), 4-bit (`Q4_0`), and 2-bit (`Q2`) precision and compare Signal-to-Quantization-Noise Ratio (SQNR) and effective bits per weight.
+
+<PythonRunner
+  client:visible
+  title="Try it Yourself: Block Quantization & SQNR Comparison"
+  expectedOutput="Precision=8-bit | Effective bpw=8.50 | SQNR=47.79 dB | Size Reduction=46.9%
+Precision=4-bit | Effective bpw=4.50 | SQNR=23.75 dB | Size Reduction=71.9%
+Precision=2-bit | Effective bpw=2.50 | SQNR=6.26 dB | Size Reduction=84.4%"
+  initialCode={`import math
+
+# Deterministic 32-element weight block
+weights = [math.sin(i * 0.45) * 0.8 + math.cos(i * 0.2) * 0.2 for i in range(32)]
+signal_power = sum(w * w for w in weights) / len(weights)
+
+def symmetric_block_quant(block, bits):
+    q_max = (1 << (bits - 1)) - 1
+    max_abs = max(abs(v) for v in block)
+    scale = max_abs / q_max if max_abs > 0 else 1.0
+    recon = [max(-q_max, min(q_max, round(v / scale))) * scale for v in block]
+    noise_power = sum((a - b) ** 2 for a, b in zip(block, recon)) / len(block)
+    sqnr_db = 10.0 * math.log10(signal_power / noise_power)
+    bpw = bits + (16.0 / len(block))  # 16-bit scale per 32 weights
+    reduction = (1.0 - bpw / 16.0) * 100.0
+    return bpw, sqnr_db, reduction
+
+for bits in (8, 4, 2):
+    bpw, sqnr, red = symmetric_block_quant(weights, bits)
+    print(f"Precision={bits}-bit | Effective bpw={bpw:.2f} | SQNR={sqnr:.2f} dB | Size Reduction={red:.1f}%")`}
+/>
+
+---
+
+## Check Your Understanding
+
+<QuizCard
+  client:visible
+  question="Why does Q4_K_M generally outperform Q4_0 at nearly the same file size?"
+  options={[
+    "Q4_K_M uses 256-weight super-blocks with quantized sub-block scales and mixed-precision assignment (higher bits on critical attention/output tensors).",
+    "Q4_K_M stores every weight in 16-bit floating point.",
+    "Q4_K_M removes the feed-forward layers from the model.",
+    "Q4_K_M only works on cloud GPUs."
+  ]}
+  correctAnswer={0}
+  explanation="K-quants allocate slightly higher precision to sensitive tensors (like attention value and output projections) and use double-quantized super-block scales to minimize quantization noise."
+/>

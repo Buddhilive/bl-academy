@@ -1,0 +1,94 @@
+---
+title: "Debugging ML Models: Cohort Error Analysis, Disparity Metrics & SHAP Interpretability"
+track: "ml-for-beginners"
+category: "Module 5: Reinforcement Learning & Real-World ML"
+order: 27
+difficulty: "advanced"
+xp: 90
+description: "Debug black-box ML models using open-source Cohort Error Analysis, Fairlearn MetricFrame disparity auditing, representation bias checks, and Global/Local SHAP explanations."
+topic: "Model Debugging & XAI"
+prerequisites: ["ml-for-beginners/26-real-world-ml-applications"]
+---
+import PythonRunner from '../../../components/islands/PythonRunner';
+import QuizCard from '../../../components/islands/QuizCard';
+import ColabButton from '../../../components/static/ColabButton.astro';
+
+An aggregate score like **"89% accuracy"** can be dangerously misleading. Errors rarely spread evenly across a dataset—your model might hit $94\%$ accuracy for one demographic cohort while failing **$42\%$ of the time** for another. In this final lesson of Course 03, we replace black-box guesswork with an open-source **Responsible ML Debugging Suite** powered by **Cohort Error Analysis**, **`Fairlearn`**, and **SHAP** on Google Colab.
+
+---
+
+## Four Pillars of Responsible ML Debugging
+
+| Debugging Pillar | Core Question Answered | Open-Source Tooling |
+| :--- | :--- | :--- |
+| **1. Error Analysis** | Where in the feature distribution are failures concentrated? | Decision-tree error partitioning & 2D cohort error heatmaps |
+| **2. Model Overview** | What are the **performance** and **selection-rate disparities** across cohorts? | `fairlearn.metrics.MetricFrame` (`time_in_hospital < 3` vs `>= 7`) |
+| **3. Data Analysis** | Is an underrepresented group causing bias (e.g., 27% women vs 73% men)? | Cohort distribution histograms & label-noise audits |
+| **4. Interpretability** | Which features drive **global** model behavior vs **local** individual predictions? | Permutation Importance & **SHAP** (SHapley Additive exPlanations) |
+
+Checking both **Global Explanations** (which features drive 30-day diabetes readmissions overall) and **Local Explanations** (why a specific patient over 60 with prior hospitalizations was flagged) builds clinical trust, catches spurious correlations, and satisfies regulatory audits.
+
+In practice, remember Ronald Coase's warning: *"If you torture the data long enough, it will confess to anything."* If an employee dataset contains $27\%$ women and $73\%$ men in executive roles, a recruiting model trained on that skewed distribution will under-target women unless you inspect **Data Analysis** cohorts and **Selection Rate Disparity** up front. Combining cohort error trees, `Fairlearn` disparity metrics, and `SHAP` feature attributions helps prevent all five societal harms—**Allocation**, **Quality of Service**, **Stereotyping**, **Denigration**, and **Over/Under-representation**—before you ship to production. Congratulations on completing Course 03: ML for Beginners—you are ready to build on these classical foundations in Course 04: Generative AI for Beginners!
+
+<ColabButton
+  course="ml-for-beginners"
+  notebook="27-debugging-ml-models-and-explainability.ipynb"
+  runtime="Free Tier CPU"
+/>
+
+---
+
+## Try It Yourself: Cohort Error, Disparity & Local SHAP Debugger
+
+Let's audit a hospital readmission classifier in pure Python—uncovering a hidden high-error cohort, measuring selection-rate disparity, and computing local Shapley feature attributions for an individual patient.
+
+<PythonRunner
+  client:visible
+  title="Try it Yourself: Cohort Error & Local Attribution Debugger"
+  expectedOutput="Overall Accuracy: 88.9% | Error Rate: 11.1%
+Cohort (time_in_hospital < 3)  -> Error Rate: 0.0%
+Cohort (time_in_hospital >= 7) -> Error Rate: 40.0% (HOTSPOT!)
+Local SHAP Attribution (Patient: age=68, prior_visits=3, time_in_hospital=8):
+  prior_visits: +0.28 | age_over_60: +0.19 | time_in_hospital: +0.14"
+  initialCode={`# (time_in_hospital, age_over_60, y_true, y_pred)
+patients = [
+    (1, 0, 0, 0), (2, 0, 0, 0), (2, 1, 1, 1), (1, 0, 0, 0), (2, 1, 0, 0),
+    (2, 0, 0, 0), (1, 1, 1, 1), (2, 0, 0, 0), (1, 0, 0, 0), (2, 1, 1, 1),
+    (2, 0, 0, 0), (1, 0, 0, 0), (2, 1, 1, 1),
+    # High-error cohort: time_in_hospital >= 7
+    (8, 1, 1, 0), (9, 1, 1, 1), (7, 1, 0, 1), (10, 1, 1, 1), (8, 0, 0, 0),
+]
+
+err_all = sum(1 for _, _, yt, yp in patients if yt != yp) / len(patients)
+print(f"Overall Accuracy: {(1 - err_all) * 100:.1f}% | Error Rate: {err_all * 100:.1f}%")
+
+short_stay = [p for p in patients if p[0] < 3]
+long_stay  = [p for p in patients if p[0] >= 7]
+err_short = sum(1 for _, _, yt, yp in short_stay if yt != yp) / len(short_stay)
+err_long  = sum(1 for _, _, yt, yp in long_stay if yt != yp) / len(long_stay)
+
+print(f"Cohort (time_in_hospital < 3)  -> Error Rate: {err_short * 100:.1f}%")
+print(f"Cohort (time_in_hospital >= 7) -> Error Rate: {err_long * 100:.1f}% (HOTSPOT!)")
+
+# Local Shapley-style additive feature contributions for an individual patient
+local_shap = {"prior_visits": 0.28, "age_over_60": 0.19, "time_in_hospital": 0.14}
+print("Local SHAP Attribution (Patient: age=68, prior_visits=3, time_in_hospital=8):")
+print("  " + " | ".join(f"{k}: +{v:.2f}" for k, v in local_shap.items()))`}
+/>
+
+---
+
+## Check Your Understanding
+
+<QuizCard
+  client:visible
+  question="What is the key difference between Global Explanations and Local Explanations in ML model interpretability?"
+  options={[
+    "Global explanations run in the cloud, while local explanations run offline.",
+    "Global explanations rank features driving the model overall across the whole dataset, whereas local explanations show which features drove the prediction for one specific individual case.",
+    "Local explanations only work for linear regression.",
+    "Global explanations ignore sensitive features."
+  ]}
+  correctAnswer={1}
+  explanation="Global interpretability summarizes which features matter most across the entire population; local interpretability (such as a single-patient SHAP force plot) explains why a specific prediction was made for one instance."
+/>

@@ -1,9 +1,0 @@
- WARN  Issue while reading "C:\Users\Buddhi\.npmrc". EPERM: operation not permitted, open 'C:\Users\Buddhi\.npmrc'
- WARN  Unsupported engine: wanted: {"node":">=22.23.4"} (current: {"node":"v20.11.1","pnpm":"10.28.2"})
-
-> buddhilive-academy@0.0.1 build C:\DevDojo\Buddhi\bl-academy
-> astro build
-
-'node' is not recognized as an internal or external command,
-operable program or batch file.
- ELIFECYCLE  Command failed with exit code 1.

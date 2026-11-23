@@ -1,0 +1,140 @@
+---
+title: "Introduction and History of Artificial Intelligence"
+track: "ai-for-beginners"
+category: "Module 1: Symbolic AI & Foundations"
+order: 2
+difficulty: "beginner"
+xp: 50
+description: "Explore Weak vs. Strong AI, the Turing Test, Symbolic vs. Connectionist paradigms, and the major historical milestones of Artificial Intelligence."
+topic: "AI History and Paradigms"
+prerequisites: ["ai-for-beginners/00-course-setup-and-colab-environment"]
+---
+import PythonRunner from '../../../components/islands/PythonRunner';
+import QuizCard from '../../../components/islands/QuizCard';
+
+**Artificial Intelligence** studies how to build computer systems that exhibit behaviors we normally associate with human intelligence—recognizing faces, understanding language, playing strategy games, or making medical diagnoses.
+
+Traditional software engineering works when you can write an explicit step-by-step recipe (an algorithm). You can easily write an algorithm to sort a list of numbers or calculate compound interest. However, try writing explicit `if-else` rules to estimate a person's age from a photograph. You recognize a person's age effortlessly in your head, yet you cannot translate that intuition into exact pixel rules. That gap—tasks we can perform but cannot explicitly program—is where AI begins.
+
+---
+
+## Weak AI vs. Strong AI
+
+When people talk about AI in the news, they often mix up two fundamentally different concepts: **Weak (Narrow) AI** and **Strong AI (Artificial General Intelligence, or AGI)**.
+
+| Dimension | Weak AI (Narrow AI) | Strong AI (AGI) |
+| :--- | :--- | :--- |
+| **Scope** | Designed and trained for a single, well-defined task or narrow domain. | Possesses general human-level intelligence across arbitrary domains. |
+| **Understanding** | Excels at pattern matching and optimization without genuine consciousness. | Capable of abstract reasoning, cross-domain transfer, and self-directed adaptation. |
+| **Real-World Examples** | Voice assistants, spam filters, chess engines, movie recommenders, code copilots. | Currently theoretical; no deployed system has achieved true AGI. |
+
+---
+
+## Defining Intelligence and the Turing Test
+
+One of the hardest problems in AI is that "intelligence" itself has no universally agreed-upon mathematical definition. Is a crow solving a multi-step puzzle intelligent? What about a thermostat or a chess engine?
+
+In 1950, **Alan Turing** side-stepped philosophical debates by proposing an operational benchmark called the **Imitation Game**—now known as the **Turing Test**. A human interrogator conducts a text-only conversation with two hidden participants: one human and one machine. If the interrogator cannot reliably tell which participant is the machine, the system passes the test.
+
+> **Reality Check:** Passing a conversational test does not automatically prove human-like understanding. Early chatbots like *Eugene Goostman* (2014) convinced 30% of judges in a 5-minute chat by adopting the persona of a 13-year-old non-native speaker—a clever trick by the bot's authors rather than true general reasoning.
+
+---
+
+## Two Core Paradigms: Top-Down vs. Bottom-Up AI
+
+If we want machines to solve complex tasks, we can model human intelligence from two opposite directions:
+
+1. **Top-Down Approach (Symbolic AI / GOFAI)**: Models conscious human reasoning. Domain experts encode explicit facts and `IF-THEN` rules into a computer-readable knowledge base, and an inference engine deduces conclusions.
+2. **Bottom-Up Approach (Connectionism / Neural Networks)**: Models the biological structure of the brain using interconnected artificial neurons. Instead of writing rules by hand, we feed the network thousands of labeled examples and let it learn weighted patterns from data.
+
+| Feature | Top-Down (Symbolic AI) | Bottom-Up (Neural Networks) |
+| :--- | :--- | :--- |
+| **Core Mechanism** | Explicit rules, logic, ontologies, knowledge graphs | Weighted neurons, gradient optimization, training data |
+| **Explainability** | High — every conclusion traces back to exact rules | Low ("black box") — knowledge is distributed across weights |
+| **Scaling Bottleneck** | Hand-crafting and maintaining rules for messy real-world data | Requires large datasets and heavy GPU compute |
+| **Best Fit** | Legal/medical compliance, formal verification, structured queries | Vision, speech recognition, natural language generation |
+
+*(Two additional paradigms—**Evolutionary / Genetic Algorithms** and **Multi-Agent Emergent Systems**—will also appear in Module 5 of this course.)*
+
+---
+
+## A Brief History of AI
+
+AI did not appear overnight. Over seven decades, the field swung between symbolic optimism, funding winters, and data-driven breakthroughs:
+
+| Era | Milestone | Impact |
+| :--- | :--- | :--- |
+| **1950** | Alan Turing publishes *Computing Machinery and Intelligence* | Introduces the Turing Test. |
+| **1956** | Dartmouth Summer Research Project on Artificial Intelligence | Coins the term "Artificial Intelligence" and launches Symbolic AI. |
+| **1966** | Joseph Weizenbaum builds **ELIZA** | Demonstrates rule-based pattern matching in natural language dialogue. |
+| **1970s–1980s** | **Expert Systems** & the **First AI Winter** | Early rule systems succeed in narrow domains but prove too brittle and expensive to maintain, triggering funding cuts. |
+| **1997** | **Deep Blue** defeats Garry Kasparov | Alpha-beta search and specialized hardware conquer chess. |
+| **2012** | **AlexNet** wins ImageNet ILSVRC | Deep Convolutional Neural Networks slash image error rates from ~26% to 16.4% using GPUs. |
+| **2015–2020** | **ResNet**, **Transformers**, **BERT**, and **GPT-3** | Deep learning achieves human parity in image classification (2015), speech (2016), translation (2018), and general text generation. |
+
+---
+
+## Hands-On: Symbolic Rules vs. Weighted Scoring
+
+To feel the difference between Top-Down (Symbolic) and Bottom-Up (Weighted) AI, let's run both approaches on a simple sentence-analysis problem in pure Python. Notice how the **ELIZA-style symbolic matcher** relies on exact keyword patterns, whereas the **weighted feature scorer** sums learned numerical weights.
+
+<PythonRunner
+  client:visible
+  title="Try it Yourself: Symbolic Pattern Matching vs. Weighted Scorer"
+  expectedOutput="=== Top-Down Symbolic (ELIZA Rule) ===
+Input: 'I feel worried about my exam'
+Response: Why do you feel worried about my exam?
+
+=== Bottom-Up Weighted Scorer (Sentiment) ===
+Text: 'great fast helpful tool' -> score=2.20 -> POSITIVE
+Text: 'slow broken confusing ui' -> score=-2.10 -> NEGATIVE"
+  initialCode={`import re
+
+# 1. Top-Down Symbolic Approach (ELIZA-style pattern transformation)
+def eliza_respond(user_input: str) -> str:
+    match = re.match(r"I feel (.*)", user_input, re.IGNORECASE)
+    if match:
+        feeling = match.group(1)
+        return f"Why do you feel {feeling}?"
+    return "Tell me more about that."
+
+sample = "I feel worried about my exam"
+print("=== Top-Down Symbolic (ELIZA Rule) ===")
+print(f"Input: '{sample}'")
+print(f"Response: {eliza_respond(sample)}\n")
+
+# 2. Bottom-Up Weighted Approach (Numeric feature weights)
+weights = {
+    "great": 0.9, "fast": 0.6, "helpful": 0.7,
+    "slow": -0.7, "broken": -0.9, "confusing": -0.5,
+}
+
+def predict_sentiment(text: str) -> tuple[float, str]:
+    score = sum(weights.get(word, 0.0) for word in text.lower().split())
+    label = "POSITIVE" if score >= 0 else "NEGATIVE"
+    return score, label
+
+print("=== Bottom-Up Weighted Scorer (Sentiment) ===")
+for review in ["great fast helpful tool", "slow broken confusing ui"]:
+    score, label = predict_sentiment(review)
+    print(f"Text: '{review}' -> score={score:.2f} -> {label}")`}
+/>
+
+---
+
+## Check Your Understanding
+
+<QuizCard
+  client:visible
+  question="Why did early Top-Down Symbolic Expert Systems struggle to scale across complex real-world tasks like visual object recognition?"
+  options={[
+    "Computers in the 1970s could not execute if-else conditional statements.",
+    "Extracting all tacit human knowledge into rigid manual rules is brittle, expensive, and cannot capture perceptual intuition like recognizing faces.",
+    "Symbolic AI requires NVIDIA T4 GPUs that did not exist until 2012.",
+    "Expert systems cannot explain how they arrived at a decision."
+  ]}
+  correctAnswer={1}
+  explanation="Top-Down systems are highly explainable, but hand-crafting and maintaining thousands of explicit rules breaks down on messy, perceptual tasks where humans rely on intuition rather than conscious step-by-step logic."
+/>
+
+Next up, we'll build a real Symbolic AI inference engine and explore ontologies in **Lesson 02: Knowledge Representation and Expert Systems**.

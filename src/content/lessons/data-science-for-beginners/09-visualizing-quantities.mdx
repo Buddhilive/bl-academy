@@ -1,0 +1,125 @@
+---
+title: "Visualizing Quantities: Line, Scatter & Bar Charts with Matplotlib"
+track: "data-science-for-beginners"
+category: "Module 3: Data Visualization"
+order: 9
+difficulty: "beginner"
+xp: 70
+description: "Use Matplotlib line, scatter, and horizontal bar charts on the Minnesota birds dataset to spot wingspan outliers and compare category counts and lengths."
+topic: "Visualizing Quantities"
+prerequisites: ["data-science-for-beginners/08-data-preparation-and-cleaning"]
+---
+import PythonRunner from '../../../components/islands/PythonRunner';
+import QuizCard from '../../../components/islands/QuizCard';
+import ColabButton from '../../../components/static/ColabButton.astro';
+
+Once your data is clean, the fastest way to understand what is actually inside it is to plot it. Numbers in a 400-row table hide mistakes that jump off the screen in two seconds on a chart. In this lesson, we'll use **Matplotlib** on a dataset of Minnesota birds to visualize quantities, catch absurd data-entry typos, and compare bird categories with horizontal bar charts.
+
+---
+
+## Choosing the Right Chart for Your Question
+
+Before writing plotting code, match your chart type to the story your data needs to tell:
+
+| Analytical Goal | Best Chart Types |
+| :--- | :--- |
+| **Analyze trends over time** | Line chart |
+| **Compare discrete values & categories** | Bar chart, Horizontal Bar, Scatterplot |
+| **Show parts of a whole** | Pie, Donut, Waffle chart |
+| **Show distribution of values** | Histogram, Box plot, Scatterplot |
+| **Show relationships between variables** | Line, Scatterplot, Bubble, Dual-axis |
+
+---
+
+## Spotting Outliers: The 23-Meter "Pterodactyl" Typo
+
+When we plot `birds['MaxWingspan']` as a basic line chart, a massive spike shoots up to `2300` cm—a 23-meter wingspan! Adding 45-degree x-axis labels for 440+ species turns unreadable fast, so we switch to a **scatter plot** (`'bo'` blue circles), hide the crowded x-axis ticks with `plt.tick_params(..., labelbottom=False)`, and annotate only birds with `MaxWingspan > 500`:
+
+- **Bald eagle** (`2300` cm — clearly an extra `0` typo for `230` cm)
+- **Prairie falcon** (`2500` cm — another extra `0` typo)
+
+Filtering out those two mislabeled records immediately reveals the true wingspan scale across Minnesota's wildlife.
+
+---
+
+## Horizontal & Superimposed Bar Charts
+
+Plotting raw ungrouped rows as a vertical bar chart produces an unreadable wall of bars. Instead, we use Pandas to aggregate first (`birds['Category'].value_counts()`) and Matplotlib to render a **horizontal bar chart** (`plot.barh()`):
+
+- **Category Counts**: `Ducks/Geese/Waterfowl` tops the chart—no surprise in Minnesota, the "Land of 10,000 Lakes."
+- **Superimposed Min/Max Lengths**: Calling `plt.barh(category, maxLength)` followed by `plt.barh(category, minLength)` overlays minimum and maximum body lengths per category, visually revealing that larger birds also span wider length ranges.
+
+<ColabButton
+  course="data-science-for-beginners"
+  notebook="09-visualizing-quantities.ipynb"
+  runtime="Free Tier CPU"
+/>
+
+---
+
+## Try It Yourself: Wingspan Outlier Detector & ASCII Bar Chart
+
+Run this pure-Python bird analyzer to flag the `> 500 cm` wingspan typos, filter them out, and render a horizontal bar chart of category counts and length ranges.
+
+<PythonRunner
+  client:visible
+  title="Try it Yourself: Bird Wingspan Outlier Filter & Category Bars"
+  expectedOutput="=== Wingspan Outliers (> 500 cm) ===
+FLAGGED: Bald eagle (2300 cm)
+FLAGGED: Prairie falcon (2500 cm)
+
+=== Clean Max Wingspan Mean ===
+118.4 cm across 5 valid species
+
+=== Species Count by Category ===
+Ducks/Geese/Waterfowl | ### (3)
+Hawks/Eagles          | # (1)
+Hummingbirds          | # (1)"
+  initialCode={`birds = [
+    {"Name": "Black-bellied whistling-duck", "Category": "Ducks/Geese/Waterfowl", "MaxWingspan": 94},
+    {"Name": "Snow goose", "Category": "Ducks/Geese/Waterfowl", "MaxWingspan": 165},
+    {"Name": "Ross's goose", "Category": "Ducks/Geese/Waterfowl", "MaxWingspan": 116},
+    {"Name": "Bald eagle", "Category": "Hawks/Eagles", "MaxWingspan": 2300},
+    {"Name": "Prairie falcon", "Category": "Falcons", "MaxWingspan": 2500},
+    {"Name": "Red-tailed hawk", "Category": "Hawks/Eagles", "MaxWingspan": 133},
+    {"Name": "Ruby-throated hummingbird", "Category": "Hummingbirds", "MaxWingspan": 84},
+]
+
+print("=== Wingspan Outliers (> 500 cm) ===")
+clean = []
+for b in birds:
+    if b["MaxWingspan"] > 500:
+        print(f"FLAGGED: {b['Name']} ({b['MaxWingspan']} cm)")
+    else:
+        clean.append(b)
+
+avg_ws = sum(b["MaxWingspan"] for b in clean) / len(clean)
+print(f"\n=== Clean Max Wingspan Mean ===\n{avg_ws:.1f} cm across {len(clean)} valid species")
+
+counts = {}
+for b in clean:
+    counts[b["Category"]] = counts.get(b["Category"], 0) + 1
+
+print("\n=== Species Count by Category ===")
+for cat, n in sorted(counts.items(), key=lambda x: -x[1]):
+    print(f"{cat:<21} | {'#' * n} ({n})")`}
+/>
+
+---
+
+## Check Your Understanding
+
+<QuizCard
+  client:visible
+  question="When plotting hundreds of bird species, why is a horizontal bar chart (`barh`) on `value_counts()` preferred over a raw vertical bar chart?"
+  options={[
+    "Horizontal bar charts automatically delete outlier rows.",
+    "Aggregating counts first avoids plotting hundreds of overlapping bars, and horizontal labels stay readable without 90-degree rotation.",
+    "Matplotlib only supports horizontal bars for CSV files.",
+    "Vertical bar charts cannot display integer counts."
+  ]}
+  correctAnswer={1}
+  explanation="Summarizing data with value_counts() before plotting prevents clutter, and horizontal bars give long category names plenty of room on the y-axis."
+/>
+
+Next, we'll move from individual quantities to full **probability density curves and histograms** in **Visualizing Distributions**.
