@@ -63,7 +63,7 @@ const courseJsonLd = {
       educationalLevel: course.difficulty,
       provider: {
         '@type': 'EducationalOrganization',
-        name: 'BuddhiLive Academy',
+        name: 'BuddhiAI Academy',
         url: siteBase.toString().replace(/\/$/, ''),
       },
     },
@@ -89,7 +89,7 @@ const courseJsonLd = {
 ---
 
 <Layout
-  title={`Course ${course.stepCode}: ${course.title} | BuddhiLive Academy`}
+  title={`Course ${course.stepCode}: ${course.title} | BuddhiAI Academy`}
   description={course.summary}
 >
   <script slot="head" type="application/ld+json" set:html={JSON.stringify(courseJsonLd)} />
@@ -276,7 +276,7 @@ const courseJsonLd = {
 
     <footer class="border-t border-neutral-800 bg-neutral-900/40 py-6 text-center text-xs text-neutral-400">
       <div class="max-w-5xl mx-auto px-4 flex flex-wrap items-center justify-between gap-2">
-        <span>© 2026 BuddhiLive Academy</span>
+        <span>© 2026 BuddhiAI Academy</span>
         <a href="/#acknowledgements" class="text-[#E07A5F] hover:underline">
           Curriculum Acknowledgements
         </a>

@@ -48,11 +48,11 @@ shapes:
   rounded-full: "9999px"
 ---
 
-# Design System: Buddhilive Academy
+# Design System: BuddhiAI Academy
 
 ## Overview
 
-Buddhilive Academy is an interactive STEM tutorial and reference platform inspired by the structured, scannable clarity of W3Schools, combined with a W3Schools "Pathfinder / My Learning" progress and gamification system (XP, track milestones, and completion badges). It is designed for fast lookup and systematic study across Python, Data Science, AI, Mathematics, and Computer Science.
+BuddhiAI Academy is an interactive STEM tutorial and reference platform inspired by the structured, scannable clarity of W3Schools, combined with a W3Schools "Pathfinder / My Learning" progress and gamification system (XP, track milestones, and completion badges). It is designed for fast lookup and systematic study across Python, Data Science, AI, Mathematics, and Computer Science.
 
 The visual aesthetic evokes an enlightened, high-contrast digital atelier:
 - Warm terracotta earthen focus (`#A7452A`) honoring curiosity and structured thought.

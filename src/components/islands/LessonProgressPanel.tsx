@@ -161,12 +161,17 @@ export default function LessonProgressPanel({
         <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
           <a
             href="/"
+            aria-label="BuddhiAI Academy"
             className="flex items-center gap-2 font-bold text-white text-base tracking-tight shrink-0 min-h-[44px] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#E07A5F] rounded"
           >
-            <span className="w-7 h-7 rounded bg-[#A7452A] flex items-center justify-center text-xs text-white font-extrabold">
-              BL
-            </span>
-            <span className="hidden sm:inline">BuddhiLive</span>
+            <img
+              src="/logo.png"
+              alt=""
+              width={28}
+              height={28}
+              className="w-7 h-7 rounded object-contain shrink-0"
+            />
+            <span className="hidden sm:inline">BuddhiAI</span>
           </a>
 
           <div className="h-5 w-px bg-neutral-800 shrink-0" aria-hidden="true" />

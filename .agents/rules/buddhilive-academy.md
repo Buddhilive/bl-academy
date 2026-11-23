@@ -5,7 +5,7 @@ priority: P0
 trigger: always_on
 ---
 
-# Antigravity Rules: Buddhilive Academy
+# Antigravity Rules: BuddhiAI Academy
 
 ## 1. Grounding & Attribution Rule (Non-Negotiable)
 - Whenever creating, editing, or outlining tutorials/lessons:

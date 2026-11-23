@@ -1,5 +1,5 @@
 /**
- * Island component props and state contracts for Buddhilive Academy interactive components.
+ * Island component props and state contracts for BuddhiAI Academy interactive components.
  */
 
 export interface PythonRunnerProps {

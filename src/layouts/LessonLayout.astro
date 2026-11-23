@@ -85,7 +85,7 @@ const lessonJsonLd = {
       },
       provider: {
         '@type': 'EducationalOrganization',
-        name: 'BuddhiLive Academy',
+        name: 'BuddhiAI Academy',
         url: siteBase.toString().replace(/\/$/, ''),
       },
     },
@@ -116,7 +116,7 @@ const lessonJsonLd = {
 };
 ---
 
-<Layout title={`${title} | BuddhiLive Academy`} description={description} ogType="article">
+<Layout title={`${title} | BuddhiAI Academy`} description={description} ogType="article">
   <script slot="head" type="application/ld+json" set:html={JSON.stringify(lessonJsonLd)} />
   <slot name="head" slot="head" />
   

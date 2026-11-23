@@ -1,4 +1,4 @@
-# AGENTS.md — Buddhilive Academy
+# AGENTS.md — BuddhiAI Academy
 
 Operational instructions and engineering principles for AI coding agents.
 

@@ -1,4 +1,4 @@
-# Supabase Setup Guide — Buddhilive Academy
+# Supabase Setup Guide — BuddhiAI Academy
 
 This document outlines the setup steps required in the Supabase Dashboard to support user authentication (Google Sign-In & Email Magic Link) and dual-layer local-first progress synchronization.
 

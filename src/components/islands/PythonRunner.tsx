@@ -9,7 +9,7 @@ import type { PythonRunnerProps } from '../../types/islands';
 
 export const PythonRunner: React.FC<PythonRunnerProps> = ({
   lessonSlug,
-  initialCode = '# Write your Python code below\nprint("Hello, Buddhilive Academy!")',
+  initialCode = '# Write your Python code below\nprint("Hello, BuddhiAI Academy!")',
   expectedOutput,
   packages,
   title = 'Example',

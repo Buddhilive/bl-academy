@@ -1,6 +1,6 @@
 # Acknowledgements
 
-**Buddhilive Academy**'s AI Engineering learning path is built on open-source educational curricula, engineering guides, and community-driven repositories. We gratefully acknowledge the authors, maintainers, and contributors of the following upstream open-source projects whose work inspired and grounded our curriculum:
+**BuddhiAI Academy**'s AI Engineering learning path is built on open-source educational curricula, engineering guides, and community-driven repositories. We gratefully acknowledge the authors, maintainers, and contributors of the following upstream open-source projects whose work inspired and grounded our curriculum:
 
 | Course / Inspiration | Upstream Repository | Maintainer / Organization |
 | :--- | :--- | :--- |
@@ -14,4 +14,4 @@
 | **07. Harness Engineering** | [walkinglabs/learn-harness-engineering](https://github.com/walkinglabs/learn-harness-engineering) | WalkingLabs & Contributors |
 | **08. Edge AI for Beginners** | [microsoft/edgeai-for-beginners](https://github.com/microsoft/edgeai-for-beginners) | Microsoft & Contributors |
 
-All adaptations on Buddhilive Academy replace proprietary cloud dependencies with open-source frameworks, **Google Colab Free Tier** notebooks, and **Google AI Studio Free Tier** (`GEMINI_API_KEY`) workflows so every learner can run the complete path at zero cost.
+All adaptations on BuddhiAI Academy replace proprietary cloud dependencies with open-source frameworks, **Google Colab Free Tier** notebooks, and **Google AI Studio Free Tier** (`GEMINI_API_KEY`) workflows so every learner can run the complete path at zero cost.

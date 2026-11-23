@@ -17,14 +17,14 @@ const homeJsonLd = {
   '@graph': [
     {
       '@type': 'EducationalOrganization',
-      name: 'BuddhiLive Academy',
+      name: 'BuddhiAI Academy',
       url: 'https://academy.buddhilive.com',
       description:
         'Open-source, zero-backend 9-course AI Engineering curriculum with client-side Pyodide execution and Google Colab notebooks.',
     },
     {
       '@type': 'WebSite',
-      name: 'BuddhiLive Academy',
+      name: 'BuddhiAI Academy',
       url: 'https://academy.buddhilive.com',
     },
   ],
@@ -100,7 +100,7 @@ const pedagogySteps = [
 ---
 
 <Layout
-  title="BuddhiLive Academy — 9-Course AI Engineering Learning Path"
+  title="BuddhiAI Academy — 9-Course AI Engineering Learning Path"
   description="Master AI Engineering sequentially from Python fundamentals to neural networks, data science, ML, Generative AI, MCP, AI Agents, Harness Engineering, and Edge AI."
 >
   <script slot="head" type="application/ld+json" set:html={JSON.stringify(homeJsonLd)} />
@@ -111,10 +111,14 @@ const pedagogySteps = [
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2.5 flex items-center justify-between gap-3">
         <div class="flex items-center gap-2.5 sm:gap-3 min-w-0">
           <a href="/" class="flex items-center gap-2.5 font-extrabold text-base sm:text-lg text-white min-h-[44px] shrink-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#E07A5F] rounded">
-            <span class="w-7 h-7 rounded bg-[#A7452A] flex items-center justify-center text-xs text-white shrink-0">
-              BL
-            </span>
-            <span class="truncate">BuddhiLive Academy</span>
+            <img
+              src="/logo.png"
+              alt=""
+              width="28"
+              height="28"
+              class="w-7 h-7 rounded object-contain shrink-0"
+            />
+            <span class="truncate">BuddhiAI Academy</span>
           </a>
 
           <div class="h-5 w-px bg-neutral-800 shrink-0" aria-hidden="true" />
@@ -126,7 +130,6 @@ const pedagogySteps = [
           <a href="#learning-path" class="hover:text-[#E07A5F] transition-colors py-2">Learning Path</a>
           <a href="#how-it-works" class="hover:text-[#E07A5F] transition-colors py-2">Pedagogy</a>
           <a href="#free-stack" class="hover:text-[#E07A5F] transition-colors py-2">Colab &amp; Gemini Setup</a>
-          <a href="#acknowledgements" class="hover:text-[#E07A5F] transition-colors py-2">Acknowledgements</a>
         </nav>
 
         <div class="flex items-center gap-2 shrink-0">
@@ -154,9 +157,6 @@ const pedagogySteps = [
                 </li>
                 <li>
                   <a href="#free-stack" class="flex items-center min-h-[44px] px-3 py-2 rounded-lg text-neutral-200 hover:bg-neutral-800 hover:text-[#E07A5F]">Colab &amp; Gemini Setup</a>
-                </li>
-                <li>
-                  <a href="#acknowledgements" class="flex items-center min-h-[44px] px-3 py-2 rounded-lg text-neutral-200 hover:bg-neutral-800 hover:text-[#E07A5F]">Acknowledgements</a>
                 </li>
                 <li class="pt-1 border-t border-neutral-800 sm:hidden">
                   <a href={resolveCourseEntryUrl('python', allLessons)} class="flex items-center justify-center min-h-[44px] px-3 py-2 rounded-lg bg-[#A7452A] text-white font-semibold">Start Course 00 »</a>
@@ -395,7 +395,7 @@ const pedagogySteps = [
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-4">
         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
-            <p class="font-semibold text-neutral-200">BuddhiLive Academy</p>
+            <p class="font-semibold text-neutral-200">BuddhiAI Academy</p>
             <p class="mt-1">
               Fast, accessible, open-source AI Engineering tutorials with client-side Pyodide &amp; Google Colab Free Tier.
             </p>
