@@ -145,7 +145,7 @@ const lessonJsonLd = {
       {/* Main lesson content */}
       <main id="main-content" class="flex-1 min-w-0 max-w-4xl">
         <slot name="top-banner">
-          <AdSlot slotId="top-lesson-banner" className="mb-6" />
+          <AdSlot slotId={import.meta.env.PUBLIC_ADSENSE_TOP_SLOT_ID || '9280073752'} format="auto" className="mb-6" />
         </slot>
 
         <article class="prose prose-invert prose-neutral max-w-none prose-headings:font-semibold prose-headings:text-neutral-100 prose-a:text-[#E07A5F] hover:prose-a:underline prose-code:text-[#E07A5F] prose-pre:bg-neutral-900 prose-pre:border prose-pre:border-neutral-800">
@@ -218,10 +218,6 @@ const lessonJsonLd = {
             sticky={false}
           />
         </div>
-
-        <slot name="bottom-banner">
-          <AdSlot slotId="bottom-lesson-banner" className="mt-8" />
-        </slot>
       </main>
     </div>
   </div>
