@@ -485,13 +485,15 @@ print(status_msg)
 # 3. Leetspeak Translator Challenge (translate.py)
 print("\\n--- Leetspeak Translator ---")
 sample_text = "I like to eat eggs and spam."
-leetspeak = sample_text.replace("a", "4") \\
-                       .replace("b", "8") \\
-                       .replace("e", "3") \\
-                       .replace("l", "1") \\
-                       .replace("o", "0") \\
-                       .replace("s", "5") \\
-                       .replace("t", "7")
+leetspeak = (
+    sample_text.replace("a", "4")
+    .replace("b", "8")
+    .replace("e", "3")
+    .replace("l", "1")
+    .replace("o", "0")
+    .replace("s", "5")
+    .replace("t", "7")
+)
 
 print("Original   :", sample_text)
 print("Translated :", leetspeak)
