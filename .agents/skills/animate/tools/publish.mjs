@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // Publish a rendered explainer piece into public/videos/<course>/ for BuddhiAI Academy MDX lessons.
-//   usage: node tools/publish.mjs pieces/<course>/<slug> <course> <slug> [--poster-time 1.5] [--share]
+//   usage: node tools/publish.mjs .buddhi/pieces/<course>/<slug> <course> <slug> [--poster-time 1.5] [--share]
 import { spawnSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';

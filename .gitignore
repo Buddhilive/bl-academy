@@ -29,11 +29,11 @@ pnpm-debug.log*
 
 # animate skill: reference media & transient piece render artifacts
 references/
-pieces/**/frames*/
-pieces/**/review/
-pieces/**/index.html
-pieces/**/renders/*.wav
-pieces/**/renders/final*.mp4
-pieces/**/renders/share*.mp4
-pieces/**/voice/*.scratch.wav
-pieces/**/voice/voice.wav
+.buddhi/pieces/**/frames*/
+.buddhi/pieces/**/review/
+.buddhi/pieces/**/index.html
+.buddhi/pieces/**/renders/*.wav
+.buddhi/pieces/**/renders/final*.mp4
+.buddhi/pieces/**/renders/share*.mp4
+.buddhi/pieces/**/voice/*.scratch.wav
+.buddhi/pieces/**/voice/voice.wav
