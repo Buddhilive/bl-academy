@@ -24,6 +24,8 @@ Antigravity automatically discovers every `SKILL.md` in this directory:
    - `repoagent-doc-generation`: Topological per-symbol documentation engine.
    - `system-design`: Principled trade-off evaluations for structural choices.
    - `remember`: Explicit cross-session memory capture (`/remember`).
+4. **Media & Explainer Production**:
+   - `animate`: Deterministic procedural `<canvas>` explainer video workflow with 7 styles, local Voicebox (`"Buddhi"`) narration, WebVTT captions, and `<ExplainerVideo />` publishing (`/animate`).
 
 ## Adding Custom or Tech-Stack Skills
 

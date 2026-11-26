@@ -9,7 +9,9 @@
     "dev": "astro dev",
     "build": "astro build",
     "preview": "astro preview",
-    "astro": "astro"
+    "astro": "astro",
+    "animate:setup": "node .agents/skills/animate/tools/setup.mjs --install --test",
+    "animate:test": "node .agents/skills/animate/tools/setup.mjs --test"
   },
   "dependencies": {
     "@astrojs/markdown-remark": "^7.3.5",

@@ -1,0 +1,88 @@
+---
+interface Props {
+  course: string;
+  slug: string;
+  title: string;
+  description?: string;
+  captions?: boolean;
+  lang?: string;
+  captionsLabel?: string;
+  transcript?: string;
+}
+
+const {
+  course,
+  slug,
+  title,
+  description,
+  captions = false,
+  lang = 'en',
+  captionsLabel = 'English',
+  transcript,
+} = Astro.props;
+
+const sanitizeSegment = (value: string) => value.replace(/[^a-zA-Z0-9_-]/g, '');
+const safeCourse = sanitizeSegment(course);
+const safeSlug = sanitizeSegment(slug);
+
+const videoSrc = `/videos/${safeCourse}/${safeSlug}.mp4`;
+const posterSrc = `/videos/${safeCourse}/${safeSlug}-poster.png`;
+const captionsSrc = `/videos/${safeCourse}/${safeSlug}.vtt`;
+---
+
+<figure
+  class="not-prose my-6 overflow-hidden rounded-lg border border-stone-300 bg-stone-50 text-stone-900 dark:border-stone-700 dark:bg-neutral-900 dark:text-stone-100"
+  aria-label={`Explainer video: ${title}`}
+>
+  <div class="aspect-video w-full bg-neutral-950">
+    <video
+      controls
+      preload="metadata"
+      playsinline
+      poster={posterSrc}
+      aria-label={title}
+      class="h-full w-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#A7452A] focus-visible:ring-offset-2 dark:focus-visible:ring-[#E07A5F]"
+    >
+      <source src={videoSrc} type="video/mp4" />
+      {captions && (
+        <track
+          kind="captions"
+          src={captionsSrc}
+          srclang={lang}
+          label={captionsLabel}
+          default
+        />
+      )}
+      <p class="p-4 text-sm text-stone-300">
+        Your browser does not support HTML5 video.
+        <a
+          href={videoSrc}
+          class="underline text-[#E07A5F] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E07A5F]"
+        >
+          Download {title} (MP4)
+        </a>.
+      </p>
+    </video>
+  </div>
+
+  <figcaption class="border-t border-stone-300 px-4 py-3 dark:border-stone-700">
+    <div class="text-sm font-semibold text-stone-900 dark:text-stone-100">
+      {title}
+    </div>
+    {description && (
+      <p class="mt-1 text-sm text-stone-600 dark:text-stone-400">
+        {description}
+      </p>
+    )}
+    {transcript && (
+      <details class="mt-3 rounded-md border border-stone-200 bg-white px-3 py-2 dark:border-stone-700 dark:bg-neutral-950/60">
+        <summary class="flex min-h-[44px] cursor-pointer items-center text-sm font-medium text-[#A7452A] dark:text-[#E07A5F] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#A7452A] focus-visible:ring-offset-2 dark:focus-visible:ring-[#E07A5F]">
+          Read video transcript
+        </summary>
+        <div class="mt-2 border-t border-stone-200 pt-2 text-sm leading-relaxed text-stone-700 dark:border-stone-800 dark:text-stone-300">
+          {transcript}
+        </div>
+      </details>
+    )}
+  </figcaption>
+</figure>

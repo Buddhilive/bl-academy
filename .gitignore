@@ -26,3 +26,14 @@ pnpm-debug.log*
 
 # generated buddhi docs plan (can exceed GitHub 100 MB limit)
 .buddhi/docs-plan.json
+
+# animate skill: reference media & transient piece render artifacts
+references/
+pieces/**/frames*/
+pieces/**/review/
+pieces/**/index.html
+pieces/**/renders/*.wav
+pieces/**/renders/final*.mp4
+pieces/**/renders/share*.mp4
+pieces/**/voice/*.scratch.wav
+pieces/**/voice/voice.wav

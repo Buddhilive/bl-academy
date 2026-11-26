@@ -13,5 +13,6 @@
 | **06. AI Agents for Beginners** | [microsoft/ai-agents-for-beginners](https://github.com/microsoft/ai-agents-for-beginners) | Microsoft Cloud Advocates & Contributors |
 | **07. Harness Engineering** | [walkinglabs/learn-harness-engineering](https://github.com/walkinglabs/learn-harness-engineering) | WalkingLabs & Contributors |
 | **08. Edge AI for Beginners** | [microsoft/edgeai-for-beginners](https://github.com/microsoft/edgeai-for-beginners) | Microsoft & Contributors |
+| **Explainer Video Animation Engine** | [cth9191/animate](https://github.com/cth9191/animate) | cth9191 & Contributors (MIT License) |
 
 All adaptations on BuddhiAI Academy replace proprietary cloud dependencies with open-source frameworks, **Google Colab Free Tier** notebooks, and **Google AI Studio Free Tier** (`GEMINI_API_KEY`) workflows so every learner can run the complete path at zero cost.
