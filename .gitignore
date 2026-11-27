@@ -2,6 +2,7 @@
 dist/
 docs/
 .buddhi/rtk/
+public/videos/
 
 # generated types
 .astro/
