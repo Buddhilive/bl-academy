@@ -46,7 +46,7 @@ Modern Windows installations do not bundle Python by default. Setting up Python 
 
 ### Step 1: Download the Windows Installer
 1. In your browser, navigate to the official [Python for Windows Download Page](https://www.python.org/downloads/windows/).
-2. Select the **Latest Python 3 Release** (Python 3.8 or newer).
+2. Select a currently supported **Python 3 release**.
 3. Scroll down to the files section and choose the **Windows x86-64 executable installer** for modern 64-bit machines, or the 32-bit installer if your processor uses 32-bit architecture.
 
 A 64-bit architecture provides access to an address space of $2^{64}$ bytes ($\approx 1.84 \times 10^{19}$ bytes), removing the restrictive 4-gigabyte ($2^{32} \text{ bytes} = 4 \text{ GB}$) memory ceiling inherent to 32-bit runtimes.
@@ -86,7 +86,7 @@ You can launch IDLE using either of two methods:
 
 ## 1.4 Ubuntu Linux Setup Tutorial
 
-Ubuntu Linux comes with Python 3 pre-installed, but you should verify that its version meets modern standards ($\text{version} \ge 3.8$).
+Ubuntu Linux comes with Python 3 pre-installed, but you should verify that it is a supported release.
 
 ### Step 1: Check Current Version & Distribution
 Open your terminal emulator and verify your installed Python 3 version:
@@ -95,7 +95,7 @@ Open your terminal emulator and verify your installed Python 3 version:
 python3 --version
 ```
 
-If your output reports an outdated release, check your Ubuntu version:
+If `python3 --version` reports an unsupported release, check your Ubuntu version:
 
 ```bash
 lsb_release -a
@@ -104,16 +104,10 @@ lsb_release -a
 ### Step 2: Install Python 3 & IDLE via APT
 The installation procedure depends on your Ubuntu release:
 
-- **For Ubuntu 18.04 LTS and newer:** Python 3 is available directly in the official Universe repository:
+- **For recent supported Ubuntu releases:** Python 3 is available in the official repositories:
   ```bash
   sudo apt-get update
   sudo apt-get install python3 idle-python3
-  ```
-- **For older Ubuntu distributions (Ubuntu 17 and lower):** Add the maintained deadsnakes Personal Package Archive (PPA):
-  ```bash
-  sudo add-apt-repository ppa:deadsnakes/ppa
-  sudo apt-get update
-  sudo apt-get install python3.8 idle-python3.8
   ```
 
 ### Step 3: Launch IDLE from the Terminal
@@ -123,7 +117,7 @@ In your terminal, execute:
 idle3
 ```
 
-Confirm that the header of the launched graphical window displays Python 3.8 or greater.
+Confirm that the IDLE header displays a currently supported Python 3 release.
 
 ---
 
@@ -148,14 +142,14 @@ Below is an interactive Python sandbox powered purely in your browser by Pyodide
   initialCode={`import sys
 import platform
 
-# Verify that current runtime satisfies: version >= 3.8
+# Verify the current runtime and supported major release
 current_version = sys.version_info
-is_modern = current_version >= (3, 8)
+is_python_3 = current_version.major == 3
 
 print(f"Python Implementation : {platform.python_implementation()}")
 print(f"Python Version        : {platform.python_version()}")
 print(f"Version Tuple         : ({current_version.major}, {current_version.minor}, {current_version.micro})")
-print(f"Meets Requirement >= 3.8 : {is_modern}")
+print(f"Is Python 3             : {is_python_3}")
 print(f"Machine Architecture  : {platform.architecture()[0]}")
 `} 
 />
@@ -188,7 +182,7 @@ The table below summarizes standard setup procedures, installation artifacts, an
 | :--- | :--- | :--- | :--- |
 | **Windows 10/11** | `.exe` executable installer | Check `"Add Python 3.x to PATH"` | Start Menu $\rightarrow$ IDLE |
 | **macOS** | `.pkg` Universal2 package | Default standard install | Spotlight (`Cmd + Space`), type `idle` |
-| **Ubuntu Linux** | `apt-get` package manager | Install `idle-python3` GUI package | Terminal: `idle3` or `idle-python3.8` |
+| **Ubuntu Linux** | `apt-get` package manager | Install `idle-python3` GUI package | Terminal: `idle3` |
 
 ---
 

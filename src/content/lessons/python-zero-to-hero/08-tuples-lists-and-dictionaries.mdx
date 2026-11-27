@@ -477,7 +477,7 @@ Choosing the correct compound data structure is a core software design decision.
 
 | Feature / Criterion | **List** (`list`) | **Tuple** (`tuple`) | **Dictionary** (`dict`) |
 | :--- | :--- | :--- | :--- |
-| **Ordering** | Natural insertion order | Natural insertion order | Key insertion order (Python 3.7+) |
+| **Ordering** | Insertion order | Insertion order | Insertion order |
 | **Mutability** | **Mutable** (can add, remove, mutate) | **Immutable** (frozen once created) | **Mutable** (keys/values can be modified) |
 | **Indexing Model** | Continuous integer index $0, 1, \dots$ | Continuous integer index $0, 1, \dots$ | Unique hashable key label |
 | **Lookup Performance** | $\mathcal{O}(1)$ by index; $\mathcal{O}(n)$ by value search | $\mathcal{O}(1)$ by index; $\mathcal{O}(n)$ by value search | $\mathcal{O}(1)$ average by key |
@@ -587,7 +587,7 @@ print(f"Total Inventory Value: \${total_valuation:.2f}")`}
   * Shallow copy (`a[:]` or `a.copy()`) copies only the outer list container.
   * Deep copy (`copy.deepcopy()`) recursively copies all nested containers.
 * **Dictionaries (`dict`)**:
-  * Unordered (Python 3.6: insertion-ordered) key-value hash mappings with $\mathcal{O}(1)$ average lookup.
+  * Insertion-ordered key-value hash mappings with $\mathcal{O}(1)$ average lookup.
   * Keys **must be immutable and hashable** (`str`, `int`, `tuple`). Mutable objects like `list` raise `TypeError: unhashable type: 'list'`.
   * Iterate with `.items()` for key-value pairs, `.keys()` for keys, and `.values()` for values.
   * Use `.get(key, default)` for defensive lookups without triggering `KeyError`.
