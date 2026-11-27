@@ -95,3 +95,17 @@ Record of conformant accessibility choices made during development.
 - **Rule**: WCAG 2.2 SC 1.4.3 (Contrast Minimum) & SC 1.3.1 (Info and Relationships).
 - **Choice**: Rendered `notebook/{course}/{notebook} • {runtime}` inside the existing `text-neutral-400` (`#A3A3A3` on `bg-neutral-900/70` `#171717`, >= 7.0:1 contrast) metadata span alongside the semantic `<a href={colabUrl}>` CTA, keeping button text concise and preserving zero CLS.
 - **Evidence**: `src/components/static/ColabButton.astro`.
+
+## 2026-11-27: Lesson Voice Reader (`021-lesson-voice-reader`)
+
+### Decision 10: Header Icon Controls, Settings Dialog & Narration Highlight in `LessonVoiceReader.tsx`
+- **Pattern**: Compact header audio transport (`Play/Pause/Resume`, `Stop`, `Settings`) in `LessonProgressPanel.tsx` + modal Settings dialog (`English Voice`, `Playback Speed`) + `[data-voice-reading="true"]` active-block highlight in `LessonLayout.astro`.
+- **Rule**: WCAG 2.2 SC 1.4.3 (Contrast Minimum), SC 2.1.1 (Keyboard), SC 2.3.3 (Animation from Interactions), SC 2.4.7 (Focus Visible), SC 2.5.8 (Target Size Minimum), SC 4.1.2 (Name, Role, Value), SC 4.1.3 (Status Messages).
+- **Choice**:
+  1. Used `min-h-[44px] min-w-[44px]` icon-only `<button type="button">` controls with descriptive `aria-label`s, `aria-pressed` on Play/Pause, and `hidden sm:inline-flex` on the idle Stop button so mobile headers (`375px`) remain single-row without overflow.
+  2. Implemented the Settings modal with `role="dialog"`, `aria-modal="true"`, `aria-labelledby`, `Escape`/backdrop dismissal, initial focus on the Close button, and focus restoration to the Settings trigger button on close.
+  3. Active-block auto-scroll (`scrollIntoView`) checks `prefers-reduced-motion: reduce` to switch from `smooth` to `auto`, and `[data-voice-reading="true"]` uses `scroll-margin-top: 5.5rem` to clear the sticky header.
+  4. Added a single `aria-live="polite"` status region for state announcements (`Started`, `Paused`, `Resumed`, `Stopped`, `Finished`).
+  5. Verified Light & Dark mode contrast via `check_contrast`: `#1C1917` on `#F7F5F0` (16.05:1), `#FFFFFF` on `#A7452A` (5.95:1), `#F5F5F4` on `#1E1E1E` (15.28:1), `#A8A29E` on `#1E1E1E` (6.61:1), `#121212` on `#E07A5F` (6.35:1).
+- **Evidence**: `src/components/islands/LessonVoiceReader.tsx`, `src/components/islands/LessonProgressPanel.tsx`, `src/layouts/LessonLayout.astro`.
+

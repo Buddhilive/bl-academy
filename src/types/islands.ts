@@ -125,3 +125,38 @@ export interface LessonFooterProps {
   className?: string;
 }
 
+export type NarrationSegmentKind = 'heading' | 'prose' | 'cue';
+
+export interface NarrationSegment {
+  id: string;
+  text: string;
+  kind: NarrationSegmentKind;
+  sectionTitle?: string;
+  element?: unknown;
+}
+
+export type PlaybackStatus = 'idle' | 'playing' | 'paused' | 'unsupported';
+
+export interface ReaderPreferences {
+  rate: number;
+  voiceURI: string | null;
+}
+
+export interface LessonVoiceReaderProps {
+  /**
+   * CSS selector for the lesson article container. Defaults to 'main article'.
+   */
+  articleSelector?: string;
+
+  /**
+   * Layout variant: compact icon controls for the sticky header, or inline bar.
+   */
+  variant?: 'header' | 'inline';
+
+  /**
+   * Optional additional container CSS classes.
+   */
+  className?: string;
+}
+
+
