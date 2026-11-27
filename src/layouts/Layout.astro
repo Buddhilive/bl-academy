@@ -26,6 +26,8 @@ const adsenseClient =
 	import.meta.env.PUBLIC_ADSENSE_CLIENT_ID ||
 	import.meta.env.PUBLIC_ADSENSE_CLIENT ||
 	'ca-pub-9435032914308988';
+const rawGtmId = (import.meta.env.PUBLIC_GTM_ID || 'GTM-KLW73CMQ').trim();
+const gtmId = /^(GTM|G)-[A-Z0-9]+$/i.test(rawGtmId) ? rawGtmId : '';
 ---
 <!doctype html>
 <html lang="en" class="dark">
@@ -57,6 +59,21 @@ const adsenseClient =
 				src={`https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${adsenseClient}`}
 				crossorigin="anonymous"
 			/>
+		)}
+
+		{gtmId && import.meta.env.PROD && !noindex && (
+			<>
+				<script
+					is:inline
+					async
+					src={`https://www.googletagmanager.com/gtm.js?id=${encodeURIComponent(gtmId)}`}
+				></script>
+				<script is:inline>
+					window.dataLayer = window.dataLayer || [];
+					function gtag(){dataLayer.push(arguments);}
+					gtag('js', new Date());
+				</script>
+			</>
 		)}
 
 		<slot name="head" />

@@ -8,6 +8,7 @@ import {
 } from '../../lib/storage';
 import { getCourseByTrack } from '../../lib/curriculum';
 import CoursesDropdown from './CoursesDropdown';
+import LessonVoiceReader from './LessonVoiceReader';
 
 interface LessonSummary {
   id: string;
@@ -24,6 +25,7 @@ interface Props {
 
 export default function LessonProgressPanel({
   currentTrack = 'python',
+  currentSlug,
   trackLessons,
   trackUrls,
 }: Props) {
@@ -180,7 +182,9 @@ export default function LessonProgressPanel({
         </div>
 
         {/* Pathfinder / My Learning Progress Indicator & Local Backup */}
-        <div className="flex items-center gap-2.5 sm:gap-3 shrink-0">
+        <div className="flex items-center gap-1.5 sm:gap-3 shrink-0">
+          {currentSlug && <LessonVoiceReader variant="header" />}
+
           {totalLessons > 0 && (
             <div className="flex items-center gap-2">
               <span className="text-xs text-neutral-300 hidden md:inline-block font-mono">

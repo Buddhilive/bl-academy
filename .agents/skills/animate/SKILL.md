@@ -9,7 +9,7 @@ You create short, deterministic procedural `<canvas>` explainer videos in code: 
 
 **Requirements (check first):** Run `pnpm animate:test` (or `pnpm animate:setup` to install missing Playwright/Chromium). Requires Node 18+, Playwright with Chromium (`npm i -g playwright && npx playwright install chromium`), and `ffmpeg` on PATH. For word-level voice timing, Python with `faster-whisper` (`pip install faster-whisper`); without it, word timings are estimated. For narrated explainers, local **Voicebox** (`http://localhost:17493`, profile `"Buddhi"`) or `--scratch` / user recordings.
 
-All paths below are relative to `.agents/skills/animate/`. Source pieces live in `pieces/<course>/<slug>/` (or `pieces/<name>/` for standalone pieces); published web deliverables go to `public/videos/<course>/`; custom project styles live in `styles/<name>/`.
+All skill paths below (`kit/`, `styles/`, `templates/`, `references/`, `tools/`) are relative to `.agents/skills/animate/`. Source pieces live in `.buddhi/.buddhi/pieces/<course>/<slug>/` (or `.buddhi/pieces/<name>/` for standalone pieces); published web deliverables go to `public/videos/<course>/`; custom project styles live in `.buddhi/styles/<name>/` (or `styles/<name>/`).
 
 ## Non-Negotiables
 
@@ -36,50 +36,50 @@ Pick the format from [FORMATS.md](grammar/FORMATS.md) and read [STORY.md](gramma
 Ask via `ask_question`: **Approve / Change beats / Different angle**.
 
 ### 2. Look Check (2–4 Style Frames)
-Scaffold `pieces/<course>/<slug>/`: copy `piece.json` and `src/` from `styles/<name>/demo/`, `templates/beat-cut/`, or `templates/piece/` (which defaults to `16:9`), then write `brief.md` and `LOG.md` fresh. For custom references, follow [references/new-style.md](references/new-style.md).
+Scaffold `.buddhi/pieces/<course>/<slug>/`: copy `piece.json` and `src/` from `styles/<name>/demo/`, `templates/beat-cut/`, or `templates/piece/` (which defaults to `16:9`), then write `brief.md` and `LOG.md` fresh. For custom references, follow [references/new-style.md](references/new-style.md).
 
-Draw 2–4 contrasting beats as full-size frames, render them side-by-side with `node .agents/skills/animate/tools/still.mjs pieces/<course>/<slug> 2.25,9.75,16.5 look.png --scale 0.5`, and ask via `ask_question`: **Thumbs up per frame / Change the look / Try another style**.
+Draw 2–4 contrasting beats as full-size frames, render them side-by-side with `node .agents/skills/animate/tools/still.mjs .buddhi/pieces/<course>/<slug> 2.25,9.75,16.5 look.png --scale 0.5`, and ask via `ask_question`: **Thumbs up per frame / Change the look / Try another style**.
 
 ### 3. Storyboard Check (Every Beat)
-Fill `TIMELINE.board` with one key time per beat (`{ t, title, sound, next }`), render with `node .agents/skills/animate/tools/storyboard.mjs pieces/<course>/<slug>`, and get thumbs up/down per panel before animating.
+Fill `TIMELINE.board` with one key time per beat (`{ t, title, sound, next }`), render with `node .agents/skills/animate/tools/storyboard.mjs .buddhi/pieces/<course>/<slug>`, and get thumbs up/down per panel before animating.
 
 ### 4. Build, Export & Review
-1. Write `pieces/<course>/<slug>/brief.md` and keep `LOG.md`.
+1. Write `.buddhi/pieces/<course>/<slug>/brief.md` and keep `LOG.md`.
 2. Animate scenes in `src/scenes.js` (or `src/era-*.js` via parallel `invoke_subagent` / `run_workflow` for pieces >30s) and wire transitions in `src/bridges.js`.
-3. Build: `node .agents/skills/animate/tools/build.mjs pieces/<course>/<slug>`
-4. Verify determinism & transitions: `node .agents/skills/animate/tools/tile.mjs pieces/<course>/<slug> tile.png <frames...>`
+3. Build: `node .agents/skills/animate/tools/build.mjs .buddhi/pieces/<course>/<slug>`
+4. Verify determinism & transitions: `node .agents/skills/animate/tools/tile.mjs .buddhi/pieces/<course>/<slug> tile.png <frames...>`
 5. Score in `src/score.js`.
-6. Export MP4 + WebVTT captions: `node .agents/skills/animate/tools/export.mjs pieces/<course>/<slug> --share` (`--formats 16:9,9:16,1:1` for multi-format, `--blur 4` for 1s styles, `--only-audio` to iterate audio fast).
-7. Measure & inspect: `node .agents/skills/animate/tools/review.mjs pieces/<course>/<slug>` — fix until text, cut grid, arc, and loudness pass, and log a per-shot PASS table in `LOG.md`.
+6. Export MP4 + WebVTT captions: `node .agents/skills/animate/tools/export.mjs .buddhi/pieces/<course>/<slug> --share` (`--formats 16:9,9:16,1:1` for multi-format, `--blur 4` for 1s styles, `--only-audio` to iterate audio fast).
+7. Measure & inspect: `node .agents/skills/animate/tools/review.mjs .buddhi/pieces/<course>/<slug>` — fix until text, cut grid, arc, and loudness pass, and log a per-shot PASS table in `LOG.md`.
 
 ### 5. Publish to BuddhiAI Academy & Deliver
 For web lesson explainers, run:
 ```powershell
-node .agents/skills/animate/tools/publish.mjs pieces/<course>/<slug> <course> <slug>
+node .agents/skills/animate/tools/publish.mjs .buddhi/pieces/<course>/<slug> <course> <slug>
 ```
 This copies `<slug>.mp4`, `<slug>.vtt` (if present), and `<slug>-poster.png` to `public/videos/<course>/` and prints the `<ExplainerVideo />` MDX snippet. Summarize the measured review numbers, weakest shot, and unverified audio listening check for the user.
 
 ### 6. Learn
-Append lessons learned to `pieces/<course>/<slug>/LOG.md`. Propose any new durable rule for `references/craft.md` or `STYLE.md`.
+Append lessons learned to `.buddhi/pieces/<course>/<slug>/LOG.md`. Propose any new durable rule for `references/craft.md` or `STYLE.md`.
 
 ## Optional Capabilities
 
 ### Voice-Over (Local Voicebox `"Buddhi"` + `voice.mjs`)
 When narrated, **the voice is the clock**: each beat starts ~0.3s after the previous line ends, and payoff hits land in a pause *before* the line that names them.
-1. Write `pieces/<course>/<slug>/voice/script.json`:
+1. Write `.buddhi/pieces/<course>/<slug>/voice/script.json`:
    `{ "lead": 1.2, "tail": 1.8, "profile": "Buddhi", "lines": [{ "id": "open", "text": "As it is spoken.", "after": 0.45 }] }`
-2. **Timing draft before recording:** `node .agents/skills/animate/tools/voice.mjs pieces/<course>/<slug> --scratch`
+2. **Timing draft before recording:** `node .agents/skills/animate/tools/voice.mjs .buddhi/pieces/<course>/<slug> --scratch`
 3. **Generate with local Voicebox** (ensure Voicebox desktop/server is running at `http://localhost:17493`; run with `BypassSandbox: true` in Antigravity so localhost HTTP is reachable):
    ```powershell
-   node .agents/skills/animate/tools/voicebox.mjs pieces/<course>/<slug> --profile Buddhi
+   node .agents/skills/animate/tools/voicebox.mjs .buddhi/pieces/<course>/<slug> --profile Buddhi
    ```
    Or place manual recordings as `voice/<id>.wav` / `.mp3`.
-4. **Align words & build WAV:** `node .agents/skills/animate/tools/voice.mjs pieces/<course>/<slug>` → writes `voice/voice.wav` and `voice.json` (injected as `VOICE` by `build.mjs`).
+4. **Align words & build WAV:** `node .agents/skills/animate/tools/voice.mjs .buddhi/pieces/<course>/<slug>` → writes `voice/voice.wav` and `voice.json` (injected as `VOICE` by `build.mjs`).
 5. Set `"voice": { "file": "voice/voice.wav", "music": -12 }` in `piece.json`. `export.mjs` ducks music under speech, normalizes to `-14 LUFS`, and emits `renders/narration.srt` + `renders/narration.vtt`.
 
 ### User Music Track, Product Assets, Multi-Format & Parallel Subagents
-- **Music track:** `node .agents/skills/animate/tools/beats.mjs pieces/<course>/<slug>/audio/track.wav pieces/<course>/<slug> --start 12 --dur <len>` → `beats.json` (`BEATS` + `onBeat(t)`).
-- **Real product screenshots:** `node .agents/skills/animate/tools/capture.mjs <url> pieces/<course>/<slug>/assets/home.png` → draw via `drawAsset(...)`.
+- **Music track:** `node .agents/skills/animate/tools/beats.mjs .buddhi/pieces/<course>/<slug>/audio/track.wav .buddhi/pieces/<course>/<slug> --start 12 --dur <len>` → `beats.json` (`BEATS` + `onBeat(t)`).
+- **Real product screenshots:** `node .agents/skills/animate/tools/capture.mjs <url> .buddhi/pieces/<course>/<slug>/assets/home.png` → draw via `drawAsset(...)`.
 - **Parallel scenes (>30s):** Split into `src/era-01.js`, `src/era-02.js`, … listed in `piece.json` `"scenes": [...]`, and dispatch one `invoke_subagent` worker per era with `STYLE.md`, time range, cues, and bridge objects while keeping `src/head.html`, `src/bridges.js`, and `src/score.js` coordinator-owned.
 
 ## Reference Index

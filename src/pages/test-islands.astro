@@ -3,6 +3,7 @@ import Layout from '../layouts/Layout.astro';
 import PythonRunner from '../components/islands/PythonRunner';
 import QuizCard from '../components/islands/QuizCard';
 import LessonFooter from '../components/islands/LessonFooter';
+import LessonVoiceReader from '../components/islands/LessonVoiceReader';
 ---
 
 <Layout>
@@ -20,6 +21,10 @@ import LessonFooter from '../components/islands/LessonFooter';
         Verifying PythonRunner, QuizCard, and LessonFooter client-side islands under Astro client:visible hydration with Pyodide Web Worker execution.
       </p>
     </header>
+
+    <section class="space-y-3" aria-label="Lesson Voice Reader Verification">
+      <LessonVoiceReader client:idle articleSelector="main" variant="header" />
+    </section>
 
     <!-- Component 1: PythonRunner with expectedOutput -->
     <section class="space-y-4">

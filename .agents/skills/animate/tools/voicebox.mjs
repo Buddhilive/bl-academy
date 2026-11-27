@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // Generate per-line speech takes from a local Voicebox server (https://docs.voicebox.sh/)
-//   usage: node tools/voicebox.mjs pieces/<course>/<slug> [--profile Buddhi] [--url http://localhost:17493] [--force]
+//   usage: node tools/voicebox.mjs .buddhi/pieces/<course>/<slug> [--profile Buddhi] [--url http://localhost:17493] [--force]
 // Reads  <piece>/voice/script.json ({ lead, tail, profile?, lines: [{ id, text, after?, file? }] })
 // Writes <piece>/voice/<id>.wav (or updates line.file) via GET /profiles and POST /generate.
 // Note: If running inside a network-isolated agent sandbox, execute with localhost access (BypassSandbox: true).
@@ -98,7 +98,7 @@ for (const [i, line] of (script.lines || []).entries()) {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ text: line.text, profile_id: profileId }),
-    signal: AbortSignal.timeout(60000),
+    signal: AbortSignal.timeout(300000),
   });
   if (!res.ok) {
     const body = await res.text().catch(() => '');
@@ -114,6 +114,23 @@ for (const [i, line] of (script.lines || []).entries()) {
     } else if (payload.audio_url || payload.url) {
       const audioRes = await fetch(endpoint(payload.audio_url || payload.url), { signal: AbortSignal.timeout(30000) });
       if (!audioRes.ok) throw new Error(`Failed downloading generated audio: HTTP ${audioRes.status}`);
+      fs.writeFileSync(outPath, Buffer.from(await audioRes.arrayBuffer()));
+    } else if (payload.id) {
+      // Async generation API: poll /generate/{id}/status then download /audio/{id}
+      const genId = payload.id;
+      const deadline = Date.now() + 600000;
+      let status = payload.status || 'generating';
+      while (['generating', 'pending', 'queued', 'processing', 'loading_model'].includes(status)) {
+        if (Date.now() > deadline) throw new Error(`Voicebox generation timed out for "${id}" (${genId})`);
+        await new Promise((r) => setTimeout(r, 2000));
+        const stRes = await fetch(endpoint(`/history/${genId}`), { signal: AbortSignal.timeout(30000) });
+        if (!stRes.ok) throw new Error(`Voicebox status check failed for "${id}": HTTP ${stRes.status}`);
+        const st = await stRes.json();
+        status = st.status || status;
+        if (status === 'failed' || status === 'error') throw new Error(`Voicebox generation failed for "${id}": ${st.error || 'unknown error'}`);
+      }
+      const audioRes = await fetch(endpoint(`/audio/${genId}`), { signal: AbortSignal.timeout(120000) });
+      if (!audioRes.ok) throw new Error(`Failed downloading /audio/${genId}: HTTP ${audioRes.status}`);
       fs.writeFileSync(outPath, Buffer.from(await audioRes.arrayBuffer()));
     } else {
       throw new Error(`Unexpected JSON response from /generate for "${id}"`);
