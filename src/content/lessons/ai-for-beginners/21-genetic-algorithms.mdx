@@ -20,14 +20,14 @@ Gradient descent works brilliantly when your loss function is smooth and differe
 
 ## Core Evolutionary Operators
 
-Imagine trying to invent the best cookie recipe when you have no calculus formula to guide you. You start by baking 20 random batches, taste-testing them to keep the best 4, mixing the first half of one great recipe with the second half of another, and occasionally tweaking one ingredient at random—then repeating for 15 generations.
+Imagine trying to invent the best cookie recipe when you have no calculus formula to guide you. You start by baking 20 random batches, taste-testing them to keep the best 4, mixing the first half of one great recipe with the second half of another, and occasionally tweaking one ingredient at random, then repeating for 15 generations.
 
 That is exactly how a **Genetic Algorithm (GA)** works. Each candidate solution is modeled as a **chromosome** (a list of numbers or bits called **genes** $g$ from the space of all possible solutions $\Gamma$). Over successive generations, the population evolves using four building blocks:
 
 | Operator | Plain-English Role | How It Works |
 | :--- | :--- | :--- |
 | **Fitness Function** | Scorekeeper ($\text{fit}: \Gamma \to \mathbb{R}$) | Takes any candidate solution and outputs a single real number scoring how close it is to the goal (e.g., error $= 0$). |
-| **Selection** | Survival of the fittest | Picks top-performing parents (either **Tournament**—picking the best of a small random group—or **Roulette-Wheel**—giving higher-scoring parents a bigger slice of probability). |
+| **Selection** | Survival of the fittest | Picks top-performing parents (either **Tournament**, picking the best of a small random group, or **Roulette-Wheel**, giving higher-scoring parents a bigger slice of probability). |
 | **Crossover** | Recombining parents ($\Gamma^2 \to \Gamma$) | Splits two parent chromosomes at a cut point and swaps slices to create offspring sharing traits from both. |
 | **Mutation** | Random exploration ($\Gamma \to \Gamma$) | Flips or nudges a single gene with a small probability $p_m$ so the population doesn't get stuck repeating the same ideas. |
 

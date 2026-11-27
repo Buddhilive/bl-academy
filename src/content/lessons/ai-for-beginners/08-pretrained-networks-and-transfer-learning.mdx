@@ -12,9 +12,13 @@ prerequisites: ["ai-for-beginners/07-convolutional-neural-networks"]
 import QuizCard from '../../../components/islands/QuizCard';
 import ColabButton from '../../../components/static/ColabButton.astro';
 
-Training a deep CNN from scratch requires millions of labeled images and days of GPU time. Fortunately, the low- and mid-level convolutional filters learned on **ImageNet** (14 million images across 1,000 categories) are universal—edges, curves, fur, and geometric textures transfer directly to medical X-rays, pet breeds, or defect inspection.
+Training a deep CNN from scratch requires millions of labeled images and days of GPU time. Fortunately, the low- and mid-level convolutional filters learned on **ImageNet** (14 million images across 1,000 categories) are universal, edges, curves, fur, and geometric textures transfer directly to medical X-rays, pet breeds, or defect inspection.
 
 **Transfer Learning** lets you take a pre-trained backbone (`ResNet-18`, `VGG-16`, `MobileNetV3`), freeze its convolutional feature extractor, and train only a lightweight new classification head on your custom dataset in minutes.
+
+After transfer learning, the biggest change in your workflow is which layers you train. The feature extractor may already recognize useful shapes and textures. Only the final head needs to learn which combination represents the classes in your dataset.
+
+This approach is also easier to debug. Start by training only the head and measure validation accuracy. Then, if the model improves, try fine-tuning a small number of later layers with a lower learning rate. Unfreezing everything immediately can overwrite useful pre-trained features and cause overfitting on a small dataset.
 
 ---
 
@@ -39,7 +43,7 @@ As networks grow deeper, activations can explode or vanish. Five core engineerin
 
 ### Adversarial Examples
 
-Because neural networks optimize smooth surfaces in high-dimensional pixel space, adding tiny, human-imperceptible nudges in the direction that increases error ($\mathbf{x}_{\text{adv}} = \mathbf{x} + \epsilon \cdot \text{sign}(\nabla_{\mathbf{x}} \mathcal{L})$)—where $\epsilon$ is a tiny pixel change and $\text{sign}(\nabla_{\mathbf{x}} \mathcal{L})$ picks $+1$ or $-1$ based on the loss gradient—can flip a confident "dog" prediction into "cat". Adding a **Total Variation Loss** term also lets you visualize what a pre-trained network considers an "ideal cat" by smoothing out high-frequency static during input optimization. Recognizing both techniques is essential for understanding model robustness.
+Because neural networks optimize smooth surfaces in high-dimensional pixel space, adding tiny, human-imperceptible nudges in the direction that increases error ($\mathbf{x}_{\text{adv}} = \mathbf{x} + \epsilon \cdot \text{sign}(\nabla_{\mathbf{x}} \mathcal{L})$), where $\epsilon$ is a tiny pixel change and $\text{sign}(\nabla_{\mathbf{x}} \mathcal{L})$ picks $+1$ or $-1$ based on the loss gradient, can flip a confident "dog" prediction into "cat". Adding a **Total Variation Loss** term also lets you visualize what a pre-trained network considers an "ideal cat" by smoothing out high-frequency static during input optimization. Recognizing both techniques is essential for understanding model robustness.
 
 <ColabButton
   course="ai-for-beginners"

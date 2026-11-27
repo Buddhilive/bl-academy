@@ -12,7 +12,7 @@ prerequisites: ["ai-for-beginners/13-text-representation-bow-and-tfidf"]
 import QuizCard from '../../../components/islands/QuizCard';
 import ColabButton from '../../../components/static/ColabButton.astro';
 
-Sparse one-hot and Bag-of-Words vectors suffer from two major flaws: they waste memory across tens of thousands of zeros, and every word is orthogonal to every other word—so `"king"` and `"monarch"` look just as unrelated as `"king"` and `"banana"`.
+Sparse one-hot and Bag-of-Words vectors suffer from two major flaws: they waste memory across tens of thousands of zeros, and every word is orthogonal to every other word, so `"king"` and `"monarch"` look just as unrelated as `"king"` and `"banana"`.
 
 **Word Embeddings** solve both problems by mapping each word ID into a compact, dense vector $\mathbf{v} \in \mathbb{R}^d$ (typically $d = 100\text{–}300$) where **geometric proximity reflects semantic meaning**.
 
@@ -26,7 +26,7 @@ In PyTorch, `nn.Embedding(vocab_size, embed_dim)` acts like a trainable lookup t
 
 ## Semantic Vector Spaces: Word2Vec & GloVe
 
-When trained on billions of words using self-supervised context prediction (**Word2Vec** CBoW/Skip-Gram or **GloVe** co-occurrence factorization), word vectors organize themselves into meaningful geometric directions. We measure how close two word vectors $\mathbf{u}$ and $\mathbf{v}$ are using **Cosine Similarity**—which checks the angle $\theta$ between two arrows regardless of their length:
+When trained on billions of words using self-supervised context prediction (**Word2Vec** CBoW/Skip-Gram or **GloVe** co-occurrence factorization), word vectors organize themselves into meaningful geometric directions. We measure how close two word vectors $\mathbf{u}$ and $\mathbf{v}$ are using **Cosine Similarity**, which checks the angle $\theta$ between two arrows regardless of their length:
 
 $$\cos(\theta) = \frac{\mathbf{u} \cdot \mathbf{v}}{\|\mathbf{u}\|_2 \, \|\mathbf{v}\|_2}, \qquad \mathbf{v}_{\text{king}} - \mathbf{v}_{\text{man}} + \mathbf{v}_{\text{woman}} \approx \mathbf{v}_{\text{queen}}$$
 
@@ -39,7 +39,7 @@ Here, $\mathbf{u} \cdot \mathbf{v}$ is the dot product (multiplying matching coo
 | **GloVe** | Factorizes global word–word co-occurrence matrix. | Combines local context with global corpus statistics. |
 | **FastText** | Sums character $n$-gram embeddings per word. | Handles typos and unseen out-of-vocabulary words. |
 
-> **Limitation:** Static embeddings assign one single vector per word spelling. The word *"play"* gets the same vector in *"a play at the theatre"* and *"play with friends"*—a limitation we will solve with RNNs and Transformers. Also, when loading pre-trained Word2Vec or GloVe weights into your own model, remember to align your tokenizer's vocabulary IDs carefully and initialize any unseen domain words randomly so gradients can fine-tune them during training. This simple alignment step prevents out-of-vocabulary words from silently collapsing to zero.
+> **Limitation:** Static embeddings assign one single vector per word spelling. The word *"play"* gets the same vector in *"a play at the theatre"* and *"play with friends"*, a limitation we will solve with RNNs and Transformers. Also, when loading pre-trained Word2Vec or GloVe weights into your own model, remember to align your tokenizer's vocabulary IDs carefully and initialize any unseen domain words randomly so gradients can fine-tune them during training. This simple alignment step prevents out-of-vocabulary words from silently collapsing to zero.
 
 <ColabButton
   course="ai-for-beginners"

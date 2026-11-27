@@ -12,7 +12,7 @@ prerequisites: ["ai-for-beginners/15-language-modeling-and-custom-embeddings"]
 import QuizCard from '../../../components/islands/QuizCard';
 import ColabButton from '../../../components/static/ColabButton.astro';
 
-Pooling word embeddings together throws away word order—meaning `"not good"` and `"good, not bad"` can look dangerously similar to a linear classifier. To capture sequential grammar, negation, and long-range context, we need **Recurrent Neural Networks (RNNs)**.
+Pooling word embeddings together throws away word order, meaning `"not good"` and `"good, not bad"` can look dangerously similar to a linear classifier. To capture sequential grammar, negation, and long-range context, we need **Recurrent Neural Networks (RNNs)**.
 
 Think of an RNN like reading a book one word at a time while keeping a single sticky note in your hand: after each new word $\mathbf{x}_t$, you erase and rewrite your sticky-note summary (**hidden state** $\mathbf{h}_t$) so it blends the new word with what you remember so far.
 
@@ -26,13 +26,13 @@ $$\mathbf{h}_t = \tanh\left(W_{xh}\mathbf{x}_t + W_{hh}\mathbf{h}_{t-1} + \mathb
 
 In plain English: take the current word vector $\mathbf{x}_t$ multiplied by $W_{xh}$, add the previous sticky-note summary $\mathbf{h}_{t-1}$ multiplied by $W_{hh}$ plus a bias $\mathbf{b}$, and squash the result through $\tanh$ (an S-curve keeping values smoothly between `-1` and `+1`).
 
-When we train the unrolled sequence via **Backpropagation Through Time (BPTT)**, gradients must pass backward through $W_{hh}^{\top}$ at every single word step. Imagine whispering a message down a 50-person telephone chain where each person speaks slightly quieter: by the time the error signal reaches the start of a long sentence, those repeated multiplications shrink exponentially toward zero—the **vanishing gradient problem**—causing simple RNNs to forget words from the beginning of a paragraph.
+When we train the unrolled sequence via **Backpropagation Through Time (BPTT)**, gradients must pass backward through $W_{hh}^{\top}$ at every single word step. Imagine whispering a message down a 50-person telephone chain where each person speaks slightly quieter: by the time the error signal reaches the start of a long sentence, those repeated multiplications shrink exponentially toward zero, the **vanishing gradient problem**, causing simple RNNs to forget words from the beginning of a paragraph.
 
 ---
 
 ## Gated Memory: LSTMs & GRUs
 
-**Long Short-Term Memory (LSTM)** networks solve vanishing gradients by adding a separate **Cell State** $\mathbf{c}_t$—think of it as an unobstructed conveyor belt running straight through time—controlled by three learned **gates** (using sigmoid $\sigma$, which outputs a dial between `0` = completely closed and `1` = completely open):
+**Long Short-Term Memory (LSTM)** networks solve vanishing gradients by adding a separate **Cell State** $\mathbf{c}_t$, think of it as an unobstructed conveyor belt running straight through time, controlled by three learned **gates** (using sigmoid $\sigma$, which outputs a dial between `0` = completely closed and `1` = completely open):
 
 | LSTM / GRU Component | Equation / Mechanism | Role in Sequence Memory |
 | :--- | :--- | :--- |

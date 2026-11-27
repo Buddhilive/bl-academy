@@ -12,7 +12,7 @@ prerequisites: ["ai-for-beginners/16-recurrent-neural-networks"]
 import QuizCard from '../../../components/islands/QuizCard';
 import ColabButton from '../../../components/static/ColabButton.astro';
 
-Up to this point, our Recurrent Neural Networks took an entire sentence and compressed it into a single class label. However, RNNs can also work in reverse—predicting the *next* token in a sequence given everything generated so far. That simple shift turns an RNN into an **autoregressive generative model** capable of writing poetry, generating Python code, translating languages, or captioning images.
+Up to this point, our Recurrent Neural Networks took an entire sentence and compressed it into a single class label. However, RNNs can also work in reverse, predicting the *next* token in a sequence given everything generated so far. That simple shift turns an RNN into an **autoregressive generative model** capable of writing poetry, generating Python code, translating languages, or captioning images.
 
 ---
 
@@ -31,7 +31,7 @@ Depending on how inputs and outputs align in time, recurrent networks support fo
 
 ## Teacher Forcing & Autoregressive Generation
 
-During training, we feed a character or word sequence of length $T$ (for example, `"HELL"`) and ask the network at every step $t$ to predict the shifted next token (`"ELLO"`). Feeding the true ground-truth token as the next step's input—rather than the model's own noisy guess—is called **Teacher Forcing**, and it stabilizes gradient updates dramatically.
+During training, we feed a character or word sequence of length $T$ (for example, `"HELL"`) and ask the network at every step $t$ to predict the shifted next token (`"ELLO"`). Feeding the true ground-truth token as the next step's input, rather than the model's own noisy guess, is called **Teacher Forcing**, and it stabilizes gradient updates dramatically.
 
 At inference time, we start with a short **prompt**, run it through the LSTM to warm up its hidden state $(\mathbf{h}_t, \mathbf{c}_t)$, and then generate one token at a time, feeding each newly chosen token right back into the model.
 
@@ -39,11 +39,11 @@ At inference time, we start with a short **prompt**, run it through the LSTM to 
 
 ## Soft Text Generation & Temperature Scaling
 
-If you always pick the single highest-probability token (**Greedy Decoding**), generative models quickly get trapped in repetitive loops like *"of the company and the company and the company..."*. Instead, we sample from the predicted Softmax probability distribution—and tune creativity using a **Temperature** parameter $T > 0$:
+If you always pick the single highest-probability token (**Greedy Decoding**), generative models quickly get trapped in repetitive loops like *"of the company and the company and the company..."*. Instead, we sample from the predicted Softmax probability distribution, and tune creativity using a **Temperature** parameter $T > 0$:
 
 $$P_i = \frac{\exp(z_i / T)}{\sum_j \exp(z_j / T)}$$
 
-In plain English: $z_i$ is the raw score (logit) for candidate token $i$. Dividing every score by **Temperature** $T$ before Softmax acts like a "confidence vs. surprise" dial—smaller $T$ exaggerates the gap between the top score and everything else, while larger $T$ shrinks the gap so underdog words get a chance.
+In plain English: $z_i$ is the raw score (logit) for candidate token $i$. Dividing every score by **Temperature** $T$ before Softmax acts like a "confidence vs. surprise" dial, smaller $T$ exaggerates the gap between the top score and everything else, while larger $T$ shrinks the gap so underdog words get a chance.
 
 - **Low Temperature ($T < 1.0$, e.g., `0.3`)**: Sharpens the distribution, making the model conservative, grammatical, and deterministic.
 - **Neutral Temperature ($T = 1.0$)**: Samples directly from the model's learned probabilities.

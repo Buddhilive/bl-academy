@@ -31,7 +31,7 @@ Because $\mathbf{z}$ is much smaller than the raw image (a tight bottleneck), th
 
 ## Variational Autoencoders (VAEs) & The Reparameterization Trick
 
-A standard autoencoder's latent space often has "holes"—if you pick a random point $\mathbf{z}$ between two memorized images, the decoder may output garbled static. A **Variational Autoencoder (VAE)** fixes this by mapping each image not to a single rigid dot, but to a smooth bell-curve cloud (a Gaussian distribution) described by a center (**mean** $\boldsymbol{\mu}$) and a spread (**log-variance** $\log \boldsymbol{\sigma}^2$).
+A standard autoencoder's latent space often has "holes", if you pick a random point $\mathbf{z}$ between two memorized images, the decoder may output garbled static. A **Variational Autoencoder (VAE)** fixes this by mapping each image not to a single rigid dot, but to a smooth bell-curve cloud (a Gaussian distribution) described by a center (**mean** $\boldsymbol{\mu}$) and a spread (**log-variance** $\log \boldsymbol{\sigma}^2$).
 
 Because backpropagation cannot differentiate through a random coin flip directly, VAEs use a clever **Reparameterization Trick**: instead of sampling randomly *inside* the network, we sample standard random noise $\boldsymbol{\epsilon}$ from outside and scale it:
 

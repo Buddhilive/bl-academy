@@ -47,7 +47,7 @@ GANs aren't the only way to synthesize art. **Neural Style Transfer** starts wit
 - **Style Loss**: How well $\mathbf{x}$ matches the texture and brushstrokes of the painting, measured using **Gram matrices** ($G_{ij}^l = \sum_k F_{ik}^l F_{jk}^l$). In plain English, multiplying feature channel $i$ by channel $j$ across all pixel positions $k$ measures *which textures appear together* (e.g., swirling blue + bright yellow) while throwing away *where* they sit on the canvas.
 - **Total Variation Loss**: Smooths neighboring pixel jumps to suppress high-frequency static.
 
-By tuning the relative weights of Content, Style, and Variation losses, you can blend the recognizable geometry of a photograph with the color palette and brushwork of Van Gogh or Monet. Unlike GANs, classical optimization-based Style Transfer doesn't train a generator network from scratch—it optimizes the pixels of a single canvas directly via backpropagation.
+By tuning the relative weights of Content, Style, and Variation losses, you can blend the recognizable geometry of a photograph with the color palette and brushwork of Van Gogh or Monet. Unlike GANs, classical optimization-based Style Transfer doesn't train a generator network from scratch, it optimizes the pixels of a single canvas directly via backpropagation.
 
 <ColabButton
   course="ai-for-beginners"

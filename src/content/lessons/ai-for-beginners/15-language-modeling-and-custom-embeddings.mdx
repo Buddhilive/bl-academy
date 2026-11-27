@@ -29,7 +29,7 @@ In practice, computing a full Softmax over a $100{,}000$-word vocabulary on ever
 
 Why train your own embeddings instead of downloading generic ones? Suppose you are building a classifier for biomedical papers, legal contracts, or software error logs. Generic news-trained embeddings may lump specialized acronyms together or miss domain relationships altogether. Training a lightweight CBoW or Skip-Gram model on your own unlabeled corpus takes just minutes in PyTorch and produces crisp, domain-aligned word vectors where technical synonyms cluster together naturally.
 
-You can also evaluate custom embeddings immediately by checking **nearest neighbors** via Cosine Similarity—confirming that related terms sit close in vector space before plugging the `nn.Embedding` weights into downstream classifiers. Even a small domain-specific corpus of a few thousand sentences is enough to surface meaningful clusters around your core technical vocabulary.
+You can also evaluate custom embeddings immediately by checking **nearest neighbors** via Cosine Similarity, confirming that related terms sit close in vector space before plugging the `nn.Embedding` weights into downstream classifiers. Even a small domain-specific corpus of a few thousand sentences is enough to surface meaningful clusters around your core technical vocabulary.
 
 <ColabButton
   course="ai-for-beginners"

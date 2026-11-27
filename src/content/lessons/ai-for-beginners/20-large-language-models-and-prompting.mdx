@@ -12,9 +12,9 @@ prerequisites: ["ai-for-beginners/19-named-entity-recognition"]
 import QuizCard from '../../../components/islands/QuizCard';
 import ColabButton from '../../../components/static/ColabButton.astro';
 
-With BERT, you still needed a labeled dataset and a fine-tuning pass for every new downstream task. **Large Language Models (LLMs)**—starting with the **GPT** (Generative Pre-Trained Transformer) family and scaling up to modern frontier models like **Gemini**—flipped that workflow on its head.
+With BERT, you still needed a labeled dataset and a fine-tuning pass for every new downstream task. **Large Language Models (LLMs)**, starting with the **GPT** (Generative Pre-Trained Transformer) family and scaling up to modern frontier models like **Gemini**, flipped that workflow on its head.
 
-Because an LLM is trained on trillions of tokens of text and code to predict the next token $P(w_N \mid w_0, \dots, w_{N-1})$, it absorbs grammar, world facts, and reasoning patterns simultaneously. As a result, you can solve new tasks **zero-shot** or **few-shot** simply by phrasing your instructions clearly in natural language—a discipline known as **Prompt Engineering**.
+Because an LLM is trained on trillions of tokens of text and code to predict the next token $P(w_N \mid w_0, \dots, w_{N-1})$, it absorbs grammar, world facts, and reasoning patterns simultaneously. As a result, you can solve new tasks **zero-shot** or **few-shot** simply by phrasing your instructions clearly in natural language, a discipline known as **Prompt Engineering**.
 
 ---
 
@@ -26,6 +26,12 @@ $$\text{Perplexity}(W) = \sqrt[N]{\frac{1}{P(W_1, \dots, W_N)}} = \exp\left(-\fr
 
 In plain English: $N$ is the number of tokens in the test passage, and $P(w_i \mid w_{<i})$ is the probability the model assigned to the actual next word $w_i$ given the words before it ($w_{<i}$). You can think of Perplexity as *"how many equally likely options the model is effectively guessing between at each word."* Lower perplexity means the model is less "surprised" by real human sentences: a model assigning $P = 0.5$ to every next token has $\text{PPL} = 2.0$ (like choosing between 2 words), whereas a model assigning $P = 0.1$ has $\text{PPL} = 10.0$ (choosing among 10).
 
+Perplexity is useful for comparing language models on the same test text. Do not compare perplexity across unrelated datasets, because vocabulary size and text difficulty can change the result. Perplexity also does not directly measure factual correctness or safety. A fluent model can still produce incorrect claims.
+
+A prompt should give the model enough context to complete the task consistently. State the format you want, name the facts that may be used, and include examples when the output must follow a strict pattern. Keep prompts testable by trying the same prompt with varied inputs.
+
+Output quality depends on both the prompt and the model settings. For repeatable classification or extraction, start with a low temperature. For creative writing, a higher temperature may help, but it can also add irrelevant or inconsistent details. Always validate important answers against a reliable source.
+
 ---
 
 ## Prompt Engineering & Google AI Studio Free Tier (`google-genai`)
@@ -34,11 +40,11 @@ Instead of retraining weights, you steer an LLM at inference time using structur
 
 | Prompting Technique | How It Works | Best Used For |
 | :--- | :--- | :--- |
-| **Zero-Shot Prompting** | Provide only the task instruction and input—no examples. | Summarization, translation, general Q&A. |
+| **Zero-Shot Prompting** | Provide only the task instruction and input, no examples. | Summarization, translation, general Q&A. |
 | **Few-Shot Prompting** | Include 2–5 `(input → output)` demonstrations inside the prompt. | Enforcing strict JSON/CSV formatting or domain-specific classification. |
 | **Chain-of-Thought (CoT)** | Ask the model to *"reason step by step"* before answering. | Multi-step math, logic puzzles, and code debugging. |
 
-In the companion notebook, you can run both **local open-source GPT-2** generation on Colab AND live cloud calls to **Google AI Studio Free Tier** (`gemini-2.5-flash`) using your `GEMINI_API_KEY` from Lesson 00. Seeing both side by side—a small local causal model and a frontier cloud model—makes the jump from classical NLP to modern prompt engineering crystal clear:
+In the companion notebook, you can run both **local open-source GPT-2** generation on Colab AND live cloud calls to **Google AI Studio Free Tier** (`gemini-2.5-flash`) using your `GEMINI_API_KEY` from Lesson 00. Seeing both side by side, a small local causal model and a frontier cloud model, makes the jump from classical NLP to modern prompt engineering crystal clear:
 
 ```python
 from google.colab import userdata

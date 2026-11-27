@@ -12,7 +12,7 @@ prerequisites: ["ai-for-beginners/03-the-perceptron"]
 import QuizCard from '../../../components/islands/QuizCard';
 import ColabButton from '../../../components/static/ColabButton.astro';
 
-A single-layer perceptron can only draw a straight line. As Marvin Minsky and Seymour Papert famously pointed out in 1969, even a simple **XOR** gate cannot be solved by one linear hyperplane. To model curved, real-world decision boundaries—and to handle multi-class probability distributions—we need **Multi-Layered Perceptrons (MLPs)** trained via **Backpropagation**.
+A single-layer perceptron can only draw a straight line. As Marvin Minsky and Seymour Papert famously pointed out in 1969, even a simple **XOR** gate cannot be solved by one linear hyperplane. To model curved, real-world decision boundaries, and to handle multi-class probability distributions, we need **Multi-Layered Perceptrons (MLPs)** trained via **Backpropagation**.
 
 In this lesson, you will build your own modular neural network framework from scratch so you understand every matrix multiplication and gradient flowing inside modern libraries.
 
@@ -41,7 +41,7 @@ Here, $\frac{\partial \mathcal{L}}{\partial W}$ is the **gradient** (the slope t
 
 ## Non-Linear Activations & Backpropagation
 
-Why can't we just stack two `Linear` layers back-to-back? Imagine multiplying a number by `2` and then multiplying the result by `3`—you could have just multiplied by `6` in one step! Mathematically, stacking two linear layers without a bend in between ($W_2(W_1\mathbf{x}) = (W_2 W_1)\mathbf{x}$) collapses into a single straight-line transformation.
+Why can't we just stack two `Linear` layers back-to-back? Imagine multiplying a number by `2` and then multiplying the result by `3`, you could have just multiplied by `6` in one step! Mathematically, stacking two linear layers without a bend in between ($W_2(W_1\mathbf{x}) = (W_2 W_1)\mathbf{x}$) collapses into a single straight-line transformation.
 
 Inserting a non-linear **activation function** $\alpha(\cdot)$ (like `ReLU`, which zeroes out negative values, or `Tanh`, which squashes values into an S-curve between `-1` and `+1`) bends the space between layers so the network can learn curved boundaries like XOR or handwritten digits:
 
@@ -52,7 +52,7 @@ Inserting a non-linear **activation function** $\alpha(\cdot)$ (like `ReLU`, whi
 | **`Tanh`** | $\tanh(z)$ | $\frac{\partial \mathcal{L}}{\partial z} \cdot (1 - \tanh^2(z))$ |
 | **`Softmax + CrossEntropy`** | $p_k = \text{softmax}(z)_k$ | $\frac{\partial \mathcal{L}}{\partial z_k} = p_k - y_k$ |
 
-Think of **Backpropagation** as a blame-assignment relay race running in reverse. Using the calculus **Chain Rule**, it passes the error signal backward from the loss function through each layer's `.backward()` method. Every layer receives the incoming error slope from the layer ahead of it ($\frac{\partial \mathcal{L}}{\partial \text{out}}$), calculates how much its own weights contributed (`dW`, `db`), and passes the remaining blame ($\frac{\partial \mathcal{L}}{\partial \text{in}}$) back to the previous layer. Separating `forward()`, `backward()`, and `update()` into clean object-oriented classes makes it trivial to stack arbitrary architectures—from simple two-layer XOR nets to multi-class MNIST classifiers.
+Think of **Backpropagation** as a blame-assignment relay race running in reverse. Using the calculus **Chain Rule**, it passes the error signal backward from the loss function through each layer's `.backward()` method. Every layer receives the incoming error slope from the layer ahead of it ($\frac{\partial \mathcal{L}}{\partial \text{out}}$), calculates how much its own weights contributed (`dW`, `db`), and passes the remaining blame ($\frac{\partial \mathcal{L}}{\partial \text{in}}$) back to the previous layer. Separating `forward()`, `backward()`, and `update()` into clean object-oriented classes makes it trivial to stack arbitrary architectures, from simple two-layer XOR nets to multi-class MNIST classifiers.
 
 <ColabButton
   course="ai-for-beginners"
@@ -143,4 +143,4 @@ XOR Predictions:
   explanation="The composition of two linear functions is still linear. Non-linear activations allow hidden layers to bend the decision boundary and solve non-linearly separable problems like XOR and image recognition."
 />
 
-Writing backward passes by hand teaches you how gradients flow—but for deep networks with millions of parameters, we want automatic differentiation and GPU acceleration. Let's move to **Lesson 05: Deep Learning with PyTorch & Controlling Overfitting**.
+Writing backward passes by hand teaches you how gradients flow, but for deep networks with millions of parameters, we want automatic differentiation and GPU acceleration. Let's move to **Lesson 05: Deep Learning with PyTorch & Controlling Overfitting**.

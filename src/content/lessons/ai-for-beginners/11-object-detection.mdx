@@ -18,7 +18,7 @@ Image classification tells you *what* is in a picture. **Object Detection** goes
 
 ## Core Metrics: IoU, NMS & Mean Average Precision (mAP)
 
-How do we score whether a predicted bounding box matches the ground truth—and how do we clean up duplicate overlapping predictions?
+How do we score whether a predicted bounding box matches the ground truth, and how do we clean up duplicate overlapping predictions?
 
 1. **Intersection over Union (IoU)**: Imagine two paper rectangles $A$ (predicted) and $B$ (ground truth) laid on a table. IoU divides their overlapping area ($A \cap B$) by their combined total area ($A \cup B$), giving a score from `0.0` (no overlap) to `1.0` (perfect match):
 
@@ -37,7 +37,7 @@ $$\text{IoU}(A, B) = \frac{\text{Area}(A \cap B)}{\text{Area}(A \cup B)} \in [0,
 | **One-Stage (Single Pass)** | **YOLO**, **SSD**, **RetinaNet** | Divides the image into an $S \times S$ grid and predicts classes + boxes in one forward pass (RetinaNet adds Focal Loss). | Real-time speed (30–100+ FPS). |
 | **Transformer-Based** | **DETR** | Predicts a fixed set of boxes directly via self-attention without hand-crafted anchors or NMS. | Clean end-to-end pipeline. |
 
-In practice, you rarely train an object detector from scratch on raw images—instead, you start from a pre-trained **COCO** (80 classes) or **PASCAL VOC** (20 classes) backbone in `torchvision` or HuggingFace `transformers` and fine-tune it on your domain-specific bounding boxes. Tuning the **confidence score threshold** alongside the **NMS IoU threshold** gives you direct control over the trade-off between missed detections and duplicate false alarms.
+In practice, you rarely train an object detector from scratch on raw images, instead, you start from a pre-trained **COCO** (80 classes) or **PASCAL VOC** (20 classes) backbone in `torchvision` or HuggingFace `transformers` and fine-tune it on your domain-specific bounding boxes. Tuning the **confidence score threshold** alongside the **NMS IoU threshold** gives you direct control over the trade-off between missed detections and duplicate false alarms.
 
 <ColabButton
   course="ai-for-beginners"

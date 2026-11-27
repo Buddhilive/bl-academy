@@ -12,13 +12,13 @@ prerequisites: ["ai-for-beginners/21-genetic-algorithms"]
 import QuizCard from '../../../components/islands/QuizCard';
 import ColabButton from '../../../components/static/ColabButton.astro';
 
-In supervised learning, every training example comes with a ground-truth label. **Reinforcement Learning (RL)** tackles a harder, more natural setting: **learning by doing**. An **agent** interacts with an **environment**, observes a **state** $s_t$, picks an **action** $a_t$, and receives a **reward** $r_t$—often long after the decisive move was made.
+In supervised learning, every training example comes with a ground-truth label. **Reinforcement Learning (RL)** tackles a harder, more natural setting: **learning by doing**. An **agent** interacts with an **environment**, observes a **state** $s_t$, picks an **action** $a_t$, and receives a **reward** $r_t$, often long after the decisive move was made.
 
 ---
 
 ## Core RL Concepts & The Bellman Update
 
-Think of training a puppy with treats: the puppy tries actions in a room, and when it eventually sits on the mat, it gets a reward. An RL task is formalized as a **Markov Decision Process (MDP)**—a step-by-step loop of states, actions, and rewards—where the agent maximizes its total **discounted cumulative return**:
+Think of training a puppy with treats: the puppy tries actions in a room, and when it eventually sits on the mat, it gets a reward. An RL task is formalized as a **Markov Decision Process (MDP)**, a step-by-step loop of states, actions, and rewards, where the agent maximizes its total **discounted cumulative return**:
 
 $$G_t = \sum_{k=0}^{\infty} \gamma^k r_{t+k+1}, \qquad \gamma \in [0, 1)$$
 
@@ -26,11 +26,11 @@ In plain English: $r_{t+k+1}$ is the reward received $k+1$ steps in the future, 
 
 ### Tabular Q-Learning vs. Deep Policy Gradients
 
-In **Tabular Q-Learning**, the agent keeps a cheat-sheet table $Q(s, a)$ estimating *"how good is it to take action $a$ when I am in state $s$?"* After each step to a new state $s'$ with reward $r$, it nudges its old estimate toward the new reality using learning rate $\alpha$: $Q(s,a) \leftarrow (1-\alpha)Q(s,a) + \alpha[r + \gamma \max_{a'} Q(s',a')]$.
+In **Tabular Q-Learning**, the agent keeps a cheat-sheet table $Q(s, a)$ estimating *"how good is it to take action $a$ when I am in state $s$?"* After each step to a new state $s'$ with reward $r$, it nudges its old estimate toward the new reality using learning rate $\alpha$: $Q(s, a) \leftarrow (1-\alpha)Q(s, a) + \alpha[r + \gamma \max_{a'} Q(s', a')]$.
 
 | RL Algorithm | What It Learns | Update Rule / Loss | Best Used For |
 | :--- | :--- | :--- | :--- |
-| **Tabular Q-Learning** | State–action value table $Q(s, a)$ | Nudges $Q(s,a)$ toward immediate reward $r$ plus discounted best next-state value $\gamma \max_{a'} Q(s',a')$. | Small discrete gridworlds (like *Peter & the Wolf*). |
+| **Tabular Q-Learning** | State–action value table $Q(s, a)$ | Nudges $Q(s, a)$ toward immediate reward $r$ plus discounted best next-state value $\gamma \max_{a'} Q(s', a')$. | Small discrete gridworlds (like *Peter & the Wolf*). |
 | **Policy Gradients (REINFORCE)** | Neural network policy $\pi_\theta(a \mid s)$ | Increases the probability of actions that led to high returns $G_t$. | Continuous or high-dimensional states (`CartPole-v1`). |
 | **Actor–Critic** | Policy (**Actor**) + Value baseline (**Critic**) | Critic estimates expected return; Actor improves policy with lower variance. | Complex control (`MountainCar`, robotics, Atari). |
 

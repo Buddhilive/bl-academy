@@ -12,7 +12,7 @@ prerequisites: ["python-zero-to-hero/12-installing-third-party-packages-with-pip
 import QuizCard from '../../../components/islands/QuizCard';
 import ColabButton from '../../../components/static/ColabButton.astro';
 
-Welcome to **AI for Beginners**—your bridge from core Python programming into neural networks, computer vision, natural language processing, and modern AI systems. You don't need an expensive workstation or paid cloud credits to build real models here. Everything in this 26-lesson course runs on **Google Colab Free Tier** (CPU and T4 GPU runtimes) and **Google AI Studio Free Tier**, paired with readable pure-Python code walkthroughs in every lesson that you can copy into Colab or run locally.
+Welcome to **AI for Beginners**, your bridge from core Python programming into neural networks, computer vision, natural language processing, and modern AI systems. You don't need an expensive workstation or paid cloud credits to build real models here. Everything in this 26-lesson course runs on **Google Colab Free Tier** (CPU and T4 GPU runtimes) and **Google AI Studio Free Tier**, paired with readable pure-Python code walkthroughs in every lesson that you can copy into Colab or run locally.
 
 Before we write our first perceptron or train a convolutional network, let's get your workspace wired up cleanly so every notebook and API call works on the first try.
 
@@ -22,12 +22,12 @@ Before we write our first perceptron or train a convolutional network, let's get
 
 Every lesson combines two complementary learning layers so you understand both the underlying math and real-world engineering workflows:
 
-1. **Pure-Python Lesson Walkthroughs**: Short, self-contained Python examples right inside each lesson that step through core algorithms—gradient updates, 2D convolutions, attention matrices, and Q-learning tables—using only Python's standard library. You can read them inline, copy them into a Colab cell, or run them locally.
+1. **Pure-Python Lesson Walkthroughs**: Short, self-contained Python examples right inside each lesson that step through core algorithms, gradient updates, 2D convolutions, attention matrices, and Q-learning tables, using only Python's standard library. You can read them inline, copy them into a Colab cell, or run them locally.
 2. **Google Colab Free Tier Notebooks**: Gives you a free cloud Jupyter runtime with pre-installed `PyTorch`, `NumPy`, `OpenCV`, and optional **NVIDIA T4 GPUs (16 GB VRAM)** for training deep learning models on real datasets.
 
 | Environment | Best Used For | Hardware Tier | Setup Required |
 | :--- | :--- | :--- | :--- |
-| **Pure-Python Snippets** | Algorithm math, logic engines, quick experiments | Colab CPU or Local Python | None — copy & run anywhere |
+| **Pure-Python Snippets** | Algorithm math, logic engines, quick experiments | Colab CPU or Local Python | None , copy & run anywhere |
 | **Google Colab (CPU)** | Symbolic AI, tabular ML, genetic algorithms, ethics audits | Free Cloud CPU (~12 GB RAM) | Google Account |
 | **Google Colab (T4 GPU)** | CNNs, Autoencoders, GANs, BERT, CLIP | Free NVIDIA T4 (16 GB VRAM) | Select **Runtime → Change runtime type → T4 GPU** |
 | **Google AI Studio** | Cloud LLM prompting and multimodal inference (`google-genai`) | Free Tier API (`GEMINI_API_KEY`) | Free API key stored in Colab Secrets |
@@ -36,7 +36,7 @@ Every lesson combines two complementary learning layers so you understand both t
 
 ## Setting Up Google Colab Free Tier
 
-Whenever you see an **Open with Google Colab** button in a lesson, clicking it opens that lesson's self-contained `.ipynb` notebook directly in Colab—no local Conda environments or manual helper-file downloads needed.
+Whenever you see an **Open with Google Colab** button in a lesson, clicking it opens that lesson's self-contained `.ipynb` notebook directly in Colab, no local Conda environments or manual helper-file downloads needed.
 
 <ColabButton
   course="ai-for-beginners"
@@ -61,7 +61,7 @@ Later in this course (and throughout our upcoming Generative AI, MCP, and AI Age
 ### Step 1: Generate the Key
 1. Visit [aistudio.google.com/apikey](https://aistudio.google.com/apikey) and sign in with your Google account.
 2. Click **Create API Key** and select or create a Google Cloud project when prompted.
-3. Copy the generated key string immediately—never commit API keys directly into code or public Git repositories.
+3. Copy the generated key string immediately, never commit API keys directly into code or public Git repositories.
 
 ### Step 2: Store It Safely in Colab Secrets
 1. Open your Google Colab notebook and click the **Secrets (key icon)** in the left sidebar.

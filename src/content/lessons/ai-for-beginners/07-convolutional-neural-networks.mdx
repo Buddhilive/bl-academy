@@ -14,7 +14,7 @@ import ColabButton from '../../../components/static/ColabButton.astro';
 
 Standard fully connected networks flatten an image into a 1D vector, throwing away 2D spatial structure. Worse, if a cat moves 10 pixels to the left, a dense network treats it as a completely different set of input features.
 
-**Convolutional Neural Networks (CNNs)** solve this by sliding small, trainable **filter kernels** across the image. Instead of memorizing where every pixel sits, a CNN learns *local visual patterns*—edges in early layers, textures in middle layers, and eyes, wheels, or faces in deeper layers.
+**Convolutional Neural Networks (CNNs)** solve this by sliding small, trainable **filter kernels** across the image. Instead of memorizing where every pixel sits, a CNN learns *local visual patterns*, edges in early layers, textures in middle layers, and eyes, wheels, or faces in deeper layers.
 
 ---
 
@@ -32,7 +32,7 @@ To keep the output grid from shrinking too fast at the edges, we can wrap the in
 
 $$W_{\text{out}} = \left\lfloor \frac{W_{\text{in}} - K + 2P}{S} \right\rfloor + 1$$
 
-The $\lfloor \cdot \rfloor$ brackets simply mean "round down to the nearest whole number" (integer floor division). Following convolution + ReLU, **Pooling layers** (`MaxPool2d` or `AvgPool2d`) shrink the feature map further—for example, taking only the maximum value in each $2 \times 2$ block—which reduces compute and helps the network recognize a pattern even if it shifts slightly.
+The $\lfloor \cdot \rfloor$ brackets simply mean "round down to the nearest whole number" (integer floor division). Following convolution + ReLU, **Pooling layers** (`MaxPool2d` or `AvgPool2d`) shrink the feature map further, for example, taking only the maximum value in each $2 \times 2$ block, which reduces compute and helps the network recognize a pattern even if it shifts slightly.
 
 ---
 

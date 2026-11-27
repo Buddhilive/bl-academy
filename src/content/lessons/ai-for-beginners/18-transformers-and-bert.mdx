@@ -14,7 +14,7 @@ import ColabButton from '../../../components/static/ColabButton.astro';
 
 Recurrent Neural Networks had two stubborn bottlenecks: they still struggled to remember very long contexts, and because step $t$ depends on step $t-1$, you cannot parallelize sequence processing across GPU cores.
 
-In 2017, the landmark paper **"Attention Is All You Need"** replaced recurrence completely with **Self-Attention**—birthing the **Transformer** architecture behind BERT, GPT, and Gemini.
+In 2017, the landmark paper **"Attention Is All You Need"** replaced recurrence completely with **Self-Attention**, birthing the **Transformer** architecture behind BERT, GPT, and Gemini.
 
 ---
 
@@ -25,7 +25,7 @@ Think of Self-Attention like searching a library where every word in a sentence 
 $$\text{Attention}(Q, K, V) = \text{softmax}\left(\frac{QK^{\top}}{\sqrt{d_k}}\right)V$$
 
 Let's break down each step in plain English:
-1. $QK^{\top}$ computes the dot product between every Query and every Key—high scores mean a strong match (for example, `"it"` matching `"animal"`).
+1. $QK^{\top}$ computes the dot product between every Query and every Key, high scores mean a strong match (for example, `"it"` matching `"animal"`).
 2. Dividing by $\sqrt{d_k}$ (the square root of the key vector's dimension) keeps those scores from growing too huge, so Softmax gradients stay healthy.
 3. $\text{softmax}(\dots)$ turns each row of match scores into positive weights that add up to `1.0` (100% attention budget).
 4. Multiplying by $V$ blends the Value vectors according to those attention weights, giving each token a context-aware representation.
@@ -34,7 +34,7 @@ Let's break down each step in plain English:
 
 Because Self-Attention processes all tokens in parallel without sequential order, a Transformer would treat *"dog bites man"* identically to *"man bites dog"* unless we inject **Positional Encoding** (either fixed sine/cosine waves or learned position embeddings) into every token vector.
 
-**Multi-Head Attention** runs $h$ independent attention projections in parallel—letting one head track subject–verb agreement, another resolve pronouns (`"it"` → `"animal"`), and another capture local modifiers.
+**Multi-Head Attention** runs $h$ independent attention projections in parallel, letting one head track subject–verb agreement, another resolve pronouns (`"it"` → `"animal"`), and another capture local modifiers.
 
 ---
 
@@ -47,7 +47,7 @@ Because Self-Attention processes all tokens in parallel without sequential order
 | **Masked Language Modeling (MLM)** | Masks 15% of input tokens (`[MASK]`) and predicts them using **both** left and right context. | Produces deeply contextualized word representations. |
 | **Next Sentence Prediction (NSP)** | Predicts whether Sentence B naturally follows Sentence A. | Helps downstream QA and sentence-pair classification. |
 
-Once pre-trained, BERT can be fine-tuned in minutes on custom classification, QA, or entity extraction datasets using HuggingFace `transformers`—replacing weeks of training from scratch with transfer learning for text.
+Once pre-trained, BERT can be fine-tuned in minutes on custom classification, QA, or entity extraction datasets using HuggingFace `transformers`, replacing weeks of training from scratch with transfer learning for text.
 
 <ColabButton
   course="ai-for-beginners"
@@ -116,7 +116,7 @@ Contextual Output[0] ('bank'): [0.456, 0.544]
     "Positional encoding removes all punctuation from the input."
   ]}
   correctAnswer={0}
-  explanation="Unlike RNNs that process tokens one step at a time, Self-Attention views all tokens in parallel—so adding positional encodings is essential to preserve word order."
+  explanation="Unlike RNNs that process tokens one step at a time, Self-Attention views all tokens in parallel, so adding positional encodings is essential to preserve word order."
 />
 
 Next, let's apply Transformers and sequence models to token-level extraction in **Lesson 19: Named Entity Recognition (NER)**.

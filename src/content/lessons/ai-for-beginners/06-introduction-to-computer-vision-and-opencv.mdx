@@ -12,7 +12,7 @@ prerequisites: ["ai-for-beginners/05-deep-learning-frameworks-and-overfitting"]
 import QuizCard from '../../../components/islands/QuizCard';
 import ColabButton from '../../../components/static/ColabButton.astro';
 
-**Computer Vision** teaches machines to extract high-level meaning from digital images and video—whether classifying objects, tracking motion, reading Braille pages, or reconstructing 3D scenes. Before we pass pixels into deep Convolutional Neural Networks, classical computer vision libraries like **OpenCV** (`cv2`) give us fast, deterministic tools to clean, normalize, and analyze images.
+**Computer Vision** teaches machines to extract high-level meaning from digital images and video, whether classifying objects, tracking motion, reading Braille pages, or reconstructing 3D scenes. Before we pass pixels into deep Convolutional Neural Networks, classical computer vision libraries like **OpenCV** (`cv2`) give us fast, deterministic tools to clean, normalize, and analyze images.
 
 ---
 
@@ -43,7 +43,7 @@ To a computer, an image is simply a multi-dimensional array of pixel intensities
 
 1. **Pre-Processing Braille Pages**: By combining adaptive thresholding, Gaussian blur, and morphological erosion/dilation, you can isolate raised Braille dots into clean binary grids ready for character classification.
 2. **Video Motion Detection via Frame Differencing**: If a camera is stationary, subtracting consecutive grayscale frames $|I_t - I_{t-1}|$ highlights moving objects while canceling static backgrounds.
-3. **Optical Flow**: Estimates per-pixel velocity vectors $(u, v)$ across frames—either **Sparse Optical Flow** (Lucas–Kanade tracking corners/edges) or **Dense Optical Flow** (Farnebäck computing a full 2D motion field). Notice how even without deep neural networks, classical computer vision can solve real-time gesture and movement tracking with minimal compute.
+3. **Optical Flow**: Estimates per-pixel velocity vectors $(u, v)$ across frames, either **Sparse Optical Flow** (Lucas–Kanade tracking corners/edges) or **Dense Optical Flow** (Farnebäck computing a full 2D motion field). Notice how even without deep neural networks, classical computer vision can solve real-time gesture and movement tracking with minimal compute.
 
 <ColabButton
   course="ai-for-beginners"

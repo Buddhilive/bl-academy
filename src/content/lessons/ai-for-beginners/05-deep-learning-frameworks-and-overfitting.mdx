@@ -12,7 +12,7 @@ prerequisites: ["ai-for-beginners/04-multi-layered-perceptron-and-own-framework"
 import QuizCard from '../../../components/islands/QuizCard';
 import ColabButton from '../../../components/static/ColabButton.astro';
 
-Building a neural network from scratch in NumPy is the best way to understand backpropagation—but manually writing `.backward()` derivatives for a 50-layer ResNet or Transformer is impractical, and NumPy cannot run on GPUs.
+Building a neural network from scratch in NumPy is the best way to understand backpropagation, but manually writing `.backward()` derivatives for a 50-layer ResNet or Transformer is impractical, and NumPy cannot run on GPUs.
 
 That is why modern AI engineering relies on **PyTorch**. PyTorch gives you two superpowers out of the box: GPU-accelerated **Tensors** and **Automatic Differentiation (`autograd`)** over dynamic computational graphs.
 
@@ -38,15 +38,15 @@ As soon as you have a flexible neural network, you will run into the most import
 Consider fitting 5 noisy data points: a 2-parameter straight line captures the underlying trend (training error $5.3$, validation error $5.1$), whereas a 7-parameter polynomial passes through every training dot (training error $0.0$) while exploding on unseen data (validation error $20.0$).
 
 This is the **Bias–Variance Trade-off**:
-- **Underfitting (High Bias)**: The model is too simple to capture the real pattern—both training and validation errors stay high.
-- **Overfitting (High Variance)**: The model memorizes random noise in the training set—training loss drops near zero while validation loss climbs.
+- **Underfitting (High Bias)**: The model is too simple to capture the real pattern, both training and validation errors stay high.
+- **Overfitting (High Variance)**: The model memorizes random noise in the training set, training loss drops near zero while validation loss climbs.
 
 ### Four Practical Ways to Prevent Overfitting
 
 1. **More Training Data / Data Augmentation**: Harder for a model to memorize noise when the dataset is large and varied.
 2. **Early Stopping**: Snapshot model weights at the epoch where validation loss stops improving.
 3. **Dropout**: Randomly zero out a fraction $p$ of hidden neurons during each training step so the network cannot rely on fragile co-adaptations.
-4. **L2 Regularization (Weight Decay)**: Think of Weight Decay like a budget limit on how extreme any single weight can get—if a model tries to memorize noise by cranking weights up to huge numbers, L2 regularization adds a penalty proportional to the squared weights ($\frac{\lambda}{2}\|\mathbf{w}\|_2^2$) to the loss:
+4. **L2 Regularization (Weight Decay)**: Think of Weight Decay like a budget limit on how extreme any single weight can get, if a model tries to memorize noise by cranking weights up to huge numbers, L2 regularization adds a penalty proportional to the squared weights ($\frac{\lambda}{2}\|\mathbf{w}\|_2^2$) to the loss:
 
 $$\mathcal{L}_{\text{reg}}(\mathbf{w}) = \mathcal{L}(\mathbf{w}) + \frac{\lambda}{2}\sum_j w_j^2 \implies w_j \leftarrow w_j - \eta \left(\frac{\partial \mathcal{L}}{\partial w_j} + \lambda w_j\right)$$
 

@@ -12,7 +12,7 @@ prerequisites: ["ai-for-beginners/12-semantic-segmentation-and-unet"]
 import QuizCard from '../../../components/islands/QuizCard';
 import ColabButton from '../../../components/static/ColabButton.astro';
 
-Unlike images—which arrive as clean numerical grids of pixel intensities—human language is discrete, variable-length, and symbolic. Before any neural network can classify a news article, translate a sentence, or answer a question, we must convert text into numerical **tensors**.
+Unlike images, which arrive as clean numerical grids of pixel intensities, human language is discrete, variable-length, and symbolic. Before any neural network can classify a news article, translate a sentence, or answer a question, we must convert text into numerical **tensors**.
 
 ---
 
@@ -22,7 +22,7 @@ Computers already store characters as integers under **ASCII** or **UTF-8**. Whe
 
 - **Character-level tokenization**: Small vocabulary ($C \approx 100$), long sequences, and individual characters carry little semantic meaning on their own.
 - **Word-level tokenization**: Preserves whole-word semantics, but requires a huge vocabulary ($V \approx 50{,}000+$) where rare words or typos become unknown (`<UNK>`) tokens.
-- **Subword tokenization (BPE / WordPiece)**: Modern sweet spot used by BERT and Gemini—splits rare words into meaningful pieces (`"unhappiness"` → `["un", "happiness"]`).
+- **Subword tokenization (BPE / WordPiece)**: Modern sweet spot used by BERT and Gemini, splits rare words into meaningful pieces (`"unhappiness"` → `["un", "happiness"]`).
 
 ---
 
@@ -116,4 +116,4 @@ Doc 1 Top TF-IDF Terms: [('markets', 0.3662), ('rally', 0.3662), ('the', 0.0)]
   explanation="In raw BoW, common words like 'the' and 'is' dominate word counts. Multiplying by Inverse Document Frequency (IDF) dampens words shared across all documents."
 />
 
-Bag-of-Words and TF-IDF treat every word as an isolated dimension—so `"car"` and `"automobile"` have zero similarity. Next, let's fix that using dense vector spaces in **Lesson 14: Semantic Word Embeddings**.
+Bag-of-Words and TF-IDF treat every word as an isolated dimension, so `"car"` and `"automobile"` have zero similarity. Next, let's fix that using dense vector spaces in **Lesson 14: Semantic Word Embeddings**.

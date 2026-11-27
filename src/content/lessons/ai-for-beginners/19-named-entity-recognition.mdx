@@ -20,7 +20,7 @@ Whenever a voice assistant extracts *"Seattle"* and *"tomorrow"* from *"What's t
 
 ## NER as Token Classification & BIO Tagging
 
-Because a single entity can span multiple consecutive words—and two different entities can sit right next to each other—we need a tagging scheme that marks exact span boundaries. The industry standard is **BIO (Beginning–Inside–Outside)** tagging:
+Because a single entity can span multiple consecutive words, and two different entities can sit right next to each other, we need a tagging scheme that marks exact span boundaries. The industry standard is **BIO (Beginning–Inside–Outside)** tagging:
 
 - **`B-<TYPE>`**: First token of an entity of type `<TYPE>` (e.g., `B-DIS` or `B-CHEM`).
 - **`I-<TYPE>`**: Continuation token inside the same entity span (`I-DIS`).
@@ -38,7 +38,7 @@ Consider this medical paper title: *"Tricuspid valve regurgitation and lithium c
 | `carbonate` | `I-CHEM` | Chemical ends |
 | `toxicity` | `B-DIS` | Disease #2 starts (separate from `CHEM`) |
 
-Architecturally, NER is a **Many-to-Many** token classification task: every token $t$ passes through a Bidirectional LSTM or a Transformer Encoder (such as HuggingFace `AutoModelForTokenClassification`) followed by a linear head predicting its BIO tag ID. When working with subword tokenizers like BERT's WordPiece, a single long word such as `"regurgitation"` may split into `["reg", "##urg", "##itation"]`—so standard NER pipelines align labels only to the first subword piece and mask continuation subwords with `-100` in the loss function. This clean alignment lets pre-trained Transformers extract entities accurately across news, legal, and clinical domains.
+Architecturally, NER is a **Many-to-Many** token classification task: every token $t$ passes through a Bidirectional LSTM or a Transformer Encoder (such as HuggingFace `AutoModelForTokenClassification`) followed by a linear head predicting its BIO tag ID. When working with subword tokenizers like BERT's WordPiece, a single long word such as `"regurgitation"` may split into `["reg", "##urg", "##itation"]`, so standard NER pipelines align labels only to the first subword piece and mask continuation subwords with `-100` in the loss function. This clean alignment lets pre-trained Transformers extract entities accurately across news, legal, and clinical domains.
 
 <ColabButton
   course="ai-for-beginners"

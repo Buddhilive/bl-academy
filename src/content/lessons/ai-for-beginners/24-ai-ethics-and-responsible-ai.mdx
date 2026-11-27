@@ -14,7 +14,7 @@ import ColabButton from '../../../components/static/ColabButton.astro';
 
 After building perceptrons, CNNs, Transformers, and RL agents, one truth becomes clear: AI is not a sentient sci-fi character plotting rebellion. Under the hood, it is large-scale matrix arithmetic trained to extract statistical patterns from historical data. Precisely *because* it mirrors historical data at massive scale, an unexamined model can quietly amplify human biases, fail on underrepresented groups, or make high-stakes mistakes with high confidence.
 
-Deploying AI responsibly is an engineering discipline—not an afterthought.
+Deploying AI responsibly is an engineering discipline, not an afterthought.
 
 ---
 
@@ -33,11 +33,11 @@ Deploying AI responsibly is an engineering discipline—not an afterthought.
 
 ## Quantifying Fairness & Open-Source Tooling
 
-We don't have to guess whether a classifier is fair—we can measure it mathematically. Given a binary prediction $\hat{Y} \in \{0, 1\}$ and a sensitive group attribute $A \in \{0, 1\}$, two foundational metrics are **Demographic Parity Difference ($\Delta_{\text{DP}}$)** and **Disparate Impact Ratio ($\text{DI}$)**:
+We don't have to guess whether a classifier is fair, we can measure it mathematically. Given a binary prediction $\hat{Y} \in \{0, 1\}$ and a sensitive group attribute $A \in \{0, 1\}$, two foundational metrics are **Demographic Parity Difference ($\Delta_{\text{DP}}$)** and **Disparate Impact Ratio ($\text{DI}$)**:
 
-$$\Delta_{\text{DP}} = \left| P(\hat{Y}=1 \mid A=0) - P(\hat{Y}=1 \mid A=1) \right|, \qquad \text{DI} = \frac{P(\hat{Y}=1 \mid A=0)}{P(\hat{Y}=1 \mid A=1)}$$
+$$\Delta_{\text{DP}} = \left| P(\hat{Y}=1 \mid A=0) - P(\hat{Y}=1 \mid A=1) \right|, \qquad \text{DI} = \frac{\min(P(\hat{Y}=1 \mid A=0), P(\hat{Y}=1 \mid A=1))}{\max(P(\hat{Y}=1 \mid A=0), P(\hat{Y}=1 \mid A=1))}$$
 
-In plain English: $P(\hat{Y}=1 \mid A=0)$ is simply the approval rate ("how often the model predicts `1`") for Group `0`, and $P(\hat{Y}=1 \mid A=1)$ is the approval rate for Group `1`. $\Delta_{\text{DP}}$ subtracts the two rates (ideal is `0.0`), while $\text{DI}$ divides them (ideal is `1.0`). Under the widely used **four-fifths (80%) rule**, a Disparate Impact ratio below `0.80` signals potential adverse impact requiring investigation. Open-source Python libraries—including **`fairlearn`** (for fairness metrics and bias mitigation), **`interpret`** (InterpretML glass-box Explainable Boosting Machines), and **`dice-ml`** (counterfactual *"what would need to change?"* explanations)—let you run these audits directly in Google Colab.
+In plain English: $P(\hat{Y}=1 \mid A=0)$ is simply the approval rate ("how often the model predicts `1`") for Group `0`, and $P(\hat{Y}=1 \mid A=1)$ is the approval rate for Group `1`. $\Delta_{\text{DP}}$ subtracts the two rates (ideal is `0.0`), while $\text{DI}$ divides them (ideal is `1.0`). Under the widely used **four-fifths (80%) rule**, a Disparate Impact ratio below `0.80` signals potential adverse impact requiring investigation. Open-source Python libraries, including **`fairlearn`** (for fairness metrics and bias mitigation), **`interpret`** (InterpretML glass-box Explainable Boosting Machines), and **`dice-ml`** (counterfactual *"what would need to change?"* explanations), let you run these audits directly in Google Colab.
 
 <ColabButton
   course="ai-for-beginners"
@@ -104,4 +104,4 @@ Passes 80% Rule (>=0.80): False
   explanation="'Fairness through unawareness' (just dropping the sensitive column) rarely eliminates bias because other correlated proxy features leak demographic information."
 />
 
-Next, let's finish Course 01 on the frontier of vision and language combined in **Lesson 25: Multi-Modal Networks — CLIP & VQGAN**.
+Next, let's finish Course 01 on the frontier of vision and language combined in **Lesson 25: Multi-Modal Networks , CLIP & VQGAN**.
