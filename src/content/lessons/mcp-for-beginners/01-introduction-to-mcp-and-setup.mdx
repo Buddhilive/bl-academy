@@ -48,7 +48,7 @@ MCP uses a **Host-Client-Server** model built on a two-layer architecture:
 In plain English, here is what happens step-by-step when you ask your AI assistant a question:
 1. **You ask a question** in the **Host** (for example, *"Check today's sales in our docs"*).
 2. **The Host checks its Tool Registry** and sends the available tool descriptions to the LLM.
-3. **The LLM picks the right tool** and asks the Host to run it—the model never touches your database or files directly.
+3. **The LLM picks the right tool** and asks the Host to run it. The model never touches your database or files directly.
 4. **The Host's MCP Client forwards the request** to the **MCP Server**, gets the result back, and hands it to the LLM to write your final answer.
 
 ### Knowledge & Tool Federation
@@ -67,7 +67,7 @@ Every hands-on notebook in this course runs on **Google Colab Free Tier** using 
 4. Locally, keep your key in a gitignored `.env` file loaded via `python-dotenv`:
 
 ```bash
-pip install mcp google-genai python-dotenv
+pip install "mcp<2" google-genai python-dotenv
 ```
 
 ```python
