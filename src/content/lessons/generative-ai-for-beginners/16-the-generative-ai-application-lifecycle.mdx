@@ -31,8 +31,8 @@ Shipping your first GenAI prototype takes an afternoon; keeping it accurate, aff
 
 Every GenAI application cycles continuously through three stages, wrapped in overarching **Management (Security, Compliance, Governance)**:
 
-1. **Stage 1 — Ideating / Exploring**: Define the business hypothesis, prototype a prompt/RAG DAG flow, and sanity-check on a small golden dataset.
-2. **Stage 2 — Building / Augmenting**: Scale evaluation to larger test sets, compare Metaprompting vs. RAG vs. Fine-Tuning, and gate releases on five holistic metrics:
+1. **Stage 1: Ideating / Exploring**: Define the business hypothesis, prototype a prompt/RAG DAG flow, and sanity-check on a small golden dataset.
+2. **Stage 2: Building / Augmenting**: Scale evaluation to larger test sets, compare Metaprompting vs. RAG vs. Fine-Tuning, and gate releases on five holistic metrics:
    - **Quality**: Relevance, coherence, and task completion.
    - **Harm**: Responsible AI safety scores (hate, violence, self-harm).
    - **Honesty (Groundedness)**: Adherence to retrieved context without hallucinations.
@@ -40,7 +40,7 @@ Every GenAI application cycles continuously through three stages, wrapped in ove
      $$\text{Cost} = \frac{N_{\text{in}} \cdot c_{\text{in}} + N_{\text{out}} \cdot c_{\text{out}}}{10^6}$$
      (where $N_{\text{in}}$ and $N_{\text{out}}$ are input/output token counts, and $c_{\text{in}}, c_{\text{out}}$ are their prices per million tokens).
    - **Latency**: Time-to-First-Token ($\text{TTFT}$) and end-to-end wall-clock milliseconds.
-3. **Stage 3 — Operationalizing**: Deploy to production with CI/CD, live telemetry, A/B routing, and automated regression alerts.
+3. **Stage 3: Operationalizing**: Deploy to production with CI/CD, live telemetry, A/B routing, and automated regression alerts.
 
 ---
 

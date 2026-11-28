@@ -18,7 +18,7 @@ When you type a question into a modern AI assistant and watch a coherent paragra
 
 ## Where Generative AI Fits in the AI Landscape
 
-Generative AI is not a separate universe from Machine Learning—it is a specialized branch nested inside **Artificial Intelligence $\supset$ Machine Learning $\supset$ Deep Learning $\supset$ Generative AI**.
+Generative AI is not a separate universe from Machine Learning. It is a specialized branch nested inside **Artificial Intelligence $\supset$ Machine Learning $\supset$ Deep Learning $\supset$ Generative AI**.
 
 Over the past six decades, language AI evolved through four distinct eras:
 1. **1960s Rule-Based Chatbots**: Hardcoded keyword and pattern-matching scripts (like ELIZA) that broke the moment phrasing changed.
@@ -55,7 +55,7 @@ $$P(w_i \mid w_{<t}) = \frac{\exp(z_i / T)}{\sum_{j=1}^{|V|} \exp(z_j / T)}$$
 
 In plain English: $w_{<t}$ means "all tokens before step $t$," $|V|$ is the total number of words in the vocabulary, and **Temperature** ($T$) acts like a "creativity vs. predictability" dial:
 - **Low Temperature ($T \to 0$)**: Dividing $z_i$ by a small $T$ exaggerates the lead of the top-scoring word, making responses focused, repeatable, and nearly deterministic.
-- **High Temperature ($T \ge 1.0$)**: Dividing by a larger $T$ flattens the differences between scores, boosting lower-probability words for creative brainstorming—at the cost of higher **fabrication (hallucination)** risk.
+- **High Temperature ($T \ge 1.0$)**: Dividing by a larger $T$ flattens the differences between scores, boosting lower-probability words for creative brainstorming, at the cost of higher **fabrication (hallucination)** risk.
 
 ---
 
@@ -152,5 +152,5 @@ Autoregressive Step 1: 'Generative AI' + ' rocks'
     "Latency drops to zero because self-attention is disabled."
   ]}
   correctAnswer={1}
-  explanation="Higher temperature divides logits by a larger T before softmax, flattening the probability curve so less probable tokens get sampled more often—increasing creativity as well as hallucination risk."
+  explanation="Higher temperature divides logits by a larger T before softmax, flattening the probability curve so less probable tokens get sampled more often, increasing creativity as well as hallucination risk."
 />

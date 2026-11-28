@@ -12,7 +12,7 @@ prerequisites: ["generative-ai-for-beginners/03-exploring-and-comparing-differen
 import QuizCard from '../../../components/islands/QuizCard';
 import ColabButton from '../../../components/static/ColabButton.astro';
 
-Because Large Language Models generate fluent, confident prose, it is dangerously easy for users to assume every sentence they produce is factually true and ethically neutral. In reality, an unguarded LLM is a statistical next-token predictor—if you ask it a trick question like *"Who was the sole survivor of the Titanic?"*, a naive model will happily invent a name and backstory even though more than 700 passengers survived. In this lesson, we'll examine the core risks of Generative AI and implement a practical **4-layer defense-in-depth architecture** to keep your applications safe, grounded, and trustworthy.
+Because Large Language Models generate fluent, confident prose, it is dangerously easy for users to assume every sentence they produce is factually true and ethically neutral. In reality, an unguarded LLM is a statistical next-token predictor. If you ask it a trick question like *"Who was the sole survivor of the Titanic?"*, a naive model will happily invent a name and backstory even though more than 700 passengers survived. In this lesson, we'll examine the core risks of Generative AI and implement a practical **4-layer defense-in-depth architecture** to keep your applications safe, grounded, and trustworthy.
 
 ---
 
@@ -88,7 +88,7 @@ Open the notebook below to test `google-genai` `SafetySetting` policies and see 
 
 ## Try It Yourself: 4-Layer GenAI Safety & Groundedness Pipeline
 
-Run this pure-Python simulation to watch how prompts pass through all four defense layers—catching harmful keywords in Layer 2, correcting the *"sole survivor of the Titanic"* false premise in Layer 3, and attaching a transparent UX disclosure in Layer 4.
+Run this pure-Python simulation to watch how prompts pass through all four defense layers. It catches harmful keywords in Layer 2, corrects the *"sole survivor of the Titanic"* false premise in Layer 3, and attaches a transparent UX disclosure in Layer 4.
 
 **4-Layer Responsible GenAI Guardrail Pipeline**
 

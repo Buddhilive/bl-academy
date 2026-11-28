@@ -12,7 +12,7 @@ prerequisites: ["generative-ai-for-beginners/18-ai-agents-and-multi-agent-workfl
 import QuizCard from '../../../components/islands/QuizCard';
 import ColabButton from '../../../components/static/ColabButton.astro';
 
-When Prompt Engineering and RAG hit their ceiling—say, you need an LLM to internalize a highly specific poetic style, shrink a 2,000-token system prompt down to 20 tokens, or let a small 1B–3B model match the domain accuracy of a frontier model—it is time for **Fine-Tuning**. Instead of paying to retrain billions of weights, modern **Low-Rank Adaptation (LoRA)** and **4-bit QLoRA** freeze the base model and train tiny adapter matrices on a single **Google Colab Free Tier T4 GPU**.
+When Prompt Engineering and RAG hit their ceiling, for example, you need an LLM to internalize a highly specific poetic style, shrink a 2,000-token system prompt down to 20 tokens, or let a small 1B–3B model match the domain accuracy of a frontier model. In these cases, it is time for **Fine-Tuning**. Instead of paying to retrain billions of weights, modern **Low-Rank Adaptation (LoRA)** and **4-bit QLoRA** freeze the base model and train tiny adapter matrices on a single **Google Colab Free Tier T4 GPU**.
 
 ---
 
@@ -34,7 +34,7 @@ In math notation, full fine-tuning updates every number in a giant weight matrix
 
 $$W = W_0 + \Delta W = W_0 + \frac{\alpha}{r} B A, \qquad B \in \mathbb{R}^{d \times r}, \; A \in \mathbb{R}^{r \times k}, \; r \ll \min(d, k)$$
 
-In plain English: $r$ is the **rank** (a tiny bottleneck width like `4` or `8` that is much smaller than $d$ and $k$, written $r \ll \min(d, k)$), and $\alpha$ (`lora_alpha`) is a scaling constant that controls how strongly the adapter correction is weighted. With rank $r = 8$ on a $4096 \times 4096$ projection matrix, trainable parameters drop from $16.77\text{M}$ down to $65,536$—a **$99.6\%$ reduction**! **QLoRA** takes this further by compressing (quantizing) the frozen base weights $W_0$ to 4-bit NormalFloat (`nf4`) via `bitsandbytes`, fitting 3B–7B models comfortably inside Colab's 15 GB T4 VRAM.
+In plain English: $r$ is the **rank** (a tiny bottleneck width like `4` or `8` that is much smaller than $d$ and $k$, written $r \ll \min(d, k)$), and $\alpha$ (`lora_alpha`) is a scaling constant that controls how strongly the adapter correction is weighted. With rank $r = 8$ on a $4096 \times 4096$ projection matrix, trainable parameters drop from $16.77\text{M}$ down to $65,536$, a **$99.6\%$ reduction**. **QLoRA** takes this further by compressing (quantizing) the frozen base weights $W_0$ to 4-bit NormalFloat (`nf4`) via `bitsandbytes`, fitting 3B–7B models comfortably inside Colab's 15 GB T4 VRAM.
 
 ---
 
@@ -49,7 +49,7 @@ To see SFT + LoRA in action, we use the **"Elle" Periodic Table Limerick** JSONL
 
 ## Open the Companion Colab Notebook
 
-Launch the notebook below on a **Colab Free Tier T4 GPU**—it embeds the complete `training-data.jsonl` and `validation-data.jsonl` datasets inline and runs real LoRA SFT training with **Hugging Face `peft` (`LoraConfig`) + `trl` (`SFTTrainer`)**.
+Launch the notebook below on a **Colab Free Tier T4 GPU**. It embeds the complete `training-data.jsonl` and `validation-data.jsonl` datasets inline and runs real LoRA SFT training with **Hugging Face `peft` (`LoraConfig`) + `trl` (`SFTTrainer`)**.
 
 <ColabButton
   course="generative-ai-for-beginners"

@@ -12,7 +12,7 @@ prerequisites: ["generative-ai-for-beginners/04-using-generative-ai-responsibly"
 import QuizCard from '../../../components/islands/QuizCard';
 import ColabButton from '../../../components/static/ColabButton.astro';
 
-Once you connect to a Large Language Model API, you quickly notice that two slightly different phrasings of the same question can yield wildly different answers. **Prompt engineering** is the craft of structuring your inputs—context, instructions, examples, delimiters, and output cues—so a stochastic model consistently produces accurate, structured results. In this lesson, we'll inspect how tokenizers slice real text, compare base models against instruction-tuned models, and break down the anatomy of production prompts.
+Once you connect to a Large Language Model API, you quickly notice that two slightly different phrasings of the same question can yield wildly different answers. **Prompt engineering** is the craft of structuring your inputs: context, instructions, examples, delimiters, and output cues. These parts help a stochastic model consistently produce accurate, structured results. In this lesson, we'll inspect how tokenizers slice real text, compare base models against instruction-tuned models, and break down the anatomy of production prompts.
 
 ---
 
@@ -42,7 +42,7 @@ LLMs do not read characters or whole words; they read subword **tokens**. Counti
 
 ## Anatomy of a Well-Engineered Prompt
 
-Production developer tools—like **AI coding assistants** that assemble open editor tabs, cursor neighbor lines, file paths, and comments into a single context window—rely on five modular building blocks:
+Production developer tools, like **AI coding assistants** that assemble open editor tabs, cursor neighbor lines, file paths, and comments into a single context window, rely on five modular building blocks:
 
 | Component | Role in the Prompt | Practical Example |
 | :--- | :--- | :--- |

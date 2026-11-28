@@ -45,7 +45,7 @@ At query time, we embed the user's question $\mathbf{q}$ and score every video s
 
 $$\text{similarity}(\mathbf{q}, \mathbf{d}_i) = \cos(\theta) = \frac{\mathbf{q} \cdot \mathbf{d}_i}{\|\mathbf{q}\|_2 \|\mathbf{d}_i\|_2} = \frac{\sum_{j=1}^{D} q_j d_{i,j}}{\sqrt{\sum_{j=1}^{D} q_j^2}\sqrt{\sum_{j=1}^{D} d_{i,j}^2}}$$
 
-In plain English: $\mathbf{q}$ is the query's embedding vector (of length $D$), $\mathbf{d}_i$ is a video segment's embedding vector, and the formula measures the angle $\theta$ between them—scoring `1.0` when they point in the exact same direction (identical meaning) and `0.0` when unrelated. We filter out low-relevance matches below a threshold (such as $\text{similarity} \ge 0.35$), sort descending, return the top $k=5$ results, and format clickable timestamped URLs: `https://youtu.be/{videoId}?t={seconds}`.
+In plain English: $\mathbf{q}$ is the query's embedding vector (of length $D$), $\mathbf{d}_i$ is a video segment's embedding vector, and the formula measures the angle $\theta$ between them. It scores `1.0` when they point in the exact same direction (identical meaning) and `0.0` when unrelated. We filter out low-relevance matches below a threshold (such as $\text{similarity} \ge 0.35$), sort descending, return the top $k=5$ results, and format clickable timestamped URLs: `https://youtu.be/{videoId}?t={seconds}`.
 
 ---
 

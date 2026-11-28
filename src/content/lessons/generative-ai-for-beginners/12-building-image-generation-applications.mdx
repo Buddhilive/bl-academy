@@ -12,7 +12,7 @@ prerequisites: ["generative-ai-for-beginners/11-rag-and-vector-databases"]
 import QuizCard from '../../../components/islands/QuizCard';
 import ColabButton from '../../../components/static/ColabButton.astro';
 
-Text-to-image models turn natural language descriptions into photorealistic artwork, illustrations, and product mockups in seconds. Under the hood, modern **latent diffusion models** start with pure Gaussian noise $x_T \sim \mathcal{N}(0, I)$ and iteratively denoise it—conditioned on a text embedding $c_{\text{text}}$—until a coherent image emerges. In this lesson, we'll generate images from text prompts, decode base64 image payloads with `Pillow`, perform **mask-based inpainting**, and wrap user prompts in **child-safe visual metaprompts** using open-source **Hugging Face `diffusers`** on Colab T4 GPU alongside **Google AI Studio Imagen**.
+Text-to-image models turn natural language descriptions into photorealistic artwork, illustrations, and product mockups in seconds. Under the hood, modern **latent diffusion models** start with pure Gaussian noise $x_T \sim \mathcal{N}(0, I)$ and iteratively denoise it. They are conditioned on a text embedding $c_{\text{text}}$, then remove noise until a coherent image emerges. In this lesson, we'll generate images from text prompts, decode base64 image payloads with `Pillow`, perform **mask-based inpainting**, and wrap user prompts in **child-safe visual metaprompts** using open-source **Hugging Face `diffusers`** on Colab T4 GPU alongside **Google AI Studio Imagen**.
 
 ---
 

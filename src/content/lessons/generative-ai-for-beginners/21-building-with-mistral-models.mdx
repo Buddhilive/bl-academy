@@ -12,7 +12,7 @@ prerequisites: ["generative-ai-for-beginners/20-building-with-small-language-mod
 import QuizCard from '../../../components/islands/QuizCard';
 import ColabButton from '../../../components/static/ColabButton.astro';
 
-The **Mistral model family** proves that architectural efficiency and open Apache 2.0 weights can rival massive closed models—especially on multilingual reasoning, code generation, and low-latency workloads. In this lesson, we'll compare **Mistral Large 3**, **Mistral Small 3.1**, and **Mistral NeMo**, build a **Cross-Language Korean-to-English FAISS RAG pipeline** over Paul Graham's essay, and inspect how the **Tekken tokenizer** compresses multilingual text and JSON tool schemas.
+The **Mistral model family** proves that architectural efficiency and open Apache 2.0 weights can rival massive closed models, especially on multilingual reasoning, code generation, and low-latency workloads. In this lesson, we'll compare **Mistral Large 3**, **Mistral Small 3.1**, and **Mistral NeMo**, build a **Cross-Language Korean-to-English FAISS RAG pipeline** over Paul Graham's essay, and inspect how the **Tekken tokenizer** compresses multilingual text and JSON tool schemas.
 
 ---
 
@@ -35,7 +35,7 @@ In a cross-language RAG pipeline, your knowledge base might be in English (such 
 Because multilingual embeddings align semantics across languages, `index.search(question_embedding, k=2)` retrieves the exact English passage describing *writing short stories* and *programming on an IBM 1401 in 9th grade*, and the LLM synthesizes a grounded answer!
 
 ### 2. Local Tekken Tokenization with `mistral-common`
-Replacing older SentencePiece tokenizers, **Tekken** compresses source code and non-English languages significantly better. Using `mistral-common[hf-hub]`, you can tokenize `ChatCompletionRequest` payloads—complete with `get_current_weather` JSON tool definitions—100% locally without any API key.
+Replacing older SentencePiece tokenizers, **Tekken** compresses source code and non-English languages significantly better. Using `mistral-common[hf-hub]`, you can tokenize `ChatCompletionRequest` payloads, complete with `get_current_weather` JSON tool definitions, 100% locally without any API key.
 
 ---
 

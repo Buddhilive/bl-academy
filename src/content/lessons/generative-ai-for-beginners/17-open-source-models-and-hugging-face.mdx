@@ -18,7 +18,7 @@ Hosted APIs like Gemini are unbeatable for rapid prototyping, but many teams eve
 
 ## Open-Source vs. Open-Weight LLMs
 
-- **Truly Open-Source LLMs (OSI Criteria)**: Release not just model weights, but also the pre-training datasets, evaluation harnesses, fine-tuning code, and training logs—exemplified by AllenAI's **OLMo-7B**.
+- **Truly Open-Source LLMs (OSI Criteria)**: Release not just model weights, but also the pre-training datasets, evaluation harnesses, fine-tuning code, and training logs. AllenAI's **OLMo-7B** is an example.
 - **Open-Weight Models**: Release trained weights under permissive (Apache 2.0) or custom community licenses without necessarily publishing the full pre-training dataset (e.g., **Meta Llama**, **Mistral**, **Falcon**, **Google Gemma**).
 
 ### Major Open Model Families & Domain Fine-Tunes
@@ -34,11 +34,11 @@ Hosted APIs like Gemini are unbeatable for rapid prototyping, but many teams eve
 
 ## Architectural Optimizations: MQA, FlashAttention & Sparse MoE
 
-1. **Multi-Query Attention (MQA) & Grouped-Query Attention (GQA)**: Standard Multi-Head Attention (MHA) keeps a separate Key ($K$) and Value ($V$) scratchpad (**KV-Cache**) for every single attention head—like giving 32 readers 32 separate copies of the same reference book. MQA shares one $K/V$ head across all query heads (and GQA shares a few grouped $K/V$ heads), slashing KV-Cache VRAM usage:
+1. **Multi-Query Attention (MQA) & Grouped-Query Attention (GQA)**: Standard Multi-Head Attention (MHA) keeps a separate Key ($K$) and Value ($V$) scratchpad (**KV-Cache**) for every single attention head, like giving 32 readers 32 separate copies of the same reference book. MQA shares one $K/V$ head across all query heads (and GQA shares a few grouped $K/V$ heads), slashing KV-Cache VRAM usage:
    $$\text{KV Cache Bytes} = 2 \cdot b \cdot s \cdot L \cdot n_{\text{kv\_heads}} \cdot d_{\text{head}} \cdot \text{bytes}$$
    Here, `2` accounts for both Key and Value tensors, $b$ is batch size, $s$ is sequence length, $L$ is the number of Transformer layers, $n_{\text{kv\_heads}}$ is how many $K/V$ heads are stored, $d_{\text{head}}$ is each head's vector size, and $\text{bytes}$ is precision (`2` for FP16).
 2. **FlashAttention**: Reorders attention matrix tiling inside fast GPU SRAM to avoid quadratic $O(N^2)$ memory bottlenecks.
-3. **Sparse Mixture-of-Experts (MoE)**: Routes each token to only the top-$k$ specialized feed-forward experts—giving a 47B total-parameter model the inference speed of a ~13B active-parameter model.
+3. **Sparse Mixture-of-Experts (MoE)**: Routes each token to only the top-$k$ specialized feed-forward experts. This gives a 47B total-parameter model the inference speed of a ~13B active-parameter model.
 
 ---
 
