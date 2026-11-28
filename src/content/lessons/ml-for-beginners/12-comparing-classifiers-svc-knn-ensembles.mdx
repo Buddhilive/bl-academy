@@ -28,6 +28,8 @@ Before looking at the benchmark numbers, here is how each of these five algorith
 
 Running a single `classifiers` dictionary loop lets us compare all five algorithms on the exact same `train_test_split`:
 
+The benchmark values below are a useful starting point, but your own test split may produce different scores. Model choice should come from measured cross-validation on a representative dataset, not from this table alone. Random Forest and RBF SVC often handle ingredient interactions well, while a linear SVC is usually faster and easier to inspect.
+
 | Classifier | Mechanism & Key Hyperparameters | Cuisine Test Accuracy | Strengths & Trade-offs |
 | :--- | :--- | :--- | :--- |
 | **Linear SVC** | `SVC(kernel='linear', C=10, probability=True)` | **78.6%** | Fast maximum-margin hyperplane; $C$ controls regularization |
@@ -97,7 +99,7 @@ knn_acc = sum(1 for x, y in test if knn_predict(x) == y) / len(test)
 ens_acc = sum(1 for x, y in test if ensemble_predict(x) == y) / len(test)
 print(f"KNN (k=3) Accuracy: {knn_acc * 100:.1f}%")
 print(f"Decision Stump Ensemble Accuracy: {ens_acc * 100:.1f}%")
-print(f"Macro-F1 Improvement: +{ens_acc - knn_acc:.2f}")
+print(f"Accuracy Improvement: +{(ens_acc - knn_acc) * 100:.1f} percentage points")
 ```
 
 **Expected Output:**
@@ -105,7 +107,7 @@ print(f"Macro-F1 Improvement: +{ens_acc - knn_acc:.2f}")
 ```text
 KNN (k=3) Accuracy: 75.0%
 Decision Stump Ensemble Accuracy: 100.0%
-Macro-F1 Improvement: +0.25
+Accuracy Improvement: +25.0 percentage points
 ```
 
 ---
