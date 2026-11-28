@@ -41,6 +41,18 @@ When architecting a new agent application, you will usually pick between—or co
 
 ```python
 # Code-First Sequential Collaboration Pattern
+class SequentialAgent:
+    def __init__(self, name: str):
+        self.name = name
+
+    def run(self, task: str) -> str:
+        if self.name == "data_retrieval":
+            return "Q4 revenue is $120,000"
+        return "Q4 revenue grew 18% year over year"
+
+agent_retrieve = SequentialAgent("data_retrieval")
+agent_analyze = SequentialAgent("data_analysis")
+
 retrieval_result = agent_retrieve.run("Retrieve sales data for Q4")
 analysis_result = agent_analyze.run(f"Analyze this data: {retrieval_result}")
 ```

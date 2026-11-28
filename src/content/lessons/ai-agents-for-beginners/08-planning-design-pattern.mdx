@@ -23,6 +23,9 @@ The **Planning Design Pattern** solves this by teaching an agent to clarify the 
 Instead of letting the planner emit free-form prose that downstream code has to regex-parse, we bind the planner to a strict **Pydantic** schema:
 
 ```python
+from enum import Enum
+from pydantic import BaseModel
+
 class AgentEnum(str, Enum):
     FlightBooking = "flight_booking"
     HotelBooking = "hotel_booking"

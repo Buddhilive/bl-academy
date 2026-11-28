@@ -52,31 +52,31 @@ Launch the companion notebook to generate real **Ed25519 (`PyNaCl`) + RFC 8785 (
 
 ---
 
-## Try It Yourself: RFC 8785 JCS, Hash Chain & Re-Sign Attack Detector
+## Try It Yourself: Canonical Hashing, Hash Chains & Re-Sign Attack Detector
 
-Run this pure-Python sandbox to canonicalize tool-call payloads per JCS, sign and verify a 3-receipt hash chain against a pinned issuer key, detect both byte tampering and an attacker's self-signed `04_resigned_receipt` forgery, and enforce `human.approval.v1` action-digest binding.
+Run this pure-Python sandbox to learn canonical encoding and pinned-key verification. It uses HMAC as a **safe browser-only stand-in** for a real signature algorithm: the companion notebook below uses actual Ed25519 signatures. HMAC does not replace Ed25519 in production because it requires a shared secret.
 
 **Cryptographic Receipt Chain & Tamper Detector**
 
 ```python
 import base64, hashlib, hmac, json
 
-def jcs(obj) -> bytes:
+def canonical_jcs(obj) -> bytes:
     return json.dumps(obj, sort_keys=True, separators=(",", ":"), ensure_ascii=False).encode("utf-8")
 
 def sha256_jcs(obj) -> str:
-    return f"sha256:{hashlib.sha256(jcs(obj)).hexdigest()}"
+    return f"sha256:{hashlib.sha256(canonical_jcs(obj)).hexdigest()}"
 
 PINNED_SECRET = b"issuer-ed25519-pinned-seed-v1"
 ROGUE_SECRET = b"attacker-rogue-key"
 
 def sign_receipt(payload: dict, key: bytes, pub_label: str) -> dict:
-    sig = base64.urlsafe_b64encode(hmac.new(key, jcs(payload), hashlib.sha256).digest()).decode().rstrip("=")
-    return {**payload, "signature": {"alg": "EdDSA", "sig": sig, "public_key": pub_label}}
+    sig = base64.urlsafe_b64encode(hmac.new(key, canonical_jcs(payload), hashlib.sha256).digest()).decode().rstrip("=")
+    return {**payload, "signature": {"alg": "HMAC-SHA256-DEMO", "sig": sig, "public_key": pub_label}}
 
 def verify_receipt(receipt: dict, pinned_key: bytes) -> bool:
     payload = {k: v for k, v in receipt.items() if k != "signature"}
-    expected = base64.urlsafe_b64encode(hmac.new(pinned_key, jcs(payload), hashlib.sha256).digest()).decode().rstrip("=")
+    expected = base64.urlsafe_b64encode(hmac.new(pinned_key, canonical_jcs(payload), hashlib.sha256).digest()).decode().rstrip("=")
     return hmac.compare_digest(receipt["signature"]["sig"], expected)
 
 # Build 3-receipt hash chain
