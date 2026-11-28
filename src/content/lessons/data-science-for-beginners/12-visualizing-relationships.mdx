@@ -12,7 +12,7 @@ prerequisites: ["data-science-for-beginners/11-visualizing-proportions"]
 import QuizCard from '../../../components/islands/QuizCard';
 import ColabButton from '../../../components/static/ColabButton.astro';
 
-Real-world datasets rarely have just one interesting column. Usually you want to know how two or three variables move *together* over time. In this lesson, we'll use **Seaborn**'s relational plotting toolkit (`relplot`, `FacetGrid`, and `lineplot`) on a poignant USDA dataset tracking U.S. **honey production from 1998 to 2012**—spanning the 2006 onset of **Colony Collapse Disorder (CCD)**.
+Real-world datasets rarely have just one interesting column. Usually you want to know how two or three variables move *together* over time. In this lesson, we'll use **Seaborn**'s relational plotting toolkit (`relplot`, `FacetGrid`, and `lineplot`) on a poignant USDA dataset tracking U.S. **honey production from 1998 to 2012**, spanning the 2006 onset of **Colony Collapse Disorder (CCD)**.
 
 Each row records a state's colony count (`numcol`), yield per colony (`yieldpercol`), total production (`totalprod`), stocks, price per pound (`priceperlb`), and production value (`prodvalue`) for a single year. Putting these columns side by side lets us test supply-and-demand hypotheses visually before writing a single regression equation.
 
@@ -23,7 +23,7 @@ Each row records a state's colony count (`numcol`), yield per colony (`yieldperc
 Using `sns.relplot(x="priceperlb", y="state", data=honey, height=15, aspect=.5)` plots honey prices across every U.S. state. To reveal *how* prices evolved over time, we add a third dimension:
 
 - **Color (`hue="year", palette="YlOrBr"`)**: Uses a warm honey-toned sequential palette showing prices climbing steadily from 1998 (`$0.64/lb` in Arizona) to 2012 (`$1.79/lb`).
-- **Size (`size="year"`)**: Maps later years to larger dot circumferences—a great **colorblind-accessible** alternative (or complement) to color alone.
+- **Size (`size="year"`)**: Maps later years to larger dot circumferences, a great **colorblind-accessible** alternative (or complement) to color alone.
 
 ---
 

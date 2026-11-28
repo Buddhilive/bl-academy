@@ -12,7 +12,7 @@ prerequisites: ["data-science-for-beginners/09-visualizing-quantities"]
 import QuizCard from '../../../components/islands/QuizCard';
 import ColabButton from '../../../components/static/ColabButton.astro';
 
-Knowing the average wingspan or body mass of a bird only tells part of the story. Two datasets can share the exact same mean while looking completely different—one tightly clustered, another split into two peaks. To see how values actually spread across an axis, we visualize their **distribution** using **Histograms** and **Kernel Density Estimation (KDE)** plots.
+Knowing the average wingspan or body mass of a bird only tells part of the story. Two datasets can share the exact same mean while looking completely different, one tightly clustered, another split into two peaks. To see how values actually spread across an axis, we visualize their **distribution** using **Histograms** and **Kernel Density Estimation (KDE)** plots.
 
 ---
 
@@ -20,7 +20,7 @@ Knowing the average wingspan or body mass of a bird only tells part of the story
 
 A **histogram** groups continuous numeric values into adjacent intervals called **bins** and counts how many observations fall into each bin:
 
-- **Too few bins (`bins=10`)**: Hides detail—most of the 400+ Minnesota birds lump into a single tall bar under `2000 g`.
+- **Too few bins (`bins=10`)**: Hides detail, most of the 400+ Minnesota birds lump into a single tall bar under `2000 g`.
 - **More bins (`bins=30` or `40`) + range filtering**: Filtering to `filteredBirds = birds[(birds['MaxBodyMass'] > 1) & (birds['MaxBodyMass'] < 60)]` reveals granular structure in small songbirds instead of squashing them next to heavy swans and geese.
 - **2D Histograms (`ax.hist2d(x, y)`)**: Maps two numeric variables (`MaxBodyMass` vs `MaxLength`) onto a 2D grid where brighter cells highlight strong convergence.
 
@@ -43,13 +43,13 @@ Even though histograms require numbers, we can compare distributions across cate
 
 ## Smooth Density Plots with Seaborn (`sns.kdeplot`)
 
-Histograms look "stepped" because of discrete bin edges. **Seaborn**'s `sns.kdeplot()` fits a smooth **Kernel Density Estimate (KDE)** curve over the data—imagine placing a small, smooth bell-shaped bump over each data point and adding all the bumps together into one continuous curve:
+Histograms look "stepped" because of discrete bin edges. **Seaborn**'s `sns.kdeplot()` fits a smooth **Kernel Density Estimate (KDE)** curve over the data, imagine placing a small, smooth bell-shaped bump over each data point and adding all the bumps together into one continuous curve:
 
 $$\hat{f}_h(x) = \frac{1}{nh}\sum_{i=1}^{n} K\!\left(\frac{x - x_i}{h}\right)$$
 
 Here, $\hat{f}_h(x)$ is the estimated density at value $x$, $n$ is the number of data points, $x_i$ is each individual data point, $h$ is the **bandwidth** (how wide each bell-shaped bump is), and $K$ is the **kernel** function (usually a standard bell curve) that shapes each bump.
 
-- **`bw_adjust`**: Controls the smoothing bandwidth $h$—smaller values (`bw_adjust=0.2`) hug local peaks closely, while larger values smooth them out.
+- **`bw_adjust`**: Controls the smoothing bandwidth $h$, smaller values (`bw_adjust=0.2`) hug local peaks closely, while larger values smooth them out.
 - **`hue="Order", fill=True`**: Layers translucent density ridges across bird orders.
 - **2D KDE (`x="MinLength", y="MaxLength", hue="ConservationStatus")`**: Draws contour rings showing where `Vulnerable` or `Least Concern` species cluster in 2D space.
 

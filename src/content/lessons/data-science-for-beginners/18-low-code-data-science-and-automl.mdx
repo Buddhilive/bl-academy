@@ -12,7 +12,7 @@ prerequisites: ["data-science-for-beginners/17-data-science-in-the-cloud"]
 import QuizCard from '../../../components/islands/QuizCard';
 import ColabButton from '../../../components/static/ColabButton.astro';
 
-Building a proof-of-concept (POC) model doesn't always require writing hundreds of lines of boilerplate training loops. **Automated Machine Learning (AutoML)** and **low-code UIs** let you benchmark dozens of algorithms, tune hyperparameters, and publish an interactive web app in minutes—all on **Google Colab Free Tier** using open-source tools like **FLAML**, **Scikit-Learn**, and **Gradio**.
+Building a proof-of-concept (POC) model doesn't always require writing hundreds of lines of boilerplate training loops. **Automated Machine Learning (AutoML)** and **low-code UIs** let you benchmark dozens of algorithms, tune hyperparameters, and publish an interactive web app in minutes, all on **Google Colab Free Tier** using open-source tools like **FLAML**, **Scikit-Learn**, and **Gradio**.
 
 ---
 
@@ -56,7 +56,7 @@ Open-source **FLAML** (`flaml.AutoML`) searches across Logistic Regression, Rand
 
 ## Try It Yourself: AutoML Leaderboard & Clinical Endpoint Scorer
 
-Run this pure-Python AutoML comparator and clinical endpoint scorer to rank candidate models by validation accuracy and score the two sample patient records (`[True, False]`).
+Run this pure-Python AutoML comparator and clinical endpoint scorer to rank candidate models by validation accuracy and score two sample patient records.
 
 **AutoML Leaderboard & Heart Failure Scorer**
 
@@ -84,7 +84,7 @@ p1 = {"age": 0, "ejection_fraction": 0, "serum_creatinine": 0.0, "time": 0}
 p2 = {"age": 60, "ejection_fraction": 38, "serum_creatinine": 1.40, "time": 130}
 
 print("\n=== Deployed Endpoint Scoring ===")
-print(f"Patient 1 (baseline zeros): {{'result': {p1['time'] == 0 or predict_heart_failure(p1)}}}")
+print(f"Patient 1 (baseline zeros): {{'result': {predict_heart_failure(p1)}}}")
 print(f"Patient 2 (age=60, EF=38, Cr=1.4, time=130): {{'result': {predict_heart_failure(p2)}}}")
 ```
 
@@ -97,7 +97,7 @@ print(f"Patient 2 (age=60, EF=38, Cr=1.4, time=130): {{'result': {predict_heart_
 3. DecisionStump       : AUC_weighted = 0.765
 
 === Deployed Endpoint Scoring ===
-Patient 1 (baseline zeros): {'result': True}
+Patient 1 (baseline zeros): {'result': False}
 Patient 2 (age=60, EF=38, Cr=1.4, time=130): {'result': False}
 ```
 

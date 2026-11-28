@@ -22,7 +22,7 @@ In this lesson, we'll inspect DataFrame schemas on the classic **Iris** dataset,
 
 Cleaning data pays off in three ways: **ease of reuse** (normalized formats are easy to query and share), **consistency** (datasets from different sources merge cleanly), and **model accuracy**.
 
-When you first load a large table—say 60,000 rows by 400 columns—start with three quick inspection methods:
+When you first load a large table, say 60,000 rows by 400 columns, start with three quick inspection methods:
 
 - `df.info()`: Prints row count, column names, non-null counts, `Dtype` (e.g., `float64`), and memory footprint.
 - `df.head()` / `df.tail()`: Previews the first 5 and last 5 rows to spot formatting quirks immediately.

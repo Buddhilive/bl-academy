@@ -32,10 +32,10 @@ Before writing plotting code, match your chart type to the story your data needs
 
 ## Spotting Outliers: The 23-Meter "Pterodactyl" Typo
 
-When we plot `birds['MaxWingspan']` as a basic line chart, a massive spike shoots up to `2300` cm—a 23-meter wingspan! Adding 45-degree x-axis labels for 440+ species turns unreadable fast, so we switch to a **scatter plot** (`'bo'` blue circles), hide the crowded x-axis ticks with `plt.tick_params(..., labelbottom=False)`, and annotate only birds with `MaxWingspan > 500`:
+When we plot `birds['MaxWingspan']` as a basic line chart, a massive spike shoots up to `2300` cm, a 23-meter wingspan! Adding 45-degree x-axis labels for 440+ species turns unreadable fast, so we switch to a **scatter plot** (`'bo'` blue circles), hide the crowded x-axis ticks with `plt.tick_params(..., labelbottom=False)`, and annotate only birds with `MaxWingspan > 500`:
 
-- **Bald eagle** (`2300` cm — clearly an extra `0` typo for `230` cm)
-- **Prairie falcon** (`2500` cm — another extra `0` typo)
+- **Bald eagle** (`2300` cm , clearly an extra `0` typo for `230` cm)
+- **Prairie falcon** (`2500` cm , another extra `0` typo)
 
 Filtering out those two mislabeled records immediately reveals the true wingspan scale across Minnesota's wildlife.
 
@@ -45,7 +45,7 @@ Filtering out those two mislabeled records immediately reveals the true wingspan
 
 Plotting raw ungrouped rows as a vertical bar chart produces an unreadable wall of bars. Instead, we use Pandas to aggregate first (`birds['Category'].value_counts()`) and Matplotlib to render a **horizontal bar chart** (`plot.barh()`):
 
-- **Category Counts**: `Ducks/Geese/Waterfowl` tops the chart—no surprise in Minnesota, the "Land of 10,000 Lakes."
+- **Category Counts**: `Ducks/Geese/Waterfowl` tops the chart, no surprise in Minnesota, the "Land of 10,000 Lakes."
 - **Superimposed Min/Max Lengths**: Calling `plt.barh(category, maxLength)` followed by `plt.barh(category, minLength)` overlays minimum and maximum body lengths per category, visually revealing that larger birds also span wider length ranges.
 
 <ColabButton

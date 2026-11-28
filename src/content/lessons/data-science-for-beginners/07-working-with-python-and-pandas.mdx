@@ -12,7 +12,7 @@ prerequisites: ["data-science-for-beginners/06-working-with-nosql-data"]
 import QuizCard from '../../../components/islands/QuizCard';
 import ColabButton from '../../../components/static/ColabButton.astro';
 
-While SQL is unbeatable for querying relational tables, complex transformations—resampling time series, computing custom row-wise features, or extracting entities from unstructured text—call for a full programming language. **Python**, backed by **Pandas**, **NumPy**, **Matplotlib**, and **SciPy**, is the universal workhorse for this job (alongside domain tools like R and Julia).
+While SQL is unbeatable for querying relational tables, complex transformations, resampling time series, computing custom row-wise features, or extracting entities from unstructured text, call for a full programming language. **Python**, backed by **Pandas**, **NumPy**, **Matplotlib**, and **SciPy**, is the universal workhorse for this job (alongside domain tools like R and Julia).
 
 In this lesson, we'll master `Series` index alignment, `DataFrame` slicing and `groupby` aggregations, epidemiological spread modeling, and extracting structured clinical entities from scientific abstracts using **Google AI Studio Free Tier**.
 
@@ -45,7 +45,7 @@ A **DataFrame** is a 2D table of `Series` sharing the same index. Here is a quic
 
 ## Unstructured Text & Cloud Extraction with Gemini API
 
-When data arrives as raw text—such as thousands of medical research abstracts in the CORD-19 dataset—we can extract structured keywords (diagnoses, treatments, medications) using Python NLP or **Google AI Studio Free Tier** (`google-genai` + `GEMINI_API_KEY`).
+When data arrives as raw text, such as thousands of medical research abstracts in the CORD-19 dataset, we can extract structured keywords (diagnoses, treatments, medications) using Python NLP or **Google AI Studio Free Tier** (`google-genai` + `GEMINI_API_KEY`).
 
 ```python
 from google.colab import userdata

@@ -12,7 +12,7 @@ prerequisites: ["data-science-for-beginners/10-visualizing-distributions"]
 import QuizCard from '../../../components/islands/QuizCard';
 import ColabButton from '../../../components/static/ColabButton.astro';
 
-When your dataset is purely categorical—like whether a wild mushroom is **edible** or **poisonous**, or which forest habitat it prefers—you want to show **proportions**: how each slice contributes to the whole. In this lesson, we'll analyze the Audubon gilled mushrooms dataset (8,124 specimens across 23 species) and build **Pie**, **Donut**, and **Waffle** charts.
+When your dataset is purely categorical, like whether a wild mushroom is **edible** or **poisonous**, or which forest habitat it prefers, you want to show **proportions**: how each slice contributes to the whole. In this lesson, we'll analyze a classic gilled mushrooms dataset (8,124 specimens) and build **Pie**, **Donut**, and **Waffle** charts.
 
 ---
 
@@ -25,7 +25,7 @@ Every column in `mushrooms.csv` (`class`, `cap-shape`, `cap-color`, `odor`, `hab
 
 Always verify that your `labels` list matches the alphabetical/grouped index order returned by `.groupby(['class']).count()`, otherwise you'll accidentally swap Edible and Poisonous labels on your chart!
 
-When exploring the seven mushroom habitats (`Grasses`, `Leaves`, `Meadows`, `Paths`, `Urban`, `Waste`, `Wood`), grouping by `habitat` reveals that woods and grasses dominate the dataset. Similarly, grouping by `cap-color` exposes nine distinct shades—from common brown and gray caps to rare green and purple specimens—making a 100-square grid far easier to compare than tiny 1% pie wedges. `PyWaffle` even lets you swap plain squares for Font Awesome mushroom icons when presenting to non-technical audiences.
+When exploring the seven mushroom habitats (`Grasses`, `Leaves`, `Meadows`, `Paths`, `Urban`, `Waste`, `Wood`), grouping by `habitat` reveals that woods and grasses dominate the dataset. Similarly, grouping by `cap-color` exposes nine distinct shades, from common brown and gray caps to rare green and purple specimens, making a 100-square grid far easier to compare than tiny 1% pie wedges. `PyWaffle` even lets you swap plain squares for Font Awesome mushroom icons when presenting to non-technical audiences.
 
 ---
 

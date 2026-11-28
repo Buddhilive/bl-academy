@@ -20,12 +20,12 @@ In this lesson, we'll walk through probability distributions, descriptive statis
 
 ## Probability & Random Variables
 
-**Probability** is simply a score between $0$ (impossible) and $1$ (guaranteed) that measures how likely an event is—calculated as the number of ways an event can happen divided by the total number of equally likely outcomes. A **random variable** $X$ is just a label for the numeric outcome of a random process (like the number you roll on a die):
+**Probability** is simply a score between $0$ (impossible) and $1$ (guaranteed) that measures how likely an event is, calculated as the number of ways an event can happen divided by the total number of equally likely outcomes. A **random variable** $X$ is just a label for the numeric outcome of a random process (like the number you roll on a die):
 
 - **Discrete Random Variable**: Takes countable, separate values (e.g., rolling a 6-sided die, where $P(X=3) = \frac{1}{6}$). When every outcome is equally likely, it's called a **uniform distribution** (each of $N$ outcomes gets $\frac{1}{N}$).
 - **Continuous Random Variable**: Takes any value along a smooth range (e.g., the exact second a bus arrives between 8:00 and 8:15). Because there are infinitely many exact instants, the chance of hitting one *exact* instant to the nanosecond is $0$. Instead, we ask for the chance it arrives within a time window by measuring the area under its probability curve:
 
-$$P(t_1 \le X < t_2) = \int_{t_1}^{t_2} p(x)\,dx$$
+$$P(t_1 \le X < t_2) = \int_{t_1}^{t_2} p(x)\, dx$$
 
 Here, $t_1$ and $t_2$ are the start and end of your window (say, 8:05 and 8:10), $p(x)$ is the **probability density function** (the height of the curve at point $x$), and the integral symbol $\int$ simply means "add up the total area under the curve between $t_1$ and $t_2$."
 
@@ -40,9 +40,9 @@ $$\mu = \frac{1}{n}\sum_{i=1}^{n} x_i, \qquad \sigma^2 = \frac{1}{n}\sum_{i=1}^{
 In these formulas:
 - $n$ is the total number of data points (e.g., players), and $x_i$ is each individual value.
 - $\mu$ (pronounced "mu") is the **mean** (add all values together and divide by $n$). For a probability distribution, this average is also called the **expected value** $\mathbb{E}[X]$.
-- $\sigma^2$ ("sigma squared") is the **variance**—the average of the squared distances from the mean—and taking its square root gives the **standard deviation** $\sigma$, which brings the spread back into the original units (like pounds).
+- $\sigma^2$ ("sigma squared") is the **variance**, the average of the squared distances from the mean, and taking its square root gives the **standard deviation** $\sigma$, which brings the spread back into the original units (like pounds).
 
-Because a few extreme values can pull the mean upward or downward, we also rely on the **median** (the exact middle value when sorted), the **mode** (the most common value—useful when data has multiple peaks, or is *multimodal*), and **quartiles**:
+Because a few extreme values can pull the mean upward or downward, we also rely on the **median** (the exact middle value when sorted), the **mode** (the most common value, useful when data has multiple peaks, or is *multimodal*), and **quartiles**:
 - **$Q_1$ (25th percentile)**: 25% of observations fall below this value.
 - **$Q_3$ (75th percentile)**: 75% of observations fall below this value.
 - **Inter-Quartile Range ($\text{IQR}$)**: $\text{IQR} = Q_3 - Q_1$, which measures the span of the middle 50% of the data. Values outside $[Q_1 - 1.5\,\text{IQR},\, Q_3 + 1.5\,\text{IQR}]$ are flagged as **outliers** on a box plot.
@@ -51,13 +51,13 @@ Because a few extreme values can pull the mean upward or downward, we also rely 
 
 ## Normal Distribution, Confidence Intervals & Hypothesis Testing
 
-Many real-world measurements—like baseball player weights—cluster around an average in a symmetric bell-shaped **normal distribution** $\mathcal{N}(\mu, \sigma^2)$ (defined by its center $\mu$ and variance $\sigma^2$). Thanks to the **Central Limit Theorem**, if you take many random samples from *almost any* dataset and average each sample, those sample averages will form a bell curve—and by the **Law of Large Numbers**, the bigger your sample size $n$, the closer your sample average gets to the true population average $\mu$.
+Many real-world measurements, like baseball player weights, cluster around an average in a symmetric bell-shaped **normal distribution** $\mathcal{N}(\mu, \sigma^2)$ (defined by its center $\mu$ and variance $\sigma^2$). Thanks to the **Central Limit Theorem**, if you take many random samples from *almost any* dataset and average each sample, those sample averages will form a bell curve, and by the **Law of Large Numbers**, the bigger your sample size $n$, the closer your sample average gets to the true population average $\mu$.
 
 Think of a **confidence interval** as a safety net around your sample average. Instead of claiming the entire league's average weight is *exactly* $201.73\text{ lbs}$ based on a sample, you give a range built from **Student's $t$-distribution** (published by William Sealy Gosset under the pseudonym "Student" while working at the Guinness brewery):
 
-$$\bar{X} \pm t_{(1-p)/2,\; n-1} \frac{s}{\sqrt{n}}$$
+$$\bar{X} \pm t_{1-\alpha/2,\; n-1} \frac{s}{\sqrt{n}}$$
 
-Here, $\bar{X}$ is your sample mean, $s$ is your sample standard deviation, $n$ is the sample size, $p$ is your desired confidence level (such as $0.95$ for 95%), and $t_{(1-p)/2,\; n-1}$ is a multiplier from the $t$-distribution table that grows larger when you want higher confidence or have a smaller sample. Higher confidence ($p = 0.95$ vs $0.85$) produces a wider safety net:
+Here, $\bar{X}$ is your sample mean, $s$ is your sample standard deviation, $n$ is the sample size, $p$ is your desired confidence level (such as $0.95$ for 95%), $\alpha=1-p$, and $t_{1-\alpha/2,\; n-1}$ is a multiplier from the $t$-distribution table that grows larger when you want higher confidence or have a smaller sample. Higher confidence ($p = 0.95$ vs $0.85$) produces a wider safety net:
 
 | Confidence Level ($p$) | Weight Mean ($\text{lbs}$) | Interval Width |
 | :--- | :--- | :--- |
@@ -71,7 +71,7 @@ In the MLB dataset, First Basemen average $74.00\text{ in}$ tall while Second Ba
 
 ## Covariance & Correlation
 
-Do taller baseball players tend to weigh more? To check whether two variables $X$ (height) and $Y$ (weight) move together, we first measure **covariance**—whether above-average values of $X$ pair with above-average values of $Y$—and then scale it into the **Pearson correlation coefficient** $r_{XY}$ so it always sits neatly between $-1$ and $+1$:
+Do taller baseball players tend to weigh more? To check whether two variables $X$ (height) and $Y$ (weight) move together, we first measure **covariance**, whether above-average values of $X$ pair with above-average values of $Y$, and then scale it into the **Pearson correlation coefficient** $r_{XY}$ so it always sits neatly between $-1$ and $+1$:
 
 $$\text{Cov}(X, Y) = \mathbb{E}\big[(X - \mathbb{E}[X])(Y - \mathbb{E}[Y])\big], \qquad r_{XY} = \frac{\text{Cov}(X, Y)}{\sigma_X \sigma_Y}$$
 

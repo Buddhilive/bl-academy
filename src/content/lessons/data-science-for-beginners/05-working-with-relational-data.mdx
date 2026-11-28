@@ -12,7 +12,7 @@ prerequisites: ["data-science-for-beginners/04-statistics-and-probability"]
 import QuizCard from '../../../components/islands/QuizCard';
 import ColabButton from '../../../components/static/ColabButton.astro';
 
-If you have ever used a spreadsheet, you already understand the basic building block of a relational database: rows hold observations, and columns describe them. The trouble starts when your dataset grows—repeating city and country names on every rainfall row wastes space and invites typos, while adding a new column for every year breaks your table schema. **Relational databases** solve this by splitting data into linked tables and reconnecting them on demand with **SQL**.
+If you have ever used a spreadsheet, you already understand the basic building block of a relational database: rows hold observations, and columns describe them. The trouble starts when your dataset grows, repeating city and country names on every rainfall row wastes space and invites typos, while adding a new column for every year breaks your table schema. **Relational databases** solve this by splitting data into linked tables and reconnecting them on demand with **SQL**.
 
 In this lesson, we'll design normalized tables using primary and foreign keys, write `SELECT`, `WHERE`, and `INNER JOIN` queries, and run them directly against Python's built-in `sqlite3` engine.
 
@@ -22,7 +22,7 @@ In this lesson, we'll design normalized tables using primary and foreign keys, w
 
 Suppose we track annual rainfall (in millimeters) for Tokyo, Atlanta, and Auckland from 2018 to 2020. Putting everything in one table forces us into one of two bad designs:
 
-1. **Row Duplication**: Repeating `"Tokyo"` and `"Japan"` three times—once per year—bloats storage and risks inconsistent edits.
+1. **Row Duplication**: Repeating `"Tokyo"` and `"Japan"` three times, once per year, bloats storage and risks inconsistent edits.
 2. **Column Proliferation**: Creating columns `2018`, `2019`, `2020` forces you to alter the table structure every January and makes multi-year aggregations awkward.
 
 ---
@@ -65,7 +65,7 @@ An **`INNER JOIN`** stitches two tables together along a matching key seam (`cit
 
 ## Try It Yourself: SQLite3 Relational Joins
 
-Python ships with `sqlite3` in the standard library—so you can spin up a real SQL database anywhere Python runs, including Google Colab. Run the code below to build the normalized `cities` and `rainfall` tables, run the 2019 `INNER JOIN`, and query the airport directory.
+Python ships with `sqlite3` in the standard library, so you can spin up a real SQL database anywhere Python runs, including Google Colab. Run the code below to build the normalized `cities` and `rainfall` tables, run the 2019 `INNER JOIN`, and query the airport directory.
 
 **SQLite3 INNER JOIN & Airport Queries**
 

@@ -12,7 +12,7 @@ prerequisites: ["data-science-for-beginners/14-data-science-lifecycle-introducti
 import QuizCard from '../../../components/islands/QuizCard';
 import ColabButton from '../../../components/static/ColabButton.astro';
 
-Once you've captured a dataset, how do you verify it can actually answer your stakeholders' questions before spending days training models? You run **Exploratory Data Analysis (EDA)**. EDA is the detective work of the Data Science Lifecycle—profiling distributions, sampling subsets, querying hypotheses, and hunting down missing values.
+Once you've captured a dataset, how do you verify it can actually answer your stakeholders' questions before spending days training models? You run **Exploratory Data Analysis (EDA)**. EDA is the detective work of the Data Science Lifecycle, profiling distributions, sampling subsets, querying hypotheses, and hunting down missing values.
 
 In this lesson, we'll apply Pandas EDA techniques to the **Email Spam Classification** word-count dataset.
 
@@ -32,9 +32,9 @@ Remember: you don't have to wait until cleaning is 100% finished to plot explora
 ### Investigating Why Values Go Missing
 
 When `isna()` or `isnull()` flags gaps in your dataset, resist the urge to immediately drop or zero-fill them. Ask *why* the values vanished in the first place:
-- **Missing Completely at Random (MCAR)**: A sensor briefly lost Wi-Fi—safe to drop or impute without introducing bias.
-- **Missing at Random (MAR)**: Younger respondents skipped an income question—use group-aware imputation rather than a global mean.
-- **Missing Not at Random (MNAR)**: High-risk patients dropped out of a follow-up study—dropping those rows silently skews your model's conclusions.
+- **Missing Completely at Random (MCAR)**: A sensor briefly lost Wi-Fi, safe to drop or impute without introducing bias.
+- **Missing at Random (MAR)**: Younger respondents skipped an income question, use group-aware imputation rather than a global mean.
+- **Missing Not at Random (MNAR)**: High-risk patients dropped out of a follow-up study, dropping those rows silently skews your model's conclusions.
 
 Checking missingness alongside `describe()` and `sample()` ensures your data actually supports the stakeholder goal before modeling begins.
 

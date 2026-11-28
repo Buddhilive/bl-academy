@@ -12,7 +12,7 @@ prerequisites: ["data-science-for-beginners/05-working-with-relational-data"]
 import QuizCard from '../../../components/islands/QuizCard';
 import ColabButton from '../../../components/static/ColabButton.astro';
 
-Not every dataset fits neatly into normalized SQL tables. Social media posts, IoT telemetry, and inventory workbooks often evolve rapidly or carry nested hierarchies that would require dozens of awkward joins in a relational schema. That's where **non-relational data**—from everyday spreadsheets to **NoSQL** databases—shines.
+Not every dataset fits neatly into normalized SQL tables. Social media posts, IoT telemetry, and inventory workbooks often evolve rapidly or carry nested hierarchies that would require dozens of awkward joins in a relational schema. That's where **non-relational data**, from everyday spreadsheets to **NoSQL** databases, shines.
 
 In this lesson, we'll review spreadsheet mechanics (workbooks, formulas, and functions), compare the four NoSQL architectures, and query JSON document collections using open-source Python tools.
 
@@ -22,14 +22,14 @@ In this lesson, we'll review spreadsheet mechanics (workbooks, formulas, and fun
 
 A **workbook** contains one or more **worksheets** (tabs), each built from a grid of **cells** at the intersection of alphabetical columns and numerical rows (like `B3`).
 
-- **Formulas**: Expressions starting with `=` that compute a cell's value from other cells—for example, multiplying quantity (`QTY`) by unit cost (`COST`) to get `Inventory Value`.
+- **Formulas**: Expressions starting with `=` that compute a cell's value from other cells, for example, multiplying quantity (`QTY`) by unit cost (`COST`) to get `Inventory Value`.
 - **Functions**: Predefined operations like `=SUM(E5:E20)` that accept ordered arguments to aggregate ranges without manual addition.
 
 ---
 
 ## The Four NoSQL Database Families
 
-"NoSQL" stands for *Not Only SQL*—an umbrella covering four distinct non-relational storage models:
+"NoSQL" stands for *Not Only SQL*, an umbrella covering four distinct non-relational storage models:
 
 | NoSQL Type | Data Model | Primary Strength | Open-Source Examples |
 | :--- | :--- | :--- | :--- |
@@ -42,7 +42,7 @@ A **workbook** contains one or more **worksheets** (tabs), each built from a gri
 
 ## Querying JSON Document Stores in Python
 
-A document database stores collections of JSON objects—for instance, user profiles (`PersonsData.json` with `firstname`, `age`, `id`) or social media posts (`TwitterData.json` with `created_at`, `id`, `text`). Because documents map 1-to-1 to Python dictionaries, you can filter them cleanly with open-source libraries like **TinyDB** or run SQL-over-JSON queries directly with **DuckDB** and `sqlite3` in Google Colab.
+A document database stores collections of JSON objects, for instance, user profiles (`PersonsData.json` with `firstname`, `age`, `id`) or social media posts (`TwitterData.json` with `created_at`, `id`, `text`). Because documents map 1-to-1 to Python dictionaries, you can filter them cleanly with open-source libraries like **TinyDB** or run SQL-over-JSON queries directly with **DuckDB** and `sqlite3` in Google Colab.
 
 <ColabButton
   course="data-science-for-beginners"

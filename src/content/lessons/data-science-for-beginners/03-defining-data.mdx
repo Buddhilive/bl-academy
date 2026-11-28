@@ -12,7 +12,7 @@ prerequisites: ["data-science-for-beginners/02-data-science-ethics"]
 import QuizCard from '../../../components/islands/QuizCard';
 import ColabButton from '../../../components/static/ColabButton.astro';
 
-A single observation—like a heart-rate reading from your smartwatch or one row in a monthly earnings sheet—is a **data point**, and a collection of them forms a **dataset**. Before you write a single line of analysis code, you need to know what kind of data you're holding. In this lesson, we'll classify data by its measurement type and its structural layout.
+A single observation, like a heart-rate reading from your smartwatch or one row in a monthly earnings sheet, is a **data point**, and a collection of them forms a **dataset**. Before you write a single line of analysis code, you need to know what kind of data you're holding. In this lesson, we'll classify data by its measurement type and its structural layout.
 
 By the way, getting this classification right early saves hours of debugging later. Treating a phone number as a continuous math variable or assuming an unstructured sensor log has a rigid schema is one of the fastest ways to break a data pipeline.
 
@@ -22,8 +22,8 @@ By the way, getting this classification right early saves hours of debugging lat
 
 **Raw data** arrives straight from its source before any cleaning or organization. Once we inspect its values, every feature falls into one of two measurement families:
 
-- **Quantitative Data**: Objective, numerical observations you can measure and compute mathematically—such as a country's population, height in centimeters, Air Quality Index (AQI) readings, or quarterly revenue.
-- **Qualitative (Categorical) Data**: Descriptive observations capturing qualities or categories—such as car make and model, video comments, or favorite color. Watch out for *numerical identifiers* like phone numbers, zip codes, or order IDs: even though they use digits, averaging two phone numbers is meaningless, so they behave as qualitative labels.
+- **Quantitative Data**: Objective, numerical observations you can measure and compute mathematically, such as a country's population, height in centimeters, Air Quality Index (AQI) readings, or quarterly revenue.
+- **Qualitative (Categorical) Data**: Descriptive observations capturing qualities or categories, such as car make and model, video comments, or favorite color. Watch out for *numerical identifiers* like phone numbers, zip codes, or order IDs: even though they use digits, averaging two phone numbers is meaningless, so they behave as qualitative labels.
 
 ---
 
@@ -33,9 +33,9 @@ Beyond what a value measures, data is organized by how strictly its layout is en
 
 | Structure Type | Layout & Rules | Schema Flexibility | Common Examples |
 | :--- | :--- | :--- | :--- |
-| **Structured** | Fixed rows and columns with strict data types and constraints | Rigid — adding a new non-null column requires migrating all existing rows | Spreadsheets, relational SQL tables, bank statements |
-| **Semi-Structured** | Flexible hierarchy using metadata tags, keys, or delimiters | Moderate — new attributes can be added per record without altering old rows | JSON, CSV, HTML, email headers + body |
-| **Unstructured** | No predefined rows, columns, or schema rules | High — easy to append new formats, but slower to parse and clean | Plain text, audio, video feeds, raw sensor streams |
+| **Structured** | Fixed rows and columns with strict data types and constraints | Rigid , adding a new non-null column requires migrating all existing rows | Spreadsheets, relational SQL tables, bank statements |
+| **Semi-Structured** | Flexible hierarchy using metadata tags, keys, or delimiters | Moderate , new attributes can be added per record without altering old rows | JSON, CSV, HTML, email headers + body |
+| **Unstructured** | No predefined rows, columns, or schema rules | High , easy to append new formats, but slower to parse and clean | Plain text, audio, video feeds, raw sensor streams |
 
 Think about a barometric pressure sensor logging every 2 minutes. If it is unstructured, adding a temperature field tomorrow takes zero schema migration. The trade-off? You might discover the sensor occasionally wrote `"e"` instead of a number to signal a hardware fault, forcing you to sanitize the stream before computing an average.
 
